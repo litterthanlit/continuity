@@ -1,0 +1,31 @@
+{
+  "title": "Kit gallery",
+  "logline": "Every UI kit component in motion — reference + visual regression fixture.",
+  "format": { "aspect": "16:9", "fps": 30 },
+  "theme": "mono-dark",
+  "scenes": [
+    {
+      "id": "app",
+      "duration": 4.6,
+      "intent": "Window, sidebar, list rows, cursor path + click, toast.",
+      "beats": [{ "id": "b1", "at": 0.1 }, { "id": "b2", "at": 0.9 }, { "id": "click", "at": 2.2 }],
+      "text": {},
+      "transition": { "type": "push", "duration": 0.5 }
+    },
+    {
+      "id": "data",
+      "duration": 4.0,
+      "intent": "Browser, bar chart, line chart, stat counter, sheen.",
+      "beats": [{ "id": "b1", "at": 0.15 }, { "id": "b2", "at": 0.8 }],
+      "text": {},
+      "transition": { "type": "crossfade", "duration": 0.5 }
+    },
+    {
+      "id": "dev",
+      "duration": 4.4,
+      "intent": "Code block cascade, terminal, input typing with caret, toggle, progress, phone.",
+      "beats": [{ "id": "b1", "at": 0.1 }, { "id": "b2", "at": 0.9 }, { "id": "b3", "at": 1.8 }],
+      "text": {}
+    }
+  ]
+}

@@ -6,6 +6,10 @@ import { keyTimes } from "./times.js";
 
 interface Measured {
   id: string;
+  /** inside a UI-kit mockup */
+  ui: boolean;
+  /** px of text cut off by the nearest clipping ancestor */
+  clip: number;
   /** data-ct ids of DOM ancestors */
   anc: string[];
   scene: string;
@@ -41,30 +45,60 @@ window.__ctMeasure = function (time) {
     if (el.closest("[data-layout-ignore]")) return;
     var id = el.getAttribute("data-ct");
     if (/\\.(scene|camera)$/.test(id)) return;
-    var own = "";
-    el.childNodes.forEach(function (c) { if (c.nodeType === 3) own += c.textContent; });
-    el.querySelectorAll(".ct-w, .ct-c").forEach(function (c) {
-      if (c.closest("[data-ct]") === el) own += c.textContent;
-    });
+    var own = el.textContent || "";
+    el.querySelectorAll("[data-ct]").forEach(function (c) { own = own.replace(c.textContent || "", ""); });
     if (own.replace(/\\s/g, "").length < 2) return;
     var r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) return;
     var opacity = visibleOpacity(el);
     if (opacity < 0.05) return;
-    var cs = getComputedStyle(el);
     var scale = el.offsetWidth ? r.width / el.offsetWidth : 1;
+    // Effective size of the text this element itself holds (not of its box).
+    var fontPx = Infinity;
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (var tn = walker.nextNode(); tn; tn = walker.nextNode()) {
+      if (!tn.textContent || !tn.textContent.trim()) continue;
+      var holder = tn.parentElement;
+      // text owned by a nested animated element is measured on that element
+      if (!holder || holder.closest("[data-ct]") !== el) continue;
+      if (holder.closest("[data-layout-ignore]")) continue;
+      fontPx = Math.min(fontPx, parseFloat(getComputedStyle(holder).fontSize) * scale);
+    }
+    if (!isFinite(fontPx)) return;
+    // Text cut off by a clipping ancestor (window, card, mask) — ignoring our
+    // own reveal masks and the scene/camera/stage wrappers.
+    var clip = 0;
+    // Measure the glyphs themselves (a Range), not the element box: a block
+    // paragraph can be exactly as wide as its clipping parent while its text
+    // runs past both.
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var tr = range.getBoundingClientRect();
+    if (tr.width < 1) tr = r;
+    for (var q = el; q && q !== document.body; q = q.parentElement) {
+      if (q.classList.contains("ct-m") || q.classList.contains("ct-l") || q.classList.contains("ct-li")) continue;
+      if (q.classList.contains("ct-scene") || q.classList.contains("ct-camera") || q.classList.contains("ct-stage")) break;
+      var qs = getComputedStyle(q);
+      if (qs.overflowX !== "visible" || qs.overflowY !== "visible" || qs.clipPath !== "none") {
+        var b = q.getBoundingClientRect();
+        clip = Math.max(clip, b.left - tr.left, tr.right - b.right, b.top - tr.top, tr.bottom - b.bottom);
+        break;
+      }
+    }
     var anc = [];
     for (var p = el.parentElement; p; p = p.parentElement) {
       var pid = p.getAttribute && p.getAttribute("data-ct");
       if (pid) anc.push(pid);
     }
     out.push({
+      clip: clip,
       anc: anc,
       id: id,
       scene: id.slice(0, id.indexOf(".")),
       text: (el.textContent || "").replace(/\\s+/g, " ").trim().slice(0, 60),
       x: r.left, y: r.top, w: r.width, h: r.height,
-      fontPx: parseFloat(cs.fontSize) * scale,
+      fontPx: fontPx,
+      ui: Boolean(el.closest("[data-ct-ui]")),
       opacity: opacity
     });
   });
@@ -138,6 +172,7 @@ export async function probeProject(build: BuildResult): Promise<Finding[]> {
       const minErr = portrait ? 26 : 20;
       const seenSafe = new Set<string>();
       const seenSize = new Set<string>();
+      const seenClip = new Set<string>();
       for (const k of settled) {
         for (const m of await measure(k.t)) {
           if (m.opacity < 0.5 || m.scene !== k.scene) continue;
@@ -160,7 +195,21 @@ export async function probeProject(build: BuildResult): Promise<Finding[]> {
               suggestion: portrait ? "wrap content in <Safe zone=\"social\">" : "wrap content in <Safe> (title-safe) or pull it inward",
             });
           }
-          if (m.fontPx < minWarn && !seenSize.has(m.id)) {
+          if (m.clip > 2 && !seenClip.has(m.id)) {
+            seenClip.add(m.id);
+            findings.push({
+              source: "probe",
+              rule: "text-clipped",
+              severity: "error",
+              scene: m.scene,
+              element: m.id,
+              time: k.t,
+              bbox: { x: r2(m.x), y: r2(m.y), width: r2(m.w), height: r2(m.h) },
+              message: `"${m.text}" is cut off by its container (${Math.round(m.clip)}px hidden)`,
+              suggestion: "shorten the text, widen the container, or reduce the size — never let copy run under an edge",
+            });
+          }
+          if (m.fontPx < minWarn - 0.5 && !seenSize.has(m.id)) {
             seenSize.add(m.id);
             findings.push({
               source: "probe",
@@ -185,6 +234,8 @@ export async function probeProject(build: BuildResult): Promise<Finding[]> {
             const a = ms[i];
             const b = ms[j];
             if (a.scene !== b.scene) continue;
+            // UI layered over UI (a toast over a window) is composition, not a collision.
+            if (a.ui && b.ui) continue;
             const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
             const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
             const inter = ix * iy;

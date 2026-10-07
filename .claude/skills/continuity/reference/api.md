@@ -68,6 +68,17 @@ Type
 - `<Fit ct max min>` — single-line text auto-fit to container width at load.
 - `<Counter ct from decimals prefix suffix>` + `m.counter(ct, { to })`.
 
+Product UI (video-scale: all text ≥ 26px; sub-parts expose `<ct>-…` ids)
+- `<Window ct title width height glass?>` (body `<ct>-body`) · `<Browser ct url>` (`<ct>-url`, `<ct>-body`) · `<Phone ct width>` (`<ct>-screen`)
+- `<Card ct glow? glass?>` · `<Button variant="primary|secondary|ghost">` · `<Pill dot>` · `<Kbd>` · `<Avatar initials>`
+- `<Input ct value placeholder>` → type `<ct>-text`, blink `<ct>-caret` · `<Toggle ct>` → `<ct>-knob` x 0→36, `<ct>-on` opacity · `<Progress ct value>` → `<ct>-fill` scaleX
+- `<Toast ct title body>` · `<Sidebar ct items active>` (`<ct>-i0…`) · `<List ct rows>` (`<ct>-r0…`)
+- `<CodeBlock ct code>` (lines `<ct>-l0…`, highlighted) · `<Terminal ct lines>` (`<ct>-l0…`)
+- `<BarChart ct data highlightIndex>` (bars `<ct>-b0…`, grow with `scaleY: [0, 1]`) · `<LineChart ct data>` (`<ct>-line` draw, `<ct>-area` fade) · `<Stat ct value label>` (+ `m.counter`)
+- `<Cursor ct class="left-… top-…">` (+ `<ct>-ripple`) · `<Sheen ct>` light sweep (tween `xPct: [-160, 360]`)
+- Kit UI roots carry `data-ct-ui`: their text is judged as UI imagery (`ui-glance`, ≥ 0.8s landed), not copy (`read-time`).
+- Characters must exist in the vendored fonts (Latin + "CT Symbols/Arrows/Math" fallbacks: ✓ ✔ ❯ ◆ ⌘ ★ ● ■ ▲ ✕ → ← ↗ × ÷). Emoji are rejected (`glyph-missing`) — draw icons as SVG.
+
 ## Motion DSL (`m`)
 
 Timing (`at`): seconds · `"b1"` · `"b1+0.2"` · `"end-0.6"` · `"after:headline"`.
@@ -80,6 +91,10 @@ m.tween(targets, { x: [from, to], opacity: 1 }, { at, duration, ease, kind?, spl
 m.camera({ scale: [1, 1.04], x: [0, -40] }, { at?, duration?, ease? })  // whole-scene camera
 m.loop(target, { y: 8, rotate: 1.5 }, { period: 6, phase?, at?, until? })  // ambient sine
 m.counter(target, { from?, to, at, duration?, decimals?, prefix?, suffix? })
+m.path("cursor", [{ x: -280, y: -330 }, { x: 40, y: 10, hold: 0.3 }], { at })   // waypoints, px offsets
+m.click("cursor", { at })                                   // press + ripple
+m.type("search-text", { at, cps: 22 })                      // typeOn by chars
+m.blink("search-caret", { at, until })                      // soft caret blink
 m.time(at) → seconds · m.endOf(id) → seconds
 ```
 

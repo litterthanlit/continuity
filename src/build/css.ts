@@ -1,5 +1,6 @@
 import { compile } from "@tailwindcss/node";
 import { basename } from "node:path";
+import { symbolFonts } from "../themes/fonts.js";
 import type { FontFamily, Theme } from "../themes/index.js";
 
 /**
@@ -18,11 +19,13 @@ export const TYPE_SCALE: Record<string, [number, number, string]> = {
   micro: [26, 1.3, "0.02em"],
 };
 
-const stack = (f: FontFamily) => `"${f.family}", ${f.fallback}`;
+const SYMBOL_STACK = symbolFonts.map((f) => `"${f.family}"`).join(", ");
+const stack = (f: FontFamily) => `"${f.family}", ${SYMBOL_STACK}, ${f.fallback}`;
 
+/** Every vendored family a build needs: the theme's four roles + symbol fallbacks. */
 export function uniqueFamilies(theme: Theme): FontFamily[] {
   const seen = new Map<string, FontFamily>();
-  for (const f of Object.values(theme.fonts)) seen.set(f.family, f);
+  for (const f of [...Object.values(theme.fonts), ...symbolFonts]) seen.set(f.family, f);
   return [...seen.values()];
 }
 
@@ -82,7 +85,7 @@ html, body { margin: 0; padding: 0; background: var(--color-bg); }
 #root { position: relative; overflow: hidden; background: var(--color-bg); color: var(--color-fg);
   font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
   font-kerning: normal; font-feature-settings: "ss01" on, "cv11" on; }
-.ct-scene { position: absolute; inset: 0; overflow: hidden; }
+.ct-scene { position: absolute; inset: 0; overflow: hidden; perspective: 2200px; }
 .ct-camera { position: absolute; inset: 0; transform-origin: 50% 50%; }
 .ct-measuring .ct-scene { display: block !important; visibility: hidden !important; }
 .font-display { font-feature-settings: "ss01" on, "cv11" on, "calt" on; }

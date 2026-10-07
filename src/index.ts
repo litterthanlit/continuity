@@ -33,6 +33,7 @@ export type { SceneContext } from "./kit/context.js";
 export { useScene, ctId } from "./kit/context.js";
 export * from "./kit/core.js";
 export * from "./kit/type.js";
+export * from "./kit/ui.js";
 export type { MotionBuilder, At, PresetCallOptions, TweenCallOptions } from "./motion/dsl.js";
 export { durations, eases, staggers, readTime } from "./motion/tokens.js";
 export type { DurationToken, EaseToken, StaggerToken } from "./motion/tokens.js";

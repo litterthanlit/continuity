@@ -23,6 +23,7 @@ export const RULES = {
   "settle-interrupted": "A new tween on the same property starts before the previous one settled — motion never lands.",
   "read-time": "Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.",
   "hold-too-short": "Element exits almost as soon as it lands.",
+  "ui-glance": "UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).",
   "scene-overrun": "Motion is still running after the scene has ended (it will be cut off).",
   "late-entrance": "Element enters in the last moments of the scene — it pops in and is gone.",
   "dead-air": "Nothing moves for too long. Add ambient life (camera drift, a loop on bg/glow) or tighten the scene.",
@@ -198,11 +199,22 @@ export function lintTimeline(build: BuildResult): Finding[] {
     const SETTLED_HOLD = 0.6;
     for (const e of build.elements) {
       if (e.scene !== sc.scene || !textLeaf(e) || counted.has(e.id)) continue;
-      if (e.ancestors.some((a) => elements.get(a) && textLeaf(elements.get(a)!))) continue;
+      // Part of a larger copy element (e.g. an accent word inside a headline): judged with its parent.
+      if (e.ancestors.some((a) => elements.get(a) && !elements.get(a)!.ui && textLeaf(elements.get(a)!))) continue;
       const chain = [e.id, ...e.ancestors];
       const readable = Math.max(0, ...chain.map((id) => firstReadable.get(id) ?? 0));
       const landed = Math.max(0, ...chain.map((id) => enterEnd.get(id) ?? 0));
       const until = Math.min(sc.duration, ...chain.map((id) => exitStart.get(id) ?? Infinity));
+      if (e.ui) {
+        if (until - landed < 0.8) {
+          add("ui-glance", "warning", sc, `UI text "${e.ownText.slice(0, 40)}" is landed for only ${r2(Math.max(0, until - landed))}s`, {
+            element: e.id,
+            time: at(landed),
+            suggestion: "land it earlier or hold the scene longer",
+          });
+        }
+        continue;
+      }
       const window = until - readable;
       const need = readTime(e.text.length);
       const quote = `"${e.text.slice(0, 48)}${e.text.length > 48 ? "…" : ""}"`;

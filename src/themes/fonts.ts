@@ -46,3 +46,21 @@ export const fonts = {
 } satisfies Record<string, FontFamily>;
 
 export type FontKey = keyof typeof fonts;
+
+const single = (family: string, file: string): FontFamily => ({
+  family,
+  fallback: "",
+  license: "OFL-1.1",
+  faces: [{ file, weight: "400", style: "normal" }],
+});
+
+/**
+ * Deterministic symbol fallbacks appended to every font stack. Without them,
+ * glyphs like ✓ ❯ ◆ ⌘ → silently render in whatever system font the machine
+ * has — a different picture on every renderer.
+ */
+export const symbolFonts: FontFamily[] = [
+  single("CT Symbols", "@fontsource/noto-sans-symbols-2/files/noto-sans-symbols-2-symbols-400-normal.woff2"),
+  single("CT Arrows", "@fontsource/noto-sans-symbols/files/noto-sans-symbols-symbols-400-normal.woff2"),
+  single("CT Math", "@fontsource/noto-sans-symbols-2/files/noto-sans-symbols-2-math-400-normal.woff2"),
+];

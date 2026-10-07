@@ -1,0 +1,27 @@
+{
+  "title": "Seeded static defects (test fixture \u2014 every lint/build rule must fire)",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "mono-dark",
+  "scenes": [
+    {
+      "id": "motion",
+      "duration": 6,
+      "intent": "Timeline defects.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.9
+        }
+      ],
+      "text": {
+        "long": "This sentence is far too long to be read in the tiny window of time that the scene gives it before leaving.",
+        "a": "Alpha",
+        "b": "Beta",
+        "c": "Gamma"
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Seeded layout defects (test fixture \u2014 every browser rule must fire)",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "mono-dark",
+  "scenes": [
+    {
+      "id": "layout",
+      "duration": 3,
+      "intent": "Layout defects.",
+      "beats": [],
+      "text": {
+        "clipped": "This line is much too long for its narrow box",
+        "tiny": "Tiny legal-sized type",
+        "edge": "Hugging the edge",
+        "dim": "Barely visible",
+        "x1": "Crossing one",
+        "x2": "Crossing two"
+      }
+    }
+  ]
+}

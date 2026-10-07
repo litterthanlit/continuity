@@ -14,6 +14,7 @@ import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
 import { classCandidates, compileCss, fontFaceCss, fontLoadList, uniqueFamilies } from "./css.js";
+import { missingGlyphs } from "./glyphs.js";
 import { sourceHash } from "./hash.js";
 import { runtimeBundle } from "./runtime-bundle.js";
 
@@ -31,6 +32,8 @@ export interface ElementInfo {
   decor: boolean;
   /** Animatable ancestors (nearest first), whose motion also moves/hides this element. */
   ancestors: string[];
+  /** Inside a UI-kit mockup (window, card, code…): text is imagery to glance at, not copy to read. */
+  ui: boolean;
 }
 
 export interface BuildResult {
@@ -252,6 +255,7 @@ export async function buildProject(
       role: roleOf.get(id),
       decor: el.hasAttribute("data-layout-ignore") || Boolean(el.closest("[data-layout-ignore]")),
       ancestors,
+      ui: Boolean(el.closest("[data-ct-ui]")),
     });
   }
   for (const [id, n] of seen) {
@@ -294,6 +298,22 @@ export async function buildProject(
         words,
         lines: Math.max(1, (node.querySelectorAll("br") as unknown as unknown[]).length + 1, Math.min(4, Math.round(words / 4))),
       };
+    }
+  }
+
+  // Every visible character must be drawable by a vendored font (determinism).
+  for (const sec of document.querySelectorAll("[data-ct-scene]") as unknown as HTMLElement[]) {
+    const missing = missingGlyphs(sec.textContent ?? "", uniqueFamilies(theme));
+    if (missing.length) {
+      const sceneId = sec.getAttribute("data-ct-scene")!;
+      findings.push({
+        source: "build",
+        rule: "glyph-missing",
+        severity: "error",
+        scene: sceneId,
+        message: `no vendored font has a glyph for ${missing.map((c) => `"${c}" (U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")})`).join(", ")} — it would render in a random system font`,
+        suggestion: "use a character the theme fonts cover, or draw it as an inline SVG icon",
+      });
     }
   }
 

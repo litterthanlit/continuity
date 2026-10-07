@@ -8,6 +8,8 @@ import {
   type PresetOptions,
 } from "./presets.js";
 import {
+  durations,
+  eases,
   resolveDuration,
   resolveEase,
   resolveStagger,
@@ -195,6 +197,66 @@ export class MotionBuilder {
       this.loops.push({ target: this.id(target), prop, amplitude, period: opts.period, phase: opts.phase ?? 0, start, end });
     }
     return this;
+  }
+
+  /**
+   * Move an element (typically a Cursor) through waypoints, offsets in px from
+   * its layout position. Each leg eases in-out; legs chain with a short hold
+   * unless a waypoint has its own `at`.
+   */
+  path(
+    target: string,
+    points: Array<{ x: number; y: number; at?: At; duration?: number | DurationToken; hold?: number }>,
+    opts: { at?: At; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; hold?: number } = {},
+  ): this {
+    const { spec, name } = resolveEase(opts.ease ?? "inOut");
+    let t = this.time(opts.at);
+    for (const p of points) {
+      const start = p.at !== undefined ? this.time(p.at) : t;
+      const duration = resolveDuration(p.duration ?? opts.duration ?? "slow");
+      this.push({
+        target: this.id(target),
+        kind: "move",
+        start,
+        duration,
+        ease: spec,
+        easeName: name,
+        props: { x: [null, p.x], y: [null, p.y] },
+      });
+      t = round(start + duration + (p.hold ?? opts.hold ?? 0.12));
+    }
+    return this;
+  }
+
+  /** A click: the pointer presses (scale) and an accent ripple expands from its tip (`<target>-ripple`). */
+  click(target: string, opts: { at?: At; ripple?: boolean } = {}): this {
+    const at = this.time(opts.at);
+    const id = this.id(target);
+    this.push({ target: id, kind: "emphasis", start: at, duration: durations.instant, ease: eases.standard, easeName: "standard", props: { scale: [null, 0.84] }, preset: "click" });
+    this.push({ target: id, kind: "emphasis", start: round(at + durations.instant), duration: durations.fast, ease: eases.snappy, easeName: "snappy", props: { scale: [null, 1] }, preset: "click" });
+    if (opts.ripple !== false) {
+      this.push({
+        target: `${id}-ripple`,
+        kind: "emphasis",
+        start: at,
+        duration: durations.slow,
+        ease: eases.hero,
+        easeName: "hero",
+        props: { scale: [0.3, 1.7], opacity: [0.9, 0] },
+        preset: "click",
+      });
+    }
+    return this;
+  }
+
+  /** Type text on, character by character, at a human rate (default 22 chars/s). */
+  type(target: string, opts: { at?: At; cps?: number } = {}): this {
+    return this.enter(target, "typeOn", { at: opts.at, split: "chars", stagger: round(1 / (opts.cps ?? 22)) });
+  }
+
+  /** Cursor-style blink (soft, deterministic) between `at` and `until`. */
+  blink(target: string, opts: { at?: At; until?: At; period?: number } = {}): this {
+    return this.loop(target, { opacity: 1.6 }, { period: opts.period ?? 1.0, phase: 0.25, at: opts.at, until: opts.until });
   }
 
   /** Count a number up/down inside a text element. */

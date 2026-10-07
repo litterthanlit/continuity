@@ -99,8 +99,9 @@
 - `duration-off-token` — Durations should come from the token scale (instant/fast/base/slow/hero/linger) for a consistent rhythm.
 - `exit-slower-than-enter` — Exits should be quicker than entrances (attention has moved on).
 - `settle-interrupted` — A new tween on the same property starts before the previous one settled — motion never lands.
-- `read-time` — Text leaves the screen before it can be read (≈17 chars/s + settle, min 0.83s).
+- `read-time` — Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.
 - `hold-too-short` — Element exits almost as soon as it lands.
+- `ui-glance` — UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).
 - `scene-overrun` — Motion is still running after the scene has ended (it will be cut off).
 - `late-entrance` — Element enters in the last moments of the scene — it pops in and is gone.
 - `dead-air` — Nothing moves for too long. Add ambient life (camera drift, a loop on bg/glow) or tighten the scene.

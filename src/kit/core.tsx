@@ -254,3 +254,22 @@ export function Path({
     </svg>
   );
 }
+
+/**
+ * Light sweep across a surface (place inside a relative, overflow-hidden
+ * parent). Animate: `m.tween("sheen", { xPct: [-160, 360] }, { duration: "linger", ease: "inOut" })`.
+ */
+export function Sheen({ ct, opacity = 0.14 }: { ct: string; opacity?: number }) {
+  return (
+    <div class="pointer-events-none absolute inset-0 overflow-hidden" data-layout-ignore>
+      <div
+        data-ct={ctId(ct)}
+        class="absolute inset-y-[-20%] left-0 w-[38%]"
+        style={{
+          transform: "translate3d(0,0,0) translate(-160%,0)",
+          background: `linear-gradient(100deg, transparent 0%, rgba(255,255,255,${opacity}) 50%, transparent 100%)`,
+        }}
+      />
+    </div>
+  );
+}
