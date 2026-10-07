@@ -1,5 +1,4 @@
 import type { BuildResult } from "../../build/build.js";
-import { buildDir } from "../../paths.js";
 import type { Finding, Severity } from "../../spec/findings.js";
 import { parseJsonOutput, runHf } from "./hf.js";
 import { auditTimes } from "./times.js";
@@ -42,7 +41,7 @@ const PASSTHROUGH = ["ratio", "required", "fg", "bg", "suggestedColor", "text", 
  */
 export async function hfCheck(build: BuildResult, opts: { snapshots?: boolean } = {}): Promise<{ findings: Finding[]; raw: unknown }> {
   const times = auditTimes(build);
-  const args = ["check", buildDir(build.slug), "--json", "--samples", "9", "--timeout", "15000"];
+  const args = ["check", build.dir, "--json", "--samples", "9", "--timeout", "15000"];
   if (times.length) args.push("--at", times.join(","));
   if (opts.snapshots) args.push("--snapshots");
   const r = await runHf(args, { timeoutMs: 10 * 60_000 });

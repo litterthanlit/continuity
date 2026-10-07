@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { ROOT } from "../../paths.js";
 import { hfEnv } from "./env.js";
+import { withBrowserSlot } from "./lock.js";
 
 const require = createRequire(join(ROOT, "package.json"));
 
@@ -20,8 +21,17 @@ export interface HfResult {
   stderr: string;
 }
 
-/** Run the pinned HyperFrames CLI with the Continuity environment. */
+const HEAVY = new Set(["render", "check", "snapshot", "benchmark"]);
+
+/** Run the pinned HyperFrames CLI with the Continuity environment (browser-heavy commands take a slot). */
 export function runHf(
+  args: string[],
+  opts: { cwd?: string; quiet?: boolean; onLine?: (line: string) => void; timeoutMs?: number } = {},
+): Promise<HfResult> {
+  return HEAVY.has(args[0]) ? withBrowserSlot(() => spawnHf(args, opts)) : spawnHf(args, opts);
+}
+
+function spawnHf(
   args: string[],
   opts: { cwd?: string; quiet?: boolean; onLine?: (line: string) => void; timeoutMs?: number } = {},
 ): Promise<HfResult> {

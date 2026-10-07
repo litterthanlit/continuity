@@ -17,8 +17,8 @@ interface HfLintFinding {
   selector?: string;
 }
 
-export async function hfLint(slug: string): Promise<Finding[]> {
-  const r = await runHf(["lint", buildDir(slug), "--json"]);
+export async function hfLint(dir: string): Promise<Finding[]> {
+  const r = await runHf(["lint", dir, "--json"]);
   const j = parseJsonOutput<{ findings: HfLintFinding[] }>(r.stdout);
   return j.findings
     .filter((f) => !HF_LINT_IGNORE.has(f.code))
@@ -32,17 +32,24 @@ export async function hfLint(slug: string): Promise<Finding[]> {
     }));
 }
 
+/** Build the whole project, or one scene in isolation (others become placeholders) into its own dir. */
+export function buildFor(slug: string, scene?: string) {
+  return buildProject(slug, scene ? { only: scene, outDir: buildDir(`${slug}~${scene}`) } : {});
+}
+
 export interface LintResult {
   build: BuildResult;
   findings: Finding[];
 }
 
 /** Build + static checks (schema, build, timeline lint, HyperFrames lint). Fast, no browser. */
-export async function buildAndLint(slug: string, opts: { hf?: boolean } = {}): Promise<LintResult> {
-  const build = await buildProject(slug);
-  const findings = [...build.findings];
+export async function buildAndLint(slug: string, opts: { hf?: boolean; scene?: string } = {}): Promise<LintResult> {
+  const build = await buildFor(slug, opts.scene);
+  let findings = [...build.findings];
   if (build.timeline) findings.push(...lintTimeline(build));
-  if (build.ok && opts.hf !== false) findings.push(...(await hfLint(slug)));
+  if (build.ok && opts.hf !== false) findings.push(...(await hfLint(build.dir)));
+  // Scene mode: other scenes are placeholders, so only this scene's findings mean anything.
+  if (opts.scene) findings = findings.filter((f) => !f.scene || f.scene === opts.scene || f.source === "schema");
   return { build, findings };
 }
 

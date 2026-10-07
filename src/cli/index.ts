@@ -3,8 +3,11 @@ import { build } from "./commands/build.js";
 import { check } from "./commands/check.js";
 import { docs } from "./commands/docs.js";
 import { doctor } from "./commands/doctor.js";
+import { gateStatus } from "./commands/gate-status.js";
 import { compare, restore, score, verdict } from "./commands/iterate.js";
+import { licenses } from "./commands/licenses.js";
 import { lint } from "./commands/lint.js";
+import { motion, strip } from "./commands/motion.js";
 import { newProject } from "./commands/new.js";
 import { render } from "./commands/render.js";
 import { reportCmd } from "./commands/report.js";
@@ -24,7 +27,9 @@ const COMMANDS: Command[] = [
   timeline,
   stills,
   sheet,
+  strip,
   render,
+  motion,
   status,
   score,
   compare,
@@ -32,13 +37,15 @@ const COMMANDS: Command[] = [
   restore,
   reportCmd,
   docs,
+  licenses,
+  gateStatus,
   doctor,
 ];
 
 function help() {
   log(`${color.bold("continuity")} — motion design as code, with eyes.
 
-${color.bold("Loop:")} lint → check (gate) → stills / sheet (look) → score → fix → compare/verdict → render → report
+${color.bold("Loop:")} lint → check (gate) → stills / sheet / strip (look) → score → fix → render → motion → compare/verdict → report
 
 ${COMMANDS.map((c) => `  ${c.name.padEnd(10)} ${c.summary}`).join("\n")}
 

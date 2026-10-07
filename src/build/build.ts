@@ -101,7 +101,13 @@ function errMsg(e: unknown): string {
  */
 export async function buildProject(
   slug: string,
-  opts: { write?: boolean; srcDir?: string; outDir?: string } = {},
+  opts: {
+    write?: boolean;
+    srcDir?: string;
+    outDir?: string;
+    /** Build only this scene; the others become timed placeholders (isolates parallel scene-builders). */
+    only?: string;
+  } = {},
 ): Promise<BuildResult> {
   const write = opts.write ?? true;
   const src = opts.srcDir ?? projectDir(slug);
@@ -138,7 +144,9 @@ export async function buildProject(
     const tl: SceneTimeline = { scene: sc.id, start: timing.start, duration: sc.duration, beats, tweens: [], loops: [] };
     scenes.set(sc.id, tl);
     let inner = `<div class="absolute inset-0 grid place-items-center text-h3 text-danger">missing scene ${sc.id}</div>`;
-    if (!existsSync(file)) {
+    if (opts.only && opts.only !== sc.id) {
+      inner = `<div class="absolute inset-0 bg-bg"></div>`;
+    } else if (!existsSync(file)) {
       findings.push({ source: "build", rule: "scene-missing", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx not found in ${src.replace(ROOT + "/", "")}` });
     } else {
       let def: SceneDefinition | undefined;
@@ -189,6 +197,10 @@ export async function buildProject(
         `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${index + 1}">` +
         `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div></section>`,
     );
+  }
+
+  if (opts.only && !sb.scenes.some((s) => s.id === opts.only)) {
+    findings.push({ source: "build", rule: "scene-unknown", severity: "error", message: `no scene "${opts.only}" in the storyboard` });
   }
 
   // Scene transitions become tweens on the scene roots.

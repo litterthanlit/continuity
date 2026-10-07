@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import { extname, join, normalize } from "node:path";
 import puppeteer, { type Browser, type Page } from "puppeteer-core";
 import { resolveBrowser } from "./env.js";
+import { withBrowserSlot } from "./lock.js";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -46,12 +47,14 @@ export async function launch(): Promise<Browser> {
 }
 
 export async function withBrowser<T>(fn: (b: Browser) => Promise<T>): Promise<T> {
-  const b = await launch();
-  try {
-    return await fn(b);
-  } finally {
-    await b.close();
-  }
+  return withBrowserSlot(async () => {
+    const b = await launch();
+    try {
+      return await fn(b);
+    } finally {
+      await b.close();
+    }
+  });
 }
 
 /** Render an HTML document to PNG (used for contact sheets, strips, charts, compare packs). */
@@ -64,7 +67,8 @@ export async function screenshotHtml(
     const srv = opts.baseDir ? await serveDir(opts.baseDir) : null;
     const page: Page = await b.newPage();
     try {
-      await page.setViewport({ width: opts.width, height: opts.height ?? 800, deviceScaleFactor: 1 });
+      // fullPage screenshots grow to the content; start small so nothing is padded
+      await page.setViewport({ width: opts.width, height: opts.height ?? 120, deviceScaleFactor: 1 });
       if (srv) {
         await page.setRequestInterception(true);
         page.on("request", (req) => {

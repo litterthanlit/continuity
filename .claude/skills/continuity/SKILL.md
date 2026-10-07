@@ -45,8 +45,11 @@ and time; the `→` line is the suggested fix. Re-run until clean. Rule meanings
 occlusion, contrast with a suggested compliant color).
 
 ## 5 · Look (critic)
-`pnpm ct sheet <slug>` + `pnpm ct stills <slug>` → read the images. Load the
-`critique` skill and score the 5 axes with evidence. Fix the top issues only.
+`pnpm ct sheet <slug>` + `pnpm ct stills <slug>` → read the images.
+`pnpm ct strip <slug> --scene <id>` shows a scene's motion paths in one image;
+`pnpm ct motion <slug>` (after a render) charts the edit's rhythm and flags dead
+zones/jolts. Load the `critique` skill and score the 5 axes with evidence
+(`pnpm ct score …`). Fix the top issues only.
 
 ## 6 · Iterate with discipline
 - Max **3** visual rounds. Gains come in round 1; later rounds often regress.
@@ -59,6 +62,12 @@ occlusion, contrast with a suggested compliant color).
 `pnpm ct render <slug>` (final), check QC output, write
 `.continuity/report.md` (`pnpm ct report <slug>`), and show the user the MP4 +
 contact sheet.
+
+## Working in parallel
+`pnpm ct lint|check|stills|sheet|strip <slug> --scene <id>` build that scene in
+isolation (others become placeholders, own build dir), so one builder's
+half-written file never breaks another's check. Browser work queues for a
+limited number of slots automatically. Always finish with a full `ct check`.
 
 ## Roles (subagents, when available)
 - **director** — brief + storyboard + treatment. Never writes scene code.

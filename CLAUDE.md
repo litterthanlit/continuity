@@ -66,19 +66,26 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/kit/` | scene components (Stage, Safe, Headline, …) |
 | `src/themes/` | `mono-dark`, `light-editorial`, `vivid-gradient` |
 | `src/lint/timeline.ts` | motion lint rules (`RULES` explains each) |
-| `.claude/skills/` | `continuity` (start here), `motion-craft`, `kinetic-type`, `product-launch`, `critique` |
+| `.claude/skills/` | `continuity` (start here), `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref` |
+| `.claude/agents/` | `director`, `scene-builder`, `critic` — orchestrated by `/make-video`, `/iterate`, `/critique`, `/render` |
+| `.claude/hooks/` | edit → `ct lint` feedback; Stop → blocks "done" until changed projects pass `ct check`; SessionStart → install |
+| `projects/_kit`, `_defects*` | component gallery (reference) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands
 
 ```
 pnpm ct new <slug> --aspect 9:16 --theme mono-dark
-pnpm ct lint <slug>            # fast static gate (also runs on every edit via hook)
-pnpm ct check <slug>           # THE gate (browser audits) — records the iteration
+pnpm ct lint <slug> [--storyboard | --scene id]   # fast static gate (also runs on every edit via hook)
+pnpm ct check <slug> [--scene id]  # THE gate (browser audits) — the full run records the iteration
 pnpm ct timeline <slug>        # every tween with numbers
-pnpm ct stills <slug> [--beats | --at 1.2,3]
+pnpm ct stills <slug> [--beats | --at 1.2,3 | --scene id]
 pnpm ct sheet <slug> [--anchors] [--scene id]
+pnpm ct strip <slug> --scene id    # onion skin: motion paths in one image
 pnpm ct render <slug> [--draft]
-pnpm ct status <slug>
+pnpm ct motion <slug>          # motion-energy chart of the render: rhythm, dead zones, jolts
+pnpm ct score|compare|verdict|restore <slug> …   # critique bookkeeping, keep the best
+pnpm ct status <slug> · pnpm ct report <slug> · pnpm ct licenses
 pnpm verify                    # typecheck + eslint + unit tests (engine changes)
+CT_SLOW=1 pnpm test            # + browser tests: seeded defects, golden frames
 ```

@@ -1,12 +1,11 @@
 import { join, relative } from "node:path";
-import { buildProject } from "../../build/build.js";
 import { rel } from "../../paths.js";
 import { flagBool, flagNum, flagStr, requireSlug } from "../lib/args.js";
 import { withBrowser, screenshotHtml } from "../lib/browser.js";
 import type { Command } from "../lib/command.js";
 import { captureFrames } from "../lib/frames.js";
 import { fail, log, ok, step } from "../lib/log.js";
-import { report } from "../lib/project.js";
+import { buildFor, report } from "../lib/project.js";
 import { defaultCols, sheetHtml } from "../lib/sheet.js";
 import { currentIteration, readFindings } from "../lib/store.js";
 import { gridTimes } from "../lib/times.js";
@@ -21,7 +20,7 @@ export const sheet: Command = {
     "  --per      frames per sheet image (default 20)",
   async run(a) {
     const slug = requireSlug(a);
-    const b = await buildProject(slug);
+    const b = await buildFor(slug, flagStr(a, "scene"));
     if (!b.ok || !b.timeline) {
       report("build", b.findings);
       fail("fix build errors first (ct lint)");
@@ -36,7 +35,7 @@ export const sheet: Command = {
     const it = currentIteration(slug);
     const framesDir = join(it.dir, "frames");
     step(`capturing ${points.length} frames every ${every}s → iteration ${it.n}`);
-    const frames = await captureFrames(slug, points.map((p) => p.t), framesDir, "g");
+    const frames = await captureFrames(slug, points.map((p) => p.t), framesDir, "g", b.dir);
     const findings = readFindings(it.dir, "findings.json");
     const flagAt = (t: number) => {
       const near = findings.filter((f) => f.time !== undefined && Math.abs(f.time - t) <= every / 2 && f.severity !== "info");

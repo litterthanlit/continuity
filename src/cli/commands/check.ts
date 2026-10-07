@@ -17,7 +17,7 @@ export const check: Command = {
     const slug = requireSlug(a);
     const json = flagBool(a, "json");
     const scene = typeof a.flags.scene === "string" ? a.flags.scene : undefined;
-    const { build, findings } = await buildAndLint(slug);
+    const { build, findings } = await buildAndLint(slug, { scene });
     if (!json) log(buildSummary(build));
     const all: Finding[] = [...findings];
     if (build.ok) {
@@ -25,13 +25,15 @@ export const check: Command = {
       const [hf, probe] = await Promise.all([hfCheck(build, { snapshots: flagBool(a, "snapshots") }), probeProject(build)]);
       all.push(...hf.findings, ...probe);
     }
+    // Scene mode builds the other scenes as placeholders: only this scene's findings count,
+    // and the result is not the project gate.
     const scoped = scene ? all.filter((f) => !f.scene || f.scene === scene) : all;
     const it = currentIteration(slug);
-    writeFindings(it.dir, "findings.json", all);
-    const c = countBySeverity(all);
-    updateIteration(slug, it.n, { gate: { ok: c.errors === 0, errors: c.errors, warnings: c.warnings, at: new Date().toISOString() } });
+    writeFindings(it.dir, scene ? `findings-${scene}.json` : "findings.json", scoped);
+    const c = countBySeverity(scoped);
+    if (!scene) updateIteration(slug, it.n, { gate: { ok: c.errors === 0, errors: c.errors, warnings: c.warnings, at: new Date().toISOString() } });
     const passed = report(`check (iteration ${it.n}${scene ? `, scene ${scene}` : ""})`, scoped, { json });
-    if (!json) log(`findings → ${rel(join(it.dir, "findings.json"))}`);
+    if (!json) log(`findings → ${rel(join(it.dir, scene ? `findings-${scene}.json` : "findings.json"))}${scene ? "  (scene check — run the full `ct check` before calling the project done)" : ""}`);
     return passed ? 0 : 1;
   },
 };

@@ -1,11 +1,10 @@
 import { join } from "node:path";
-import { buildProject } from "../../build/build.js";
 import { rel } from "../../paths.js";
 import { flagBool, flagNums, flagStr, requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { captureFrames } from "../lib/frames.js";
 import { fail, log, ok, step } from "../lib/log.js";
-import { report } from "../lib/project.js";
+import { buildFor, report } from "../lib/project.js";
 import { currentIteration } from "../lib/store.js";
 import { beatTimes, fmtTime, keyTimes, type TimePoint } from "../lib/times.js";
 
@@ -19,7 +18,7 @@ export const stills: Command = {
     "  --at      exact global times (seconds)",
   async run(a) {
     const slug = requireSlug(a);
-    const b = await buildProject(slug);
+    const b = await buildFor(slug, flagStr(a, "scene"));
     if (!b.ok || !b.timeline) {
       report("build", b.findings);
       fail("fix build errors first (ct lint)");
@@ -39,7 +38,7 @@ export const stills: Command = {
     const it = currentIteration(slug);
     const dir = join(it.dir, "stills");
     step(`capturing ${points.length} frame(s) → iteration ${it.n}`);
-    const frames = await captureFrames(slug, points.map((p) => p.t), dir);
+    const frames = await captureFrames(slug, points.map((p) => p.t), dir, "t", b.dir);
     for (const f of frames) {
       const p = points.find((x) => Math.abs(x.t - f.t) < 0.002);
       log(`  ${fmtTime(f.t)}  ${(p?.scene ?? "").padEnd(14)} ${(p?.label ?? "").padEnd(8)} ${rel(f.file)}`);

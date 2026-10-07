@@ -1,5 +1,4 @@
 import type { BuildResult } from "../../build/build.js";
-import { buildDir } from "../../paths.js";
 import type { Finding } from "../../spec/findings.js";
 import { serveDir, withBrowser } from "./browser.js";
 import { keyTimes } from "./times.js";
@@ -135,7 +134,7 @@ export async function probeProject(build: BuildResult): Promise<Finding[]> {
   const findings: Finding[] = [];
   const settled = keyTimes(build);
   const moving = midMotionTimes(build);
-  const srv = await serveDir(buildDir(build.slug));
+  const srv = await serveDir(build.dir);
   try {
     await withBrowser(async (browser) => {
       const page = await browser.newPage();
