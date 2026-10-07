@@ -1,0 +1,60 @@
+{
+  "name": "continuity",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An open-source, agent-first harness for authoring state-of-the-art motion design videos as code.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "ct": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "eslint .",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/inter-tight": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
+    "@tailwindcss/node": "4.3.3",
+    "esbuild": "0.28.2",
+    "linkedom": "0.18.12",
+    "preact": "11.0.0",
+    "preact-render-to-string": "6.8.0",
+    "puppeteer-core": "25.12.0",
+    "sharp": "0.35.5",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "eslint": "10.12.0",
+    "hyperframes": "0.8.140",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@hyperframes/core": "0.8.140",
+      "@hyperframes/engine": "0.8.140",
+      "@hyperframes/producer": "0.8.140",
+      "@hyperframes/lint": "0.8.140",
+      "@hyperframes/parsers": "0.8.140",
+      "@hyperframes/studio-server": "0.8.140"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

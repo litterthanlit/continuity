@@ -1,0 +1,20 @@
+{
+  "title": "Untitled",
+  "logline": "Who this is for, what it shows, and what it should make them do.",
+  "format": { "aspect": "16:9", "fps": 30 },
+  "theme": "mono-dark",
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": 3,
+      "intent": "Stop the scroll: one bold promise.",
+      "beats": [{ "id": "b1", "at": 0.2, "note": "headline lands" }],
+      "text": { "eyebrow": "Introducing", "headline": "Your big promise." },
+      "elements": [
+        { "id": "eyebrow", "role": "eyebrow", "anchor": "C2" },
+        { "id": "headline", "role": "headline", "anchor": "C3:D4" }
+      ],
+      "motion": "Eyebrow fades in, headline masks up by line. Slow camera push."
+    }
+  ]
+}

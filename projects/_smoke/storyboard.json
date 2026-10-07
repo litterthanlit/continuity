@@ -1,0 +1,22 @@
+{
+  "title": "Smoke test",
+  "format": { "aspect": "16:9", "fps": 30 },
+  "theme": "mono-dark",
+  "scenes": [
+    {
+      "id": "hello",
+      "duration": 3.8,
+      "intent": "Prove build, split text, presets and transitions work.",
+      "beats": [{ "id": "b1", "at": 0.2 }, { "id": "b2", "at": 1.0 }],
+      "text": { "eyebrow": "Continuity", "title": "Motion design, as code." },
+      "transition": { "type": "zoom", "duration": 0.5 }
+    },
+    {
+      "id": "count",
+      "duration": 2.8,
+      "intent": "Counter + highlight.",
+      "beats": [{ "id": "b1", "at": 0.3 }],
+      "text": { "label": "frames rendered" }
+    }
+  ]
+}

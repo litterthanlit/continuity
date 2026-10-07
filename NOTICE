@@ -1,0 +1,26 @@
+Continuity
+Copyright 2026 The Continuity contributors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This project builds on the following open-source software (not vendored
+unless noted):
+
+- HyperFrames (https://github.com/heygen-com/hyperframes) — Apache-2.0,
+  Copyright HeyGen. Used as the composition runtime, capture and encode
+  pipeline, and verification CLI. Excerpts of its CLI reference are vendored
+  in .claude/skills/hyperframes-ref/ with attribution.
+- Preact, preact-render-to-string — MIT
+- Tailwind CSS — MIT
+- esbuild — MIT
+- zod — MIT
+- linkedom — ISC
+- sharp — Apache-2.0 (libvips: LGPL-3.0-or-later, dynamically linked)
+- puppeteer-core — Apache-2.0
+- Fonts via @fontsource: Geist, Geist Mono, Inter, Inter Tight,
+  Instrument Serif — SIL Open Font License 1.1 (font files are copied into
+  each build output).
+
+GSAP is NOT used by Continuity compositions. (The HyperFrames CLI's optional
+Studio UI bundles GSAP under its own "no charge" license; Continuity never
+loads it into a composition.)

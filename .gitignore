@@ -1,0 +1,15 @@
+node_modules/
+build/
+out/
+.cache/
+.scratch/
+*.log
+.DS_Store
+# per-project evidence store (iterations, stills, sheets) — keep only the curated report + poster
+projects/*/.continuity/*
+!projects/*/.continuity/report.md
+!projects/*/.continuity/poster.png
+!projects/*/.continuity/sheet.png
+# HyperFrames side outputs
+**/snapshots/
+**/renders/
