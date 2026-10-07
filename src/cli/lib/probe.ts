@@ -6,6 +6,8 @@ import { keyTimes } from "./times.js";
 
 interface Measured {
   id: string;
+  /** data-ct ids of DOM ancestors */
+  anc: string[];
   scene: string;
   text: string;
   x: number;
@@ -51,7 +53,13 @@ window.__ctMeasure = function (time) {
     if (opacity < 0.05) return;
     var cs = getComputedStyle(el);
     var scale = el.offsetWidth ? r.width / el.offsetWidth : 1;
+    var anc = [];
+    for (var p = el.parentElement; p; p = p.parentElement) {
+      var pid = p.getAttribute && p.getAttribute("data-ct");
+      if (pid) anc.push(pid);
+    }
     out.push({
+      anc: anc,
       id: id,
       scene: id.slice(0, id.indexOf(".")),
       text: (el.textContent || "").replace(/\\s+/g, " ").trim().slice(0, 60),
@@ -183,8 +191,7 @@ export async function probeProject(build: BuildResult): Promise<Finding[]> {
             const smaller = Math.min(a.w * a.h, b.w * b.h);
             if (smaller <= 0 || inter / smaller < 0.12) continue;
             // nested (e.g. an accent span inside its headline) is not a collision
-            if (a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w && a.y + a.h <= b.y + b.h) continue;
-            if (b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h) continue;
+            if (a.anc.includes(b.id) || b.anc.includes(a.id)) continue;
             const key = [a.id, b.id].sort().join("|");
             if (seenPair.has(key)) continue;
             seenPair.add(key);

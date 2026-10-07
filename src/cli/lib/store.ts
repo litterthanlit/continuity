@@ -48,7 +48,7 @@ export function iterationDir(slug: string, n: number) {
   return join(stateDir(slug), "iterations", pad(n));
 }
 
-const SNAPSHOT = ["storyboard.json", "scenes", "theme.ts", "assets"];
+const SNAPSHOT = ["storyboard.json", "scenes", "lib", "theme.ts", "assets"];
 
 /** The iteration matching the project's current sources (created on first use). */
 export function currentIteration(slug: string): { n: number; dir: string; record: IterationRecord; isNew: boolean } {

@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import { build } from "./commands/build.js";
 import { check } from "./commands/check.js";
+import { docs } from "./commands/docs.js";
 import { doctor } from "./commands/doctor.js";
+import { compare, restore, score, verdict } from "./commands/iterate.js";
 import { lint } from "./commands/lint.js";
 import { newProject } from "./commands/new.js";
 import { render } from "./commands/render.js";
+import { reportCmd } from "./commands/report.js";
 import { sheet } from "./commands/sheet.js";
 import { status } from "./commands/status.js";
 import { stills } from "./commands/stills.js";
@@ -13,12 +16,29 @@ import { parseArgs, UsageError } from "./lib/args.js";
 import type { Command } from "./lib/command.js";
 import { color, fail, log } from "./lib/log.js";
 
-const COMMANDS: Command[] = [newProject, build, lint, check, timeline, stills, sheet, render, status, doctor];
+const COMMANDS: Command[] = [
+  newProject,
+  build,
+  lint,
+  check,
+  timeline,
+  stills,
+  sheet,
+  render,
+  status,
+  score,
+  compare,
+  verdict,
+  restore,
+  reportCmd,
+  docs,
+  doctor,
+];
 
 function help() {
   log(`${color.bold("continuity")} — motion design as code, with eyes.
 
-${color.bold("Loop:")} lint → check (gate) → stills / sheet (look) → fix → render
+${color.bold("Loop:")} lint → check (gate) → stills / sheet (look) → score → fix → compare/verdict → render → report
 
 ${COMMANDS.map((c) => `  ${c.name.padEnd(10)} ${c.summary}`).join("\n")}
 

@@ -1,0 +1,86 @@
+{
+  "title": "Continuity — motion design, as code",
+  "logline": "For skeptical designers: AI agents can now make motion you'd ship, because they can finally see their own work.",
+  "format": { "aspect": "9:16", "fps": 30 },
+  "theme": "mono-dark",
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": 2.6,
+      "intent": "Stake the claim: motion design is a craft (earn trust with designers).",
+      "beats": [{ "id": "b1", "at": 0.1, "note": "line 1 rises" }, { "id": "b2", "at": 0.55, "note": "'a craft.' lands, serif swap" }],
+      "text": { "l1": "Motion is", "l2": "a craft." },
+      "elements": [
+        { "id": "l1", "role": "headline", "anchor": "A2:F2" },
+        { "id": "l2", "role": "headline", "anchor": "A3:F3" }
+      ],
+      "motion": "Line-mask reveal, left-aligned editorial stack. 'craft.' in serif italic. Slow push-in."
+    },
+    {
+      "id": "write",
+      "duration": 2.3,
+      "intent": "The turn: agents can already write motion code.",
+      "beats": [{ "id": "b1", "at": 0.05 }, { "id": "b2", "at": 0.5, "note": "'write it.' punches in" }],
+      "text": { "l1": "Agents can", "l2": "write it." },
+      "elements": [
+        { "id": "l1", "role": "headline", "anchor": "A2:F2" },
+        { "id": "l2", "role": "headline", "anchor": "A3:F3" }
+      ],
+      "motion": "Word punch (rise by words, hero ease). 'write' in accent. A thin caret blinks after 'it.' (type-on feel)."
+    },
+    {
+      "id": "blind",
+      "duration": 2.5,
+      "intent": "Tension: they can't see what they make.",
+      "beats": [{ "id": "b1", "at": 0.05 }, { "id": "b2", "at": 1.2, "note": "'see' defocuses" }],
+      "text": { "l1": "But they", "l2": "can't", "l3": "see it." },
+      "elements": [
+        { "id": "l1", "role": "headline" },
+        { "id": "l2", "role": "headline" },
+        { "id": "l3", "role": "headline" }
+      ],
+      "motion": "Lines mask up. After landing, the word 'see' blurs out of focus — the problem made visible.",
+      "transition": { "type": "zoom", "duration": 0.45 }
+    },
+    {
+      "id": "eyes",
+      "duration": 2.9,
+      "intent": "Resolution: we gave them eyes — the contact sheet as proof.",
+      "beats": [{ "id": "b1", "at": 0.2 }, { "id": "b2", "at": 0.75, "note": "frame grid cascades in" }],
+      "text": { "l1": "So we gave", "l2": "them eyes." },
+      "elements": [
+        { "id": "l1", "role": "headline", "anchor": "A2:F2" },
+        { "id": "l2", "role": "headline", "anchor": "A3:F3" },
+        { "id": "grid", "role": "ui", "anchor": "A4:F5" }
+      ],
+      "motion": "Headline masks up; a 3×3 grid of 'frames' (contact sheet) cascades in from the center with a snappy spring. Camera drifts."
+    },
+    {
+      "id": "check",
+      "duration": 2.4,
+      "intent": "Proof: every frame is checked.",
+      "beats": [{ "id": "b1", "at": 0.1 }, { "id": "b2", "at": 0.7, "note": "check draws" }],
+      "text": { "l1": "Every frame,", "l2": "checked." },
+      "elements": [
+        { "id": "l1", "role": "headline" },
+        { "id": "l2", "role": "headline" },
+        { "id": "tick", "role": "decor" }
+      ],
+      "motion": "Lines mask up; an accent check-mark strokes on beside 'checked.'",
+      "transition": { "type": "dip", "duration": 0.5 }
+    },
+    {
+      "id": "end",
+      "duration": 2.9,
+      "intent": "Brand + promise + CTA.",
+      "beats": [{ "id": "b1", "at": 0.15 }, { "id": "b2", "at": 0.6 }, { "id": "b3", "at": 1.0 }],
+      "text": { "eyebrow": "Open source", "wordmark": "Continuity", "tagline": "Motion design, as code." },
+      "elements": [
+        { "id": "eyebrow", "role": "eyebrow", "anchor": "C2:D2" },
+        { "id": "wordmark", "role": "logo", "anchor": "B3:E3" },
+        { "id": "tagline", "role": "subhead", "anchor": "B4:E4" }
+      ],
+      "motion": "Wordmark tracks in from wide; tagline rises; eyebrow fades; glow breathes."
+    }
+  ]
+}

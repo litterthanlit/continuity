@@ -37,7 +37,7 @@ export function Body({ size = "body", as = "p", class: cls, ...rest }: TextProps
 
 /** Small uppercase mono label above a headline ("INTRODUCING", "01 — SPEED"). */
 export function Eyebrow({ size, as = "p", class: cls, ...rest }: TextProps) {
-  const s = size ?? (useScene().portrait ? "caption" : "micro");
+  const s = size ?? (useScene().portrait ? "body" : "micro");
   return <Text {...rest} base="" as={as} size={s} class={cx("font-mono uppercase tracking-[0.18em] text-subtle", cls)} />;
 }
 
@@ -62,6 +62,22 @@ export function Serif({ children, class: cls, ct }: { children: ComponentChildre
     <span data-ct={ct ? ctId(ct) : undefined} class={cx("font-serif italic font-normal tracking-normal", cls)}>
       {children}
     </span>
+  );
+}
+
+/**
+ * Keep copy in the storyboard while styling one word/phrase of it:
+ * `<Emph text={text.l2} word="craft.">{(w) => <Serif>{w}</Serif>}</Emph>`
+ */
+export function Emph({ text, word, children }: { text: string; word: string; children: (w: string) => ComponentChildren }) {
+  const i = text.indexOf(word);
+  if (i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i)}
+      {children(word)}
+      {text.slice(i + word.length)}
+    </>
   );
 }
 

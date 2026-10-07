@@ -12,13 +12,19 @@ export interface Frame {
  * Capture full-resolution frames at exact times through HyperFrames' own
  * seek + capture path (what you see is what renders).
  */
-export async function captureFrames(slug: string, times: number[], outDir: string, prefix = "t"): Promise<Frame[]> {
+export async function captureFrames(
+  slug: string,
+  times: number[],
+  outDir: string,
+  prefix = "t",
+  compositionDir = buildDir(slug),
+): Promise<Frame[]> {
   if (!times.length) return [];
   mkdirSync(outDir, { recursive: true });
   const tmp = join(outDir, ".snap");
   rmSync(tmp, { recursive: true, force: true });
   const uniq = [...new Set(times.map((t) => Math.round(t * 1000) / 1000))].sort((a, b) => a - b);
-  const r = await runHf(["snapshot", buildDir(slug), "--at", uniq.join(","), "--no-end", "-o", tmp], { timeoutMs: 10 * 60_000 });
+  const r = await runHf(["snapshot", compositionDir, "--at", uniq.join(","), "--no-end", "-o", tmp], { timeoutMs: 10 * 60_000 });
   if (r.code !== 0 || !existsSync(tmp)) throw new Error(`hyperframes snapshot failed:\n${r.stdout.slice(-1500)}\n${r.stderr.slice(-1500)}`);
   const files = readdirSync(tmp).filter((f) => /^frame-\d+-at-[\d.]+s\.png$/.test(f));
   const out: Frame[] = [];

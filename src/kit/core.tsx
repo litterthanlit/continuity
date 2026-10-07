@@ -12,7 +12,42 @@ export interface BaseProps {
   children?: ComponentChildren;
 }
 
-export const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
+/**
+ * Join classes; later classes override earlier ones in the same group (a tiny,
+ * dependency-free tailwind-merge for the utilities kit components set by
+ * default), so `<Eyebrow class="text-accent">` really is accent.
+ */
+const GROUPS: Array<[string, RegExp]> = [
+  ["text-size", /^text-(mega|display|h1|h2|h3|lead|body|caption|micro|xs|sm|base|lg|xl|[2-9]xl|\[[\d.]+(px|rem|em)\])$/],
+  ["text-align", /^text-(left|center|right|justify|start|end)$/],
+  ["text-wrap", /^text-(balance|pretty|wrap|nowrap)$/],
+  ["text-color", /^text-/],
+  ["font-family", /^font-(display|sans|mono|serif)$/],
+  ["font-weight", /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])$/],
+  ["tracking", /^tracking-/],
+  ["leading", /^leading-/],
+  ["case", /^(uppercase|lowercase|capitalize|normal-case)$/],
+  ["italic", /^(italic|not-italic)$/],
+];
+const groupOf = (c: string) => GROUPS.find(([, re]) => re.test(c.replace(/^[a-z-]+:/, "")))?.[0];
+
+export function cx(...parts: Array<string | false | null | undefined>): string {
+  const tokens = parts.filter(Boolean).join(" ").split(/\s+/).filter(Boolean);
+  const seen = new Map<string, number>();
+  const out: Array<string | null> = [];
+  for (const t of tokens) {
+    const variant = t.includes(":") ? t.slice(0, t.lastIndexOf(":") + 1) : "";
+    const g = groupOf(t);
+    if (g) {
+      const key = variant + g;
+      const prev = seen.get(key);
+      if (prev !== undefined) out[prev] = null;
+      seen.set(key, out.length);
+    }
+    out.push(t);
+  }
+  return out.filter((t): t is string => t !== null).join(" ");
+}
 
 /** Any element, optionally animatable. `<El ct="card" as="section" class="...">`. */
 export function El({
@@ -125,13 +160,14 @@ export type SafeZone = "title" | "action" | "social" | "none";
  * Content area inset to a safe zone:
  * - title  — 90% of the frame (EBU R95 / SMPTE ST 2046-1 title-safe)
  * - action — 93%
- * - social — 9:16 feed UI clearance (top 12%, bottom 20%, sides 6%/14%)
+ * - social — 9:16 feed UI clearance (top 12%, bottom 20%, left 8%, right 14%)
  */
 export function Safe({ zone = "title", class: cls, style, children, ct }: BaseProps & { zone?: SafeZone }) {
   const insets: Record<SafeZone, string> = {
     title: "5%",
     action: "3.5%",
-    social: "12% 14% 20% 6%",
+    // 8% left (not 6%) leaves room for a camera push-in of up to ~5%.
+    social: "12% 14% 20% 8%",
     none: "0",
   };
   return (

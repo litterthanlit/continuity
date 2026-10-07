@@ -21,7 +21,7 @@ export const RULES = {
   "duration-off-token": "Durations should come from the token scale (instant/fast/base/slow/hero/linger) for a consistent rhythm.",
   "exit-slower-than-enter": "Exits should be quicker than entrances (attention has moved on).",
   "settle-interrupted": "A new tween on the same property starts before the previous one settled — motion never lands.",
-  "read-time": "Text leaves the screen before it can be read (≈17 chars/s + settle, min 0.83s).",
+  "read-time": "Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.",
   "hold-too-short": "Element exits almost as soon as it lands.",
   "scene-overrun": "Motion is still running after the scene has ended (it will be cut off).",
   "late-entrance": "Element enters in the last moments of the scene — it pops in and is gone.",
@@ -176,31 +176,47 @@ export function lintTimeline(build: BuildResult): Finding[] {
       }
     }
 
-    // Visibility windows → read time & hold.
+    // Visibility windows → read time & hold. Viewers read reveals as they happen,
+    // so reading starts when the first part becomes legible (~30% into it), and
+    // the complete line must also be seen settled for a moment.
     const enterEnd = new Map<string, number>();
+    const firstReadable = new Map<string, number>();
     const exitStart = new Map<string, number>();
     for (const s of ss) {
       const t = s.tween;
       const incoming = t.kind === "enter" || (t.kind === "transition" && t.start < sc.duration / 2);
       const outgoing = t.kind === "exit" || (t.kind === "transition" && t.start >= sc.duration / 2);
-      if (incoming) enterEnd.set(t.target, Math.max(enterEnd.get(t.target) ?? 0, s.lastEnd));
+      if (incoming) {
+        enterEnd.set(t.target, Math.max(enterEnd.get(t.target) ?? 0, s.lastEnd));
+        const fr = t.start + t.duration * 0.3;
+        firstReadable.set(t.target, Math.max(firstReadable.get(t.target) ?? 0, fr));
+      }
       if (outgoing) exitStart.set(t.target, Math.min(exitStart.get(t.target) ?? Infinity, t.start));
     }
     const textLeaf = (e: ElementInfo) => !e.decor && e.role !== "decor" && e.ownText.replace(/[\s\d.,%+$€£-]/g, "").length >= 2;
     const counted = new Set(sc.tweens.filter((t) => t.counter).map((t) => t.target));
+    const SETTLED_HOLD = 0.6;
     for (const e of build.elements) {
       if (e.scene !== sc.scene || !textLeaf(e) || counted.has(e.id)) continue;
       if (e.ancestors.some((a) => elements.get(a) && textLeaf(elements.get(a)!))) continue;
       const chain = [e.id, ...e.ancestors];
-      const from = Math.max(0, ...chain.map((id) => enterEnd.get(id) ?? 0));
+      const readable = Math.max(0, ...chain.map((id) => firstReadable.get(id) ?? 0));
+      const landed = Math.max(0, ...chain.map((id) => enterEnd.get(id) ?? 0));
       const until = Math.min(sc.duration, ...chain.map((id) => exitStart.get(id) ?? Infinity));
-      const hold = until - from;
+      const window = until - readable;
       const need = readTime(e.text.length);
-      if (hold < need) {
-        add("read-time", "error", sc, `"${e.text.slice(0, 48)}${e.text.length > 48 ? "…" : ""}" is readable for ${r2(Math.max(0, hold))}s, needs ~${r2(need)}s`, {
+      const quote = `"${e.text.slice(0, 48)}${e.text.length > 48 ? "…" : ""}"`;
+      if (window < need) {
+        add("read-time", "error", sc, `${quote} is on screen for ${r2(Math.max(0, window))}s of reading, needs ~${r2(need)}s`, {
           element: e.id,
-          time: at(from),
-          suggestion: `land it earlier, exit later, shorten the copy, or lengthen the scene by ${r2(need - hold)}s`,
+          time: at(readable),
+          suggestion: `start it earlier, exit later, shorten the copy, or lengthen the scene by ${r2(need - window)}s`,
+        });
+      } else if (until - landed < SETTLED_HOLD) {
+        add("read-time", "error", sc, `${quote} is fully landed for only ${r2(Math.max(0, until - landed))}s before it leaves`, {
+          element: e.id,
+          time: at(landed),
+          suggestion: `let it hold ≥ ${SETTLED_HOLD}s after the last part lands (tighten the stagger or start earlier)`,
         });
       }
     }
@@ -235,10 +251,10 @@ export function lintTimeline(build: BuildResult): Finding[] {
     let worst = { n: 0, t: 0 };
     for (const s of enters) {
       const t = s.start + 0.01;
-      const n = new Set(enters.filter((o) => o.start <= t && o.lastEnd > t).map((o) => o.tween.target)).size;
+      const n = new Set(enters.filter((o) => o.start <= t && o.lastEnd > t).map((o) => o.tween.group ?? o.tween.target)).size;
       if (n > worst.n) worst = { n, t };
     }
-    if (worst.n > 5) add("crowded", "warning", sc, `${worst.n} elements are mid-entrance at ${r2(worst.t)}s`, { time: at(worst.t), suggestion: "stagger, group into one container, or move some to a later beat" });
+    if (worst.n > 5) add("crowded", "warning", sc, `${worst.n} independent elements/groups are mid-entrance at ${r2(worst.t)}s`, { time: at(worst.t), suggestion: "stagger, group into one container, or move some to a later beat" });
 
     // Unstaggered groups.
     const groups = new Map<string, Span[]>();

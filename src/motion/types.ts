@@ -132,6 +132,8 @@ export interface Tween {
   counter?: CounterFormat;
   /** Lint rule ids this tween deliberately breaks. */
   allow?: string[];
+  /** Tweens declared together (one call on several targets) share a group — choreographed as one unit. */
+  group?: string;
 }
 
 /** Continuous, deterministic sine motion added on top of a channel (ambient life). */

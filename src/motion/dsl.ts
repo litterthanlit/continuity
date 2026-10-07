@@ -86,6 +86,7 @@ export class MotionError extends Error {}
 export class MotionBuilder {
   readonly tweens: Tween[] = [];
   readonly loops: Loop[] = [];
+  private calls = 0;
 
   constructor(
     readonly scene: string,
@@ -150,9 +151,11 @@ export class MotionBuilder {
     const start = this.time(opts.at);
     const normalized = normalizeProps(props);
     const offsets = this.targetOffsets(list.length, opts);
+    const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;
     list.forEach((el, i) => {
       this.push({
         target: this.id(el),
+        group,
         kind: opts.kind ?? "move",
         start: round(start + offsets[i]),
         duration,
@@ -224,6 +227,7 @@ export class MotionBuilder {
     const offsets = this.targetOffsets(list.length, opts);
     const segments = def.segments(opts);
     const mask = opts.mask ?? (def.mask && opts.split ? true : undefined);
+    const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;
     list.forEach((el, i) => {
       for (const seg of segments) {
         const { spec, name } = resolveEase(opts.ease ?? seg.ease);
@@ -235,6 +239,7 @@ export class MotionBuilder {
               : resolveDuration(seg.duration);
         this.push({
           target: this.id(el),
+          group,
           kind: def.kind,
           start: round(start + offsets[i] + (seg.offset ?? 0)),
           duration: segDuration,

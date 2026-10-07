@@ -1,8 +1,8 @@
 node_modules/
-build/
-out/
-.cache/
-.scratch/
+/build/
+/out/
+/.cache/
+/.scratch/
 *.log
 .DS_Store
 # per-project evidence store (iterations, stills, sheets) — keep only the curated report + poster
