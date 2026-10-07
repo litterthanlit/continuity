@@ -17,7 +17,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test"
+    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "bench": "tsx bench/run.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",

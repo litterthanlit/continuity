@@ -13,3 +13,6 @@ projects/*/.continuity/*
 # HyperFrames side outputs
 **/snapshots/
 **/renders/
+
+# bench runs create throwaway projects
+projects/bench-*/
