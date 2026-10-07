@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { sourceHash } from "../../build/hash.js";
 import { projectDir, stateDir } from "../../paths.js";
@@ -41,7 +41,41 @@ export function readState(slug: string): ProjectState {
 
 export function writeState(slug: string, s: ProjectState) {
   mkdirSync(stateDir(slug), { recursive: true });
-  writeFileSync(statePath(slug), JSON.stringify(s, null, 2) + "\n");
+  // write-then-rename: readers never see a half-written file
+  const tmp = `${statePath(slug)}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(s, null, 2) + "\n");
+  renameSync(tmp, statePath(slug));
+}
+
+const sleeper = new Int32Array(new SharedArrayBuffer(4));
+
+/**
+ * Serialize read-modify-write of state.json across processes (parallel
+ * scene-builders all record evidence into the same project).
+ */
+function withStateLock<T>(slug: string, fn: () => T): T {
+  mkdirSync(stateDir(slug), { recursive: true });
+  const lock = join(stateDir(slug), "state.lock");
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    try {
+      closeSync(openSync(lock, "wx"));
+      break;
+    } catch {
+      try {
+        if (Date.now() - statSync(lock).mtimeMs > 30_000) rmSync(lock, { force: true }); // stale
+      } catch {
+        /* raced with the holder releasing it */
+      }
+      if (Date.now() > deadline) throw new Error(`timed out waiting for ${lock}`);
+      Atomics.wait(sleeper, 0, 0, 25);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    rmSync(lock, { force: true });
+  }
 }
 
 export function iterationDir(slug: string, n: number) {
@@ -52,6 +86,10 @@ const SNAPSHOT = ["storyboard.json", "scenes", "lib", "theme.ts", "assets"];
 
 /** The iteration matching the project's current sources (created on first use). */
 export function currentIteration(slug: string): { n: number; dir: string; record: IterationRecord; isNew: boolean } {
+  return withStateLock(slug, () => currentIterationUnlocked(slug));
+}
+
+function currentIterationUnlocked(slug: string): { n: number; dir: string; record: IterationRecord; isNew: boolean } {
   const state = readState(slug);
   const { combined } = sourceHash(slug);
   const last = state.iterations[state.iterations.length - 1];
@@ -72,11 +110,13 @@ export function currentIteration(slug: string): { n: number; dir: string; record
 }
 
 export function updateIteration(slug: string, n: number, patch: Partial<IterationRecord>) {
-  const state = readState(slug);
-  const rec = state.iterations.find((i) => i.n === n);
-  if (!rec) throw new Error(`iteration ${n} not found`);
-  Object.assign(rec, patch);
-  writeState(slug, state);
+  withStateLock(slug, () => {
+    const state = readState(slug);
+    const rec = state.iterations.find((i) => i.n === n);
+    if (!rec) throw new Error(`iteration ${n} not found`);
+    Object.assign(rec, patch);
+    writeState(slug, state);
+  });
 }
 
 export function writeFindings(dir: string, name: string, findings: Finding[]) {
