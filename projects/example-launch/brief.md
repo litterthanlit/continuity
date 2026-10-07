@@ -28,3 +28,28 @@
   a storyboard/scene list, a contact sheet grid, a findings list going red → green,
   a motion-energy or timeline chart, critique scores. Use the UI kit (projects/_kit is
   the reference gallery).
+
+## Assumptions (director)
+
+- **No URL, no VO, no music.** The CTA is the word "Open source" plus the wordmark (the link lives
+  in the post). The film is silent-first, so every idea is carried by type and UI, and the hook
+  has to land in the first 2s of a muted autoplay. No `bpm`: cuts are placed on visual beats.
+- **Accent = the theme's own violet** (`mono-dark` accent `#8b7bff`), so no `theme.ts` is needed.
+  Green (`positive`) and red (`danger`) appear only as UI status colors in the gate moment.
+  They are signals, not a second brand accent.
+- **What counts as copy:** `storyboard.text` holds every line the viewer is meant to *read*
+  (headlines, chapter labels, the pipeline steps, the CTA), budgeted at 12 words or fewer per scene. UI mock
+  data (terminal lines, list rows, axis labels, chart pills) is *imagery*. It is written
+  verbatim in each element's `note` so the builders use exactly that text, and it follows the
+  kit's ui-glance rule instead of the read-time rule.
+- **The UI shows this film's own production.** The storyboard rows, beat lanes, contact-sheet
+  thumbnails and critique scores all describe *this* video, so every fake number is real
+  and the data stays on message.
+- **The project slug on screen is `launch`.** The terminal types `pnpm ct check launch`, not
+  `example-launch`: it reads better and types faster at video scale.
+- **Parallel scene-builders are implied, not shown.** The studio pipeline is shown as
+  Plan → Check → Measure → Critique → Ship. A separate "build" chapter would push the cut past
+  35s without serving one of the six must-say ideas.
+- **The serif-italic swap is used twice, as a pair:** "*see*" in the hook (it goes out of
+  focus) and "*eyes*" in the turn (the answer). Nowhere else, so it stays a motif and does not
+  become a tic.
