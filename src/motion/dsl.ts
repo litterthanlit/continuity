@@ -94,6 +94,8 @@ export class MotionBuilder {
     readonly scene: string,
     readonly duration: number,
     readonly beats: Record<string, number>,
+    /** Part counts estimated from the rendered view (so `after:` knows when a split cascade ends). */
+    private readonly partsOf?: (target: string, mode: SplitMode) => number | undefined,
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -331,10 +333,12 @@ export class MotionBuilder {
     return { split, stagger: { each: s.each, from: s.from, name: s.name }, ...(mask ? { mask: true } : {}) };
   }
 
-  /** Rough extra time a split tween takes for its last part (unknown part count → assume 8). */
+  /** Extra time a split tween takes until its last part starts (estimated parts; unknown → assume 8). */
   private splitSpan(t: Tween): number {
     if (!t.split || !t.stagger) return 0;
-    return t.stagger.each * 7;
+    const n = this.partsOf?.(t.target, t.split) ?? 8;
+    const offsets = staggerOffsets(Math.max(1, n), t.stagger.each, t.stagger.from);
+    return Math.max(0, ...offsets);
   }
 
   private push(t: Tween) {

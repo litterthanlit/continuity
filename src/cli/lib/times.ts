@@ -26,11 +26,16 @@ export function keyTimes(build: BuildResult): TimePoint[] {
   for (const sc of build.timeline!.scenes) {
     const resolved = resolveScene(sc, build.partsEstimate);
     let settle = 0;
+    for (const r of resolved) {
+      if (r.kind === "enter" || (r.kind === "transition" && r.start < sc.duration / 2)) settle = Math.max(settle, r.start + r.duration);
+    }
+    // The scene "leaves" at its outgoing transition, or when the stage starts clearing
+    // after everything has landed. Exits of transient elements (a caret, a tooltip)
+    // that happen before the last entrance settles don't count.
     let leave = sc.duration;
     for (const r of resolved) {
-      const end = r.start + r.duration;
-      if (r.kind === "enter" || (r.kind === "transition" && r.start < sc.duration / 2)) settle = Math.max(settle, end);
-      if (r.kind === "exit" || (r.kind === "transition" && r.start >= sc.duration / 2)) leave = Math.min(leave, r.start);
+      const outgoing = r.kind === "transition" && r.start >= sc.duration / 2;
+      if (outgoing || (r.kind === "exit" && r.start >= settle - 0.01)) leave = Math.min(leave, r.start);
     }
     let t = settle > 0 ? settle + 0.1 : sc.duration / 2;
     if (t > leave - 0.05) t = Math.max(0, leave - 0.05);

@@ -35,6 +35,7 @@ this let me do?" — never decorate.
 | Typing | `m.type(id, { cps: 18–24 })` + caret `m.blink`; results appear after typing ends |
 | Toggle / state change | knob `x` with `snappy`, track overlay opacity with `standard` |
 | Data | numbers count (`m.counter`, `linger`), bars grow `scaleY: [0, 1]` staggered, lines draw (`draw`), highlight the winner bar/point last |
+| Chart + playhead | reveal the chart with `wipeRight` on a wrapper, not `draw`: `draw` advances along the path *length*, so on a zig-zag the tip lags a playhead moving in x; a wipe tracks x exactly (same start/duration/ease as the playhead `x` tween) |
 | Notification / success | `Toast` rises with `snappy` after the action that caused it |
 | Premium sheen | `Sheen` sweep across a card once, after it lands |
 

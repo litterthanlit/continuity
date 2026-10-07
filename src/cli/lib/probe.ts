@@ -28,8 +28,15 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
  * the TS loader would wrap named helpers in an `__name()` the page lacks).
  */
 const MEASURE_SCRIPT = `
-window.__ctMeasure = function (time) {
+window.__ctMeasure = function (time, neutral) {
   window.__ct.seek(time);
+  // neutral: measure the composed layout with camera moves removed (safe areas
+  // are a composition rule; a slow push-in legitimately drifts edges outward)
+  var cams = [];
+  if (neutral) document.querySelectorAll(".ct-camera").forEach(function (c) {
+    cams.push([c, c.style.transform]);
+    c.style.transform = "none";
+  });
   function visibleOpacity(el) {
     var o = 1;
     for (var n = el; n && n !== document.body; n = n.parentElement) {
@@ -90,6 +97,7 @@ window.__ctMeasure = function (time) {
       if (pid) anc.push(pid);
     }
     out.push({
+      // (camera transforms restored below)
       clip: clip,
       anc: anc,
       id: id,
@@ -101,6 +109,7 @@ window.__ctMeasure = function (time) {
       opacity: opacity
     });
   });
+  cams.forEach(function (p) { p[0].style.transform = p[1]; });
   return out;
 };
 `;
@@ -162,8 +171,12 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       }
 
       await page.evaluate(MEASURE_SCRIPT);
-      const measure = (t: number): Promise<Measured[]> =>
-        page.evaluate((time: number) => (window as unknown as { __ctMeasure: (t: number) => Measured[] }).__ctMeasure(time), t);
+      const measure = (t: number, neutral = false): Promise<Measured[]> =>
+        page.evaluate(
+          (time: number, n: boolean) => (window as unknown as { __ctMeasure: (t: number, n: boolean) => Measured[] }).__ctMeasure(time, n),
+          t,
+          neutral,
+        );
 
       // Settled frames: safe area + type size.
       const safe = portrait
@@ -174,8 +187,30 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       const seenSafe = new Set<string>();
       const seenSize = new Set<string>();
       const seenClip = new Set<string>();
+      const action = { l: 0.035, r: 0.035, t: 0.035, b: 0.035 };
+      const seenAction = new Set<string>();
       for (const k of settled) {
-        for (const m of await measure(k.t)) {
+        // Camera drift: even with the camera, copy must stay inside action-safe (landscape).
+        if (!portrait) {
+          for (const m of await measure(k.t)) {
+            if (m.opacity < 0.5 || m.scene !== k.scene || seenAction.has(m.id)) continue;
+            if (m.x < action.l * width - 1 || m.x + m.w > (1 - action.r) * width + 1 || m.y < action.t * height - 1 || m.y + m.h > (1 - action.b) * height + 1) {
+              seenAction.add(m.id);
+              findings.push({
+                source: "probe",
+                rule: "camera-safe",
+                severity: "warning",
+                scene: m.scene,
+                element: m.id,
+                time: k.t,
+                message: `"${m.text}" is pushed past the action-safe edge by the camera move`,
+                suggestion: "use a gentler camera scale, or move the content inward",
+              });
+            }
+          }
+        }
+        // Composition: measured with camera moves removed.
+        for (const m of await measure(k.t, true)) {
           if (m.opacity < 0.5 || m.scene !== k.scene) continue;
           const outL = m.x < safe.l * width - 1;
           const outR = m.x + m.w > (1 - safe.r) * width + 1;

@@ -89,6 +89,14 @@ function graphemeCount(s: string): number {
   return n;
 }
 
+/** Part counts for a split element, estimated from its rendered HTML (lines are a heuristic). */
+export function estimateParts(node: Element): { chars: number; words: number; lines: number } {
+  const text = collapse(node.textContent ?? "");
+  const words = text ? text.split(" ").length : 0;
+  const brs = (node.querySelectorAll("br") as unknown as unknown[]).length;
+  return { chars: graphemeCount(text), words, lines: Math.max(1, brs + 1, Math.min(4, Math.round(words / 4))) };
+}
+
 function errMsg(e: unknown): string {
   const err = e as Error;
   const firstFrame = err.stack?.split("\n").find((l) => l.includes("/projects/"))?.trim();
@@ -181,7 +189,12 @@ export async function buildProject(
           findings.push({ source: "build", rule: "view", severity: "error", scene: sc.id, message: `view failed: ${errMsg(e)}` });
         }
         if (def.motion) {
-          const mb = new MotionBuilder(sc.id, sc.duration, beats);
+          const viewDoc = parseHTML(`<!doctype html><html><body>${inner}</body></html>`).document;
+          const partsOf = (target: string, mode: SplitMode) => {
+            const node = viewDoc.querySelector(`[data-ct="${target}"]`);
+            return node ? estimateParts(node as unknown as Element)[mode] : undefined;
+          };
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf);
           try {
             def.motion(mb, ctx);
           } catch (e) {
@@ -303,13 +316,7 @@ export async function buildProject(
       if (mask) node.setAttribute("data-ct-mask", "");
       const info = byId.get(target);
       if (info) info.split = mode;
-      const text = collapse(node.textContent ?? "");
-      const words = text ? text.split(" ").length : 0;
-      partsEstimate[target] = {
-        chars: graphemeCount(text),
-        words,
-        lines: Math.max(1, (node.querySelectorAll("br") as unknown as unknown[]).length + 1, Math.min(4, Math.round(words / 4))),
-      };
+      partsEstimate[target] = estimateParts(node as unknown as Element);
     }
   }
 
