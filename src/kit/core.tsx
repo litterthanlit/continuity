@@ -267,7 +267,9 @@ export function Sheen({ ct, opacity = 0.14 }: { ct: string; opacity?: number }) 
         class="absolute inset-y-[-20%] left-0 w-[38%]"
         style={{
           transform: "translate3d(0,0,0) translate(-160%,0)",
-          background: `linear-gradient(100deg, transparent 0%, rgba(255,255,255,${opacity}) 50%, transparent 100%)`,
+          // Stops at 18%/82%: an angled gradient isn't transparent along its own box
+          // edges, which shows as hard vertical lines on tall surfaces.
+          background: `linear-gradient(100deg, transparent 18%, rgba(255,255,255,${opacity}) 50%, transparent 82%)`,
         }}
       />
     </div>

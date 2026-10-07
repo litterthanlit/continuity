@@ -1,5 +1,5 @@
 import { scene, El, Window, LineChart, Pill } from "continuity";
-import { Chapter } from "../lib/chapter.js";
+import { Chapter, SURFACE } from "../lib/chapter.js";
 
 // 03 · Measure — the motion-energy curve of this film draws under a playhead,
 // then three green verdict pills. Data is the cut's "cardiogram": peaks on beats,
@@ -7,12 +7,12 @@ import { Chapter } from "../lib/chapter.js";
 
 const ENERGY = [0.15, 0.7, 0.35, 0.85, 0.3, 0.65, 0.95, 0.4, 0.8, 0.3, 0.75, 0.9];
 
-// Window spans the full safe width (1728) so the chapter's margins stay symmetric.
-const WIN_W = 1728;
-const WIN_H = 700;
+// The shared chapter surface: full title-safe width, same top edge in every chapter.
+const WIN_W = SURFACE.width; // 1728
+const WIN_H = SURFACE.height; // 600 → body 530 = chart region 434 + footer 96
 const PAD_X = 56; // chart + pill row inset inside the window body
 const CHART_W = WIN_W - 2 - PAD_X * 2; // 1px borders → 1614: the playhead travels exactly this
-const CHART_H = 400;
+const CHART_H = 340;
 const BLEED = 3; // stroke-width 5 → round-cap radius 2.5
 
 export default scene({
@@ -41,7 +41,7 @@ export default scene({
             </div>
           </div>
           {/* verdict row */}
-          <div class="flex h-[112px] shrink-0 items-center gap-[16px] border-t border-border" style={{ paddingLeft: `${PAD_X}px`, paddingRight: `${PAD_X}px` }}>
+          <div class="flex h-[96px] shrink-0 items-center gap-[16px] border-t border-border" style={{ paddingLeft: `${PAD_X}px`, paddingRight: `${PAD_X}px` }}>
             <Pill ct="eased" dot="positive">100% eased</Pill>
             <Pill ct="dead" dot="positive">0 dead zones</Pill>
             <Pill ct="jolts" dot="positive">0 jolts</Pill>
@@ -54,10 +54,7 @@ export default scene({
     // b1 — copy leads, the instrument rises under it and resolves flat before the data moves.
     m.enter("eyebrow", "fade", { at: "b1" });
     m.enter("headline", "maskUp", { at: "b1+0.1", split: "lines" });
-    // "after:headline-0.25" would resolve to 1.68s (the DSL budgets 8 split parts for a
-    // one-line headline) and land the sub on top of the b2 draw. The headline lands at
-    // 1.30s, so pin the follow to 1.30 − 0.25 = 1.05s: copy is settled when the data moves.
-    m.enter("sub", "rise", { at: "b1+0.75", distance: 24 });
+    m.enter("sub", "rise", { at: "after:headline-0.25", distance: 24 });
     m.enter("chart", "rise", { at: "b1+0.25", distance: 96, duration: "hero" });
     m.tween("chart", { rotateX: [10, 0] }, { at: "b1+0.25", duration: "hero", ease: "enter" });
 

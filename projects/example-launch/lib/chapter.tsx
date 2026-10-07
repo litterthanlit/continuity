@@ -10,6 +10,13 @@ import { Stage, Safe, Eyebrow, Headline, Subhead } from "continuity";
  * Ids (animate them in motion()): `eyebrow` (dot + label), `headline`, `sub`.
  * `children` render in the stage area under the copy (relative, full width).
  */
+/**
+ * One surface geometry for every chapter so the push transitions read as one
+ * continuous product surface: full title-safe width, fixed height, and (because
+ * the caption line is always reserved) the same top edge in every chapter.
+ */
+export const SURFACE = { width: 1728, height: 600 } as const;
+
 export function Chapter({
   eyebrow,
   headline,
@@ -32,10 +39,13 @@ export function Chapter({
             <Headline ct="headline" size="h2" as="h2">
               {headline}
             </Headline>
-            {sub && (
+            {sub ? (
               <Subhead ct="sub" size="caption">
                 {sub}
               </Subhead>
+            ) : (
+              // reserve the caption line so the UI area starts at the same y in every chapter
+              <div aria-hidden="true" class="text-caption">&nbsp;</div>
             )}
           </div>
           <div class="relative flex-1">{children}</div>
