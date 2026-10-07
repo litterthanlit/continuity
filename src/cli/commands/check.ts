@@ -12,7 +12,10 @@ import { currentIteration, updateIteration, writeFindings } from "../lib/store.j
 export const check: Command = {
   name: "check",
   summary: "THE GATE: lint + browser audits (layout, overlap, contrast, motion assertions, safe areas, type size). Records the result on the current iteration.",
-  usage: "ct check <project> [--scene <id>] [--json] [--snapshots]",
+  usage:
+    "ct check <project> [--scene <id>] [--deep] [--json] [--snapshots]\n" +
+    "  --scene  isolated check of one scene (parallel builders); not the project gate\n" +
+    "  --deep   also verify generated motion assertions in HyperFrames (slow; run before delivery)",
   async run(a) {
     const slug = requireSlug(a);
     const json = flagBool(a, "json");
@@ -22,7 +25,7 @@ export const check: Command = {
     const all: Finding[] = [...findings];
     if (build.ok) {
       if (!json) step("browser audit (HyperFrames check + Continuity probe)…");
-      const [hf, probe] = await Promise.all([hfCheck(build, { snapshots: flagBool(a, "snapshots") }), probeProject(build)]);
+      const [hf, probe] = await Promise.all([hfCheck(build, { snapshots: flagBool(a, "snapshots"), scene, deep: flagBool(a, "deep") }), probeProject(build, { scene })]);
       all.push(...hf.findings, ...probe);
     }
     // Scene mode builds the other scenes as placeholders: only this scene's findings count,

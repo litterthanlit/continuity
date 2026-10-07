@@ -61,3 +61,16 @@ GSAP is optional in HyperFrames' render path.
 - Telemetry, update checks, auto-installs and Gemini frame description are
   disabled for every HyperFrames invocation.
 - Pre-1.0 churn risk is contained by the exact pin + golden-frame tests.
+
+## Later findings (Phase 3)
+
+- **Named system fonts trigger network fetches.** HyperFrames' compiler maps
+  well-known family names in a font stack (e.g. `Georgia`) to Google Fonts
+  substitutes and downloads them at check/render time. Continuity stacks now
+  contain only vendored families + generic keywords (`serif`, `sans-serif`,
+  `monospace`), so builds never touch the network.
+- **`*.motion.json` sidecars are expensive** (~10s per assertion: HyperFrames
+  sweeps the timeline per assertion). The timeline lint and probe already verify
+  the same properties from the motion data, so the generated assertions are
+  stored as `motion-assertions.json` and only activated by `ct check --deep`
+  (pre-delivery). Effect: scene check 65s → 12s, full gate 37s → 20s.

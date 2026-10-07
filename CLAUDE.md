@@ -53,6 +53,8 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 - `pnpm ct check <p>` → 0 errors; every remaining warning justified.
 - You have read the latest `sheet.png` and the settled stills, and the critique
   scores ≥ 4/5 on every axis (see the `critique` skill).
+- `pnpm ct check <p> --deep` passed once before the final render (adds HyperFrames'
+  verification of the generated motion assertions).
 - `pnpm ct render <p>` succeeded with clean render QC.
 - `projects/<p>/.continuity/report.md` summarises what was made and known gaps.
 

@@ -127,13 +127,15 @@ function midMotionTimes(build: BuildResult, max = 48): number[] {
  * need our timeline semantics — safe areas at settled frames, minimum
  * effective type size, text-on-text collisions mid-motion, font loading.
  */
-export async function probeProject(build: BuildResult): Promise<Finding[]> {
+export async function probeProject(build: BuildResult, opts: { scene?: string } = {}): Promise<Finding[]> {
   if (!build.timeline || !build.storyboard) return [];
   const { width, height } = build.timeline;
   const portrait = height > width;
   const findings: Finding[] = [];
-  const settled = keyTimes(build);
-  const moving = midMotionTimes(build);
+  const win = opts.scene ? build.timeline.scenes.find((s) => s.scene === opts.scene) : undefined;
+  const inWin = (t: number) => !win || (t >= win.start && t <= win.start + win.duration);
+  const settled = keyTimes(build).filter((k) => inWin(k.t));
+  const moving = midMotionTimes(build).filter(inWin);
   const srv = await serveDir(build.dir);
   try {
     await withBrowser(async (browser) => {

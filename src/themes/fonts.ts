@@ -1,4 +1,8 @@
 /**
+ * Vendored font registry. Fallbacks are generic families only — naming a
+ * system font (e.g. Georgia) makes HyperFrames' compiler fetch a substitute
+ * from Google Fonts at render time, which is network-dependent.
+ *
  * Vendored font registry. Every face is a local woff2 from an @fontsource
  * package (SIL OFL 1.1), copied into each build and declared with @font-face —
  * no network at render time, identical metrics on every machine.
@@ -30,13 +34,13 @@ const variable = (pkg: string, base: string, family: string, fallback: string, i
 });
 
 export const fonts = {
-  geist: variable("geist", "geist", "Geist", "ui-sans-serif, system-ui, sans-serif"),
-  geistMono: variable("geist-mono", "geist-mono", "Geist Mono", "ui-monospace, monospace"),
-  inter: variable("inter", "inter", "Inter", "ui-sans-serif, system-ui, sans-serif"),
-  interTight: variable("inter-tight", "inter-tight", "Inter Tight", "ui-sans-serif, system-ui, sans-serif"),
+  geist: variable("geist", "geist", "Geist", "sans-serif"),
+  geistMono: variable("geist-mono", "geist-mono", "Geist Mono", "monospace"),
+  inter: variable("inter", "inter", "Inter", "sans-serif"),
+  interTight: variable("inter-tight", "inter-tight", "Inter Tight", "sans-serif"),
   instrumentSerif: {
     family: "Instrument Serif",
-    fallback: "ui-serif, Georgia, serif",
+    fallback: "serif",
     license: "OFL-1.1",
     faces: [
       { file: "@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2", weight: "400", style: "normal" },

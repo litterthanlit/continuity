@@ -1,3 +1,5 @@
+import { copyFileSync, existsSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import type { BuildResult } from "../../build/build.js";
 import type { Finding, Severity } from "../../spec/findings.js";
 import { parseJsonOutput, runHf } from "./hf.js";
@@ -39,9 +41,19 @@ const PASSTHROUGH = ["ratio", "required", "fg", "bg", "suggestedColor", "text", 
  * overlap, occlusion), our generated motion assertions and WCAG contrast,
  * sampled at Continuity's tween boundaries plus an even sweep.
  */
-export async function hfCheck(build: BuildResult, opts: { snapshots?: boolean } = {}): Promise<{ findings: Finding[]; raw: unknown }> {
-  const times = auditTimes(build);
-  const args = ["check", build.dir, "--json", "--samples", "9", "--timeout", "15000"];
+export async function hfCheck(
+  build: BuildResult,
+  opts: { snapshots?: boolean; scene?: string; deep?: boolean } = {},
+): Promise<{ findings: Finding[]; raw: unknown }> {
+  // --deep: let HyperFrames verify our generated motion assertions against the seeked
+  // timeline (slow — ~10s per assertion — so it is reserved for pre-delivery checks).
+  const sidecar = join(build.dir, "index.motion.json");
+  if (opts.deep && existsSync(join(build.dir, "motion-assertions.json"))) copyFileSync(join(build.dir, "motion-assertions.json"), sidecar);
+  else rmSync(sidecar, { force: true });
+  const win = opts.scene ? build.timeline!.scenes.find((s) => s.scene === opts.scene) : undefined;
+  const times = auditTimes(build).filter((t) => !win || (t >= win.start && t <= win.start + win.duration));
+  // Scene mode: the other scenes are placeholders — sample only this scene's window.
+  const args = ["check", build.dir, "--json", "--samples", win ? "2" : "9", "--timeout", "15000"];
   if (times.length) args.push("--at", times.join(","));
   if (opts.snapshots) args.push("--snapshots");
   const r = await runHf(args, { timeoutMs: 10 * 60_000 });

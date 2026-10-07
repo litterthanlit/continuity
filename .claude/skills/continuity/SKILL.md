@@ -59,7 +59,7 @@ zones/jolts. Load the `critique` skill and score the 5 axes with evidence
 - Change one thing per finding; don't refactor a working scene to fix a nit.
 
 ## 7 · Deliver
-`pnpm ct render <slug>` (final), check QC output, write
+`pnpm ct check <slug> --deep`, then `pnpm ct render <slug>` (final), check QC output, write
 `.continuity/report.md` (`pnpm ct report <slug>`), and show the user the MP4 +
 contact sheet.
 

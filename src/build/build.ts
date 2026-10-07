@@ -364,7 +364,9 @@ ${body}
   writeFileSync(join(dir, "index.html"), html);
   writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(theme) })};\n`);
   writeFileSync(join(dir, "continuity-motion.js"), await runtimeBundle());
-  writeFileSync(join(dir, "index.motion.json"), JSON.stringify(motionAssertions(timeline, elements), null, 2) + "\n");
+  // Not named *.motion.json on purpose: HyperFrames auto-runs sidecars and each
+  // assertion costs ~10s of timeline sweeping. `ct check --deep` activates it.
+  writeFileSync(join(dir, "motion-assertions.json"), JSON.stringify(motionAssertions(timeline, elements), null, 2) + "\n");
   writeFileSync(
     join(dir, "manifest.json"),
     JSON.stringify({ slug, hash, title: sb.title, format: sb.format, width, height, duration: timings.duration, scenes: timings.scenes, elements, partsEstimate }, null, 2) + "\n",
