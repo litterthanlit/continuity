@@ -4,7 +4,9 @@ name: Release
 #   - push a tag `vX.Y.Z` (matching package.json and plugin.json), or
 #   - run it manually ("Run workflow") on a branch: it releases v<package.json version>
 #     from that commit and creates the tag itself.
-# Needs the repository secret NPM_TOKEN.
+# Auth: npm trusted publishing (OIDC from this workflow; configured on npmjs.com for
+# litterthanlit/continuity · release.yml) — no secret needed. NPM_TOKEN is only a
+# fallback for before trusted publishing is set up; delete the secret afterwards.
 on:
   push:
     tags: ["v*"]
@@ -42,9 +44,12 @@ jobs:
       - run: pnpm verify
       - run: pnpm -s ct licenses
       - run: node scripts/pack-smoke.mjs
+      - name: npm with trusted publishing support (≥ 11.5)
+        run: npm install -g npm@11.20.0 && npm -v
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:
+          # Empty once the secret is deleted → npm authenticates via OIDC (trusted publishing).
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub release
         # Creates the tag at this commit when the run was dispatched from a branch.
