@@ -203,7 +203,7 @@ pnpm bench run                      # headless /make-video over bench/briefs (sl
 ```
 
 **Releasing:** bump `version` in `package.json` and `plugin/.claude-plugin/plugin.json`,
-then push a tag `vX.Y.Z`. `.github/workflows/release.yml` verifies, publishes to npm
+then push a tag `vX.Y.Z` — or run the Release workflow on `main` (it tags v<version> itself). `.github/workflows/release.yml` verifies, publishes to npm
 with provenance (needs the `NPM_TOKEN` secret) and cuts a GitHub release. Why it's
 packaged this way: [`docs/decisions/0002-distribution.md`](docs/decisions/0002-distribution.md).
 

@@ -1,12 +1,14 @@
 name: Release
 
-# Push a tag `vX.Y.Z` (matching package.json and plugin.json) to publish
-# @litterthanlit/continuity to npm with provenance and cut a GitHub release.
-# Needs the repository secret NPM_TOKEN (an npm automation token).
+# Publishes @litterthanlit/continuity to npm with provenance and cuts a GitHub release.
+#   - push a tag `vX.Y.Z` (matching package.json and plugin.json), or
+#   - run it manually ("Run workflow") on a branch: it releases v<package.json version>
+#     from that commit and creates the tag itself.
+# Needs the repository secret NPM_TOKEN.
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch: # re-run a failed release for an existing tag (pick the tag as the ref)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -30,11 +32,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Tag, package.json and plugin.json versions agree
         run: |
-          tag="${GITHUB_REF_NAME#v}"
           pkg="$(node -p 'require("./package.json").version')"
           plugin="$(node -p 'require("./plugin/.claude-plugin/plugin.json").version')"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then tag="$GITHUB_REF_NAME"; else tag="v$pkg"; fi
           echo "tag=$tag package=$pkg plugin=$plugin"
-          test "$tag" = "$pkg" && test "$tag" = "$plugin"
+          test "$tag" = "v$pkg" && test "$pkg" = "$plugin"
+          if npm view "@litterthanlit/continuity@$pkg" version >/dev/null 2>&1; then echo "::error::$pkg is already on npm — bump the version"; exit 1; fi
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
       - run: pnpm verify
       - run: pnpm -s ct licenses
       - run: node scripts/pack-smoke.mjs
@@ -43,6 +47,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub release
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        # Creates the tag at this commit when the run was dispatched from a branch.
+        run: gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
