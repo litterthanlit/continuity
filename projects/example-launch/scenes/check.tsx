@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
-import { scene, El, Card, Window, List, Terminal } from "continuity";
+import { scene, El, Card, Window, Terminal } from "continuity";
 import { Chapter, SURFACE } from "../lib/chapter.js";
+import storyboard from "../storyboard.json" with { type: "json" };
 
 // 02 · Check — the film's punch. A contact sheet of the film (left) and the gate
 // in a terminal (right). A collision on frame f5 is caught (red ring + two red
@@ -236,13 +237,24 @@ const THUMBS: Array<{ bg: string; body: ComponentChildren }> = [
   },
 ];
 
+// Real numbers of the film being checked (this one), so the labels stay true when
+// scenes are retimed: running time = Σ durations − transition overlaps.
+const FILM_S = storyboard.scenes.reduce(
+  (sum, sc) => sum + sc.duration - ((sc as { transition?: { duration: number } }).transition?.duration ?? 0),
+  0,
+);
+const FILM_FRAMES = Math.round(FILM_S * storyboard.format.fps);
+const fmtS = (s: number) => `${Math.round(s * 10) / 10}s`;
+
 // Radial bloom order for the 3×3 grid: centre, then the edge-adjacent frames,
 // then the corners (reading order within each ring).
 const BLOOM = [4, 1, 3, 5, 7, 0, 2, 6, 8].map((i) => `f${i}`);
+// Everything but the defect frame: recedes while f5 is red, returns with the ✔.
+const OTHERS = BLOOM.filter((id) => id !== "f5");
 
 const FINDINGS = [
-  { title: "overlap · headline × cta", meta: "f5", status: "danger" as const },
-  { title: "contrast 3.1:1 · caption", meta: "f5", status: "danger" as const },
+  { title: "overlap · headline × cta", meta: "f5" },
+  { title: "contrast 3.1:1 · caption", meta: "f5" },
 ];
 
 export default scene({
@@ -257,7 +269,7 @@ export default scene({
         >
           <div class="flex h-[34px] items-center justify-between font-mono text-[26px]">
             <span class="text-muted">sheet.png</span>
-            <span class="text-subtle">launch · 31s</span>
+            <span class="text-subtle">launch · {fmtS(FILM_S)}</span>
           </div>
           <El
             ct="frames"
@@ -275,7 +287,11 @@ export default scene({
                   </div>
                 </div>
                 {i === 5 && (
-                  <El ct="ring" class="absolute -inset-[8px] rounded-[16px] border-[3px] border-danger" />
+                  <El
+                    ct="ring"
+                    class="absolute -inset-[9px] rounded-[17px] border-[4px] border-danger"
+                    style={{ boxShadow: "0 0 24px color-mix(in oklab, var(--color-danger) 50%, transparent)" }}
+                  />
                 )}
               </El>
             ))}
@@ -290,14 +306,32 @@ export default scene({
             <El ct="cmd" data-ct-ui class="whitespace-pre font-mono text-[28px] leading-[1.6] text-fg">
               <span class="text-accent">❯</span> <El as="span" ct="cmd-l0">pnpm ct check launch</El>
             </El>
-            {/* The gate at work: every frame of the 31s film (31 × 30fps). */}
-            <Terminal ct="scan" lines={["◆ 930 frames · 7 scenes"]} />
+            {/* The gate at work: every frame of the film. */}
+            <Terminal ct="scan" lines={[`◆ ${FILM_FRAMES} frames · ${storyboard.scenes.length} scenes`]} />
             {/* The report box arrives with the findings (b3); -mb-px tucks the last row's
                 hairline under the box border. Its left edge is the verdict: red → green. */}
             <El ct="report" class="relative mt-[30px] overflow-hidden rounded-md border border-border bg-surface-2/50">
               <div class="absolute inset-y-0 left-0 w-[4px] bg-danger" />
               <El ct="goodbar" class="absolute inset-y-0 left-0 w-[4px] bg-positive" />
-              <List ct="findings" rows={FINDINGS} class="-mb-px" />
+              {/* Kit List markup, rebuilt so each title can be struck through and dimmed at the fix. */}
+              <El ct="findings" data-ct-ui class="-mb-px flex flex-col">
+                {FINDINGS.map((r, i) => (
+                  <El ct={`findings-r${i}`} class="flex h-[78px] items-center gap-[20px] border-b border-border px-[28px]">
+                    <span class="h-[18px] w-[18px] rounded-full border-[3px] border-danger" />
+                    <span class="relative inline-block font-sans text-[28px] text-fg">
+                      <El as="span" ct={`title${i}`}>
+                        {r.title}
+                      </El>
+                      <El
+                        ct={`strike${i}`}
+                        class="absolute inset-x-[-4px] top-[54%] h-[2px] bg-fg/50"
+                        style={{ transformOrigin: "left center" }}
+                      />
+                    </span>
+                    <span class="ml-auto font-mono text-[26px] text-subtle">{r.meta}</span>
+                  </El>
+                ))}
+              </El>
               {FINDINGS.map((_, i) => (
                 <El
                   ct={`good${i}`}
@@ -313,36 +347,41 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // b1 · copy, then the contact sheet; its frames bloom from the centre of the grid.
-    m.enter("eyebrow", "fade", { at: "b1" });
-    m.enter("headline", "maskUp", { at: "b1+0.1", split: "lines" });
-    m.enter("sheet", "rise", { at: "b1+0.2", distance: 80, duration: "hero" });
-    m.tween("sheet", { rotateX: [10, 0] }, { at: "b1+0.2", duration: "hero", ease: "enter", kind: "enter" });
-    m.enter(BLOOM, "scalePop", { at: "after:sheet-0.4", stagger: "grid" });
+    // The push brings the surfaces in (present at t=0); copy, then the frames bloom.
+    m.enter("eyebrow", "fade", { at: 0 });
+    m.enter("headline", "maskUp", { at: "b1", split: "lines" });
+    m.enter(BLOOM, "scalePop", { at: "b1+0.3", stagger: "grid" });
 
-    // b2 · the gate: terminal rises, the prompt is waiting, the command types on.
-    m.enter("term", "rise", { at: "b2", distance: 80, duration: "hero" });
-    m.tween("term", { rotateX: [10, 0] }, { at: "b2", duration: "hero", ease: "enter", kind: "enter" });
-    m.type("cmd-l0", { at: "b2+0.6", cps: 24 });
-    m.enter("scan-l0", "fade", { at: "b3-0.3", duration: "fast" }); // typing ends ≈2.57s
+    // b2 · the prompt is waiting; the command types on, the gate scans every frame.
+    m.type("cmd-l0", { at: "b2", cps: 24 });
+    m.enter("scan-l0", "fade", { at: "b3-0.3", duration: "fast" }); // typing ends ≈1.87s
 
-    // b3 · RED: the report lands with two findings; the ring locks onto f5, which flinches.
+    // b3 · RED. The report lands with two findings; the ring locks onto f5, which
+    // flinches; the rest of the sheet recedes; the camera pushes in. Then: hold.
     m.enter("report", "fade", { at: "b3", duration: "fast" });
     m.enter(["findings-r0", "findings-r1"], "rise", { at: "b3", distance: 18, stagger: "list" });
     m.tween("ring", { scale: [1.12, 1], opacity: [0, 1] }, { at: "b3+0.1", ease: "snappy", kind: "enter" });
     m.emphasize("f5", "nudge", { at: "b3+0.1" });
+    m.tween(OTHERS, { opacity: [1, 0.4] }, { at: "b3+0.1", duration: "slow", ease: "standard", stagger: 0 });
 
-    // b4 · GREEN: the fix. Only f5, the dots and the ✔ line move — everything else holds.
+    // b4 · GREEN. f5 is fixed, the ring clears, each finding is struck through as its
+    // dot turns green, then the verdict: green edge, ✔ line, the whole sheet returns.
     m.tween("f5b", { y: [0, -FIX] }, { at: "b4", duration: "base", ease: "standard" });
     m.tween("f5c", { opacity: [0.3, 1] }, { at: "b4", duration: "base", ease: "standard" }); // caption contrast fixed
     m.exit("ring", "fadeOut", { at: "b4" });
     m.enter(["good0", "good1"], "fade", { at: "b4+0.1", duration: "fast", stagger: 0.15 });
+    m.emphasize(["strike0", "strike1"], "underline", { at: "b4+0.1", stagger: 0.15 });
+    m.tween(["title0", "title1"], { opacity: [1, 0.62] }, { at: "b4+0.1", duration: "base", ease: "standard", stagger: 0.15 }); // → muted
     m.emphasize("f5", "glow", { at: "b4+0.3" });
-    // The verdict: the report edge turns green as ✔ prints. base (not slow) so the
-    // ✔ line is landed ≥ 0.8s before the push.
+    // base (not slow) so the ✔ line is landed well before the push.
     m.enter("goodbar", "fade", { at: "b4+0.35", duration: "fast" });
     m.enter("done-l0", "rise", { at: "b4+0.35", distance: 12, duration: "base" });
+    m.tween(OTHERS, { opacity: 1 }, { at: "b4+0.35", duration: "slow", ease: "standard", stagger: 0 });
 
-    m.camera({ scale: [1, 1.025] });
+    // Camera: a slow drift, then a focus push on the red (b3) that holds through the fix.
+    // 1.033 is the most a centred push allows: the surfaces span the full 1728px safe
+    // width, and camera-safe keeps them inside action-safe (1785px).
+    m.camera({ scale: [1, 1.012] }, { at: 0, duration: m.time("b3-0.1") });
+    m.camera({ scale: [1.012, 1.033] }, { at: "b3-0.1", duration: 1.0, ease: "inOut" });
   },
 });
