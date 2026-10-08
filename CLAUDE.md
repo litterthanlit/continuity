@@ -17,19 +17,19 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
    durations, beats, copy, element ids, motion intent). Planning is the single
    biggest quality lever — never start coding scenes from a one-line prompt.
 2. **Style frames.** Build each scene's *settled* layout first (view only, minimal
-   motion), run `pnpm ct stills <p>` and look. Fix composition and type before
+   motion), run `npx ct stills <p>` and look. Fix composition and type before
    animating anything.
 3. **Motion.** Add motion with presets and tokens. Choreograph: one focal point at a
    time, lead → follow, everything eases and settles.
-4. **Gate:** `pnpm ct check <p>` must report **0 errors**. Treat warnings as defects
+4. **Gate:** `npx ct check <p>` must report **0 errors**. Treat warnings as defects
    unless you can say why the craft is right anyway (then `allow: ["rule-id"]` with a
    comment).
-5. **Look:** `pnpm ct sheet <p>` (rhythm, hierarchy, continuity) and
-   `pnpm ct stills <p>` (type, detail). **Read the PNGs.** Never claim visual quality
+5. **Look:** `npx ct sheet <p>` (rhythm, hierarchy, continuity) and
+   `npx ct stills <p>` (type, detail). **Read the PNGs.** Never claim visual quality
    you have not looked at.
 6. **Critique → fix**, at most **3 rounds** of visual iteration. Keep the best
-   version (`pnpm ct status <p>`); revert rather than polish a regression.
-7. **Render:** `pnpm ct render <p> --draft` while iterating; final `pnpm ct render <p>`.
+   version (`npx ct status <p>`); revert rather than polish a regression.
+7. **Render:** `npx ct render <p> --draft` while iterating; final `npx ct render <p>`.
 
 ## Hard rules
 
@@ -50,12 +50,12 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 
 ## Definition of done
 
-- `pnpm ct check <p>` → 0 errors; every remaining warning justified.
+- `npx ct check <p>` → 0 errors; every remaining warning justified.
 - You have read the latest `sheet.png` and the settled stills, and the critique
   scores ≥ 4/5 on every axis (see the `critique` skill).
-- `pnpm ct check <p> --deep` passed once before the final render (adds HyperFrames'
+- `npx ct check <p> --deep` passed once before the final render (adds HyperFrames'
   verification of the generated motion assertions).
-- `pnpm ct render <p>` succeeded with clean render QC.
+- `npx ct render <p>` succeeded with clean render QC.
 - `projects/<p>/.continuity/report.md` summarises what was made and known gaps.
 
 ## Where things are
@@ -68,26 +68,41 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/kit/` | scene components (Stage, Safe, Headline, …) |
 | `src/themes/` | `mono-dark`, `light-editorial`, `vivid-gradient` |
 | `src/lint/timeline.ts` | motion lint rules (`RULES` explains each) |
-| `.claude/skills/` | `continuity` (start here), `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref` |
-| `.claude/agents/` | `director`, `scene-builder`, `critic` — orchestrated by `/make-video`, `/iterate`, `/critique`, `/render` |
-| `.claude/hooks/` | edit → `ct lint` feedback; Stop → blocks "done" until changed projects pass `ct check`; SessionStart → install |
+| `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
+| `.claude/` | this repo's session config: `skills`/`agents`/`commands` are symlinks into `plugin/`; `settings.json` wires `plugin/hooks/*`; `hooks/session-start.sh` installs deps in cloud sessions |
+| `bin/ct.mjs` | the `ct` launcher (tsx + scene tsconfig + `continuity`/preact alias hook) |
+| `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
 | `projects/_kit`, `_defects*` | component gallery (reference) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands
 
 ```
-pnpm ct new <slug> --aspect 9:16 --theme mono-dark
-pnpm ct lint <slug> [--storyboard | --scene id]   # fast static gate (also runs on every edit via hook)
-pnpm ct check <slug> [--scene id]  # THE gate (browser audits) — the full run records the iteration
-pnpm ct timeline <slug>        # every tween with numbers
-pnpm ct stills <slug> [--beats | --at 1.2,3 | --scene id]
-pnpm ct sheet <slug> [--anchors] [--scene id]
-pnpm ct strip <slug> --scene id    # onion skin: motion paths in one image
-pnpm ct render <slug> [--draft]
-pnpm ct motion <slug>          # motion-energy chart of the render: rhythm, dead zones, jolts
-pnpm ct score|compare|verdict|restore <slug> …   # critique bookkeeping, keep the best
-pnpm ct status <slug> · pnpm ct report <slug> · pnpm ct licenses
+npx ct init                    # (user repos) config, projects dir, CLAUDE.md block, permissions
+npx ct new <slug> --aspect 9:16 --theme mono-dark
+npx ct lint <slug> [--storyboard | --scene id]   # fast static gate (also runs on every edit via hook)
+npx ct check <slug> [--scene id]  # THE gate (browser audits) — the full run records the iteration
+npx ct timeline <slug>        # every tween with numbers
+npx ct stills <slug> [--beats | --at 1.2,3 | --scene id]
+npx ct sheet <slug> [--anchors] [--scene id]
+npx ct strip <slug> --scene id    # onion skin: motion paths in one image
+npx ct render <slug> [--draft]
+npx ct motion <slug>          # motion-energy chart of the render: rhythm, dead zones, jolts
+npx ct score|compare|verdict|restore <slug> …   # critique bookkeeping, keep the best
+npx ct status <slug> · npx ct report <slug> · npx ct licenses · npx ct doctor
 pnpm verify                    # typecheck + eslint + unit tests (engine changes)
 CT_SLOW=1 pnpm test            # + browser tests: seeded defects, golden frames
 ```
+
+## Packaging (this repo is also the product)
+
+- npm package `@litterthanlit/continuity` (bin `ct`, ships `bin/ src/ templates/` as
+  TypeScript run by tsx). `npx ct` works here through a `link:.` self-dependency,
+  so the repo exercises the published launcher every day.
+- Claude Code plugin `continuity` from `plugin/`, listed by `.claude-plugin/marketplace.json`.
+  Edit skills/agents/commands/hooks **in `plugin/`** (the `.claude/` paths are symlinks).
+  Keep `plugin/.claude-plugin/plugin.json` `version` equal to `package.json` (a test checks).
+- Paths: engine files resolve from `PKG_ROOT`; projects/build/out from `WORK_ROOT`
+  (nearest `continuity.json`). Never join paths onto `node_modules` — use `resolveDep`.
+- Before a release: `pnpm verify`, `CT_SLOW=1 pnpm test`, `node scripts/pack-smoke.mjs --browser`
+  (and `--pm pnpm`), `claude plugin validate ./plugin --strict`. Release = push a `v*` tag.

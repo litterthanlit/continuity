@@ -1,7 +1,8 @@
 #!/bin/bash
 # SessionStart (Claude Code cloud sessions): install dependencies so the ct CLI,
 # tests and linters work immediately. Synchronous on purpose: the agent's first
-# `pnpm ct …` must not race the install.
+# `npx ct …` must not race the install. (This repo's own setup; users of the
+# plugin get plugin/hooks/session-start.mjs instead.)
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -30,4 +31,4 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 
 # Report toolchain health (non-fatal: a missing browser is reported, not hidden).
-pnpm -s ct doctor || echo "continuity: toolchain incomplete — see 'pnpm ct doctor'"
+pnpm -s ct doctor || echo "continuity: toolchain incomplete — see 'npx ct doctor'"

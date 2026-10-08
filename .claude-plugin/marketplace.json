@@ -1,0 +1,16 @@
+{
+  "name": "continuity",
+  "owner": { "name": "litterthanlit", "url": "https://github.com/litterthanlit" },
+  "metadata": {
+    "description": "Continuity — motion design videos as code, for agents."
+  },
+  "plugins": [
+    {
+      "name": "continuity",
+      "source": "./plugin",
+      "description": "Director, scene-builder and critic agents, /make-video, /iterate, /review and /render, motion-craft skills, and gate hooks for making launch-quality motion videos with the ct CLI.",
+      "category": "design",
+      "homepage": "https://github.com/litterthanlit/continuity"
+    }
+  ]
+}

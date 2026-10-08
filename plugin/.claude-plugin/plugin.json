@@ -1,0 +1,10 @@
+{
+  "name": "continuity",
+  "version": "0.1.0",
+  "description": "A motion design studio for agents: director, parallel scene-builders and a critic make launch-quality motion videos as code, gated by lint, layout checks, contact sheets and motion analysis. Pairs with the @litterthanlit/continuity CLI.",
+  "author": { "name": "litterthanlit", "url": "https://github.com/litterthanlit" },
+  "homepage": "https://github.com/litterthanlit/continuity",
+  "repository": "https://github.com/litterthanlit/continuity",
+  "license": "Apache-2.0",
+  "keywords": ["motion-design", "video", "animation", "kinetic-typography", "product-launch", "hyperframes"]
+}
