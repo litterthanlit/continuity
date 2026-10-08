@@ -86,13 +86,13 @@
     },
     {
       "id": "check",
-      "duration": 6.6,
+      "duration": 7.0,
       "intent": "Eyes on every frame: the contact sheet shows a defect, the gate names it, the fix turns it green.",
       "beats": [
-        { "id": "b1", "at": 0.3, "note": "headline; contact sheet rises, frames pop from center" },
-        { "id": "b2", "at": 1.3, "note": "terminal rises, `pnpm ct check launch` types" },
-        { "id": "b3", "at": 2.95, "note": "2 red findings + red ring on frame f5" },
-        { "id": "b4", "at": 4.45, "note": "fix: bars separate, ring clears, dots go green, ✔ line" }
+        { "id": "b1", "at": 0.2, "note": "headline (surfaces arrive with the push); frames bloom from center at b1+0.3" },
+        { "id": "b2", "at": 1.2, "note": "`pnpm ct check launch` types" },
+        { "id": "b3", "at": 2.3, "note": "RED: 2 red findings + red ring on f5, other frames recede, camera focus push; red holds settled ≥ 1.4s" },
+        { "id": "b4", "at": 4.6, "note": "GREEN: bars separate, ring clears, findings struck through, dots go green, ✔ line, sheet restores" }
       ],
       "text": {
         "eyebrow": "02 · Check",
@@ -118,9 +118,9 @@
       "duration": 5.0,
       "intent": "Motion, measured: rhythm, easing and dead air are numbers the agent checks, not vibes.",
       "beats": [
-        { "id": "b1", "at": 0.3, "note": "headline + sub; chart window rises" },
-        { "id": "b2", "at": 1.5, "note": "energy curve draws under a playhead" },
-        { "id": "b3", "at": 2.75, "note": "three green verdict pills pop" }
+        { "id": "b1", "at": 0.0, "note": "eyebrow; headline masks up at b1+0.2; the push carries the chart window in" },
+        { "id": "b2", "at": 0.9, "note": "energy curve wipes on under the playhead" },
+        { "id": "b3", "at": 2.35, "note": "three green verdict pills pop as the playhead lands" }
       ],
       "text": {
         "eyebrow": "03 · Measure",
