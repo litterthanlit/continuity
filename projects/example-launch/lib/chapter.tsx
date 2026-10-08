@@ -31,7 +31,9 @@ export function Chapter({
   return (
     <Stage bg="grid">
       <Safe>
-        <div class="absolute inset-0 flex flex-col gap-[40px]">
+        {/* Vertically centred as one block (copy + fixed-height surface): even
+            margins top and bottom instead of a dead band under the surface. */}
+        <div class="absolute inset-0 flex flex-col justify-center gap-[40px]">
           <div class="flex flex-col gap-[12px]">
             <div data-ct-row class="flex items-center gap-[14px]">
               <EyebrowWithDot label={eyebrow} />
@@ -48,7 +50,9 @@ export function Chapter({
               <div aria-hidden="true" class="text-caption">&nbsp;</div>
             )}
           </div>
-          <div class="relative flex-1">{children}</div>
+          <div class="relative shrink-0" style={{ height: `${SURFACE.height}px` }}>
+            {children}
+          </div>
         </div>
       </Safe>
     </Stage>
