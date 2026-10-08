@@ -6,6 +6,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch: # re-run a failed release for an existing tag (pick the tag as the ref)
 
 permissions:
   contents: write
