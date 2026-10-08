@@ -1,5 +1,5 @@
 import { scene, El, Window, List } from "continuity";
-import { Chapter } from "../lib/chapter.js";
+import { Chapter, SURFACE } from "../lib/chapter.js";
 
 // 01 · Plan — the storyboard of this very film: scenes on the left, their beat
 // lanes on a shared time axis on the right. Data is real: durations and beat
@@ -13,9 +13,9 @@ const SCENES = [
   { title: "measure · motion chart", dur: 5.0, beats: [0.3, 1.5, 2.75] },
 ];
 
-// Full title-safe width → symmetric margins on every chapter.
-const WIN_W = 1728;
-const WIN_H = 600;
+// The shared chapter surface: full title-safe width, fixed height.
+const WIN_W = SURFACE.width;
+const WIN_H = SURFACE.height;
 const ROW_H = 78; // List row rhythm
 const HEAD_H = 76; // column header + time ruler
 const FOOT_H = WIN_H - 68 - HEAD_H - 5 * ROW_H; // status bar mirrors the title bar (66px)
@@ -104,7 +104,12 @@ export default scene({
                     top: `${k.lane * ROW_H + ROW_H / 2 - 11}px`,
                   }}
                 >
-                  <div class="absolute inset-[4px] rotate-45 rounded-[2px] bg-accent shadow-[0_0_0_3px_var(--color-surface)]" />
+                  {/* accent only on this scene's lane, so the "you are here" row owns the colour */}
+                  <div
+                    class={`absolute inset-[4px] rotate-45 rounded-[2px] shadow-[0_0_0_3px_var(--color-surface)] ${
+                      k.lane === CURRENT ? "bg-accent" : "bg-fg/40"
+                    }`}
+                  />
                 </El>
               ))}
             </El>
@@ -123,25 +128,23 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // b1 — copy leads (same rhythm on every chapter), the storyboard rises and its tilt resolves.
-    m.enter("eyebrow", "fade", { at: "b1" });
-    m.enter("headline", "maskUp", { at: "b1+0.1", split: "lines" });
-    // "after:headline-0.25" in intent: the one-line headline lands at b1+1.0, the sub
-    // follows 0.25s before (explicit, since after: counts the split span conservatively).
-    m.enter("sub", "rise", { at: "b1+0.75", distance: 24 });
-    m.enter("board", "rise", { at: "b1+0.25", distance: 96, duration: "hero" });
-    m.tween("board", { rotateX: [10, 0] }, { at: "b1+0.25", duration: "hero", ease: "enter", kind: "enter" });
-    m.enter(ROW_IDS, "rise", { at: "after:board-0.35", stagger: "list", distance: 18 });
+    // The push transition brings the board in: it is on screen from t=0, so the push never
+    // lands on an empty grid. The eyebrow rides in with it (no entrance of its own).
+    m.enter("headline", "maskUp", { at: 0.2, split: "lines" });
+    m.enter("sub", "rise", { at: "after:headline-0.25", distance: 24 });
 
-    // b2 — the beat lanes wipe on along the time axis, then the 16 real beats land in
-    // reading order. 0.04s (not the 0.05 grid token) so the last one settles by ≈3.1s,
-    // before b3; every keyframe pops just behind its lane's wipe front, never ahead of it.
-    m.enter(LANE_IDS, "wipeRight", { at: "b2", stagger: "list" });
-    m.enter(TICK_IDS, "scalePop", { at: "b2+0.3", duration: "fast", stagger: 0.04 });
+    // Content loads while the copy lands: rows, then the beat lanes wipe on along the time
+    // axis, then the 16 real beats pop in reading order and land on b2 (≈2.0s). 0.04s (not
+    // the 0.05 grid token) keeps the cascade tight; with a 0.3s lag behind the lane wipe
+    // every keyframe pops just behind its lane's wipe front, never ahead of it.
+    m.enter(ROW_IDS, "rise", { at: 0.5, stagger: "list", distance: 18 });
+    m.enter(LANE_IDS, "wipeRight", { at: 0.9, stagger: "list" });
+    m.enter(TICK_IDS, "scalePop", { at: 1.2, duration: "fast", stagger: 0.04 });
 
-    // b3 — "you are here": this scene's row lights up, sweeping in reading direction.
-    m.enter("current", "wipeRight", { at: "b3", duration: "base" });
-    m.emphasize(`rows-r${CURRENT}`, "glow", { at: "b3+0.2" });
+    // "You are here": this scene's row lights up, sweeping in reading direction, a breath
+    // after the beats land (b2+0.5, pulled ahead of b3 so the settled board holds ≈1.4s).
+    m.enter("current", "wipeRight", { at: "b2+0.5", duration: "base" });
+    m.emphasize(`rows-r${CURRENT}`, "glow", { at: "b2+0.7" });
 
     // Ambient: one slow push over the whole scene (≈0.6%/s), handing off to the push transition.
     // 1.03 about the centre keeps the safe-edge copy and board inside action-safe.
