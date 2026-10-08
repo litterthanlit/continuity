@@ -15,8 +15,8 @@ const MEAN = 4.6;
 // hairline, right column mean + verdict.
 const BAR_W = 640;
 
-const rows = AXES.map((_, i) => `ax${i}`);
 const fills = AXES.map((_, i) => `bar${i}-fill`);
+const round = (t: number) => Math.round(t * 100) / 100;
 
 export default scene({
   view: ({ text }) => (
@@ -36,38 +36,38 @@ export default scene({
           <div class="flex w-[480px] flex-col justify-center gap-[40px] pl-[64px]">
             <Stat ct="mean" value={MEAN} decimals={1} label="v3 · mean score" class="items-start" />
             <div class="flex">
-              <Pill ct="ships" dot="positive">
+              {/* the payoff: end-card CTA pill sizing, not the default chip */}
+              <Pill ct="ships" dot="positive" class="h-[64px]! gap-[14px]! px-[30px]! text-[30px] text-fg">
                 best of 3 · ships
               </Pill>
             </div>
           </div>
         </div>
-        <Sheen ct="sheen" opacity={0.11} />
+        <Sheen ct="sheen" opacity={0.06} />
       </Card>
     </Chapter>
   ),
   motion: (m) => {
-    // b1 · copy, then the scorecard rises with a tilt that resolves before anything is read
-    m.enter("eyebrow", "fade", { at: "b1" });
-    m.enter("headline", "maskUp", { at: "b1+0.1", split: "lines" });
+    // The scorecard (labels, empty tracks, 0.0 counters) is already on the surface
+    // when the push brings it in; only the data moves. Times are raw seconds because
+    // the push-in replaced the card entrance the storyboard beats were timed for.
+    m.enter("eyebrow", "fade", { at: 0 });
+    m.enter("headline", "maskUp", { at: 0.2, split: "lines" });
     m.enter("sub", "rise", { at: "after:headline-0.25", distance: 24 });
-    m.enter("card", "rise", { at: "b1+0.25", distance: 80, duration: "hero" });
-    m.tween("card", { rotateX: [8, 0] }, { at: "b1+0.25", duration: "hero", ease: "enter" });
-    // contents load in reading order: the five axes, then the mean column
-    m.enter([...rows, "mean", "mean-label"], "fade", { at: "after:card-0.35", stagger: "list" });
 
-    // b2 · bars fill and scores count, each axis 80ms after the previous one
-    m.tween(fills, { scaleX: [0, 1] }, { at: "b2", duration: "slow", ease: "enter", stagger: "list", kind: "enter" });
+    // Bars fill and scores count, each axis 80ms after the previous one
+    m.tween(fills, { scaleX: [0, 1] }, { at: 0.6, duration: "slow", ease: "enter", stagger: "list", kind: "enter" });
     AXES.forEach((a, i) =>
-      m.counter(`v${i}`, { from: 0, to: a.score, decimals: 1, at: `b2+${(i * 0.08).toFixed(2)}`, duration: "hero" }),
+      m.counter(`v${i}`, { from: 0, to: a.score, decimals: 1, at: round(0.6 + i * 0.08), duration: "hero" }),
     );
-    m.counter("mean", { from: 0, to: MEAN, decimals: 1, at: "b2+0.2", duration: "linger" });
+    m.counter("mean", { from: 0, to: MEAN, decimals: 1, at: 0.8, duration: "linger" });
 
-    // b3 · the verdict: the mean thumps as it lands, the pill pops, one sheen sweep.
+    // b3 · the verdict: the mean thumps once it has landed, the pill pops, one quiet
+    // sheen sweep that ends ≥ 0.5s before the dip so the verdict holds still.
     // (Storyboard asks for a `glow` on mean, but brightness on #f5f5f6 type is invisible → pulse.)
-    m.emphasize("mean", "pulse", { at: "b3-0.15" });
+    m.emphasize("mean", "pulse", { at: "after:mean" });
     m.enter("ships", "scalePop", { at: "b3" });
-    m.tween("sheen", { xPct: [-160, 360] }, { at: "b3+0.15", duration: "linger", ease: "inOut" });
+    m.tween("sheen", { xPct: [-160, 360] }, { at: "b3+0.2", duration: "hero", ease: "inOut" });
 
     m.camera({ scale: [1, 1.025] });
   },
