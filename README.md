@@ -25,14 +25,37 @@ No GSAP, no network at render time, byte-identical frames across worker counts.
 
 | | |
 |---|---|
-| ![contact sheet](projects/example-type/.continuity/sheet.png) | **example-type** — 14.7s 9:16 kinetic type, made through the harness. Gate: 0 errors. Critique mean 4.2/5. |
+| ![example-launch contact sheet](projects/example-launch/.continuity/sheet.png) | **example-launch** — 31.4s 16:9 launch film for Continuity itself, made by the agent team (director → 7 parallel scene-builders → critic, two improvement rounds). Gate 0/0, critique 3.8 → 4.4 → **4.6**/5. |
+| ![example-type contact sheet](projects/example-type/.continuity/sheet.png) | **example-type** — 14.7s 9:16 kinetic type, made through the harness. Gate: 0 errors. Critique mean 4.2/5. |
+
+## Install
+
+In the repo where you want to make videos (Node ≥ 22, ffmpeg, a headless Chrome):
+
+```bash
+npm i -D @litterthanlit/continuity     # the ct CLI + engine (pnpm/yarn/bun work too)
+npx ct init                            # config, projects/, .gitignore + CLAUDE.md blocks, permissions
+```
+
+Then, in Claude Code, add the agent layer (skills, director / scene-builder / critic
+agents, commands and gate hooks):
+
+```
+/plugin marketplace add litterthanlit/continuity
+/plugin install continuity@continuity
+/continuity:make-video A 20s launch video for …
+```
+
+`/continuity:setup` does the npm + `ct init` steps for you. `npx ct doctor` tells
+you what's missing (no headless Chrome → `npx playwright install chromium-headless-shell`
+or set `CT_BROWSER_PATH`).
 
 ## How it works
 
 ```
  brief.md ─▶ director ─▶ storyboard.json ─▶ scene-builders (parallel) ─▶ scenes/*.tsx
                                                                        │
-                     ┌──────────── pnpm ct build ◀─────────────────────┘
+                     ┌──────────── ct build ◀──────────────────────────┘
                      ▼
      HyperFrames composition (HTML + Tailwind + vendored fonts + motion runtime)
                      │
@@ -56,18 +79,19 @@ No GSAP, no network at render time, byte-identical frames across worker counts.
   (Apache-2.0), pinned exactly. Why, and what we learned:
   [`docs/decisions/0001-engine-hyperframes.md`](docs/decisions/0001-engine-hyperframes.md).
 
-## Quickstart
+## By hand
 
 ```bash
-pnpm install            # Node ≥ 22, ffmpeg on PATH; uses a local headless Chrome
-pnpm ct doctor          # toolchain check
-pnpm ct new my-video --aspect 9:16 --theme mono-dark
+npx ct new my-video --aspect 9:16 --theme mono-dark
 # write projects/my-video/brief.md + storyboard.json + scenes/*.tsx — or let an agent:
-#   claude  →  /make-video "A 15s reel announcing …"
-pnpm ct check my-video  # the gate
-pnpm ct sheet my-video  # look
-pnpm ct render my-video # MP4 + QC
+#   claude  →  /continuity:make-video "A 15s reel announcing …"
+npx ct check my-video   # the gate
+npx ct sheet my-video   # look
+npx ct render my-video  # MP4 + QC
 ```
+
+Layout lives in `continuity.json` (`projectsDir`, `buildDir`, `outDir`; defaults
+`projects`, `build`, `out`). `ct` finds it from any subdirectory.
 
 A scene:
 
@@ -91,24 +115,29 @@ export default scene({
 });
 ```
 
-## Using it with Claude Code
+## The agent layer (Claude Code plugin)
 
-`CLAUDE.md` is the constitution; `.claude/` holds the rest:
+The plugin (`plugin/`, namespaced `continuity:`) holds:
 
 - **Skills:** `continuity` (the loop + API), `motion-craft` (timing, easing,
   choreography, composition — with numbers), `kinetic-type`, `product-launch`,
   `critique` (5-axis rubric), `hyperframes-ref`.
 - **Agents:** `director`, `scene-builder`, `critic`.
-- **Commands:** `/make-video`, `/iterate`, `/critique`, `/render`.
+- **Commands:** `/continuity:make-video`, `/continuity:iterate`, `/continuity:review`,
+  `/continuity:render`, `/continuity:setup`.
 - **Hooks:** every project edit runs `ct lint` and feeds errors back; the agent
-  can't declare "done" while a changed project hasn't passed `ct check`; cloud
-  sessions install dependencies on start.
+  can't declare "done" while a changed project hasn't passed `ct check`; session
+  start reports the toolchain (and installs dependencies in cloud sessions).
+  Silent in repos that don't use Continuity.
+
+`ct init` adds the hard rules to your `CLAUDE.md` (a managed block) and allows
+`Bash(npx ct:*)` — plugins can't grant permissions themselves.
 
 ## CLI
 
-`pnpm ct <command>` — `new · build · lint · check · timeline · stills · sheet ·
+`npx ct <command>` — `init · new · build · lint · check · timeline · stills · sheet ·
 strip · render · motion · status · score · compare · verdict · restore · report ·
-docs · licenses · gate-status · doctor`. `pnpm ct <command> --help` for options.
+docs · licenses · gate-status · doctor`. `npx ct <command> --help` for options.
 
 ## Design system
 
@@ -116,22 +145,36 @@ Three themes (`mono-dark`, `light-editorial`, `vivid-gradient`), a 1080-based
 type scale (`text-mega` 240 → `text-micro` 26), vendored Geist / Inter Tight /
 Instrument Serif / Geist Mono + symbol fallbacks, a UI kit at video scale
 (windows, browsers, phones, code, terminals, charts, cursor, toasts…). See
-`projects/_kit` for the gallery and `.claude/skills/continuity/reference/` for
+`projects/_kit` for the gallery and `plugin/skills/continuity/reference/` for
 the generated catalog.
 
-## Verifying the harness
+## Developing Continuity
+
+This repo is both the product and its own first user: `pnpm install` links the
+package to itself, so `npx ct` here runs the same launcher users get, and
+`.claude/` symlinks the plugin's skills/agents/commands for in-repo sessions.
+`CLAUDE.md` is the constitution.
 
 ```bash
-pnpm verify                 # typecheck + eslint + unit tests
-CT_SLOW=1 pnpm test         # + browser tests: every seeded defect is caught, golden frames match
-pnpm ct licenses            # OSI-only production dependencies
-pnpm bench run              # headless /make-video over bench/briefs (slow; costs tokens)
+pnpm install                        # Node ≥ 22, ffmpeg on PATH; uses a local headless Chrome
+pnpm verify                         # typecheck + eslint + unit tests
+CT_SLOW=1 pnpm test                 # + browser tests: every seeded defect is caught, golden frames match
+npx ct licenses                     # OSI-only production dependencies
+node scripts/pack-smoke.mjs --browser [--pm pnpm]   # the packed tarball, driven in a fresh repo
+claude plugin validate ./plugin --strict
+pnpm bench run                      # headless /make-video over bench/briefs (slow; costs tokens)
 ```
+
+**Releasing:** bump `version` in `package.json` and `plugin/.claude-plugin/plugin.json`,
+then push a tag `vX.Y.Z`. `.github/workflows/release.yml` verifies, publishes to npm
+with provenance (needs the `NPM_TOKEN` secret) and cuts a GitHub release. Why it's
+packaged this way: [`docs/decisions/0002-distribution.md`](docs/decisions/0002-distribution.md).
 
 ## Roadmap
 
 - Voiceover with word timings + beat-synced music (storyboard `audio` track).
 - Docker image pinning Chrome/fonts/ffmpeg for pixel-exact CI; cloud rendering.
+- An MCP server exposing the same gate and eyes to non-Claude-Code agents.
 - Multi-aspect variants from one storyboard (16:9 ↔ 9:16 ↔ 1:1).
 - A web studio over the same CLI; a pairwise judge calibrated on the bench.
 

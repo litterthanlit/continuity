@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "1"
+      HYPERFRAMES_NO_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck, lint, unit tests
+        run: pnpm verify
+      - name: Licenses (OSI only)
+        run: pnpm -s ct licenses
+      - name: Packed tarball works in a fresh repo (npm)
+        run: node scripts/pack-smoke.mjs
+      - name: Packed tarball works in a fresh repo (pnpm, strict layout)
+        run: node scripts/pack-smoke.mjs --pm pnpm

@@ -1,0 +1,47 @@
+name: Release
+
+# Push a tag `vX.Y.Z` (matching package.json and plugin.json) to publish
+# @litterthanlit/continuity to npm with provenance and cut a GitHub release.
+# Needs the repository secret NPM_TOKEN (an npm automation token).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "1"
+      HYPERFRAMES_NO_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - name: Tag, package.json and plugin.json versions agree
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p 'require("./package.json").version')"
+          plugin="$(node -p 'require("./plugin/.claude-plugin/plugin.json").version')"
+          echo "tag=$tag package=$pkg plugin=$plugin"
+          test "$tag" = "$pkg" && test "$tag" = "$plugin"
+      - run: pnpm verify
+      - run: pnpm -s ct licenses
+      - run: node scripts/pack-smoke.mjs
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: GitHub release
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
