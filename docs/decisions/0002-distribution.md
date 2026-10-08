@@ -80,7 +80,7 @@ guard.
 
 ## Consequences
 - Users need Node ≥ 22, ffmpeg and a headless Chrome on their machine (`ct doctor`
-  explains). A Docker image is the planned fix.
+  explains) — or use the Docker image (0004).
 - `projects/tsconfig.json` pins resolved paths; re-run `npx ct init` after upgrading.
 - Versions of `package.json` and `plugin.json` move together (enforced by a test and
   by the release workflow).

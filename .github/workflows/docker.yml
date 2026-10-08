@@ -1,0 +1,126 @@
+name: Docker
+
+# Builds the two images from ./Dockerfile and proves them:
+#   - the repo's browser suite (golden frames, seeded layout defects, MCP browser
+#     tools) runs on the pinned toolchain image — the only CI run with a browser;
+#   - the ct image is driven like a user: doctor → new → check → draft render.
+# Release calls this with publish: true to push multi-arch images to GHCR:
+#   ghcr.io/<repo>:X.Y.Z, :X.Y, :latest            (ct CLI, entrypoint `ct`)
+#   ghcr.io/<repo>:X.Y.Z-toolchain, :X.Y-toolchain, :toolchain
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      publish:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, runner: ubuntu-latest }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    name: test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: toolchain
+          tags: continuity:toolchain
+          load: true
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+          cache-to: type=gha,scope=docker-${{ matrix.arch }},mode=max
+      - name: Build ct image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: continuity:ct
+          load: true
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+      # The goldens were made on x86-64 Chrome; arm64 Skia may differ within a pixel.
+      - name: Browser tests on the pinned toolchain (golden frames, seeded defects)
+        if: matrix.arch == 'amd64'
+        run: >
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e CI=1
+          -v "$PWD:/repo" -w /repo continuity:toolchain
+          bash -c 'pnpm install --frozen-lockfile && CT_SLOW=1 pnpm test'
+      - name: ct image, driven like a user
+        run: |
+          work="$RUNNER_TEMP/work" && mkdir -p "$work"
+          ct() { docker run --rm --user "$(id -u):$(id -g)" -v "$work:/work" continuity:ct "$@"; }
+          ct doctor
+          ct init
+          ct new demo --aspect 9:16
+          ct check demo
+          ct render demo --draft
+          test -s "$work/out/demo/latest-draft.mp4"
+
+  publish:
+    if: inputs.publish
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tags from package.json
+        id: tags
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          v="$(node -p 'require("./package.json").version')"
+          ct="$image:$v" tc="$image:$v-toolchain"
+          # Prereleases (1.2.0-rc.1) get only their exact tags.
+          if [[ "$v" != *-* ]]; then
+            mm="${v%.*}"
+            ct="$ct,$image:$mm,$image:latest"
+            tc="$tc,$image:$mm-toolchain,$image:toolchain"
+          fi
+          { echo "version=$v"; echo "ct=$ct"; echo "toolchain=$tc"; } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Push toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: toolchain
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.toolchain }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.tags.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=docker-multiarch
+          cache-to: type=gha,scope=docker-multiarch,mode=max
+      - name: Push ct image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.ct }}
+          build-args: VERSION=${{ steps.tags.outputs.version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.tags.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=docker-multiarch

@@ -1,0 +1,15 @@
+# The image COPYs explicit paths; keep the build context small and secret-free.
+**/node_modules
+.git
+.github
+.claude
+.cache
+.scratch
+build
+out
+projects
+bench
+tests
+docs
+*.log
+.DS_Store
