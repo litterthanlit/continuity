@@ -73,6 +73,24 @@ const ChapterHead = ({ w = 120 }: { w?: number }) => (
   </>
 );
 
+// f4's mini energy curve, matching the measure scene's smooth chart: the film's
+// main peaks and holds [s, 0..1] (thinned for thumbnail scale), joined by cubics with flat tangents at each extremum.
+const MINI_ENERGY: [number, number][] = [
+  [0, 0.12], [3, 0.62], [6, 0.2], [9.5, 0.82], [12.5, 0.3], [16.2, 0.92], [19.5, 0.25], [23, 0.78], [27, 0.2], [31, 0.12],
+];
+const MINI_CURVE = (() => {
+  const pts = MINI_ENERGY.map(([t, v]) => [(t / 31) * 214, 44 - 3 - v * 38]);
+  const f = (n: number) => n.toFixed(1);
+  return pts
+    .map(([x, y], i) => {
+      if (i === 0) return `M${f(x)} ${f(y)}`;
+      const [x0, y0] = pts[i - 1];
+      const h = (x - x0) / 2.4;
+      return `C${f(x0 + h)} ${f(y0)} ${f(x - h)} ${f(y)} ${f(x)} ${f(y)}`;
+    })
+    .join(" ");
+})();
+
 const THUMBS: Array<{ bg: string; body: ComponentChildren }> = [
   // f0 · hook: two lines on black, accent caret
   {
@@ -157,7 +175,7 @@ const THUMBS: Array<{ bg: string; body: ComponentChildren }> = [
         <Box x={22} y={60} w={240} h={84}>
           <svg class="absolute left-[12px] top-[10px]" width="214" height="44" viewBox="0 0 214 44" fill="none">
             <path
-              d="M0 38 L19 10 L39 27 L58 6 L78 30 L97 15 L117 2 L136 26 L156 8 L175 31 L195 12 L214 4"
+              d={MINI_CURVE}
               stroke="var(--color-accent)"
               stroke-width="2.5"
               stroke-linejoin="round"
@@ -383,5 +401,9 @@ export default scene({
     // width, and camera-safe keeps them inside action-safe (1785px).
     m.camera({ scale: [1, 1.012] }, { at: 0, duration: m.time("b3-0.1") });
     m.camera({ scale: [1.012, 1.033] }, { at: "b3-0.1", duration: 1.0, ease: "inOut" });
+    // Ambient life through the red hold and the green: a gentle upward drift until the
+    // push. Vertical, because at 1.033 the full-width layout has no horizontal room
+    // left inside action-safe (an x drift would trip camera-safe).
+    m.camera({ y: [0, -12] }, { at: "after:camera", duration: m.time("end-0.5") - m.endOf("camera"), ease: "inOut" });
   },
 });
