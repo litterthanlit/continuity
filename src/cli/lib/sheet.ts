@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { NODE_MODULES } from "../../paths.js";
+import { resolveDep } from "../../paths.js";
 import { fmtTime } from "./times.js";
 
 /** Max long edge for images handed to a vision model (larger gets downscaled anyway). */
@@ -9,7 +8,7 @@ export const MAX_SHEET_WIDTH = 1568;
 let monoFont: string | null = null;
 function monoFace(): string {
   if (!monoFont) {
-    const b64 = readFileSync(join(NODE_MODULES, "@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2")).toString("base64");
+    const b64 = readFileSync(resolveDep("@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2")).toString("base64");
     monoFont = `@font-face{font-family:"CT Mono";src:url(data:font/woff2;base64,${b64}) format("woff2");font-weight:100 900;}`;
   }
   return monoFont;

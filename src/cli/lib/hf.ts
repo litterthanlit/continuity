@@ -2,11 +2,11 @@ import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { ROOT } from "../../paths.js";
+import { PKG_ROOT, WORK_ROOT } from "../../paths.js";
 import { hfEnv } from "./env.js";
 import { withBrowserSlot } from "./lock.js";
 
-const require = createRequire(join(ROOT, "package.json"));
+const require = createRequire(join(PKG_ROOT, "package.json"));
 
 function hfBin(): string {
   const pkgJson = require.resolve("hyperframes/package.json");
@@ -37,7 +37,7 @@ function spawnHf(
 ): Promise<HfResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [hfBin(), ...args], {
-      cwd: opts.cwd ?? ROOT,
+      cwd: opts.cwd ?? WORK_ROOT,
       env: hfEnv(),
       stdio: ["ignore", "pipe", "pipe"],
     });

@@ -13,7 +13,7 @@ import { buildProject } from "../src/build/build.js";
 import { hfCheck } from "../src/cli/lib/check.js";
 import { captureFrames } from "../src/cli/lib/frames.js";
 import { probeProject } from "../src/cli/lib/probe.js";
-import { ROOT } from "../src/paths.js";
+import { PKG_ROOT as ROOT } from "../src/paths.js";
 
 const slow = process.env.CT_SLOW === "1";
 const d = slow ? describe : describe.skip;

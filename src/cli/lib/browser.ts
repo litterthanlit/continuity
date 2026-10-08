@@ -38,7 +38,7 @@ export async function serveDir(root: string): Promise<{ url: string; close: () =
 
 export async function launch(): Promise<Browser> {
   const executablePath = resolveBrowser();
-  if (!executablePath) throw new Error("No headless Chrome found. Set CT_BROWSER_PATH (see `pnpm ct doctor`).");
+  if (!executablePath) throw new Error("No headless Chrome found. Set CT_BROWSER_PATH (see `npx ct doctor`).");
   return puppeteer.launch({
     executablePath,
     headless: true,

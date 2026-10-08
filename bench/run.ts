@@ -13,7 +13,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROOT } from "../src/paths.js";
+import { PKG_ROOT as ROOT, PROJECTS_DIR } from "../src/paths.js";
 import { readState } from "../src/cli/lib/store.js";
 
 const BRIEFS = join(ROOT, "bench/briefs");
@@ -58,7 +58,7 @@ function runBrief(brief: string, runId: string, model?: string): BriefResult {
   } catch {
     /* not JSON */
   }
-  const state = existsSync(join(ROOT, "projects", project)) ? readState(project) : { iterations: [], verdicts: [] as unknown[] };
+  const state = existsSync(join(PROJECTS_DIR, project)) ? readState(project) : { iterations: [], verdicts: [] as unknown[] };
   const last = state.iterations[state.iterations.length - 1];
   const best = state.iterations.find((i) => i.n === (state as { best?: number }).best) ?? last;
   return {

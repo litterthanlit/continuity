@@ -1,6 +1,5 @@
 import * as fontkit from "fontkit";
-import { join } from "node:path";
-import { NODE_MODULES } from "../paths.js";
+import { resolveDep } from "../paths.js";
 import type { FontFamily } from "../themes/fonts.js";
 
 type Font = { hasGlyphForCodePoint(cp: number): boolean };
@@ -9,7 +8,7 @@ const cache = new Map<string, Font>();
 function open(file: string): Font {
   let f = cache.get(file);
   if (!f) {
-    f = fontkit.openSync(join(NODE_MODULES, file)) as unknown as Font;
+    f = fontkit.openSync(resolveDep(file)) as unknown as Font;
     cache.set(file, f);
   }
   return f;

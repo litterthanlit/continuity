@@ -1,0 +1,8 @@
+# Continuity: generated builds and renders, per-project evidence store
+/{{build}}/
+/{{out}}/
+{{projects}}/*/.continuity/*
+!{{projects}}/*/.continuity/report.md
+!{{projects}}/*/.continuity/poster.png
+!{{projects}}/*/.continuity/sheet.png
+!{{projects}}/*/.continuity/motion.png

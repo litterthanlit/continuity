@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
 import { sourceHash } from "../../build/hash.js";
-import { PROJECTS_DIR, ROOT } from "../../paths.js";
+import { PROJECTS_DIR, WORK_ROOT } from "../../paths.js";
 import { flagBool } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { log } from "../lib/log.js";
@@ -19,17 +20,25 @@ export interface GateState {
 /** Projects with uncommitted source changes, and whether their current sources passed the gate. */
 export function gateStates(): GateState[] {
   let porcelain = "";
+  let top = "";
   try {
-    porcelain = execFileSync("git", ["status", "--porcelain", "--untracked-files=all", "--", "projects"], { cwd: ROOT, encoding: "utf8" });
+    const git = (args: string[]) => execFileSync("git", args, { cwd: WORK_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    top = git(["rev-parse", "--show-toplevel"]).trim();
+    porcelain = git(["status", "--porcelain", "-z", "--untracked-files=all", "--", PROJECTS_DIR]);
   } catch {
-    return [];
+    return []; // not a git checkout: nothing is "being worked on"
   }
   const dirty = new Set<string>();
-  for (const line of porcelain.split("\n")) {
-    const m = /projects\/([^/]+)\/(.+)$/.exec(line.slice(3).trim());
-    if (!m || m[2].startsWith(".continuity/") || m[2].endsWith(".md")) continue;
-    if (m[1].startsWith("_defects") || m[1] === "_template") continue; // fixtures that are meant to fail / templates
-    dirty.add(m[1]);
+  // -z entries are "XY path" separated by NUL; a rename adds its source path as an extra entry.
+  for (const entry of porcelain.split("\0")) {
+    if (entry.length < 4) continue;
+    const abs = resolve(top, entry.slice(3));
+    if (!abs.startsWith(PROJECTS_DIR + sep)) continue;
+    const [slug, ...rest] = relative(PROJECTS_DIR, abs).split(sep);
+    const file = rest.join("/");
+    if (!file || file.startsWith(".continuity/") || file.endsWith(".md")) continue;
+    if (slug.startsWith("_defects") || slug === "_template") continue; // fixtures that are meant to fail / templates
+    dirty.add(slug);
   }
   const out: GateState[] = [];
   for (const slug of [...dirty].sort()) {

@@ -9,7 +9,7 @@ import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
 import { transitionTweens } from "../motion/transitions.js";
 import type { PartCounts, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
-import { BUILD_DIR, NODE_MODULES, ROOT, buildDir, projectDir } from "../paths.js";
+import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
@@ -71,11 +71,17 @@ export function loadStoryboard(slug: string, srcDir = projectDir(slug)): { story
   return { storyboard: parsed.value, findings: [] };
 }
 
+/** `export default` of a user module; unwraps the double default a CommonJS-compiled module yields. */
+function defaultExport<T>(mod: { default?: unknown }): T | undefined {
+  const d = mod.default as { default?: unknown; __esModule?: boolean } | undefined;
+  return (d && typeof d === "object" && "default" in d && !("view" in d) && !("colors" in d) ? d.default : d) as T | undefined;
+}
+
 async function loadTheme(srcDir: string, name: string): Promise<Theme> {
   const file = join(srcDir, "theme.ts");
   if (existsSync(file)) {
-    const mod = await import(pathToFileURL(file).href);
-    if (mod.default) return mod.default as Theme;
+    const theme = defaultExport<Theme>(await import(pathToFileURL(file).href));
+    if (theme) return theme;
   }
   return getTheme(name);
 }
@@ -99,8 +105,10 @@ export function estimateParts(node: Element): { chars: number; words: number; li
 
 function errMsg(e: unknown): string {
   const err = e as Error;
-  const firstFrame = err.stack?.split("\n").find((l) => l.includes("/projects/"))?.trim();
-  return err.message + (firstFrame ? ` (${firstFrame.replace(/^at\s+/, "").replace(ROOT + "/", "")})` : "");
+  const firstFrame = err.stack?.split("\n").find((l) => l.includes(PROJECTS_DIR))?.trim();
+  if (!firstFrame) return err.message;
+  const where = firstFrame.replace(/^at\s+/, "").replace(/\(?(?:file:\/\/)?(\/[^:)]+)/, (_, p: string) => rel(p));
+  return `${err.message} (${where.replace(/\)$/, "")})`;
 }
 
 /**
@@ -124,7 +132,7 @@ export async function buildProject(
   const hash = sourceHash(slug, src).combined;
   const empty = { ok: false, slug, dir, elements: [], partsEstimate: {}, hash };
   if (!existsSync(src)) {
-    return { ...empty, findings: [{ source: "build", rule: "project-missing", severity: "error", message: `projects/${slug} does not exist (try: pnpm ct new ${slug})` }] };
+    return { ...empty, findings: [{ source: "build", rule: "project-missing", severity: "error", message: `${rel(src)} does not exist (try: npx ct new ${slug})` }] };
   }
 
   const { storyboard: sb, findings: sbFindings } = loadStoryboard(slug, src);
@@ -155,13 +163,22 @@ export async function buildProject(
     if (opts.only && opts.only !== sc.id) {
       inner = `<div class="absolute inset-0 bg-bg"></div>`;
     } else if (!existsSync(file)) {
-      findings.push({ source: "build", rule: "scene-missing", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx not found in ${src.replace(ROOT + "/", "")}` });
+      findings.push({ source: "build", rule: "scene-missing", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx not found in ${rel(src)}` });
     } else {
       let def: SceneDefinition | undefined;
       try {
-        def = (await import(pathToFileURL(file).href)).default as SceneDefinition;
+        def = defaultExport<SceneDefinition>(await import(pathToFileURL(file).href));
       } catch (e) {
-        findings.push({ source: "build", rule: "scene-import", severity: "error", scene: sc.id, message: errMsg(e) });
+        const msg = errMsg(e);
+        const cjs = /require\(\)|ERR_REQUIRE|exports is not defined/.test(msg);
+        findings.push({
+          source: "build",
+          rule: "scene-import",
+          severity: "error",
+          scene: sc.id,
+          message: msg,
+          ...(cjs ? { suggestion: `scene files must load as ES modules: add ${rel(join(PROJECTS_DIR, "package.json"))} with {"type":"module"} (npx ct init does this)` } : {}),
+        });
       }
       if (def && typeof def.view !== "function") {
         findings.push({ source: "build", rule: "scene-export", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx must \`export default scene({ view, motion })\`` });
@@ -345,12 +362,12 @@ export async function buildProject(
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, "fonts"), { recursive: true });
   for (const fam of uniqueFamilies(theme)) {
-    for (const face of fam.faces) copyFileSync(join(NODE_MODULES, face.file), join(dir, "fonts", basename(face.file)));
+    for (const face of fam.faces) copyFileSync(resolveDep(face.file), join(dir, "fonts", basename(face.file)));
   }
   const assets = join(src, "assets");
   if (existsSync(assets)) cpSync(assets, join(dir, "assets"), { recursive: true });
 
-  const css = fontFaceCss(theme) + "\n" + (await compileCss(theme, classCandidates(body), ROOT));
+  const css = fontFaceCss(theme) + "\n" + (await compileCss(theme, classCandidates(body), PKG_ROOT));
   const html = `<!doctype html>
 <html lang="en">
 <head>

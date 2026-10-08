@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
 import type { ComponentChildren } from "preact";
 import { ctId } from "./context.js";
 import { cx, type Style } from "./core.js";

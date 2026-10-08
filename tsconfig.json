@@ -17,6 +17,6 @@
       "continuity": ["./src/index.ts"]
     }
   },
-  "include": ["src", "projects", "tests", "bench"],
+  "include": ["src", "projects", "templates", "tests", "bench"],
   "exclude": ["node_modules", "build", "out", "**/.continuity"]
 }

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { ROOT, projectDir } from "../paths.js";
+import { PKG_ROOT, projectDir } from "../paths.js";
 
 const SKIP = new Set([".continuity", "node_modules", ".DS_Store"]);
 
@@ -15,7 +15,7 @@ function walk(dir: string, out: string[]) {
   }
 }
 
-function hashFiles(files: string[], base = ROOT): string {
+function hashFiles(files: string[], base = PKG_ROOT): string {
   const h = createHash("sha256");
   for (const f of files) {
     h.update(relative(base, f));
@@ -31,7 +31,7 @@ export function sourceHash(slug: string, dir = projectDir(slug)): { project: str
   const pf: string[] = [];
   walk(dir, pf);
   const ef: string[] = [];
-  for (const d of ["src/motion", "src/runtime", "src/kit", "src/themes", "src/build"]) walk(join(ROOT, d), ef);
+  for (const d of ["src/motion", "src/runtime", "src/kit", "src/themes", "src/build"]) walk(join(PKG_ROOT, d), ef);
   // Hash paths relative to the project dir so a source snapshot hashes like the original.
   const project = hashFiles(pf.filter((f) => !f.endsWith(".md")), dir);
   const engine = hashFiles(ef);

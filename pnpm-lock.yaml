@@ -46,6 +46,9 @@ importers:
       fontkit:
         specifier: 2.0.4
         version: 2.0.4
+      hyperframes:
+        specifier: 0.8.140
+        version: 0.8.140(@types/node@26.6.4)
       linkedom:
         specifier: 0.18.12
         version: 0.18.12
@@ -71,15 +74,15 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
     devDependencies:
+      '@litterthanlit/continuity':
+        specifier: link:.
+        version: 'link:'
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
       eslint:
         specifier: 10.12.0
         version: 10.12.0(jiti@2.7.0)
-      hyperframes:
-        specifier: 0.8.140
-        version: 0.8.140(@types/node@26.6.4)
       typescript:
         specifier: 6.0.3
         version: 6.0.3

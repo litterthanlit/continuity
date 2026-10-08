@@ -4,6 +4,7 @@ import { check } from "./commands/check.js";
 import { docs } from "./commands/docs.js";
 import { doctor } from "./commands/doctor.js";
 import { gateStatus } from "./commands/gate-status.js";
+import { init } from "./commands/init.js";
 import { compare, restore, score, verdict } from "./commands/iterate.js";
 import { licenses } from "./commands/licenses.js";
 import { lint } from "./commands/lint.js";
@@ -20,6 +21,7 @@ import type { Command } from "./lib/command.js";
 import { color, fail, log } from "./lib/log.js";
 
 const COMMANDS: Command[] = [
+  init,
   newProject,
   build,
   lint,
@@ -49,7 +51,7 @@ ${color.bold("Loop:")} lint → check (gate) → stills / sheet / strip (look) �
 
 ${COMMANDS.map((c) => `  ${c.name.padEnd(10)} ${c.summary}`).join("\n")}
 
-Run \`pnpm ct <command> --help\` for options.`);
+Run \`npx ct <command> --help\` for options.`);
 }
 
 async function main() {

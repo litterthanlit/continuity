@@ -15,7 +15,7 @@ export const status: Command = {
     const s = readState(slug);
     const { combined } = sourceHash(slug);
     if (!s.iterations.length) {
-      log("no iterations yet — run `pnpm ct check " + slug + "`");
+      log("no iterations yet — run `npx ct check " + slug + "`");
       return 0;
     }
     for (const it of s.iterations) {
@@ -32,7 +32,7 @@ export const status: Command = {
       if (it.note) log(color.dim(`    ${it.note}`));
     }
     for (const v of s.verdicts.slice(-5)) log(color.dim(`verdict: #${v.a} vs #${v.b} → #${v.winner} — ${v.reason}`));
-    if (!s.iterations.some((i) => i.hash === combined)) log(color.yellow("sources changed since the last iteration — run `pnpm ct check " + slug + "`"));
+    if (!s.iterations.some((i) => i.hash === combined)) log(color.yellow("sources changed since the last iteration — run `npx ct check " + slug + "`"));
     return 0;
   },
 };

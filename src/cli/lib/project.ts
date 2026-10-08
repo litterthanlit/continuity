@@ -1,6 +1,7 @@
 import { buildProject, type BuildResult } from "../../build/build.js";
+import { lintSources } from "../../lint/source.js";
 import { lintTimeline } from "../../lint/timeline.js";
-import { buildDir, rel } from "../../paths.js";
+import { buildDir, projectDir, rel } from "../../paths.js";
 import { countBySeverity, formatFindings, type Finding } from "../../spec/findings.js";
 import { parseJsonOutput, runHf } from "./hf.js";
 import { color, fail, log, ok } from "./log.js";
@@ -47,6 +48,7 @@ export async function buildAndLint(slug: string, opts: { hf?: boolean; scene?: s
   const build = await buildFor(slug, opts.scene);
   let findings = [...build.findings];
   if (build.timeline) findings.push(...lintTimeline(build));
+  findings.push(...lintSources(projectDir(slug)));
   if (build.ok && opts.hf !== false) findings.push(...(await hfLint(build.dir)));
   // Scene mode: other scenes are placeholders, so only this scene's findings mean anything.
   if (opts.scene) findings = findings.filter((f) => !f.scene || f.scene === opts.scene || f.source === "schema");

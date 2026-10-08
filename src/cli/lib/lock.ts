@@ -1,9 +1,9 @@
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join } from "node:path";
-import { ROOT } from "../../paths.js";
+import { BUILD_DIR } from "../../paths.js";
 
-const DIR = join(ROOT, ".cache", "locks");
+const DIR = join(BUILD_DIR, ".locks");
 const STALE_MS = 20 * 60_000;
 
 function alive(pid: number): boolean {

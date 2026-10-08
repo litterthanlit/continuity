@@ -151,7 +151,7 @@ export const compare: Command = {
       `# Compare #${na} vs #${nb}\n\nJudge each axis (intent, composition, typography, temporal, craft) A vs B in pack-ab.png, then again in pack-ba.png.\nIf the two passes disagree, it's a tie — keep the incumbent.\n\nRecorded scores: #${na} ${JSON.stringify(scoresOf(na) ?? {})} · #${nb} ${JSON.stringify(scoresOf(nb) ?? {})}\n`,
     );
     for (const o of outs) log(`  ${rel(o)}`);
-    ok("read both packs, then: pnpm ct verdict " + `${slug} ${na} ${nb} --winner <n> --reason "…"`);
+    ok("read both packs, then: npx ct verdict " + `${slug} ${na} ${nb} --winner <n> --reason "…"`);
     return 0;
   },
 };

@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
 import type { ComponentChildren, JSX } from "preact";
 import { formatCounter } from "../motion/evaluate.js";
 import { ctId, useScene } from "./context.js";

@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { buildProject } from "../src/build/build.js";
+import { join } from "node:path";
 import { lintTimeline } from "../src/lint/timeline.js";
+import { PKG_ROOT } from "../src/paths.js";
+
+/** Projects that live outside projects/ (shipped with the package). */
+const SRC: Record<string, string> = { _template: join(PKG_ROOT, "templates", "project") };
 
 async function rules(slug: string) {
-  const b = await buildProject(slug, { write: false });
+  const b = await buildProject(slug, { write: false, srcDir: SRC[slug] });
   const findings = [...b.findings, ...lintTimeline(b)];
   return { b, findings, ids: new Set(findings.map((f) => `${f.source}:${f.rule}`)) };
 }

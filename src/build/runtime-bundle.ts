@@ -1,6 +1,6 @@
 import { build } from "esbuild";
 import { join } from "node:path";
-import { ROOT } from "../paths.js";
+import { PKG_ROOT } from "../paths.js";
 
 let cached: string | null = null;
 
@@ -13,7 +13,7 @@ let cached: string | null = null;
 export async function runtimeBundle(): Promise<string> {
   if (cached) return cached;
   const result = await build({
-    entryPoints: [join(ROOT, "src/runtime/index.ts")],
+    entryPoints: [join(PKG_ROOT, "src/runtime/index.ts")],
     bundle: true,
     format: "iife",
     platform: "browser",

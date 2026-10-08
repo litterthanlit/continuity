@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
 import type { ComponentChildren, CSSProperties, JSX } from "preact";
 import type { StageBackground } from "../themes/index.js";
 import { ctId, useScene } from "./context.js";
