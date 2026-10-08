@@ -13,12 +13,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "ct": "tsx src/cli/index.ts",
+    "ct": "tsx --tsconfig tsconfig.runtime.json src/cli/index.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
     "verify": "pnpm typecheck && pnpm lint && pnpm test",
-    "bench": "tsx bench/run.ts"
+    "bench": "tsx --tsconfig tsconfig.runtime.json bench/run.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",

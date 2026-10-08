@@ -1,0 +1,6 @@
+{
+  "//": "Runtime config for tsx (the ct CLI): same compiler options as tsconfig.json, applied to every file — including iteration snapshots under projects/*/.continuity/ that `ct compare` rebuilds (TS globs skip dot-directories unless named). tsconfig.json stays the typecheck scope.",
+  "extends": "./tsconfig.json",
+  "include": ["**/*.ts", "**/*.tsx", "projects/*/.continuity/**/*.ts", "projects/*/.continuity/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

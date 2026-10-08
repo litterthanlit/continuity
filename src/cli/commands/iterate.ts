@@ -7,6 +7,7 @@ import { screenshotHtml, withBrowser } from "../lib/browser.js";
 import type { Command } from "../lib/command.js";
 import { captureFrames } from "../lib/frames.js";
 import { fail, log, ok, step, warn } from "../lib/log.js";
+import { report } from "../lib/project.js";
 import { defaultCols, sheetHtml, type SheetCell } from "../lib/sheet.js";
 import { currentIteration, iterationDir, readState, restoreIteration, updateIteration, writeState } from "../lib/store.js";
 
@@ -102,6 +103,7 @@ export const compare: Command = {
       const outDir = join(BUILD_DIR, `${slug}@${n}`);
       const b = await buildProject(slug, { srcDir: src, outDir });
       if (!b.ok || !b.timeline) {
+        report("build", b.findings);
         fail(`iteration ${n} does not build`);
         return 1;
       }
