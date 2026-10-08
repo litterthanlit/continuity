@@ -1,6 +1,7 @@
 name: Release
 
-# Publishes @litterthanlit/continuity to npm with provenance and cuts a GitHub release.
+# Publishes @litterthanlit/continuity to npm with provenance, cuts a GitHub release and
+# pushes the Docker images (ghcr.io/litterthanlit/continuity, via docker.yml).
 #   - push a tag `vX.Y.Z` (matching package.json and plugin.json), or
 #   - run it manually ("Run workflow") on a branch: it releases v<package.json version>
 #     from that commit and creates the tag itself.
@@ -56,3 +57,14 @@ jobs:
         run: gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # Docker images for the same commit → ghcr.io (amd64 + arm64). A job here rather than a
+  # tag trigger in docker.yml: tags created by `gh release create` above trigger no workflows.
+  image:
+    needs: publish
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      publish: true

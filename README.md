@@ -50,6 +50,37 @@ agents, commands and gate hooks):
 you what's missing (no headless Chrome → `npx playwright install chromium-headless-shell`
 or set `CT_BROWSER_PATH`).
 
+### Docker
+
+No local Chrome or ffmpeg? The image carries the whole toolchain — Node 22, a pinned
+headless Chrome (the build the golden frames are made with), ffmpeg, fonts — so a
+laptop, CI and a render box produce the same frames (amd64 + arm64):
+
+```bash
+docker run --rm -v "$PWD:/work" ghcr.io/litterthanlit/continuity check my-video
+docker run --rm -v "$PWD:/work" ghcr.io/litterthanlit/continuity render my-video
+```
+
+The entrypoint is `ct`; the mounted repo is the work root. It runs as uid 1000 — on a
+Linux host with another uid, add `--user "$(id -u):$(id -g)"` so outputs stay yours.
+Pin a version tag (`:0.1.0`) matching your devDependency. As an MCP server:
+`"command": "docker", "args": ["run", "-i", "--rm", "-v", "/abs/repo:/work", "ghcr.io/litterthanlit/continuity", "mcp"]`.
+
+For CI in a repo that installs the package itself, use the toolchain image (no `ct`
+inside, corepack-enabled pnpm, root by default for Actions):
+
+```yaml
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    container: ghcr.io/litterthanlit/continuity:0.1.0-toolchain
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npx ct check my-video && npx ct render my-video
+```
+
+Build locally with `docker build -t continuity .` (`--target toolchain` for the other one).
+
 ## How it works
 
 ```
@@ -204,13 +235,14 @@ pnpm bench run                      # headless /make-video over bench/briefs (sl
 
 **Releasing:** bump `version` in `package.json` and `plugin/.claude-plugin/plugin.json`,
 then push a tag `vX.Y.Z` — or run the Release workflow on `main` (it tags v<version> itself). `.github/workflows/release.yml` verifies, publishes to npm
-with provenance via trusted publishing (no token) and cuts a GitHub release. Why it's
+with provenance via trusted publishing (no token), cuts a GitHub release and pushes
+the Docker images to GHCR (`.github/workflows/docker.yml`). Why it's
 packaged this way: [`docs/decisions/0002-distribution.md`](docs/decisions/0002-distribution.md).
 
 ## Roadmap
 
 - Voiceover with word timings + beat-synced music (storyboard `audio` track).
-- Docker image pinning Chrome/fonts/ffmpeg for pixel-exact CI; cloud rendering.
+- Cloud rendering.
 - Multi-aspect variants from one storyboard (16:9 ↔ 9:16 ↔ 1:1).
 - A web studio over the same CLI; a pairwise judge calibrated on the bench.
 

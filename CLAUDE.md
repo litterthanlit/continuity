@@ -72,6 +72,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `.claude/` | this repo's session config: `skills`/`agents`/`commands` are symlinks into `plugin/`; `settings.json` wires `plugin/hooks/*`; `hooks/session-start.sh` installs deps in cloud sessions |
 | `bin/ct.mjs` | the `ct` launcher (tsx + scene tsconfig + `continuity`/preact alias hook) |
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
+| `Dockerfile`, `.github/workflows/docker.yml` | images: `toolchain` (pinned Chrome + ffmpeg) and `ct` (default, entrypoint `ct`); CI runs the browser suite inside `toolchain`; release pushes both to GHCR |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
 | `projects/_kit`, `_defects*` | component gallery (reference) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
