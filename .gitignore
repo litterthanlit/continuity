@@ -10,6 +10,7 @@ projects/*/.continuity/*
 !projects/*/.continuity/report.md
 !projects/*/.continuity/poster.png
 !projects/*/.continuity/sheet.png
+!projects/*/.continuity/motion.png
 # HyperFrames side outputs
 **/snapshots/
 **/renders/
