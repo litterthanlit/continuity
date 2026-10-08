@@ -1,28 +1,56 @@
 import { scene, El, Window, List } from "continuity";
 import { Chapter, SURFACE } from "../lib/chapter.js";
+import storyboard from "../storyboard.json" with { type: "json" };
 
 // 01 · Plan — the storyboard of this very film: scenes on the left, their beat
-// lanes on a shared time axis on the right. Data is real: durations and beat
-// times are copied from storyboard.json.
+// lanes on a shared time axis on the right. Data is real and cannot drift:
+// durations, beat times, scene count and running time are read from storyboard.json.
 
-const SCENES = [
-  { title: "hook · the problem", dur: 3.9, beats: [0.15, 0.95, 2.45] },
-  { title: "studio · the turn", dur: 4.4, beats: [0.3, 1.6, 3.1] },
-  { title: "plan · storyboard", dur: 4.8, beats: [0.3, 2.0, 3.3], current: true },
-  { title: "check · eyes on frames", dur: 6.6, beats: [0.3, 1.3, 2.95, 4.45] },
-  { title: "measure · motion chart", dur: 5.0, beats: [0.3, 1.5, 2.75] },
-];
+const HERE = "plan"; // this scene's id: its row is the "you are here" row
+const ROWS = 5; // ≤ 5 rows per surface (treatment)
+
+// Row captions (labels, not data). Unknown ids fall back to the bare id.
+const CAPTION: Record<string, string> = {
+  hook: "the problem",
+  studio: "the turn",
+  plan: "storyboard",
+  check: "eyes on frames",
+  measure: "motion chart",
+  critic: "the score",
+  end: "the card",
+};
+
+const ALL = storyboard.scenes;
+// Five consecutive scenes around this one (hook…measure while plan is third).
+const hereIdx = ALL.findIndex((s) => s.id === HERE);
+const first = Math.max(0, Math.min(hereIdx - 2, ALL.length - ROWS));
+const SCENES = ALL.slice(first, first + ROWS).map((s) => ({
+  title: CAPTION[s.id] ? `${s.id} · ${CAPTION[s.id]}` : s.id,
+  dur: s.duration,
+  beats: s.beats.map((b) => b.at),
+  current: s.id === HERE,
+}));
+
+// Running time: each scene starts when the previous one's outgoing transition begins.
+const TOTAL = ALL.reduce(
+  (acc, s, i) => (i === ALL.length - 1 ? acc + s.duration : acc + s.duration - (s.transition?.duration ?? 0)),
+  0,
+);
+const FOOTER_L = `${storyboard.format.aspect} · ${storyboard.format.fps} fps · ${storyboard.theme}`;
+const FOOTER_R = `${ALL.length} scenes · ${TOTAL.toFixed(1)}s`;
 
 // The shared chapter surface: full title-safe width, fixed height.
 const WIN_W = SURFACE.width;
 const WIN_H = SURFACE.height;
 const ROW_H = 78; // List row rhythm
 const HEAD_H = 76; // column header + time ruler
-const FOOT_H = WIN_H - 68 - HEAD_H - 5 * ROW_H; // status bar mirrors the title bar (66px)
+const FOOT_H = WIN_H - 68 - HEAD_H - ROWS * ROW_H; // status bar mirrors the title bar (66px)
 const LEFT_W = 800; // scene list column
 const TRACK_X = 66; // lane inset inside the lanes column (≈ same on the right)
-const PX_PER_S = 120; // 6.6s (longest scene) → 792px track
-const SECONDS = [0, 1, 2, 3, 4, 5, 6];
+const TRACK_W = 792; // the longest scene fills the track; the time axis scales to fit
+const MAX_DUR = Math.max(...SCENES.map((s) => s.dur));
+const PX_PER_S = TRACK_W / MAX_DUR;
+const SECONDS = Array.from({ length: Math.floor(MAX_DUR) + 1 }, (_, i) => i);
 
 const TICKS = SCENES.flatMap((s, lane) => s.beats.map((t) => ({ lane, t })));
 const TICK_IDS = TICKS.map((_, i) => `tick${i}`);
@@ -35,7 +63,7 @@ export default scene({
     <Chapter eyebrow={text.eyebrow} headline={text.headline} sub={text.sub}>
       <Window ct="board" title="storyboard.json" width={WIN_W} height={WIN_H}>
         <div class="relative h-full">
-          {/* "You are here": the row of this scene, highlighted at b3. */}
+          {/* "You are here": the row of this scene, highlighted after the beats land. */}
           <El
             ct="current"
             class="absolute left-0 right-0 bg-accent/[0.09]"
@@ -120,8 +148,8 @@ export default scene({
             class="absolute inset-x-0 bottom-0 flex items-center justify-between bg-surface-2/70 px-[28px] font-mono text-[26px] text-subtle"
             style={{ height: `${FOOT_H}px` }}
           >
-            <span>16:9 · 30 fps · mono-dark</span>
-            <span>7 scenes · 31.0s</span>
+            <span>{FOOTER_L}</span>
+            <span>{FOOTER_R}</span>
           </div>
         </div>
       </Window>
