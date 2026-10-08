@@ -9,6 +9,7 @@ import { runHf } from "../lib/hf.js";
 import { color, fail, log, ok, secs, step, warn } from "../lib/log.js";
 import { buildAndLint, buildSummary, report } from "../lib/project.js";
 import { currentIteration, updateIteration, writeFindings } from "../lib/store.js";
+import { emitResult } from "../lib/result.js";
 
 const FORMATS = new Set(["mp4", "webm", "mov", "gif"]);
 
@@ -61,6 +62,7 @@ export const render: Command = {
       },
     });
     if (r.code !== 0) {
+      emitResult({ ok: false, error: "render failed", log: (r.stdout + r.stderr).split("\n").filter((l) => !l.startsWith("@hf-progress")).slice(-30).join("\n") });
       fail("render failed");
       log((r.stdout + r.stderr).split("\n").filter((l) => !l.startsWith("@hf-progress")).slice(-30).join("\n"));
       return 1;
@@ -75,6 +77,20 @@ export const render: Command = {
     writeFindings(it.dir, "render-findings.json", qcFindings);
     updateIteration(slug, it.n, { render: { file: rel(file), draft, at: new Date().toISOString() } });
     const q = countBySeverity(qcFindings);
+    emitResult({
+      ok: q.errors === 0,
+      iteration: it.n,
+      output: file,
+      latest: join(outDir, `latest${draft ? "-draft" : ""}.${format}`),
+      draft,
+      format,
+      durationS: info.duration,
+      sizeBytes: info.size,
+      width: info.width,
+      height: info.height,
+      renderSeconds: elapsed / 1000,
+      qc: qcFindings,
+    });
     if (qcFindings.filter((f) => f.severity !== "info").length) log(formatFindings(qcFindings.filter((f) => f.severity !== "info")));
     if (q.errors) {
       fail(`render QC: ${q.errors} error(s)`);

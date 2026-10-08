@@ -3,6 +3,7 @@ import { flagBool, requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { buildSummary, report } from "../lib/project.js";
 import { log } from "../lib/log.js";
+import { emitResult } from "../lib/result.js";
 
 export const build: Command = {
   name: "build",
@@ -13,6 +14,7 @@ export const build: Command = {
     const b = await buildProject(slug);
     const json = flagBool(a, "json");
     if (!json) log(buildSummary(b));
+    emitResult({ dir: b.dir, hash: b.hash, summary: buildSummary(b) });
     return report("build", b.findings, { json, quietOk: true }) ? 0 : 1;
   },
 };

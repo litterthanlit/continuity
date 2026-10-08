@@ -4,6 +4,7 @@ import { flagBool, flagStr, requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { buildAndLint, buildSummary, report } from "../lib/project.js";
 import { log } from "../lib/log.js";
+import { emitResult } from "../lib/result.js";
 
 export const lint: Command = {
   name: "lint",
@@ -18,6 +19,10 @@ export const lint: Command = {
     const json = flagBool(a, "json");
     if (flagBool(a, "storyboard")) {
       const { storyboard, findings } = loadStoryboard(slug);
+      if (storyboard) {
+        const t = sceneTimings(storyboard);
+        emitResult({ duration: t.duration, scenes: t.scenes.map((s, i) => ({ id: s.id, start: s.start, duration: storyboard.scenes[i].duration })) });
+      }
       if (storyboard && !json) {
         const t = sceneTimings(storyboard);
         log(`${storyboard.title} — ${storyboard.format.aspect} · ${t.duration}s · ${t.scenes.length} scenes`);
@@ -27,6 +32,7 @@ export const lint: Command = {
     }
     const { build, findings } = await buildAndLint(slug, { hf: !flagBool(a, "fast"), scene: flagStr(a, "scene") });
     if (!json) log(buildSummary(build));
+    emitResult({ summary: buildSummary(build) });
     return report("lint", findings, { json }) ? 0 : 1;
   },
 };

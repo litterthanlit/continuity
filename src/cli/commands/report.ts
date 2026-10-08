@@ -8,6 +8,7 @@ import type { Command } from "../lib/command.js";
 import { log, ok } from "../lib/log.js";
 import { iterationDir, readFindings, readState } from "../lib/store.js";
 import { fmtTime } from "../lib/times.js";
+import { emitResult } from "../lib/result.js";
 import { AXES } from "./iterate.js";
 
 export const reportCmd: Command = {
@@ -66,6 +67,7 @@ export const reportCmd: Command = {
     }
     const out = join(stateDir(slug), "report.md");
     writeFileSync(out, lines.join("\n"));
+    emitResult({ file: out, iteration: it?.n ?? null, markdown: lines.join("\n") });
     ok(`wrote ${rel(out)}`);
     log(lines.slice(0, 6).join("\n"));
     return 0;

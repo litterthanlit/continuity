@@ -9,6 +9,7 @@ import { buildFor, report } from "../lib/project.js";
 import { defaultCols, sheetHtml } from "../lib/sheet.js";
 import { currentIteration, readFindings } from "../lib/store.js";
 import { gridTimes } from "../lib/times.js";
+import { emitResult } from "../lib/result.js";
 
 export const sheet: Command = {
   name: "sheet",
@@ -66,6 +67,7 @@ export const sheet: Command = {
         outs.push(out);
       }
     });
+    emitResult({ iteration: it.n, every, frames: frames.length, sheets: outs });
     for (const o of outs) log(`  ${rel(o)}`);
     ok(`${outs.length} sheet(s) from ${frames.length} frames. Read them to judge rhythm, hierarchy and continuity.`);
     return 0;

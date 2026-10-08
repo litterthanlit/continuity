@@ -22,12 +22,10 @@ fi
 pnpm install --prefer-offline --reporter=silent
 
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  {
-    echo 'export PUPPETEER_SKIP_DOWNLOAD=1'
-    echo 'export HYPERFRAMES_NO_TELEMETRY=1'
-    echo 'export DO_NOT_TRACK=1'
-    echo 'export HYPERFRAMES_NO_UPDATE_CHECK=1'
-  } >> "$CLAUDE_ENV_FILE"
+  # Idempotent: resumed sessions re-run this hook against the same env file.
+  for v in PUPPETEER_SKIP_DOWNLOAD HYPERFRAMES_NO_TELEMETRY DO_NOT_TRACK HYPERFRAMES_NO_UPDATE_CHECK; do
+    grep -qx "export $v=1" "$CLAUDE_ENV_FILE" 2>/dev/null || echo "export $v=1" >> "$CLAUDE_ENV_FILE"
+  done
 fi
 
 # Report toolchain health (non-fatal: a missing browser is reported, not hidden).

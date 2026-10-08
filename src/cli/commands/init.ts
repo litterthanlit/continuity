@@ -3,6 +3,7 @@ import { dirname, join, relative } from "node:path";
 import { CONFIG_FILE, PKG_ROOT, PROJECTS_DIR, WORK_CONFIG, WORK_ROOT, depDir, rel } from "../../paths.js";
 import type { Command } from "../lib/command.js";
 import { color, log, ok } from "../lib/log.js";
+import { emitResult } from "../lib/result.js";
 import { doctor } from "./doctor.js";
 import { ensureEsmProjects } from "./new.js";
 
@@ -96,7 +97,11 @@ export const init: Command = {
   summary: "Set up this repo for Continuity: config, projects dir, .gitignore, CLAUDE.md rules, Claude Code permissions.",
   usage: "ct init [--no-claude]",
   async run(a) {
-    const done = (what: string) => ok(`${what}`);
+    const changes: string[] = [];
+    const done = (what: string) => {
+      changes.push(what);
+      ok(what);
+    };
     const skipClaude = a.flags["no-claude"] === true || a.flags.claude === "false";
     log(color.bold(`Continuity → ${WORK_ROOT}`));
 
@@ -132,6 +137,7 @@ ${color.bold("Next")}
   2. Make a video:  /continuity:make-video <your brief>
      or by hand:    npx ct new <slug> --aspect 16:9  →  npx ct check <slug>  →  npx ct render <slug>
 `);
+    emitResult({ root: WORK_ROOT, projectsDir: PROJECTS_DIR, changes });
     // Toolchain gaps (no Chrome yet, no ffmpeg) don't fail setup; doctor says what to install.
     if ((await doctor.run(a)) !== 0) log("Fix the issues above before checking or rendering (`npx ct doctor` re-checks).");
     return 0;

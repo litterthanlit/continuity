@@ -35,10 +35,16 @@ if (!ct) {
 }
 
 if (process.env.CLAUDE_ENV_FILE) {
-  appendFileSync(
-    process.env.CLAUDE_ENV_FILE,
-    ["PUPPETEER_SKIP_DOWNLOAD=1", "HYPERFRAMES_NO_TELEMETRY=1", "DO_NOT_TRACK=1", "HYPERFRAMES_NO_UPDATE_CHECK=1"].map((v) => `export ${v}\n`).join(""),
-  );
+  // Idempotent: resumed sessions re-run this hook against the same env file.
+  let cur = "";
+  try {
+    cur = readFileSync(process.env.CLAUDE_ENV_FILE, "utf8");
+  } catch {
+    /* new file */
+  }
+  const lines = ["PUPPETEER_SKIP_DOWNLOAD=1", "HYPERFRAMES_NO_TELEMETRY=1", "DO_NOT_TRACK=1", "HYPERFRAMES_NO_UPDATE_CHECK=1"].map((v) => `export ${v}`);
+  const missing = lines.filter((l) => !cur.split("\n").includes(l));
+  if (missing.length) appendFileSync(process.env.CLAUDE_ENV_FILE, missing.map((l) => l + "\n").join(""));
 }
 const r = runCt(ct, ["doctor"], where?.root ?? root, 60_000);
 const out = `${r.stdout ?? ""}`.trim();

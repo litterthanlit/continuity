@@ -33,7 +33,15 @@ export async function serveDir(root: string): Promise<{ url: string; close: () =
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   const { port } = server.address() as AddressInfo;
-  return { url: `http://127.0.0.1:${port}/`, close: () => new Promise((r) => server.close(() => r())) };
+  return {
+    url: `http://127.0.0.1:${port}/`,
+    // Chrome pools keep-alive sockets per browser, not per page: drop them so close() can't wait on the browser.
+    close: () =>
+      new Promise((r) => {
+        server.close(() => r());
+        server.closeAllConnections();
+      }),
+  };
 }
 
 export async function launch(): Promise<Browser> {
@@ -46,13 +54,29 @@ export async function launch(): Promise<Browser> {
   });
 }
 
+/** Settle within `ms` or give up (teardown must never hang a command — the output is already written). */
+function within(p: Promise<unknown>, ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(false), ms);
+    p.then(
+      () => (clearTimeout(t), resolve(true)),
+      () => (clearTimeout(t), resolve(false)),
+    );
+  });
+}
+
+/** Close a browser; if Chrome doesn't exit in time (seen under load), kill it. */
+export async function closeBrowser(b: Browser): Promise<void> {
+  if (!(await within(b.close(), 10_000))) b.process()?.kill("SIGKILL");
+}
+
 export async function withBrowser<T>(fn: (b: Browser) => Promise<T>): Promise<T> {
   return withBrowserSlot(async () => {
     const b = await launch();
     try {
       return await fn(b);
     } finally {
-      await b.close();
+      await closeBrowser(b);
     }
   });
 }
@@ -82,8 +106,8 @@ export async function screenshotHtml(
       await page.evaluate(() => document.fonts.ready.then(() => true));
       await page.screenshot({ path: out as `${string}.png`, fullPage: opts.height === undefined, type: "png" });
     } finally {
-      await page.close();
-      await srv?.close();
+      await within(page.close(), 10_000);
+      if (srv) await within(srv.close(), 5_000);
     }
   };
   if (opts.browser) await run(opts.browser);

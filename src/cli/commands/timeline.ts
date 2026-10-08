@@ -4,6 +4,7 @@ import { flagBool, flagStr, requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { fail, log } from "../lib/log.js";
 import { report } from "../lib/project.js";
+import { emitResult } from "../lib/result.js";
 import { fmtTime } from "../lib/times.js";
 
 const r2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
@@ -20,6 +21,8 @@ export const timeline: Command = {
       fail("no timeline");
       return 1;
     }
+    const scoped = flagStr(a, "scene");
+    emitResult({ timeline: scoped ? { ...b.timeline, scenes: b.timeline.scenes.filter((s) => s.scene === scoped) } : b.timeline });
     if (flagBool(a, "json")) {
       log(JSON.stringify(b.timeline, null, 2));
       return 0;

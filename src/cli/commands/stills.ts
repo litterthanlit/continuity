@@ -6,6 +6,7 @@ import { captureFrames } from "../lib/frames.js";
 import { fail, log, ok, step } from "../lib/log.js";
 import { buildFor, report } from "../lib/project.js";
 import { currentIteration } from "../lib/store.js";
+import { emitResult } from "../lib/result.js";
 import { beatTimes, fmtTime, keyTimes, type TimePoint } from "../lib/times.js";
 
 export const stills: Command = {
@@ -39,6 +40,13 @@ export const stills: Command = {
     const dir = join(it.dir, "stills");
     step(`capturing ${points.length} frame(s) → iteration ${it.n}`);
     const frames = await captureFrames(slug, points.map((p) => p.t), dir, "t", b.dir);
+    emitResult({
+      iteration: it.n,
+      frames: frames.map((f) => {
+        const p = points.find((x) => Math.abs(x.t - f.t) < 0.002);
+        return { t: f.t, scene: p?.scene || null, label: p?.label || null, file: f.file };
+      }),
+    });
     for (const f of frames) {
       const p = points.find((x) => Math.abs(x.t - f.t) < 0.002);
       log(`  ${fmtTime(f.t)}  ${(p?.scene ?? "").padEnd(14)} ${(p?.label ?? "").padEnd(8)} ${rel(f.file)}`);

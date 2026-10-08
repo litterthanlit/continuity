@@ -8,6 +8,7 @@ import type { Command } from "../lib/command.js";
 import { captureFrames } from "../lib/frames.js";
 import { fail, log, ok, step, warn } from "../lib/log.js";
 import { report } from "../lib/project.js";
+import { emitResult } from "../lib/result.js";
 import { defaultCols, sheetHtml, type SheetCell } from "../lib/sheet.js";
 import { currentIteration, iterationDir, readState, restoreIteration, updateIteration, writeState } from "../lib/store.js";
 
@@ -16,7 +17,7 @@ export const AXES = ["intent", "composition", "typography", "temporal", "craft"]
 export const score: Command = {
   name: "score",
   summary: "Record critique scores (1–5 per axis) and an optional critique file on the current iteration.",
-  usage: "ct score <project> --intent N --composition N --typography N --temporal N --craft N [--note \"…\"] [--file critique.md]",
+  usage: "ct score <project> --intent N --composition N --typography N --temporal N --craft N [--note \"…\"] [--file critique.md | --critique \"markdown\"]",
   async run(a) {
     const slug = requireSlug(a);
     const scores: Record<string, number> = {};
@@ -31,6 +32,8 @@ export const score: Command = {
     updateIteration(slug, it.n, { scores: { ...scores, mean }, note: flagStr(a, "note") ?? it.record.note });
     const file = flagStr(a, "file");
     if (file) copyFileSync(file, join(it.dir, "critique.md"));
+    const critique = flagStr(a, "critique");
+    if (critique) writeFileSync(join(it.dir, "critique.md"), critique.endsWith("\n") ? critique : critique + "\n");
     ok(`iteration ${it.n}: ${AXES.map((k) => `${k} ${scores[k]}`).join(" · ")} (mean ${mean})`);
     const pass = AXES.every((k) => scores[k] >= 4);
     const st = readState(slug);
@@ -40,6 +43,7 @@ export const score: Command = {
       writeState(slug, st);
       ok(`iteration ${it.n} is the first scored iteration with a clean gate — marked best`);
     }
+    emitResult({ iteration: it.n, scores: { ...scores, mean }, passesBar: pass, best: readState(slug).best ?? null });
     log(pass ? "passes the bar (all axes ≥ 4) — if the gate is clean, it can ship." : "below the bar (every axis must be ≥ 4) — fix the top issues and iterate.");
     return 0;
   },
@@ -68,6 +72,7 @@ export const verdict: Command = {
       ok(`#${winner} is now the best iteration`);
     } else log(`best stays #${s.best}`);
     writeState(slug, s);
+    emitResult({ winner: winner!, best: s.best ?? null, verdicts: s.verdicts.length });
     return 0;
   },
 };
@@ -82,6 +87,7 @@ export const restore: Command = {
     const n = a._[1] === "best" ? s.best : Number(a._[1]);
     if (!n) throw new UsageError("which iteration? (number or 'best')");
     restoreIteration(slug, n);
+    emitResult({ restored: n });
     ok(`restored iteration ${n} sources into projects/${slug}`);
     return 0;
   },
@@ -150,6 +156,7 @@ export const compare: Command = {
       join(packDir, "README.md"),
       `# Compare #${na} vs #${nb}\n\nJudge each axis (intent, composition, typography, temporal, craft) A vs B in pack-ab.png, then again in pack-ba.png.\nIf the two passes disagree, it's a tie — keep the incumbent.\n\nRecorded scores: #${na} ${JSON.stringify(scoresOf(na) ?? {})} · #${nb} ${JSON.stringify(scoresOf(nb) ?? {})}\n`,
     );
+    emitResult({ a: na, b: nb, packs: outs, readme: join(packDir, "README.md"), scores: { [na]: scoresOf(na) ?? null, [nb]: scoresOf(nb) ?? null } });
     for (const o of outs) log(`  ${rel(o)}`);
     ok("read both packs, then: npx ct verdict " + `${slug} ${na} ${nb} --winner <n> --reason "…"`);
     return 0;

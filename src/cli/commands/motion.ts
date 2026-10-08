@@ -14,6 +14,7 @@ import { onionSkin } from "../lib/onion.js";
 import { buildFor } from "../lib/project.js";
 import { sheetHtml } from "../lib/sheet.js";
 import { currentIteration, readFindings, writeFindings } from "../lib/store.js";
+import { emitResult } from "../lib/result.js";
 import { render } from "./render.js";
 
 export const motion: Command = {
@@ -44,6 +45,7 @@ export const motion: Command = {
     writeFileSync(join(it.dir, "motion.json"), JSON.stringify({ baseline: curve.baseline, ...an.stats, deadZones: an.deadZones, spikes: an.spikes }, null, 2) + "\n");
     const prior = readFindings(it.dir, "render-findings.json").filter((f) => !f.rule.startsWith("motion-"));
     writeFindings(it.dir, "render-findings.json", [...prior, ...an.findings]);
+    emitResult({ iteration: it.n, render: file, image: out, stats: an.stats, deadZones: an.deadZones, spikes: an.spikes, findings: an.findings });
     if (an.findings.length) log(formatFindings(an.findings));
     ok(`${rel(out)} · active ${(an.stats.activeShare * 100).toFixed(0)}% of frames · ${an.deadZones.length} dead zone(s) · ${an.spikes.length} jolt(s)`);
     return 0;
@@ -93,6 +95,7 @@ export const strip: Command = {
     });
     const out = join(it.dir, `strip-${sceneId}.png`);
     await withBrowser((browser) => screenshotHtml(html, out, { width: 1568, baseDir: dir, browser }));
+    emitResult({ iteration: it.n, scene: sceneId, from, to, image: out, onion });
     ok(`${rel(out)} — read it to judge paths, direction and overlaps`);
     return 0;
   },

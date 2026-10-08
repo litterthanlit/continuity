@@ -1,5 +1,6 @@
 import { buildProject, type BuildResult } from "../../build/build.js";
 import { lintSources } from "../../lint/source.js";
+import { emitResult } from "./result.js";
 import { lintTimeline } from "../../lint/timeline.js";
 import { buildDir, projectDir, rel } from "../../paths.js";
 import { countBySeverity, formatFindings, type Finding } from "../../spec/findings.js";
@@ -57,6 +58,7 @@ export async function buildAndLint(slug: string, opts: { hf?: boolean; scene?: s
 
 export function report(title: string, findings: Finding[], opts: { json?: boolean; quietOk?: boolean } = {}): boolean {
   const c = countBySeverity(findings);
+  emitResult({ title, ok: c.errors === 0, ...c, findings });
   if (opts.json) {
     log(JSON.stringify({ ok: c.errors === 0, ...c, findings }, null, 2));
     return c.errors === 0;

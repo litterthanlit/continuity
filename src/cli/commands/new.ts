@@ -6,6 +6,7 @@ import { themes } from "../../themes/index.js";
 import { flagStr, requireSlug, UsageError } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { log, ok } from "../lib/log.js";
+import { emitResult } from "../lib/result.js";
 
 /** Scene files are ES modules; in a CommonJS repo, scope the projects dir as ESM. */
 export function ensureEsmProjects(): boolean {
@@ -43,6 +44,7 @@ export const newProject: Command = {
     sb.format.aspect = aspect;
     sb.theme = theme;
     writeFileSync(sbPath, JSON.stringify(sb, null, 2) + "\n");
+    emitResult({ slug, dir, aspect, theme, files: ["brief.md", "storyboard.json", "scenes/hook.tsx"].map((f) => join(dir, f)) });
     ok(`created ${rel(dir)}`);
     log(`next: fill ${rel(join(dir, "brief.md"))}, write the storyboard, then \`npx ct check ${slug}\``);
     return 0;

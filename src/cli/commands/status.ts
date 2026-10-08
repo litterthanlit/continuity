@@ -5,6 +5,7 @@ import { requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { color, log } from "../lib/log.js";
 import { iterationDir, readState } from "../lib/store.js";
+import { emitResult } from "../lib/result.js";
 
 export const status: Command = {
   name: "status",
@@ -14,6 +15,15 @@ export const status: Command = {
     const slug = requireSlug(a);
     const s = readState(slug);
     const { combined } = sourceHash(slug);
+    emitResult({
+      slug,
+      best: s.best ?? null,
+      currentHash: combined,
+      current: s.iterations.find((i) => i.hash === combined)?.n ?? null,
+      changedSinceLast: !s.iterations.some((i) => i.hash === combined),
+      iterations: s.iterations.map((it) => ({ ...it, dir: iterationDir(slug, it.n) })),
+      verdicts: s.verdicts,
+    });
     if (!s.iterations.length) {
       log("no iterations yet — run `npx ct check " + slug + "`");
       return 0;

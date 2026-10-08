@@ -6,6 +6,7 @@ import { hfCheck } from "../lib/check.js";
 import type { Command } from "../lib/command.js";
 import { log, step } from "../lib/log.js";
 import { probeProject } from "../lib/probe.js";
+import { emitResult } from "../lib/result.js";
 import { buildAndLint, buildSummary, report } from "../lib/project.js";
 import { currentIteration, updateIteration, writeFindings } from "../lib/store.js";
 
@@ -35,6 +36,7 @@ export const check: Command = {
     writeFindings(it.dir, scene ? `findings-${scene}.json` : "findings.json", scoped);
     const c = countBySeverity(scoped);
     if (!scene) updateIteration(slug, it.n, { gate: { ok: c.errors === 0, errors: c.errors, warnings: c.warnings, at: new Date().toISOString() } });
+    emitResult({ iteration: it.n, scene: scene ?? null, findingsFile: join(it.dir, scene ? `findings-${scene}.json` : "findings.json") });
     const passed = report(`check (iteration ${it.n}${scene ? `, scene ${scene}` : ""})`, scoped, { json });
     if (!json) log(`findings → ${rel(join(it.dir, scene ? `findings-${scene}.json` : "findings.json"))}${scene ? "  (scene check — run the full `ct check` before calling the project done)" : ""}`);
     return passed ? 0 : 1;
