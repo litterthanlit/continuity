@@ -71,6 +71,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
 | `.claude/` | this repo's session config: `skills`/`agents`/`commands` are symlinks into `plugin/`; `settings.json` wires `plugin/hooks/*`; `hooks/session-start.sh` installs deps in cloud sessions |
 | `bin/ct.mjs` | the `ct` launcher (tsx + scene tsconfig + `continuity`/preact alias hook) |
+| `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
 | `projects/_kit`, `_defects*` | component gallery (reference) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
@@ -90,6 +91,7 @@ npx ct render <slug> [--draft]
 npx ct motion <slug>          # motion-energy chart of the render: rhythm, dead zones, jolts
 npx ct score|compare|verdict|restore <slug> …   # critique bookkeeping, keep the best
 npx ct status <slug> · npx ct report <slug> · npx ct licenses · npx ct doctor
+npx ct mcp [--config]          # MCP server (stdio) for other agent clients — tools wrap these commands
 pnpm verify                    # typecheck + eslint + unit tests (engine changes)
 CT_SLOW=1 pnpm test            # + browser tests: seeded defects, golden frames
 ```
@@ -102,6 +104,8 @@ CT_SLOW=1 pnpm test            # + browser tests: seeded defects, golden frames
 - Claude Code plugin `continuity` from `plugin/`, listed by `.claude-plugin/marketplace.json`.
   Edit skills/agents/commands/hooks **in `plugin/`** (the `.claude/` paths are symlinks).
   Keep `plugin/.claude-plugin/plugin.json` `version` equal to `package.json` (a test checks).
+- Commands report machine-readable results with `emitResult()` (`src/cli/lib/result.ts`) —
+  the MCP tools depend on them; a new command or field the agent needs goes there too.
 - Paths: engine files resolve from `PKG_ROOT`; projects/build/out from `WORK_ROOT`
   (nearest `continuity.json`). Never join paths onto `node_modules` — use `resolveDep`.
 - Before a release: `pnpm verify`, `CT_SLOW=1 pnpm test`, `node scripts/pack-smoke.mjs --browser`

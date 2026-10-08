@@ -73,6 +73,23 @@ try {
     ct("render", "demo", "--draft");
     assert(existsSync(join(repo, "out/demo/latest-draft.mp4")), "draft render missing");
   }
+  // The MCP server from the installed package answers over stdio.
+  {
+    const { Client } = await import("@modelcontextprotocol/client");
+    const { StdioClientTransport } = await import("@modelcontextprotocol/client/stdio");
+    console.log("$ ct mcp  (initialize → tools/list → lint demo)");
+    const transport = new StdioClientTransport({ command: join(repo, "node_modules", ".bin", "ct"), args: ["mcp"], cwd: repo, env: { ...process.env, CT_ROOT: repo } });
+    const client = new Client({ name: "pack-smoke", version: "0" });
+    await client.connect(transport);
+    const { tools } = await client.listTools();
+    assert(tools.length >= 20 && tools.some((t) => t.name === "contact_sheet"), "mcp: tools missing");
+    const lint = await client.callTool({ name: "lint", arguments: { slug: "demo", fast: true } });
+    assert(!lint.isError && lint.structuredContent?.ok === true, `mcp: lint failed: ${JSON.stringify(lint).slice(0, 300)}`);
+    const { resources } = await client.listResources();
+    assert(resources.some((r) => r.uri === "continuity://guide/motion-craft"), "mcp: guides not shipped in the package");
+    await client.close();
+    console.log(`  ✔ mcp: ${tools.length} tools, ${resources.length} guide resources, lint ok`);
+  }
   assert(stamp(pkgDir) === before, "ct wrote inside node_modules");
   console.log(`\n✔ pack smoke passed (${pm}${browser ? ", browser" : ""})${keep ? ` — kept ${repo}` : ""}`);
 } finally {

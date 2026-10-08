@@ -8,6 +8,7 @@ import { init } from "./commands/init.js";
 import { compare, restore, score, verdict } from "./commands/iterate.js";
 import { licenses } from "./commands/licenses.js";
 import { lint } from "./commands/lint.js";
+import { mcp } from "./commands/mcp.js";
 import { motion, strip } from "./commands/motion.js";
 import { newProject } from "./commands/new.js";
 import { render } from "./commands/render.js";
@@ -42,6 +43,7 @@ const COMMANDS: Command[] = [
   licenses,
   gateStatus,
   doctor,
+  mcp,
 ];
 
 function help() {

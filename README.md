@@ -133,11 +133,48 @@ The plugin (`plugin/`, namespaced `continuity:`) holds:
 `ct init` adds the hard rules to your `CLAUDE.md` (a managed block) and allows
 `Bash(npx ct:*)` — plugins can't grant permissions themselves.
 
+## Any MCP client (Cursor, Codex, VS Code, Claude Desktop, …)
+
+`ct mcp` is a stdio MCP server with the whole studio as tools. Contact sheets,
+stills, motion strips and compare packs come back **as images**; gate findings come
+back as **structured data**. The guides (motion craft, critique rubric, API) are
+resources, and `make-video` / `review` are prompts.
+
+```json
+{
+  "mcpServers": {
+    "continuity": {
+      "command": "npx",
+      "args": ["-y", "--package=@litterthanlit/continuity", "ct", "mcp"],
+      "env": { "CT_ROOT": "/absolute/path/to/your/repo" }
+    }
+  }
+}
+```
+
+`npx ct mcp --config` prints this for Claude Desktop, Cursor, VS Code, Codex and Claude Code.
+
+| Group | Tools |
+|---|---|
+| Setup | `doctor` · `init_repo` · `list_projects` · `new_project` |
+| Project files (sandboxed to a project's sources; writes return lint findings) | `list_project_files` · `read_project_file` · `write_project_file` |
+| Gate | `lint` · `check` · `timeline` |
+| Eyes (images) | `stills` · `contact_sheet` · `motion_strip` · `motion_analysis` |
+| Ship | `render` · `report` |
+| Bookkeeping | `status` · `score` · `compare` · `verdict` · `restore` |
+| Reference | `catalog` |
+
+Every operation runs in a fresh `ct` child process, so scene edits are always
+picked up and nothing but the protocol touches stdout. Long checks and renders
+send progress notifications; if your client caps tool calls (often 60s), raise the
+timeout or use `check` with `scene` and `render` with `draft` while iterating.
+Claude Code users don't need this: the plugin drives `npx ct` directly.
+
 ## CLI
 
 `npx ct <command>` — `init · new · build · lint · check · timeline · stills · sheet ·
 strip · render · motion · status · score · compare · verdict · restore · report ·
-docs · licenses · gate-status · doctor`. `npx ct <command> --help` for options.
+docs · licenses · gate-status · doctor · mcp`. `npx ct <command> --help` for options.
 
 ## Design system
 
@@ -174,7 +211,6 @@ packaged this way: [`docs/decisions/0002-distribution.md`](docs/decisions/0002-d
 
 - Voiceover with word timings + beat-synced music (storyboard `audio` track).
 - Docker image pinning Chrome/fonts/ffmpeg for pixel-exact CI; cloud rendering.
-- An MCP server exposing the same gate and eyes to non-Claude-Code agents.
 - Multi-aspect variants from one storyboard (16:9 ↔ 9:16 ↔ 1:1).
 - A web studio over the same CLI; a pairwise judge calibrated on the bench.
 

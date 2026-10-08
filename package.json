@@ -43,6 +43,7 @@
     "bin",
     "src",
     "templates",
+    "plugin/skills",
     "README.md",
     "LICENSE",
     "NOTICE"
@@ -67,6 +68,7 @@
     "@fontsource/instrument-serif": "5.3.0",
     "@fontsource/noto-sans-symbols": "5.3.0",
     "@fontsource/noto-sans-symbols-2": "5.3.0",
+    "@modelcontextprotocol/server": "2.1.0",
     "@tailwindcss/node": "4.3.3",
     "esbuild": "0.28.2",
     "fontkit": "2.0.4",
@@ -82,6 +84,7 @@
   },
   "devDependencies": {
     "@litterthanlit/continuity": "link:.",
+    "@modelcontextprotocol/client": "2.1.0",
     "@types/node": "26.6.4",
     "eslint": "10.12.0",
     "typescript": "6.0.3",
