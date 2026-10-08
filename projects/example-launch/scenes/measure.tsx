@@ -1,50 +1,49 @@
 import { scene, El, Window, Pill } from "continuity";
 import { Chapter, SURFACE } from "../lib/chapter.js";
+import storyboard from "../storyboard.json" with { type: "json" };
 
-// 03 · Measure — the motion-energy curve of THIS film (31s, 7 scenes) wipes on under
-// a playhead, then three green verdict pills. Peaks sit just after each cut (pushes,
-// entrances), shoulders on mid-scene beats, valleys on holds; never flat.
+// 03 · Measure — the motion-energy curve of THIS film wipes on under a playhead, then
+// three green verdict pills. Peaks sit just after each cut (pushes, entrances),
+// shoulders on mid-scene beats, valleys on holds; never flat.
 
-/** The film's scenes and where each starts (s) — the chart's time axis. */
-const FILM = 31;
-const SCENES: [string, number][] = [
-  ["hook", 0],
-  ["studio", 3.4],
-  ["plan", 7.3],
-  ["check", 11.6],
-  ["measure", 17.7],
-  ["critic", 22.2],
-  ["end", 26.8],
-];
+/**
+ * The film's time axis, derived from the storyboard so it never drifts from the cut:
+ * each scene starts at the previous start + duration − its outgoing transition overlap.
+ */
+const SCENES: [string, number][] = [];
+{
+  let t = 0;
+  for (const sc of storyboard.scenes as { id: string; duration: number; transition?: { duration: number } }[]) {
+    SCENES.push([sc.id, t]);
+    t += sc.duration - (sc.transition?.duration ?? 0);
+  }
+}
+const lastScene = storyboard.scenes[storyboard.scenes.length - 1];
+const FILM = SCENES[SCENES.length - 1][1] + lastScene.duration; // the cut's length (s)
 
-/** Motion energy over the film: [seconds, 0..1]. */
-const ENERGY: [number, number][] = [
-  [0, 0.1],
-  [0.8, 0.64], // hook: words rise
-  [2.5, 0.42], // "see" blurs
-  [3.2, 0.17], // hold → dip
-  [4.0, 0.8], // studio: headline
-  [5.3, 0.55], // rail draws, pills pop
-  [6.8, 0.2], // hold
-  [7.9, 0.84], // plan: window rises
-  [9.5, 0.5], // lanes + ticks
-  [11.0, 0.18], // hold
-  [12.2, 0.84], // check: sheet + frames
-  [14.2, 0.42], // terminal types, red findings hold
-  [16.2, 0.92], // the fix — the film's punch
-  [17.3, 0.2], // hold
-  [18.3, 0.82], // measure: curve draws
-  [20.0, 0.48], // verdict pills
-  [21.5, 0.18], // hold
-  [22.8, 0.8], // critic: scorecard
-  [24.2, 0.55], // bars fill
-  [25.4, 0.46], // verdict
-  [26.4, 0.16], // hold → dip
-  [27.4, 0.76], // end: wordmark
-  [28.4, 0.44], // CTA
-  [29.8, 0.15], // held end card
-  [31, 0.12],
-];
+/**
+ * Energy shape per scene: [offset s, 0..1]. A positive offset is from the scene's start;
+ * a negative one is seconds before the next cut (the hold before it).
+ */
+const SHAPE: Record<string, [number, number][]> = {
+  hook: [[0, 0.1], [0.8, 0.64] /* words rise */, [2.5, 0.42] /* "see" blurs */, [-0.2, 0.17] /* hold → dip */],
+  studio: [[0.6, 0.8] /* headline */, [1.9, 0.55] /* rail + pills */, [-0.5, 0.2]],
+  plan: [[0.6, 0.84] /* window rises */, [2.2, 0.5] /* lanes + ticks */, [-0.6, 0.18]],
+  check: [[0.6, 0.84] /* sheet + frames */, [2.6, 0.42] /* findings, hold the red */, [4.6, 0.92] /* the fix: the punch */, [-0.4, 0.2]],
+  measure: [[0.6, 0.82] /* push + headline */, [2.3, 0.48] /* verdict pills */, [-0.7, 0.18]],
+  critic: [[0.6, 0.8] /* scorecard */, [2.0, 0.55] /* bars fill */, [3.2, 0.46] /* verdict */, [-0.4, 0.16] /* hold → dip */],
+  end: [[0.6, 0.76] /* wordmark */, [1.6, 0.44] /* CTA */, [3.0, 0.15] /* held end card */],
+};
+
+/** Motion energy over the film: [seconds, 0..1], strictly increasing in time. */
+const ENERGY: [number, number][] = SCENES.flatMap(([id, start], i) => {
+  const next = i + 1 < SCENES.length ? SCENES[i + 1][1] : FILM;
+  return (SHAPE[id] ?? []).map(([o, v]): [number, number] => [o < 0 ? next + o : start + o, v]);
+});
+ENERGY.push([FILM, 0.12]);
+for (let i = 1; i < ENERGY.length; i++) {
+  if (!(ENERGY[i][0] > ENERGY[i - 1][0])) throw new Error(`measure: energy keyframes out of order at ${ENERGY[i][0]}s`);
+}
 
 // The shared chapter surface: full title-safe width, same top edge in every chapter.
 const WIN_W = SURFACE.width; // 1728
