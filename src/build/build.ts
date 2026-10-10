@@ -8,13 +8,14 @@ import { drainMissingText, textProxy, withScene, type SceneContext } from "../ki
 import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
 import { transitionTweens } from "../motion/transitions.js";
-import type { PartCounts, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
+import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
 import { resolveKit, getKit, type TypeKit } from "../themes/kits.js";
 import { buildFamilies, classCandidates, compileCss, fontFaceCss, fontLoadList } from "./css.js";
+import { FONT_CHANNELS, typeBaseOf } from "./typebase.js";
 import { missingGlyphs } from "./glyphs.js";
 import { sourceHash } from "./hash.js";
 import { runtimeBundle } from "./runtime-bundle.js";
@@ -35,6 +36,8 @@ export interface ElementInfo {
   ancestors: string[];
   /** Inside a UI-kit mockup (window, card, code…): text is imagery to glance at, not copy to read. */
   ui: boolean;
+  /** The face it is drawn in (role, family, axis ranges) — for the axis lint rules. */
+  font?: { role: string; family: string; category: string; ranges: Partial<Record<PropName, [number, number]>>; nowrap: boolean };
 }
 
 export interface BuildResult {
@@ -90,6 +93,11 @@ async function loadTheme(srcDir: string, name: string): Promise<Theme> {
 }
 
 const collapse = (s: string) => s.replace(/\s+/g, " ").trim();
+
+function fontInfo(el: unknown, kit: TypeKit): NonNullable<ElementInfo["font"]> {
+  const b = typeBaseOf(el as Parameters<typeof typeBaseOf>[0], kit);
+  return { role: b.role, family: b.family.family, category: b.family.category, ranges: b.ranges, nowrap: b.nowrap };
+}
 
 function graphemeCount(s: string): number {
   const seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -230,7 +238,11 @@ export async function buildProject(
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
             return node ? estimateParts(node as unknown as Element)[mode] : undefined;
           };
-          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf);
+          const baseOf = (target: string) => {
+            const node = viewDoc.querySelector(`[data-ct="${target}"]`);
+            return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
+          };
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf);
           try {
             def.motion(mb, ctx);
           } catch (e) {
@@ -238,6 +250,17 @@ export async function buildProject(
           }
           tl.tweens.push(...mb.tweens);
           tl.loops.push(...mb.loops);
+          // Font channels start from the element's settled face, not from neutral values.
+          for (const t of [...mb.tweens, ...mb.loops]) {
+            const props = "props" in t ? Object.keys(t.props) : [t.prop];
+            const font = props.filter((p) => p in FONT_CHANNELS) as PropName[];
+            if (!font.length) continue;
+            const b = baseOf(t.target);
+            if (!b) continue;
+            tl.bases ??= {};
+            const entry = (tl.bases[t.target] ??= {});
+            for (const p of font) entry[p] = b.values[p];
+          }
         }
       }
     }
@@ -296,6 +319,7 @@ export async function buildProject(
 
   const elements: ElementInfo[] = [];
   const seen = new Map<string, number>();
+  const fontTargets = new Set(timeline.scenes.flatMap((sc) => Object.keys(sc.bases ?? {})));
   for (const el of document.querySelectorAll("[data-ct]") as unknown as HTMLElement[]) {
     const id = el.getAttribute("data-ct")!;
     seen.set(id, (seen.get(id) ?? 0) + 1);
@@ -318,6 +342,7 @@ export async function buildProject(
       decor: el.hasAttribute("data-layout-ignore") || Boolean(el.closest("[data-layout-ignore]")),
       ancestors,
       ui: Boolean(el.closest("[data-ct-ui]")),
+      ...(fontTargets.has(id) ? { font: fontInfo(el, sceneKit.get(scene) ?? kit) } : {}),
     });
   }
   for (const [id, n] of seen) {

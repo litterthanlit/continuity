@@ -12,7 +12,7 @@
  * NOTE: avoid template literals in this file's output — the HyperFrames bundler
  * rejects interpolated selectors; esbuild is configured to lower them anyway.
  */
-import { compileScene, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
+import { compileScene, mergeVariationSettings, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
 import type { PartCounts, SplitMode, Timeline } from "../motion/types.js";
 
 interface CtData {
@@ -51,6 +51,8 @@ const sceneEls = new Map<string, HTMLElement>();
 const partEls = new Map<string, HTMLElement[]>();
 const partCounts: PartCounts = {};
 const compiled = new Map<string, CompiledScene>();
+/** Settled font-variation-settings of elements whose axes animate (kit axes such as WONK survive). */
+const variationBase = new Map<HTMLElement, string>();
 
 function collect() {
   document.querySelectorAll<HTMLElement>("[data-ct]").forEach((el) => {
@@ -237,6 +239,20 @@ function apply(sceneId: string, t: number) {
     if (s.letterSpacing !== undefined) st.letterSpacing = s.letterSpacing;
     if (s.strokeDashoffset !== undefined) st.strokeDashoffset = s.strokeDashoffset;
     if (s.text !== undefined && el.textContent !== s.text) el.textContent = s.text;
+    if (s.fontWeight !== undefined) st.fontWeight = s.fontWeight;
+    if (s.fontStretch !== undefined) st.fontStretch = s.fontStretch;
+    if (s.fontVariation !== undefined) st.fontVariationSettings = mergeVariationSettings(variationBase.get(el) ?? "normal", s.fontVariation);
+  });
+}
+
+/** Read each axis-animated element's settled variation settings before any inline style is written. */
+function captureVariationBases() {
+  compiled.forEach((c) => {
+    c.channels.forEach((byProp, key) => {
+      if (!byProp.has("opsz") && !byProp.has("soft")) return;
+      const el = resolveKey(key);
+      if (el && !variationBase.has(el)) variationBase.set(el, getComputedStyle(el).fontVariationSettings);
+    });
   });
 }
 
@@ -252,6 +268,7 @@ async function prepare() {
     document.documentElement.classList.remove("ct-measuring");
   }
   for (const s of data.timeline.scenes) compiled.set(s.scene, compileScene(s, partCounts));
+  captureVariationBases();
   // Paint the first frame of every scene so nothing flashes in its final state.
   for (const s of data.timeline.scenes) apply(s.scene, 0);
 }

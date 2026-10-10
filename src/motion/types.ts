@@ -37,6 +37,10 @@ export const PROPS = [
   "tracking", // letter-spacing, em
   "draw", // 0..1 svg stroke reveal (pathLength=1)
   "counter", // number rendered as text
+  "wght", // font-weight (variable families)
+  "wdth", // font-stretch, % (width-variable families)
+  "opsz", // optical size axis
+  "soft", // Fraunces SOFT axis 0..100
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
@@ -79,7 +83,14 @@ export const BASE_VALUES: Record<PropName, number> = {
   tracking: 0,
   draw: 1,
   counter: 0,
+  wght: 400,
+  wdth: 100,
+  opsz: 16,
+  soft: 0,
 };
+
+/** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
+export const VARIATION_AXES: Partial<Record<PropName, string>> = { opsz: "opsz", soft: "SOFT" };
 
 export type TweenKind =
   | "enter"
@@ -157,6 +168,11 @@ export interface SceneTimeline {
   beats: Record<string, number>;
   tweens: Tween[];
   loops: Loop[];
+  /**
+   * Settled values of font channels per element (from its type kit role and
+   * classes): what `from: null` and loops start from, instead of BASE_VALUES.
+   */
+  bases?: Record<string, Partial<Record<PropName, number>>>;
 }
 
 export interface Timeline {

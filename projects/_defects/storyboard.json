@@ -1,5 +1,5 @@
 {
-  "title": "Seeded static defects (test fixture \u2014 every lint/build rule must fire)",
+  "title": "Seeded static defects (test fixture — every lint/build rule must fire)",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -21,6 +21,18 @@
         "a": "Alpha",
         "b": "Beta",
         "c": "Gamma"
+      }
+    },
+    {
+      "id": "axes",
+      "type": "atelier",
+      "duration": 3,
+      "intent": "Variable-axis defects (atelier: Newsreader display, wght 200–800, no wdth).",
+      "beats": [],
+      "text": {
+        "thin": "Hairline serif display",
+        "wide": "Too wide to stretch",
+        "heavy": "Heavy"
       }
     }
   ]

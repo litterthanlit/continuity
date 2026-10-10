@@ -28,6 +28,10 @@ describe("seeded static defects (projects/_defects)", () => {
       "lint:late-entrance",
       "lint:slow-open",
       "lint:dead-air",
+      "lint:axis-reflow",
+      "lint:axis-unsupported",
+      "lint:axis-range",
+      "lint:hairline-weight",
     ]) {
       expect(ids, r).toContain(r);
     }

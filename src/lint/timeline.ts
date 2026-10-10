@@ -36,6 +36,10 @@ export const RULES = {
   "transition-too-long": "Scene transitions over 1s stall the edit.",
   "mask-needs-split": "Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.",
   "cut-off-beat": "Scene cut is not on the music grid (bpm).",
+  "axis-reflow": "Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.",
+  "axis-unsupported": "The element's family has no such axis, so the channel animates nothing (e.g. wdth on Geist, soft outside Fraunces).",
+  "axis-range": "Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.",
+  "hairline-weight": "Serif type below weight 300 shimmers after video compression.",
 } as const;
 export type RuleId = keyof typeof RULES;
 
@@ -131,6 +135,27 @@ export function lintTimeline(build: BuildResult): Finding[] {
       }
       if (t.split && t.stagger && s.lastEnd - s.end > 1.4 && !allowed(t, "stagger-too-long")) {
         add("stagger-too-long", "warning", sc, `${localOf(t.target)} cascade lasts ${r2(s.lastEnd - t.start)}s`, { ...where, suggestion: "tighten the stagger or split by a coarser unit" });
+      }
+      const font = elements.get(t.target)?.font;
+      const axes = (Object.keys(t.props) as PropName[]).filter((p) => p === "wght" || p === "wdth" || p === "opsz" || p === "soft");
+      if (font && axes.length) {
+        for (const p of axes) {
+          const range = font.ranges[p];
+          const [from, to] = t.props[p]!;
+          if (!range) {
+            if (!allowed(t, "axis-unsupported")) add("axis-unsupported", "warning", sc, `${localOf(t.target)}: ${font.family} has no ${p} axis — this tween animates nothing`, { ...where, suggestion: "use a kit whose family has the axis (flexion/broadside for wdth, wonk for soft)" });
+          } else if ([from, to].some((v) => v !== null && (v < range[0] - 0.01 || v > range[1] + 0.01)) && !allowed(t, "axis-range")) {
+            add("axis-range", "info", sc, `${localOf(t.target)}: ${p} ${from ?? "…"}→${to} leaves ${font.family}'s ${range[0]}–${range[1]}`, { ...where, suggestion: `keep ${p} within ${range[0]}–${range[1]}` });
+          }
+        }
+        const words = (elements.get(t.target)?.text ?? "").split(" ").filter(Boolean).length;
+        if ((axes.includes("wght") || axes.includes("wdth")) && !t.split && !font.nowrap && words >= 2 && !allowed(t, "axis-reflow")) {
+          add("axis-reflow", "warning", sc, `${localOf(t.target)}: ${axes.filter((p) => p === "wght" || p === "wdth").join("+")} on wrapping text re-breaks lines mid-motion`, { ...where, suggestion: 'split: "chars" or "words", or add whitespace-nowrap' });
+        }
+        const settle = t.props.wght?.[1];
+        if (settle !== undefined && settle < 300 && font.category === "serif" && !allowed(t, "hairline-weight")) {
+          add("hairline-weight", "warning", sc, `${localOf(t.target)}: ${font.family} settles at weight ${settle}`, { ...where, suggestion: "keep serif type at 300+ (400+ for small sizes)" });
+        }
       }
       if (t.preset && (t.preset === "maskUp" || t.preset === "maskDown" || t.preset === "maskOut") && !t.split && !allowed(t, "mask-needs-split")) {
         add("mask-needs-split", "info", sc, `${localOf(t.target)} uses ${t.preset} without split`, { ...where, suggestion: 'add split: "lines" (or wrap it in an overflow-hidden parent)' });

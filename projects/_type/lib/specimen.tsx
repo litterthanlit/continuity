@@ -25,9 +25,11 @@ export function Specimen({ text, value, decimals = 0 }: { text: Record<string, s
   );
 }
 
-export function specimenMotion(m: MotionBuilder, to: number, decimals = 0) {
+/** Shared choreography; `title` replaces the default line mask (axis showpieces animate the title themselves). */
+export function specimenMotion(m: MotionBuilder, to: number, decimals = 0, title?: (m: MotionBuilder) => void) {
   m.enter("eyebrow", "fadeBlur", { at: "b1" });
-  m.enter("title", "maskUp", { at: "b1+0.15", split: "lines" });
+  if (title) title(m);
+  else m.enter("title", "maskUp", { at: "b1+0.15", split: "lines" });
   m.enter("body", "rise", { at: "b1+0.6" });
   m.enter("stat-label", "fade", { at: "b1+0.8" });
   m.counter("stat", { from: 0, to, decimals, at: "b1+0.8", duration: "hero" });
