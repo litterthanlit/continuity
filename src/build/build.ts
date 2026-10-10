@@ -367,7 +367,7 @@ export async function buildProject(
   const assets = join(src, "assets");
   if (existsSync(assets)) cpSync(assets, join(dir, "assets"), { recursive: true });
 
-  const css = fontFaceCss(theme) + "\n" + (await compileCss(theme, classCandidates(body), PKG_ROOT));
+  const css = fontFaceCss(uniqueFamilies(theme)) + "\n" + (await compileCss(theme, classCandidates(body), PKG_ROOT));
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -386,7 +386,7 @@ ${body}
 </html>
 `;
   writeFileSync(join(dir, "index.html"), html);
-  writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(theme) })};\n`);
+  writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(uniqueFamilies(theme)) })};\n`);
   writeFileSync(join(dir, "continuity-motion.js"), await runtimeBundle());
   // Not named *.motion.json on purpose: HyperFrames auto-runs sidecars and each
   // assertion costs ~10s of timeline sweeping. `ct check --deep` activates it.

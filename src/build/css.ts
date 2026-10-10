@@ -29,22 +29,26 @@ export function uniqueFamilies(theme: Theme): FontFamily[] {
   return [...seen.values()];
 }
 
-/** @font-face rules pointing at fonts copied next to the composition. */
-export function fontFaceCss(theme: Theme): string {
-  return uniqueFamilies(theme)
+/**
+ * @font-face rules pointing at fonts copied next to the composition. Width-
+ * variable files declare their `font-stretch` range — without it Chrome clamps
+ * font-stretch to 100% and the wdth axis never applies.
+ */
+export function fontFaceCss(families: FontFamily[]): string {
+  return families
     .flatMap((f) =>
       f.faces.map(
         (face) =>
           `@font-face{font-family:"${f.family}";src:url("fonts/${basename(face.file)}") format("woff2");` +
-          `font-weight:${face.weight};font-style:${face.style};font-display:block;}`,
+          `font-weight:${face.weight};font-style:${face.style};${face.stretch ? `font-stretch:${face.stretch};` : ""}font-display:block;}`,
       ),
     )
     .join("\n");
 }
 
 /** Font shorthands the runtime preloads before measuring/splitting text. */
-export function fontLoadList(theme: Theme): string[] {
-  return uniqueFamilies(theme).flatMap((f) =>
+export function fontLoadList(families: FontFamily[]): string[] {
+  return families.flatMap((f) =>
     f.faces.map((face) => {
       const w = face.weight.includes(" ") ? face.weight.split(" ").map(Number).reduce((a, b) => Math.round((a + b) / 2)) : face.weight;
       return `${face.style} ${w} 1em "${f.family}"`;
