@@ -32,6 +32,11 @@ describe("seeded static defects (projects/_defects)", () => {
       "lint:axis-unsupported",
       "lint:axis-range",
       "lint:hairline-weight",
+      "lint:transition-too-long",
+      "lint:transition-too-short",
+      "lint:transition-language",
+      "lint:transition-bounce",
+      "lint:transition-strobe",
     ]) {
       expect(ids, r).toContain(r);
     }

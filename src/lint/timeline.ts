@@ -1,9 +1,11 @@
 import type { BuildResult, ElementInfo } from "../build/build.js";
-import { isLinear } from "../motion/easing.js";
+import { isLinear, peakSlope } from "../motion/easing.js";
 import { resolveScene } from "../motion/evaluate.js";
-import { TOKEN_TOLERANCE, durations, readTime } from "../motion/tokens.js";
+import { TOKEN_TOLERANCE, durations, eases, readTime } from "../motion/tokens.js";
+import { TRANSITION_DEFS } from "../motion/transitions.js";
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
 import type { Finding, Severity } from "../spec/findings.js";
+import { ASPECTS, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 
 /**
  * Timeline lint — measures motion quality structurally, on data.
@@ -33,7 +35,11 @@ export const RULES = {
   "split-too-busy": "Character split on long copy is slow and noisy. Split by words or lines instead.",
   "stagger-too-long": "The stagger cascade takes too long to complete.",
   "camera-too-fast": "Camera moves faster than ~15% zoom/s or 160px/s feel jarring.",
-  "transition-too-long": "Scene transitions over 1s stall the edit.",
+  "transition-too-long": "A transition longer than its type's craft range stalls the edit (a 0.8s whip is no longer a whip).",
+  "transition-too-short": "A transition shorter than its type's range reads as a glitch, not a move.",
+  "transition-language": "More than two transition types in one video reads as a template. Pick one primary (most cuts) and at most one accent; hard cuts are free.",
+  "transition-bounce": "Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, sharp, standard).",
+  "transition-strobe": "A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or use whip.",
   "mask-needs-split": "Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.",
   "cut-off-beat": "Scene cut is not on the music grid (bpm).",
   "axis-reflow": "Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.",
@@ -166,9 +172,6 @@ export function lintTimeline(build: BuildResult): Finding[] {
         if ((ds > 0.15 || dx > 160) && !allowed(t, "camera-too-fast")) {
           add("camera-too-fast", "warning", sc, `camera moves ${ds > 0.15 ? r2(ds * 100) + "% zoom/s" : Math.round(dx) + "px/s"}`, { ...where, suggestion: "slow it down or make it a deliberate cut" });
         }
-      }
-      if (t.kind === "transition" && t.duration > 1 && !allowed(t, "transition-too-long")) {
-        add("transition-too-long", "warning", sc, `transition lasts ${t.duration}s`, where);
       }
     }
 
@@ -316,6 +319,8 @@ export function lintTimeline(build: BuildResult): Finding[] {
     add("slow-open", "warning", sc, `first entrance starts at ${r2(firstMotion)}s`, { time: r2(firstMotion), suggestion: "start the first motion within 0.1–0.4s" });
   }
 
+  if (build.storyboard) out.push(...lintStoryboard(build.storyboard, tl));
+
   const bpm = build.storyboard?.bpm;
   if (bpm) {
     const beat = 60 / bpm;
@@ -323,6 +328,60 @@ export function lintTimeline(build: BuildResult): Finding[] {
       const off = sc.start / beat - Math.round(sc.start / beat);
       if (Math.abs(off * beat) > 1 / tl.fps) add("cut-off-beat", "info", sc, `scene starts ${r2(off * beat)}s off the ${bpm} bpm grid`, { time: sc.start });
     }
+  }
+  return out;
+}
+
+/**
+ * Storyboard-level rules: the edit's transition language and each transition's
+ * craft range. Runs on the storyboard alone (`ct lint --storyboard`), so
+ * directors see it before any scene exists.
+ */
+export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: number; fps: number }): Finding[] {
+  const out: Finding[] = [];
+  const { width, height } = frame ?? ASPECTS[sb.format.aspect];
+  const fps = frame?.fps ?? sb.format.fps;
+  const timings = sceneTimings(sb).scenes;
+  const types: string[] = [];
+  const strobing: string[] = [];
+  sb.scenes.forEach((sc, i) => {
+    const t = sc.transition;
+    if (!t || t.type === "cut" || i === sb.scenes.length - 1) return;
+    const def = TRANSITION_DEFS[t.type];
+    const at = r2(timings[i].start + sc.duration - t.duration);
+    const where = { source: "lint" as const, scene: sc.id, time: at };
+    const kind = t.type === "pushUp" ? "push" : t.type;
+    if (!types.includes(kind)) {
+      types.push(kind);
+      if (types.length === 3) {
+        out.push({ ...where, rule: "transition-language", severity: "warning", message: `a third transition type (${t.type}) after ${types.slice(0, 2).join(" and ")}`, suggestion: "keep one primary transition and one accent; cut everything else" });
+      }
+    }
+    if (t.duration > def.range[1] + 1e-6) {
+      out.push({ ...where, rule: "transition-too-long", severity: "warning", message: `${t.type} lasts ${t.duration}s (craft range ${def.range[0]}–${def.range[1]}s)`, suggestion: `use ≤ ${def.range[1]}s` });
+    } else if (t.duration < def.range[0] - 1e-6) {
+      out.push({ ...where, rule: "transition-too-short", severity: "warning", message: `${t.type} lasts ${t.duration}s (craft range ${def.range[0]}–${def.range[1]}s)`, suggestion: `use ≥ ${def.range[0]}s, or a hard cut` });
+    }
+    const ease = typeof t.ease === "string" ? eases[t.ease] : undefined;
+    if (ease && ease.type === "spring" && ease.damping / (2 * Math.sqrt(ease.stiffness * ease.mass)) < 0.7) {
+      out.push({ ...where, rule: "transition-bounce", severity: "warning", message: `${t.type} uses the springy "${t.ease}" ease — the whole frame overshoots`, suggestion: 'use "inOut", "sharp" or "standard"' });
+    }
+    if ((t.type === "push" || t.type === "pushUp" || t.type === "whip") && !t.blur && (t.type !== "whip" || t.blur === false)) {
+      const vertical = t.type === "pushUp" || t.dir === "up" || t.dir === "down";
+      const curve = typeof t.ease === "string" ? eases[t.ease] : t.ease ? { type: "bezier" as const, p: t.ease } : t.type === "whip" ? eases.sharp : eases.inOut;
+      const v = (peakSlope(curve) * (vertical ? height : width)) / Math.max(1e-3, t.duration * fps);
+      if (v > 200) strobing.push(`${sc.id} (${Math.round(v)}px/frame)`);
+    }
+  });
+  if (strobing.length) {
+    out.push({
+      source: "lint",
+      rule: "transition-strobe",
+      severity: "info",
+      scene: sb.scenes[0].id,
+      message: `${strobing.length} push${strobing.length > 1 ? "es" : ""} without motion blur peak above 200px a frame: ${strobing.join(", ")}`,
+      suggestion: "add blur: true to the push (or use whip)",
+    });
   }
   return out;
 }
