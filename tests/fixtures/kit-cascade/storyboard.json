@@ -1,0 +1,21 @@
+{
+  "title": "Kit cascade contract (test fixture)",
+  "format": { "aspect": "16:9", "fps": 30 },
+  "theme": "mono-dark",
+  "type": "atelier",
+  "scenes": [
+    {
+      "id": "a",
+      "duration": 2,
+      "intent": "Kit roles and explicit utilities.",
+      "text": { "role": "Kit weight", "bold": "Explicit bold", "label": "Label", "wide": "Wide label", "accent": "accent" }
+    },
+    {
+      "id": "b",
+      "type": "broadside",
+      "duration": 2,
+      "intent": "A scoped scene kit.",
+      "text": { "role": "Scoped kit", "accent": "accent" }
+    }
+  ]
+}

@@ -62,6 +62,8 @@ export function analyzeEnergy(curve: EnergyCurve, build: BuildResult): EnergyAna
 
   const cuts = tl.scenes.slice(1).map((s) => s.start);
   const starts = tl.scenes.flatMap((s) => s.tweens.map((t) => s.start + t.start));
+  // Transitions also land hard on purpose (a punch-cut flash dies in two frames).
+  const ends = tl.scenes.flatMap((s) => s.tweens.filter((t) => t.kind === "transition").map((t) => s.start + t.start + t.duration));
   const vals = curve.points.map((p) => p[1]);
   const median = [...vals].sort((a, b) => a - b)[Math.floor(vals.length / 2)] ?? 0;
   const spikes: number[] = [];
@@ -69,7 +71,7 @@ export function analyzeEnergy(curve: EnergyCurve, build: BuildResult): EnergyAna
     const [t, e] = curve.points[i];
     const neighbours = (curve.points[i - 1][1] + curve.points[i + 1][1]) / 2;
     const isolated = e > Math.max(4, median * 8) && e > neighbours * 3;
-    const explained = [...cuts, ...starts].some((c) => Math.abs(c - t) < 1.5 / curve.fps);
+    const explained = [...cuts, ...starts, ...ends].some((c) => Math.abs(c - t) < 1.5 / curve.fps);
     if (isolated && !explained) spikes.push(t);
   }
 

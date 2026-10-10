@@ -44,7 +44,7 @@ describe("seeded static defects (projects/_defects)", () => {
 });
 
 describe("good projects stay clean (no false positives)", () => {
-  for (const slug of ["example-type", "_kit", "_smoke", "_template"]) {
+  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions"]) {
     it(slug, async () => {
       const { findings } = await rules(slug);
       const errors = findings.filter((f) => f.severity === "error");

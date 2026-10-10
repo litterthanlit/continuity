@@ -16,7 +16,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2
+          "at": 0.1
         }
       ],
       "text": {
@@ -25,6 +25,10 @@
         "accent": "noise.",
         "body": "Geist 600 · Geist · Geist Mono",
         "stat": "uptime"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
       }
     },
     {
@@ -35,7 +39,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2
+          "at": 0.1
         }
       ],
       "text": {
@@ -44,6 +48,10 @@
         "accent": "infrastructure",
         "body": "Newsreader · Instrument Sans",
         "stat": "pages set"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
       }
     },
     {
@@ -54,7 +62,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2
+          "at": 0.1
         }
       ],
       "text": {
@@ -63,6 +71,10 @@
         "accent": "pulse.",
         "body": "Fraunces soft · Hanken Grotesk",
         "stat": "frames drawn"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
       }
     },
     {
@@ -73,7 +85,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2
+          "at": 0.1
         }
       ],
       "text": {
@@ -82,6 +94,10 @@
         "accent": "seconds,",
         "body": "Geist Mono · Geist",
         "stat": "ms p95"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
       }
     },
     {
@@ -92,7 +108,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2
+          "at": 0.1
         }
       ],
       "text": {
@@ -101,6 +117,10 @@
         "accent": "shipping.",
         "body": "Archivo 66% / 850 · Inter Tight",
         "stat": "views"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
       }
     },
     {
@@ -111,7 +131,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2
+          "at": 0.1
         }
       ],
       "text": {
