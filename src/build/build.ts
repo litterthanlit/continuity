@@ -7,7 +7,7 @@ import type { SceneDefinition } from "../index.js";
 import { drainMissingText, textProxy, withScene, type SceneContext } from "../kit/context.js";
 import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
-import { transitionTweens } from "../motion/transitions.js";
+import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
 import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
@@ -55,7 +55,9 @@ export interface BuildResult {
   hash: string;
 }
 
-const RESERVED = new Set(["scene", "camera"]);
+/** Element ids the build itself owns: the scene root, its camera and transition layers. */
+const RESERVED = new Set(["scene", "camera", "reveal", "fx"]);
+const OWN_LAYER = /\b(ct-scene|ct-camera|ct-reveal|ct-fx)\b/;
 
 export function loadStoryboard(slug: string, srcDir = projectDir(slug)): { storyboard?: Storyboard; findings: Finding[] } {
   const file = join(srcDir, "storyboard.json");
@@ -264,11 +266,20 @@ export async function buildProject(
         }
       }
     }
+    // Layers the incoming transition needs: a reveal wrapper (mask) and/or an overlay above the scene.
+    const incoming = index > 0 ? sb.scenes[index - 1].transition : undefined;
+    const layers = incoming ? TRANSITION_DEFS[incoming.type].layers : undefined;
+    let body = `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div>`;
+    if (layers?.reveal) body = `<div class="ct-reveal" data-ct="${sc.id}.reveal" data-layout-allow-overflow style="position:absolute;inset:0">${body}</div>`;
+    if (incoming && layers?.fx) {
+      const fx = layers.fx(incoming);
+      body += `<div class="ct-fx" data-ct="${sc.id}.fx" data-layout-ignore aria-hidden="true" style="${fx.style}">${fx.inner}</div>`;
+    }
     sections.push(
       `<section id="sc-${sc.id}" class="clip ct-scene" data-ct-scene="${sc.id}" data-ct="${sc.id}.scene" ` +
         (sceneKit.has(sc.id) ? `data-ct-type="${sceneKit.get(sc.id)!.name}" ` : "") +
         `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${index + 1}">` +
-        `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div></section>`,
+        `${body}</section>`,
     );
   }
 
@@ -280,7 +291,7 @@ export async function buildProject(
   sb.scenes.forEach((sc, i) => {
     if (!sc.transition || i === sb.scenes.length - 1) return;
     const next = sb.scenes[i + 1];
-    const t = transitionTweens(sc.transition.type, sc.transition.duration, { id: sc.id, duration: sc.duration }, { id: next.id });
+    const t = transitionTweens(sc.transition, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
     scenes.get(sc.id)!.tweens.push(...t.out);
     scenes.get(next.id)!.tweens.unshift(...t.in);
   });
@@ -324,7 +335,12 @@ export async function buildProject(
     const id = el.getAttribute("data-ct")!;
     seen.set(id, (seen.get(id) ?? 0) + 1);
     const [scene, local] = [id.slice(0, id.indexOf(".")), id.slice(id.indexOf(".") + 1)];
-    if (RESERVED.has(local)) continue;
+    if (RESERVED.has(local)) {
+      if (!OWN_LAYER.test(el.getAttribute("class") ?? "")) {
+        findings.push({ source: "build", rule: "reserved-id", severity: "error", scene, element: id, message: `ct="${local}" is reserved for the scene's own layers (${[...RESERVED].join(", ")})`, suggestion: "rename the element" });
+      }
+      continue;
+    }
     const ancestors: string[] = [];
     for (let p = el.parentElement; p; p = p.parentElement) {
       const pid = p.getAttribute?.("data-ct");

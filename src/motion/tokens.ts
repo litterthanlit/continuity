@@ -29,6 +29,8 @@ export const eases = {
   hero: { type: "bezier", p: [0.16, 1, 0.3, 1] },
   /** Symmetric — camera moves, wipes, scene transitions. */
   inOut: { type: "bezier", p: [0.65, 0, 0.35, 1] },
+  /** Strong symmetric (quint) — whips and punches: slow out, a blur of speed, slow in. */
+  sharp: { type: "bezier", p: [0.83, 0, 0.17, 1] },
   /** Quick, confident spring with almost no overshoot. */
   snappy: { type: "spring", stiffness: 380, damping: 34, mass: 1 },
   /** Soft settle. */

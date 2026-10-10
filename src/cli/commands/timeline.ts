@@ -44,8 +44,9 @@ export const timeline: Command = {
           const local = t.target.slice(t.target.indexOf(".") + 1);
           const what = t.preset ?? Object.keys(t.props).join("+");
           const split = t.split ? ` ${t.split}/${t.stagger?.name ?? t.stagger?.each}` : "";
+          const fx = t.fx ? ` fx:${t.fx.kind}(${Object.entries(t.fx).filter(([k]) => k !== "kind" && k !== "ease").map(([k, v]) => `${k}=${v}`).join(" ")})` : "";
           const end = spanEnd.get(i) ?? t.start + t.duration;
-          log(`  ${r2(t.start).padStart(6)}–${r2(end).padEnd(6)} ${t.kind.padEnd(10)} ${local.padEnd(18)} ${what}${split}  ease:${t.easeName ?? t.ease.type}`);
+          log(`  ${r2(t.start).padStart(6)}–${r2(end).padEnd(6)} ${t.kind.padEnd(10)} ${local.padEnd(18)} ${what}${split}${fx}  ease:${t.easeName ?? t.ease.type}`);
         });
       for (const l of sc.loops) {
         log(`  ${r2(l.start).padStart(6)}–${(l.end === null ? "end" : r2(l.end)).padEnd(6)} loop       ${l.target.slice(l.target.indexOf(".") + 1).padEnd(18)} ${l.prop} ±${l.amplitude} / ${l.period}s`);

@@ -190,7 +190,7 @@ describe("variable font axes", () => {
 
 describe("transitions", () => {
   it("place outgoing tweens at the end of the outgoing scene", () => {
-    const t = transitionTweens("push", 0.5, { id: "a", duration: 3 }, { id: "b" });
+    const t = transitionTweens({ type: "push", duration: 0.5 }, { id: "a", duration: 3 }, { id: "b" });
     expect(t.out[0]).toMatchObject({ target: "a.scene", start: 2.5, duration: 0.5 });
     expect(t.in[0]).toMatchObject({ target: "b.scene", start: 0 });
   });

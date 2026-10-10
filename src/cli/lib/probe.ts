@@ -51,7 +51,7 @@ window.__ctMeasure = function (time, neutral) {
   document.querySelectorAll("[data-ct]").forEach(function (el) {
     if (el.closest("[data-layout-ignore]")) return;
     var id = el.getAttribute("data-ct");
-    if (/\\.(scene|camera)$/.test(id)) return;
+    if (/\\.(scene|camera|reveal|fx)$/.test(id)) return;
     var own = el.textContent || "";
     el.querySelectorAll("[data-ct]").forEach(function (c) { own = own.replace(c.textContent || "", ""); });
     if (own.replace(/\\s/g, "").length < 2) return;
