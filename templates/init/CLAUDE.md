@@ -14,6 +14,8 @@ Hard rules:
 - **Ids:** anything animated, and all text, gets `ct="id"` matching the storyboard.
   Copy lives in `storyboard.json` (`scenes[].text`); views read `text.<id>`.
 - **Tokens first** (durations, eases, staggers); text stays above the legibility floor.
+- **One look:** one type kit per video (storyboard `type`, `typography` skill) and one
+  transition language (≤ 2 types besides cuts, `motion-craft` skill).
 - **Never edit `build/`** — it is generated.
 - **Done means:** `npx ct check <p>` 0 errors (`--deep` once before the final
   render), you have *read* the latest sheet.png and stills, critique ≥ 4/5 on every

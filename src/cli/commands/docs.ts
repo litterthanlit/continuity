@@ -4,7 +4,7 @@ import { SOURCE_RULES } from "../../lint/source.js";
 import { RULES } from "../../lint/timeline.js";
 import { emphasisPresets, enterPresets, exitPresets, type PresetDef } from "../../motion/presets.js";
 import { durations, eases, staggers } from "../../motion/tokens.js";
-import { transitionDescriptions } from "../../motion/transitions.js";
+import { TRANSITION_DEFS } from "../../motion/transitions.js";
 import { PKG_ROOT, rel } from "../../paths.js";
 import { TYPE_SCALE } from "../../build/css.js";
 import { themes } from "../../themes/index.js";
@@ -56,8 +56,12 @@ ${presetRows(exitPresets)}
 ${head}
 ${presetRows(emphasisPresets)}
 
-## Scene transitions
-${Object.entries(transitionDescriptions).map(([k, v]) => `- \`${k}\` — ${v}`).join("\n")}
+## Scene transitions (storyboard \`transition\`)
+| type | default | range | params | what it is |
+|---|---|---|---|---|
+${Object.entries(TRANSITION_DEFS).map(([k, d]) => `| \`${k}\` | ${k === "cut" ? "—" : `${d.duration}s`} | ${k === "cut" ? "—" : `${d.range[0]}–${d.range[1]}s`} | ${d.params.join(", ") || "—"}${d.dirs && d.dirs.length < 4 ? ` (dir: ${d.dirs.join("/")})` : ""} | ${d.description} |`).join("\n")}
+
+One transition language per video (≤ 2 types besides cuts) — see motion-craft §7.
 
 ## Type scale (px at 1080 short side · line-height · tracking)
 ${Object.entries(TYPE_SCALE).map(([k, [s, lh, ls]]) => `- \`text-${k}\` ${s}px · ${lh} · ${ls}`).join("\n")}

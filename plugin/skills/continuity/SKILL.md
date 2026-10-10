@@ -1,6 +1,6 @@
 ---
 name: continuity
-description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, roles, tools and which other skills to load (motion-craft, kinetic-type, product-launch, critique).
+description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, critique).
 ---
 
 # Continuity production loop
@@ -24,8 +24,12 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
 - **text** holds all copy by element id. Budget words: ≤ 7 words on screen at once
   for social, ≤ 12 for 16:9. Every text needs read time (≈17 chars/s + 0.4s).
 - **elements** list ids, roles and coarse anchors (6×6 grid A1–F6).
-- **transition** into the next scene: `cut` (default for punchy type),
-  `crossfade`, `dip`, `push`, `pushUp`, `blur`, `zoom`, `wipe` — see motion-craft.
+- **type** — the type kit (load `typography`): `swiss`, `atelier`, `wonk`,
+  `terminal`, `broadside`, `flexion`. One per video.
+- **transition** into the next scene, from ONE transition language (motion-craft
+  §7): `cut` (default for punchy type), `crossfade`, `dip`, `push`, `pushUp`,
+  `whip`, `punchCut`, `wipe`, `iris`, `strips`, `lightSweep`, `blur`, `zoom` —
+  with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
 - `npx ct lint <slug>` validates the storyboard immediately.
 
 ## 2 · Style frames (builder)
@@ -34,7 +38,7 @@ Build every scene's *settled* layout with minimal motion. `npx ct stills <slug>`
 negative space and color **now** — motion cannot rescue a weak frame.
 
 ## 3 · Motion (builder)
-Load `motion-craft` (always) and `kinetic-type` / `product-launch` as relevant.
+Load `motion-craft` and `typography` (always) and `kinetic-type` / `product-launch` as relevant.
 Write `motion: (m) => …` with presets + tokens. Check numbers with
 `npx ct timeline <slug>`.
 
@@ -77,4 +81,5 @@ limited number of slots automatically. Always finish with a full `ct check`.
 ## Fast reference
 - API & component catalog: `reference/api.md`
 - Presets & tokens with numbers: `motion-craft/SKILL.md`
+- Type kits, roles, axis motion: `typography/SKILL.md`
 - Rubric: `critique/SKILL.md`

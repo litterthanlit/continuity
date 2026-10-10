@@ -45,6 +45,9 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 - **Layout** inside `<Safe>` (16:9 title-safe) or `<Safe zone="social">` (9:16).
   Text never below the legibility floor (26px landscape, 34px portrait).
 - **Never edit `build/`** — it is generated. Edit `projects/<slug>/…`.
+- **Type kits, not ad-hoc fonts.** Pick one kit per video (storyboard `type`:
+  `swiss atelier wonk terminal broadside flexion` — the `typography` skill) and
+  one transition language (motion-craft §7).
 - **Open source only.** No GSAP, no fonts outside the theme registry, no network
   assets at render time.
 
@@ -64,11 +67,11 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 |---|---|
 | `projects/<slug>/` | brief.md, storyboard.json, theme.ts (optional), scenes/<id>.tsx, assets/ |
 | `projects/<slug>/.continuity/` | iterations (findings, stills, sheets, renders) — gitignored |
-| `src/motion/` | tokens, presets, DSL, evaluator, transitions |
+| `src/motion/` | tokens, presets, DSL, evaluator, transitions (`TRANSITION_DEFS`), `fx.ts` (mask/clip presentations) |
 | `src/kit/` | scene components (Stage, Safe, Headline, …) |
-| `src/themes/` | `mono-dark`, `light-editorial`, `vivid-gradient` |
+| `src/themes/` | colour themes (`mono-dark`, `light-editorial`, `vivid-gradient`), `kits.ts` (type kits), `fonts.ts` (vendored font registry) |
 | `src/lint/timeline.ts` | motion lint rules (`RULES` explains each) |
-| `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
+| `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `typography`, `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
 | `.claude/` | this repo's session config: `skills`/`agents`/`commands` are symlinks into `plugin/`; `settings.json` wires `plugin/hooks/*`; `hooks/session-start.sh` installs deps in cloud sessions |
 | `bin/ct.mjs` | the `ct` launcher (tsx + scene tsconfig + `continuity`/preact alias hook) |
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
@@ -81,7 +84,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 
 ```
 npx ct init                    # (user repos) config, projects dir, CLAUDE.md block, permissions
-npx ct new <slug> --aspect 9:16 --theme mono-dark
+npx ct new <slug> --aspect 9:16 --theme mono-dark [--type broadside]
 npx ct lint <slug> [--storyboard | --scene id]   # fast static gate (also runs on every edit via hook)
 npx ct check <slug> [--scene id]  # THE gate (browser audits) — the full run records the iteration
 npx ct timeline <slug>        # every tween with numbers
