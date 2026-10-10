@@ -7,13 +7,15 @@ import type { SceneDefinition } from "../index.js";
 import { drainMissingText, textProxy, withScene, type SceneContext } from "../kit/context.js";
 import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
-import { transitionTweens } from "../motion/transitions.js";
-import type { PartCounts, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
+import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
+import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
-import { classCandidates, compileCss, fontFaceCss, fontLoadList, uniqueFamilies } from "./css.js";
+import { resolveKit, getKit, type TypeKit } from "../themes/kits.js";
+import { buildFamilies, classCandidates, compileCss, fontFaceCss, fontLoadList } from "./css.js";
+import { FONT_CHANNELS, typeBaseOf } from "./typebase.js";
 import { missingGlyphs } from "./glyphs.js";
 import { sourceHash } from "./hash.js";
 import { runtimeBundle } from "./runtime-bundle.js";
@@ -34,6 +36,8 @@ export interface ElementInfo {
   ancestors: string[];
   /** Inside a UI-kit mockup (window, card, code…): text is imagery to glance at, not copy to read. */
   ui: boolean;
+  /** The face it is drawn in (role, family, axis ranges) — for the axis lint rules. */
+  font?: { role: string; family: string; category: string; ranges: Partial<Record<PropName, [number, number]>>; nowrap: boolean };
 }
 
 export interface BuildResult {
@@ -42,6 +46,8 @@ export interface BuildResult {
   dir: string;
   storyboard?: Storyboard;
   theme?: Theme;
+  /** The video's type kit (scenes may override it with their own `type`). */
+  typeKit?: TypeKit;
   timeline?: Timeline;
   elements: ElementInfo[];
   partsEstimate: PartCounts;
@@ -49,7 +55,9 @@ export interface BuildResult {
   hash: string;
 }
 
-const RESERVED = new Set(["scene", "camera"]);
+/** Element ids the build itself owns: the scene root, its camera and transition layers. */
+const RESERVED = new Set(["scene", "camera", "reveal", "fx"]);
+const OWN_LAYER = /\b(ct-scene|ct-camera|ct-reveal|ct-fx)\b/;
 
 export function loadStoryboard(slug: string, srcDir = projectDir(slug)): { storyboard?: Storyboard; findings: Finding[] } {
   const file = join(srcDir, "storyboard.json");
@@ -87,6 +95,11 @@ async function loadTheme(srcDir: string, name: string): Promise<Theme> {
 }
 
 const collapse = (s: string) => s.replace(/\s+/g, " ").trim();
+
+function fontInfo(el: unknown, kit: TypeKit): NonNullable<ElementInfo["font"]> {
+  const b = typeBaseOf(el as Parameters<typeof typeBaseOf>[0], kit);
+  return { role: b.role, family: b.family.family, category: b.family.category, ranges: b.ranges, nowrap: b.nowrap };
+}
 
 function graphemeCount(s: string): number {
   const seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -140,12 +153,27 @@ export async function buildProject(
   if (!sb) return { ...empty, findings };
 
   let theme: Theme;
+  let kit: TypeKit;
   try {
     theme = await loadTheme(src, sb.theme);
+    kit = resolveKit(theme, sb.type);
   } catch (e) {
     findings.push({ source: "build", rule: "theme", severity: "error", message: errMsg(e) });
     return { ...empty, storyboard: sb, findings };
   }
+  const themeKit = typeof theme.type === "string" ? theme.type : theme.type?.name;
+  if (sb.type && themeKit && sb.type !== themeKit) {
+    findings.push({
+      source: "build",
+      rule: "type-conflict",
+      severity: "info",
+      message: `storyboard type "${sb.type}" overrides the "${themeKit}" kit set in theme.ts`,
+    });
+  }
+  // Per-scene kit overrides (scoped CSS under [data-ct-type]); the same kit as the video's is no override.
+  const sceneKit = new Map<string, TypeKit>();
+  for (const sc of sb.scenes) if (sc.type && sc.type !== kit.name) sceneKit.set(sc.id, getKit(sc.type));
+  const sceneKits = [...new Map([...sceneKit.values()].map((k) => [k.name, k])).values()];
 
   const { width, height } = ASPECTS[sb.format.aspect];
   const timings = sceneTimings(sb);
@@ -195,6 +223,7 @@ export async function buildProject(
           landscape: width > height,
           square: width === height,
           theme,
+          typeKit: sceneKit.get(sc.id) ?? kit,
           beats,
           duration: sc.duration,
           index,
@@ -211,7 +240,11 @@ export async function buildProject(
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
             return node ? estimateParts(node as unknown as Element)[mode] : undefined;
           };
-          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf);
+          const baseOf = (target: string) => {
+            const node = viewDoc.querySelector(`[data-ct="${target}"]`);
+            return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
+          };
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf);
           try {
             def.motion(mb, ctx);
           } catch (e) {
@@ -219,13 +252,34 @@ export async function buildProject(
           }
           tl.tweens.push(...mb.tweens);
           tl.loops.push(...mb.loops);
+          // Font channels start from the element's settled face, not from neutral values.
+          for (const t of [...mb.tweens, ...mb.loops]) {
+            const props = "props" in t ? Object.keys(t.props) : [t.prop];
+            const font = props.filter((p) => p in FONT_CHANNELS) as PropName[];
+            if (!font.length) continue;
+            const b = baseOf(t.target);
+            if (!b) continue;
+            tl.bases ??= {};
+            const entry = (tl.bases[t.target] ??= {});
+            for (const p of font) entry[p] = b.values[p];
+          }
         }
       }
     }
+    // Layers the incoming transition needs: a reveal wrapper (mask) and/or an overlay above the scene.
+    const incoming = index > 0 ? sb.scenes[index - 1].transition : undefined;
+    const layers = incoming ? TRANSITION_DEFS[incoming.type].layers : undefined;
+    let body = `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div>`;
+    if (layers?.reveal) body = `<div class="ct-reveal" data-ct="${sc.id}.reveal" data-layout-allow-overflow style="position:absolute;inset:0">${body}</div>`;
+    if (incoming && layers?.fx) {
+      const fx = layers.fx(incoming);
+      body += `<div class="ct-fx" data-ct="${sc.id}.fx" data-layout-ignore aria-hidden="true" style="${fx.style}">${fx.inner}</div>`;
+    }
     sections.push(
       `<section id="sc-${sc.id}" class="clip ct-scene" data-ct-scene="${sc.id}" data-ct="${sc.id}.scene" ` +
+        (sceneKit.has(sc.id) ? `data-ct-type="${sceneKit.get(sc.id)!.name}" ` : "") +
         `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${index + 1}">` +
-        `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div></section>`,
+        `${body}</section>`,
     );
   }
 
@@ -237,7 +291,7 @@ export async function buildProject(
   sb.scenes.forEach((sc, i) => {
     if (!sc.transition || i === sb.scenes.length - 1) return;
     const next = sb.scenes[i + 1];
-    const t = transitionTweens(sc.transition.type, sc.transition.duration, { id: sc.id, duration: sc.duration }, { id: next.id });
+    const t = transitionTweens(sc.transition, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
     scenes.get(sc.id)!.tweens.push(...t.out);
     scenes.get(next.id)!.tweens.unshift(...t.in);
   });
@@ -276,11 +330,17 @@ export async function buildProject(
 
   const elements: ElementInfo[] = [];
   const seen = new Map<string, number>();
+  const fontTargets = new Set(timeline.scenes.flatMap((sc) => Object.keys(sc.bases ?? {})));
   for (const el of document.querySelectorAll("[data-ct]") as unknown as HTMLElement[]) {
     const id = el.getAttribute("data-ct")!;
     seen.set(id, (seen.get(id) ?? 0) + 1);
     const [scene, local] = [id.slice(0, id.indexOf(".")), id.slice(id.indexOf(".") + 1)];
-    if (RESERVED.has(local)) continue;
+    if (RESERVED.has(local)) {
+      if (!OWN_LAYER.test(el.getAttribute("class") ?? "")) {
+        findings.push({ source: "build", rule: "reserved-id", severity: "error", scene, element: id, message: `ct="${local}" is reserved for the scene's own layers (${[...RESERVED].join(", ")})`, suggestion: "rename the element" });
+      }
+      continue;
+    }
     const ancestors: string[] = [];
     for (let p = el.parentElement; p; p = p.parentElement) {
       const pid = p.getAttribute?.("data-ct");
@@ -298,6 +358,7 @@ export async function buildProject(
       decor: el.hasAttribute("data-layout-ignore") || Boolean(el.closest("[data-layout-ignore]")),
       ancestors,
       ui: Boolean(el.closest("[data-ct-ui]")),
+      ...(fontTargets.has(id) ? { font: fontInfo(el, sceneKit.get(scene) ?? kit) } : {}),
     });
   }
   for (const [id, n] of seen) {
@@ -339,9 +400,9 @@ export async function buildProject(
 
   // Every visible character must be drawable by a vendored font (determinism).
   for (const sec of document.querySelectorAll("[data-ct-scene]") as unknown as HTMLElement[]) {
-    const missing = missingGlyphs(sec.textContent ?? "", uniqueFamilies(theme));
+    const sceneId = sec.getAttribute("data-ct-scene")!;
+    const missing = missingGlyphs(sec.textContent ?? "", buildFamilies([sceneKit.get(sceneId) ?? kit]));
     if (missing.length) {
-      const sceneId = sec.getAttribute("data-ct-scene")!;
       findings.push({
         source: "build",
         rule: "glyph-missing",
@@ -355,19 +416,20 @@ export async function buildProject(
 
   const body = document.querySelector("#root")!.outerHTML;
   const ok = !findings.some((f) => f.severity === "error");
-  const result: BuildResult = { ok, slug, dir, storyboard: sb, theme, timeline, elements, partsEstimate, findings, hash };
+  const result: BuildResult = { ok, slug, dir, storyboard: sb, theme, typeKit: kit, timeline, elements, partsEstimate, findings, hash };
   if (!write) return result;
 
   // ---- Emit the HyperFrames project.
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, "fonts"), { recursive: true });
-  for (const fam of uniqueFamilies(theme)) {
+  const families = buildFamilies([kit, ...sceneKits]);
+  for (const fam of families) {
     for (const face of fam.faces) copyFileSync(resolveDep(face.file), join(dir, "fonts", basename(face.file)));
   }
   const assets = join(src, "assets");
   if (existsSync(assets)) cpSync(assets, join(dir, "assets"), { recursive: true });
 
-  const css = fontFaceCss(theme) + "\n" + (await compileCss(theme, classCandidates(body), PKG_ROOT));
+  const css = fontFaceCss(families) + "\n" + (await compileCss(theme, kit, sceneKits, classCandidates(body), PKG_ROOT));
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -386,7 +448,7 @@ ${body}
 </html>
 `;
   writeFileSync(join(dir, "index.html"), html);
-  writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(theme) })};\n`);
+  writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(families) })};\n`);
   writeFileSync(join(dir, "continuity-motion.js"), await runtimeBundle());
   // Not named *.motion.json on purpose: HyperFrames auto-runs sidecars and each
   // assertion costs ~10s of timeline sweeping. `ct check --deep` activates it.

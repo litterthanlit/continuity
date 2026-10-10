@@ -1,4 +1,5 @@
 import { loadStoryboard } from "../../build/build.js";
+import { lintStoryboard } from "../../lint/timeline.js";
 import { sceneTimings } from "../../spec/storyboard.js";
 import { flagBool, flagStr, requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
@@ -19,6 +20,7 @@ export const lint: Command = {
     const json = flagBool(a, "json");
     if (flagBool(a, "storyboard")) {
       const { storyboard, findings } = loadStoryboard(slug);
+      if (storyboard) findings.push(...lintStoryboard(storyboard));
       if (storyboard) {
         const t = sceneTimings(storyboard);
         emitResult({ duration: t.duration, scenes: t.scenes.map((s, i) => ({ id: s.id, start: s.start, duration: storyboard.scenes[i].duration })) });

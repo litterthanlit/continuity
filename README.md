@@ -209,12 +209,20 @@ docs · licenses · gate-status · doctor · mcp`. `npx ct <command> --help` for
 
 ## Design system
 
-Three themes (`mono-dark`, `light-editorial`, `vivid-gradient`), a 1080-based
-type scale (`text-mega` 240 → `text-micro` 26), vendored Geist / Inter Tight /
-Instrument Serif / Geist Mono + symbol fallbacks, a UI kit at video scale
-(windows, browsers, phones, code, terminals, charts, cursor, toasts…). See
-`projects/_kit` for the gallery and `plugin/skills/continuity/reference/` for
-the generated catalog.
+Three colour themes (`mono-dark`, `light-editorial`, `vivid-gradient`) and six
+**type kits** chosen per video (`type` in the storyboard): `swiss` (Geist,
+Vercel/Linear grade), `atelier` (Newsreader + Instrument Sans), `wonk` (Fraunces
+soft serif + Hanken Grotesk), `terminal` (Geist Mono led), `broadside` (Archivo
+condensed caps for social) and `flexion` (Mona Sans, width and weight animate).
+All fonts are vendored OFL faces; variable axes (weight, width, softness) are
+motion channels. Thirteen scene transitions — from hard cuts to whips with
+speed-matched motion blur, punch cuts, feathered wipes, iris, strips and light
+sweeps — each with a craft range the lint enforces. A 1080-based type scale, a
+UI kit at video scale (windows, browsers, phones, code, terminals, charts,
+cursor, toasts…). Galleries: `projects/_kit`, `projects/_type`,
+`projects/_transitions`; the generated catalog is in
+`plugin/skills/continuity/reference/`. Research behind the look:
+`docs/research/`.
 
 ## Developing Continuity
 

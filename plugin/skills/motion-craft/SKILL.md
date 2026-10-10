@@ -34,6 +34,7 @@ were never composed. These rules exist to prevent exactly that. Numbers are at
 | Soft settles, ambient | `gentle` spring | |
 | Playful accents only | `bouncy` | Overshoot fatigue is real — ≤ 1 per scene |
 | Camera, wipes, transitions | `inOut` | |
+| Whips, punches | `sharp` (quint in-out) | Slow out, a blur of speed, slow in |
 `linear` only for continuous loops, marquees, progress bars, type-on.
 
 ## 3. Duration — scales with size and distance
@@ -41,7 +42,8 @@ were never composed. These rules exist to prevent exactly that. Numbers are at
 - Lines of copy, cards: `slow` 0.64
 - Hero type, big panels, logo resolves: `hero` 0.9
 - Exits ≈ 60–75% of the matching entrance (`base` for a `slow` entrance).
-- Camera drifts: the whole scene (2–6s). Transitions 0.35–0.6s.
+- Camera drifts: the whole scene (2–6s). Transitions: each type has a craft range
+  (whip 0.2–0.45s, push 0.3–0.8s, iris 0.4–0.9s — see §7); lint enforces it.
 - Under 0.15s reads as a glitch; over 1.6s for an entrance drags.
 - **Vary** within the scale — a scene where everything is 0.64s feels mechanical.
 
@@ -79,26 +81,54 @@ behind a mask — big movement, no layout jump.
   Dead air > 2.5s is a lint warning.
 
 ## 7. Transitions (storyboard `transition`)
-| Type | Use for |
-|---|---|
-| `cut` | default between punchy beats; cut **on** the beat |
-| `crossfade` | calm continuity, same visual world |
-| `push` / `pushUp` | sequential steps, carousels, feeds (direction = reading/scroll) |
-| `zoom` | escalation, energy, "going deeper" |
-| `blur` | dreamy, premium, time passing |
-| `dip` | chapter break, before the CTA/logo |
-| `wipe` | reveal a new state/surface |
-Use 1–2 transition types per video. Variety for its own sake reads amateur.
+Research: `docs/research/2026-10-transitions.md`. Gallery: `projects/_transitions`.
+
+| Type | Default | Params | Use for |
+|---|---|---|---|
+| `cut` | — | | default between punchy beats; cut **on** the beat — the most premium transition |
+| `crossfade` | 0.5 | ease | the same surface in a new state |
+| `dip` | 0.5 | ease | chapter break, before the CTA/logo |
+| `push` | 0.5 | dir, blur, ease | sequential steps, carousels (dir = reading direction); `blur: true` for speed |
+| `pushUp` | 0.5 | blur, ease | feeds, lists, 9:16 |
+| `whip` | 0.33 | dir, blur, ease | camera-first product cuts: a fast push with motion blur, swap at peak speed |
+| `punchCut` | 0.37 | flash, ease | editorial punch: push-in, hard swap at 45%, 2-frame flash |
+| `wipe` | 0.5 | dir, angle, feather, ease | reveal a new state; `feather: 8–20` and `angle: 120` for a soft diagonal |
+| `iris` | 0.6 | origin {x,y %}, feather | focus on a point (a button, a logo) |
+| `strips` | 0.5 | n, dir, stagger | high-energy accent: 5–7 staggered strips, 20–40ms apart |
+| `lightSweep` | 0.6 | dir (left/right), color | a luminous band across the cut — logo/hero moments, once |
+| `blur` | 0.5 | ease | defocus out, focus in: dreamy, time passing |
+| `zoom` | 0.5 | ease | through into a detail |
+
+```json
+"transition": { "type": "push", "dir": "left", "blur": true }
+"transition": { "type": "wipe", "angle": 120, "feather": 14 }
+"transition": { "type": "iris", "origin": { "x": 70, "y": 40 } }
+```
+
+**Pick one transition language per video** (lint `transition-language`: ≤ 2 types; cuts free):
+| Language | Primary | Accent | Feel |
+|---|---|---|---|
+| Swiss cuts | `cut` on the beat | `dip` at chapter breaks, a feathered `wipe` for state reveals | Linear/Vercel restraint |
+| Camera-first product | `push` + `blur: true` (reading direction) or `whip` | `zoom` into detail, `iris` to focus | the camera does every transition |
+| Luminous | `blur`, `crossfade` | one `lightSweep` on the logo | Apple/Stripe calm energy |
+| Kinetic / social punch | `cut` on the beat | `punchCut`, vertical `whip`, `strips` (pick two) | 9:16 rhythm, 8–12 frame moves |
+
+Rules: keep one direction of travel through a sequence; exit ease-in, enter
+ease-out (the defs already pair them); never a spring on a full-frame move
+(`transition-bounce`); fast pushes need motion blur (`transition-strobe`); a
+scene's incoming and outgoing transitions must not overlap (schema error).
 
 ## 8. Camera
 Slow push-ins (1 → 1.03–1.06) build tension; lateral drift 20–60px adds depth;
-no fast camera unless it's a deliberate whip into a cut (lint: `camera-too-fast`).
+no fast camera inside a scene (lint: `camera-too-fast`) — a whip between scenes is
+the `whip` transition, with motion blur matched to its speed.
 Combine camera with stillness: when the camera moves, the content holds.
 
 ## 9. Kinetic emphasis vocabulary
-Scale contrast (one word 2× the rest) · weight shift · color swap to accent ·
+Scale contrast (one word 2× the rest) · weight shift (`weightPulse`, variable
+kits) · width breath (`widthPulse`, flexion/broadside) · color swap to accent ·
 serif italic swap (`<Serif>`) · marker highlight (`<Highlight>` + `underline`) ·
-a single `pulse` on the key word. Pick ONE per line.
+a single `pulse` on the key word. Pick ONE per line. (See the `typography` skill.)
 
 ## 10. Anti-patterns (auto-fail in critique)
 1. Linear easing on anything that moves through space.
@@ -111,6 +141,9 @@ a single `pulse` on the key word. Pick ONE per line.
 8. Random directions; bounce everywhere; long cascades.
 9. Centered everything with no hierarchy; multiple accents per frame.
 10. Opening on a static/empty frame — first motion within 0.1–0.4s.
+11. A different transition on every cut; 50/50 dissolves between unrelated frames.
+12. Hard-edged diagonal wipes with no feather; fast pushes with no motion blur.
+13. Bounce or overshoot on a full-frame scene move; light sweeps on every cut.
 
 ## Recipes
 See `recipes.md` for copy-ready motion for: statement headline, eyebrow +

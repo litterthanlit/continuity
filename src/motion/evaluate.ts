@@ -1,8 +1,11 @@
 import { staggerOffsets, round } from "./dsl.js";
 import { easeFn, type EaseFn } from "./easing.js";
+import { fxStyle } from "./fx.js";
 import {
   BASE_VALUES,
+  VARIATION_AXES,
   type CounterFormat,
+  type FxSpec,
   type Loop,
   type PartCounts,
   type PropName,
@@ -27,6 +30,7 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
       easeName: tw.easeName,
       preset: tw.preset,
       counter: tw.counter,
+      fx: tw.fx,
       allow: tw.allow,
       mask: tw.mask,
       source,
@@ -56,7 +60,7 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
   for (const [k, list] of byChannel) {
     const prop = k.slice(k.lastIndexOf("|") + 1) as PropName;
     list.sort((a, b) => a.start - b.start || a.source - b.source);
-    let prev: number = BASE_VALUES[prop];
+    let prev: number = baseValue(scene.bases, list[0].target, prop);
     for (const rt of list) {
       const [from, to] = rt.props[prop] as unknown as [number | null, number];
       const f = from ?? prev;
@@ -67,6 +71,11 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
     }
   }
   return out.map((rt) => ({ ...rt, props: resolvedProps.get(rt) ?? {} }));
+}
+
+/** Settled value of a channel: the element's font base (kit role) or the neutral value. */
+function baseValue(bases: SceneTimeline["bases"], target: string, prop: PropName): number {
+  return bases?.[target]?.[prop] ?? BASE_VALUES[prop];
 }
 
 interface Segment {
@@ -84,7 +93,9 @@ export interface CompiledScene {
   channels: Map<string, Map<PropName, Segment[]>>;
   loops: Map<string, Loop[]>;
   counters: Map<string, CounterFormat>;
+  fx: Map<string, FxSpec>;
   resolved: ResolvedTween[];
+  bases: SceneTimeline["bases"];
 }
 
 const easeCache = new Map<string, EaseFn>();
@@ -99,6 +110,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
   const resolved = resolveScene(scene, parts);
   const channels = new Map<string, Map<PropName, Segment[]>>();
   const counters = new Map<string, CounterFormat>();
+  const fx = new Map<string, FxSpec>();
   for (const rt of resolved) {
     let byProp = channels.get(rt.key);
     if (!byProp) channels.set(rt.key, (byProp = new Map()));
@@ -108,6 +120,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
       segs.push({ start: rt.start, end: rt.start + rt.duration, from: range[0], to: range[1], ease: cachedEase(rt) });
     }
     if (rt.counter) counters.set(rt.key, rt.counter);
+    if (rt.fx) fx.set(rt.key, rt.fx);
   }
   for (const byProp of channels.values()) for (const segs of byProp.values()) segs.sort((a, b) => a.start - b.start);
   const loops = new Map<string, Loop[]>();
@@ -117,7 +130,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
     list.push(l);
     if (!channels.has(l.target)) channels.set(l.target, new Map());
   }
-  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, resolved };
+  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, fx, resolved, bases: scene.bases };
 }
 
 export type Values = Partial<Record<PropName, number>>;
@@ -146,7 +159,7 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
     if (loops) {
       for (const l of loops) {
         if (t < l.start || (l.end !== null && t > l.end)) continue;
-        const base = v[l.prop] ?? BASE_VALUES[l.prop];
+        const base = v[l.prop] ?? baseValue(c.bases, key.split("::")[0], l.prop);
         v[l.prop] = base + l.amplitude * Math.sin(2 * Math.PI * ((t - l.start) / l.period + l.phase));
       }
     }
@@ -167,6 +180,29 @@ export interface StyleOut {
   letterSpacing?: string;
   strokeDashoffset?: string;
   text?: string;
+  fontWeight?: string;
+  fontStretch?: string;
+  /** Animated variation axes only; the runtime merges them over the element's settled settings. */
+  fontVariation?: Record<string, number>;
+  maskImage?: string;
+  /** Directional blur [x, y] in px (stdDeviation of the element's runtime SVG filter). */
+  motionBlur?: [number, number];
+}
+
+/**
+ * Merge animated axes over an element's settled `font-variation-settings`
+ * (e.g. a kit's `"SOFT" 100, "WONK" 1`), so animating SOFT keeps WONK.
+ */
+export function mergeVariationSettings(base: string, animated: Record<string, number>): string {
+  const axes = new Map<string, string>();
+  if (base && base !== "normal") {
+    for (const part of base.split(",")) {
+      const m = /^\s*["']([A-Za-z0-9]{4})["']\s+(-?[\d.]+)\s*$/.exec(part);
+      if (m) axes.set(m[1], m[2]);
+    }
+  }
+  for (const [tag, v] of Object.entries(animated)) axes.set(tag, f4(v));
+  return [...axes].map(([tag, v]) => `"${tag}" ${v}`).join(", ") || "normal";
 }
 
 const f4 = (n: number) => {
@@ -185,7 +221,7 @@ export function formatCounter(value: number, fmt: CounterFormat): string {
 }
 
 /** Turn channel values into CSS. Only channels that are animated are emitted. */
-export function styleOf(v: Values, counter?: CounterFormat): StyleOut {
+export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleOut {
   const s: StyleOut = {};
   const has = (p: PropName) => v[p] !== undefined;
   const g = (p: PropName) => v[p] ?? BASE_VALUES[p];
@@ -215,9 +251,20 @@ export function styleOf(v: Values, counter?: CounterFormat): StyleOut {
       CLIP_PROPS.map((p) => f4(Math.min(100, Math.max(0, g(p)))) + "%").join(" ") +
       ")";
   }
+  if (has("fx") && fx) {
+    const shape = fxStyle(fx, g("fx"));
+    if (shape.maskImage !== undefined) s.maskImage = shape.maskImage;
+    if (shape.clipPath !== undefined) s.clipPath = shape.clipPath; // one clip shape per element: fx wins over insets
+  }
+  if (has("blurX") || has("blurY")) s.motionBlur = [Math.max(0, g("blurX")), Math.max(0, g("blurY"))];
   if (has("tracking")) s.letterSpacing = f4(g("tracking")) + "em";
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });
+  if (has("wght")) s.fontWeight = f4(Math.min(1000, Math.max(1, g("wght"))));
+  if (has("wdth")) s.fontStretch = f4(Math.min(200, Math.max(50, g("wdth")))) + "%";
+  for (const [prop, tag] of Object.entries(VARIATION_AXES) as Array<[PropName, string]>) {
+    if (has(prop)) (s.fontVariation ??= {})[tag] = g(prop);
+  }
   return s;
 }
 

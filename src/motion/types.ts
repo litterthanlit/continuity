@@ -37,6 +37,13 @@ export const PROPS = [
   "tracking", // letter-spacing, em
   "draw", // 0..1 svg stroke reveal (pathLength=1)
   "counter", // number rendered as text
+  "wght", // font-weight (variable families)
+  "wdth", // font-stretch, % (width-variable families)
+  "opsz", // optical size axis
+  "soft", // Fraunces SOFT axis 0..100
+  "fx", // 0..1 progress of the tween's shape presentation (Tween.fx): 0 hidden, 1 revealed
+  "blurX", // px, directional (motion) blur along x
+  "blurY", // px, directional (motion) blur along y
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
@@ -79,7 +86,17 @@ export const BASE_VALUES: Record<PropName, number> = {
   tracking: 0,
   draw: 1,
   counter: 0,
+  wght: 400,
+  wdth: 100,
+  opsz: 16,
+  soft: 0,
+  fx: 1,
+  blurX: 0,
+  blurY: 0,
 };
+
+/** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
+export const VARIATION_AXES: Partial<Record<PropName, string>> = { opsz: "opsz", soft: "SOFT" };
 
 export type TweenKind =
   | "enter"
@@ -90,6 +107,15 @@ export type TweenKind =
   | "transition";
 
 export type SplitMode = "chars" | "words" | "lines";
+
+/** A shape presentation driven by the `fx` channel (src/motion/fx.ts). */
+export type FxSpec =
+  /** Feathered linear mask; `angle` is a CSS gradient angle (90 = the edge travels right). `feather` in % of the gradient line. */
+  | { kind: "wipe"; angle: number; feather: number }
+  /** Feathered circular mask from (x%, y%), radius to the farthest corner. */
+  | { kind: "iris"; x: number; y: number; feather: number }
+  /** `n` strips revealed toward `dir`, each eased, `stagger` as a fraction of the tween. */
+  | { kind: "strips"; n: number; dir: "up" | "down" | "left" | "right"; stagger: number; ease: EaseSpec };
 
 export type StaggerFrom = "start" | "end" | "center" | "edges";
 
@@ -130,6 +156,8 @@ export interface Tween {
   stagger?: Stagger;
   preset?: string;
   counter?: CounterFormat;
+  /** Shape presentation the `fx` channel drives. */
+  fx?: FxSpec;
   /** Lint rule ids this tween deliberately breaks. */
   allow?: string[];
   /** Tweens declared together (one call on several targets) share a group — choreographed as one unit. */
@@ -157,6 +185,11 @@ export interface SceneTimeline {
   beats: Record<string, number>;
   tweens: Tween[];
   loops: Loop[];
+  /**
+   * Settled values of font channels per element (from its type kit role and
+   * classes): what `from: null` and loops start from, instead of BASE_VALUES.
+   */
+  bases?: Record<string, Partial<Record<PropName, number>>>;
 }
 
 export interface Timeline {

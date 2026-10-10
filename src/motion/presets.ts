@@ -23,9 +23,24 @@ export interface PresetOptions {
   distance?: number;
   /** Target letter-spacing (em) for tracking presets. */
   tracking?: number;
+  /** Starting font-weight for weightIn (default: 300 below the settled weight). */
+  weight?: number;
+  /** Starting width % for widthIn (default: 25 wider than the settled width). */
+  width?: number;
+  /** Settled font channel values of the target (filled in by the builder from its type kit). */
+  base?: Partial<Record<PropName, number>>;
+  /** What the target's family can draw, per font channel (filled in by the builder). */
+  range?: Partial<Record<PropName, [number, number]>>;
 }
 
 const d = (o: PresetOptions, fallback: number) => o.distance ?? fallback;
+const DEFAULT_RANGE: Partial<Record<PropName, [number, number]>> = { wght: [100, 900], wdth: [75, 125], soft: [0, 100] };
+/** Settled value of a font channel, and a value clamped into what the family can draw. */
+const fb = (o: PresetOptions, p: PropName, fallback: number) => o.base?.[p] ?? fallback;
+const fit = (o: PresetOptions, p: PropName, v: number) => {
+  const [lo, hi] = o.range?.[p] ?? DEFAULT_RANGE[p] ?? [v, v];
+  return Math.min(hi, Math.max(lo, v));
+};
 
 export const enterPresets = {
   fade: {
@@ -144,6 +159,27 @@ export const enterPresets = {
     description: "Stroke draws on (SVG paths rendered with the Path kit component).",
     segments: () => [{ props: { draw: [0, 1] }, duration: "hero", ease: "inOut" }],
   },
+  weightIn: {
+    kind: "enter",
+    description: "Weight swells from light to the kit's settled weight while fading in. Variable families (flexion, swiss, wonk); pair with split chars/words or nowrap.",
+    segments: (o) => {
+      const b = fb(o, "wght", 400);
+      return [{ props: { wght: [fit(o, "wght", o.weight ?? b - 300), b], opacity: [0, 1] }, duration: "hero", ease: "hero" }];
+    },
+  },
+  widthIn: {
+    kind: "enter",
+    description: "Letters settle from wide to their width (wdth axis — flexion, broadside). Pair with split chars or nowrap.",
+    segments: (o) => {
+      const b = fb(o, "wdth", 100);
+      return [{ props: { wdth: [fit(o, "wdth", o.width ?? b + 25), b], opacity: [0, 1] }, duration: "slow", ease: "enter" }];
+    },
+  },
+  softIn: {
+    kind: "enter",
+    description: "Fraunces serifs soften from sharp (SOFT 0) to the kit's softness while fading in (wonk).",
+    segments: (o) => [{ props: { soft: [0, fb(o, "soft", 0) || 100], opacity: [0, 1] }, duration: "slow", ease: "enter" }],
+  },
 } satisfies Record<string, PresetDef>;
 
 export const exitPresets = {
@@ -226,6 +262,28 @@ export const emphasisPresets = {
     kind: "emphasis",
     description: "Grow a bar/underline element from the left (scaleX; set transform-origin: left).",
     segments: () => [{ props: { scaleX: [0, 1] }, duration: "slow", ease: "hero" }],
+  },
+  weightPulse: {
+    kind: "emphasis",
+    description: "Weight punches up and settles back — emphasis without moving anything (variable families).",
+    segments: (o) => {
+      const b = fb(o, "wght", 400);
+      return [
+        { props: { wght: [null, fit(o, "wght", b + 200)] }, duration: "fast", ease: "standard" },
+        { props: { wght: [null, b] }, duration: "base", ease: "standard", offset: 0.24 },
+      ];
+    },
+  },
+  widthPulse: {
+    kind: "emphasis",
+    description: "Letters stretch wide and settle back (wdth axis — flexion, broadside).",
+    segments: (o) => {
+      const b = fb(o, "wdth", 100);
+      return [
+        { props: { wdth: [null, fit(o, "wdth", b + 20)] }, duration: "fast", ease: "standard" },
+        { props: { wdth: [null, b] }, duration: "base", ease: "standard", offset: 0.24 },
+      ];
+    },
   },
 } satisfies Record<string, PresetDef>;
 

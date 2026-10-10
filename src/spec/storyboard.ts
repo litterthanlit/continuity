@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { TRANSITIONS } from "../motion/transitions.js";
+import { eases } from "../motion/tokens.js";
+import { DIRS, TRANSITION_COLORS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
+import { KIT_NAMES } from "../themes/kits.js";
 
 export const ASPECTS = {
   "16:9": { width: 1920, height: 1080 },
@@ -19,10 +21,38 @@ export const BeatSchema = z.object({
   note: z.string().optional(),
 });
 
-export const TransitionSchema = z.object({
-  type: z.enum(TRANSITIONS),
-  duration: z.number().min(0).max(2).default(0.5),
-});
+const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "origin", "n", "stagger", "blur", "color", "flash"];
+
+/** Transition into the next scene. Parameters are validated per type (TRANSITION_DEFS); duration defaults per type. */
+export const TransitionSchema = z
+  .object({
+    type: z.enum(TRANSITIONS),
+    duration: z.number().min(0).max(2).optional(),
+    ease: z
+      .union([z.enum(Object.keys(eases) as [keyof typeof eases, ...Array<keyof typeof eases>]), z.tuple([z.number(), z.number(), z.number(), z.number()])])
+      .optional(),
+    dir: z.enum(DIRS).optional(),
+    angle: z.number().min(-360).max(360).optional(),
+    feather: z.number().min(0).max(50).optional(),
+    origin: z.object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) }).optional(),
+    n: z.number().int().min(2).max(12).optional(),
+    stagger: z.number().min(0).max(0.1).optional(),
+    blur: z.union([z.boolean(), z.number().min(0).max(200)]).optional(),
+    color: z.enum(TRANSITION_COLORS).optional(),
+    flash: z.number().min(0).max(0.5).optional(),
+  })
+  .superRefine((t, ctx) => {
+    const def = TRANSITION_DEFS[t.type];
+    for (const p of PARAMS) {
+      if (t[p] !== undefined && !def.params.includes(p)) {
+        ctx.addIssue({ code: "custom", path: [p], message: `${t.type} has no "${p}" parameter (it takes: ${def.params.join(", ") || "none"})` });
+      }
+    }
+    if (t.dir && def.dirs && !def.dirs.includes(t.dir)) {
+      ctx.addIssue({ code: "custom", path: ["dir"], message: `${t.type} runs ${def.dirs.join(" or ")}, not ${t.dir}` });
+    }
+  })
+  .transform((t) => ({ ...t, duration: t.duration ?? TRANSITION_DEFS[t.type].duration }));
 
 export const ElementSchema = z.object({
   id: z.string().regex(/^[a-z][\w-]*$/i),
@@ -48,6 +78,8 @@ export const SceneSchema = z.object({
   motion: z.string().optional(),
   /** Transition into the NEXT scene. Omit for a hard cut. */
   transition: TransitionSchema.optional(),
+  /** Type kit for this scene only (galleries, a deliberate chapter break). Usually set once at the top. */
+  type: z.enum(KIT_NAMES).optional(),
 });
 
 export const StoryboardSchema = z.object({
@@ -60,6 +92,8 @@ export const StoryboardSchema = z.object({
     fps: z.union([z.literal(24), z.literal(25), z.literal(30), z.literal(60)]).default(30),
   }),
   theme: z.string().default("mono-dark"),
+  /** Type kit (font pairing): swiss, atelier, wonk, terminal, broadside, flexion. Omit for the theme's classic fonts. */
+  type: z.enum(KIT_NAMES).optional(),
   /** Optional musical grid for cutting on the beat (seam for audio). */
   bpm: z.number().positive().optional(),
   scenes: z.array(SceneSchema).min(1),
@@ -122,6 +156,12 @@ export function parseStoryboard(raw: unknown): { ok: true; value: Storyboard } |
       if (s.transition.duration >= Math.min(s.duration, next.duration))
         issues.push(`scenes.${i}.transition: ${s.transition.duration}s is longer than one of the scenes it joins`);
     }
+    // A scene's incoming and outgoing transitions both drive its root: they must not overlap.
+    const prev = i > 0 ? r.data.scenes[i - 1].transition : undefined;
+    const inD = prev && prev.type !== "cut" ? prev.duration : 0;
+    const outD = s.transition && s.transition.type !== "cut" && !isLast ? s.transition.duration : 0;
+    if (inD && outD && inD + outD > s.duration)
+      issues.push(`scenes.${i}: its incoming (${inD}s) and outgoing (${outD}s) transitions overlap inside its ${s.duration}s — lengthen the scene or shorten a transition`);
   });
   return issues.length ? { ok: false, issues } : { ok: true, value: r.data };
 }

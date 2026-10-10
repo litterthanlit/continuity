@@ -1,5 +1,6 @@
 import type { BuildResult } from "../../build/build.js";
 import type { Finding } from "../../spec/findings.js";
+import { fonts, hasTabularFigures, symbolFonts } from "../../themes/fonts.js";
 import { serveDir, withBrowser } from "./browser.js";
 import { keyTimes } from "./times.js";
 
@@ -50,7 +51,7 @@ window.__ctMeasure = function (time, neutral) {
   document.querySelectorAll("[data-ct]").forEach(function (el) {
     if (el.closest("[data-layout-ignore]")) return;
     var id = el.getAttribute("data-ct");
-    if (/\\.(scene|camera)$/.test(id)) return;
+    if (/\\.(scene|camera|reveal|fx)$/.test(id)) return;
     var own = el.textContent || "";
     el.querySelectorAll("[data-ct]").forEach(function (c) { own = own.replace(c.textContent || "", ""); });
     if (own.replace(/\\s/g, "").length < 2) return;
@@ -114,6 +115,75 @@ window.__ctMeasure = function (time, neutral) {
 };
 `;
 
+/** What every vendored family can actually draw: weight ranges, italics, widths, tabular figures. */
+const FACE_TABLE = Object.fromEntries(
+  [...Object.values(fonts), ...symbolFonts].map((f) => [
+    f.family,
+    {
+      tabular: hasTabularFigures(f),
+      faces: f.faces.map((face) => {
+        const [lo, hi] = face.weight.split(" ").map(Number);
+        const s = face.stretch ? face.stretch.split(" ").map(parseFloat) : [100, 100];
+        return { lo, hi: hi ?? lo, italic: face.style === "italic", s0: s[0], s1: s[1] ?? s[0] };
+      }),
+    },
+  ]),
+);
+
+interface FaceIssue {
+  id: string;
+  family: string;
+  weight: number;
+  italic: boolean;
+  stretch: number;
+  synth: boolean;
+  text: string;
+  have: string;
+}
+
+/**
+ * Page-side font capability check: every text-holding element asks its first
+ * family for a weight/style/width the vendored files can draw. Anything else
+ * renders faux (synthesis on) or silently as the nearest face (v2 kits turn
+ * synthesis off). Counters must sit in tabular or monospace figures.
+ */
+const FACE_SCRIPT = `
+window.__ctFaces = function (table, counters) {
+  var issues = [];
+  var seen = {};
+  function famOf(cs) { return cs.fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, ""); }
+  document.querySelectorAll(".ct-scene *").forEach(function (el) {
+    var own = false;
+    for (var c = el.firstChild; c; c = c.nextSibling) if (c.nodeType === 3 && c.textContent.trim()) { own = true; break; }
+    if (!own || el.closest("[data-layout-ignore]")) return;
+    var cs = getComputedStyle(el);
+    var fam = famOf(cs);
+    var t = table[fam];
+    if (!t) return;
+    var w = parseFloat(cs.fontWeight) || 400;
+    var it = cs.fontStyle !== "normal";
+    var st = parseFloat(cs.fontStretch) || 100;
+    var ok = t.faces.some(function (f) { return f.italic === it && w >= f.lo && w <= f.hi && st >= f.s0 - 0.01 && st <= f.s1 + 0.01; });
+    if (ok) return;
+    var key = fam + "|" + w + "|" + it + "|" + st;
+    if (seen[key]) return;
+    seen[key] = 1;
+    var holder = el.closest("[data-ct]");
+    var have = t.faces.map(function (f) { return (f.lo === f.hi ? f.lo : f.lo + "–" + f.hi) + (f.italic ? " italic" : "") + (f.s0 !== 100 || f.s1 !== 100 ? " w" + f.s0 + "–" + f.s1 + "%" : ""); });
+    issues.push({ id: holder ? holder.getAttribute("data-ct") : "", family: fam, weight: w, italic: it, stretch: st,
+      synth: cs.fontSynthesisWeight !== "none", text: el.textContent.replace(/\s+/g, " ").trim().slice(0, 40), have: have.join(", ") });
+  });
+  var proportional = [];
+  counters.forEach(function (id) {
+    var el = document.querySelector('[data-ct="' + id + '"]');
+    if (!el) return;
+    var fam = famOf(getComputedStyle(el));
+    if (table[fam] && !table[fam].tabular) proportional.push({ id: id, family: fam });
+  });
+  return { issues: issues, proportional: proportional };
+};
+`;
+
 /** Mid-points of entrances/exits: where text collides while moving. */
 function midMotionTimes(build: BuildResult, max = 48): number[] {
   const set = new Set<number>();
@@ -168,6 +238,40 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       });
       for (const f of fontIssues) {
         findings.push({ source: "probe", rule: "font-not-loaded", severity: "error", message: `font "${f}" is used but not loaded — text will render in a fallback face`, suggestion: "use a theme font family (font-display/font-sans/font-mono/font-serif)" });
+      }
+
+      await page.evaluate(FACE_SCRIPT);
+      const counters = [...new Set(build.timeline!.scenes.flatMap((s) => s.tweens.filter((t) => t.props.counter).map((t) => t.target)))].filter(
+        (id) => !win || id.startsWith(`${win.scene}.`),
+      );
+      const faces = await page.evaluate(
+        (table: typeof FACE_TABLE, ids: string[]) =>
+          (window as unknown as { __ctFaces: (t: typeof FACE_TABLE, c: string[]) => { issues: FaceIssue[]; proportional: Array<{ id: string; family: string }> } }).__ctFaces(table, ids),
+        FACE_TABLE,
+        counters,
+      );
+      for (const f of faces.issues) {
+        if (win && f.id && !f.id.startsWith(`${win.scene}.`)) continue;
+        const want = `${f.weight}${f.italic ? " italic" : ""}${f.stretch !== 100 ? ` at ${f.stretch}% width` : ""}`;
+        findings.push({
+          source: "probe",
+          rule: "font-face-missing",
+          severity: f.synth ? "info" : "warning",
+          ...(f.id ? { scene: f.id.slice(0, f.id.indexOf(".")), element: f.id } : {}),
+          message: `"${f.text}" asks ${f.family} for ${want}, which it doesn't ship (has ${f.have}) — ${f.synth ? "the browser fakes it" : "it renders as the nearest face"}`,
+          suggestion: "use a weight/style the family ships, or a role whose family has it (font-sans/font-display)",
+        });
+      }
+      for (const c of faces.proportional) {
+        findings.push({
+          source: "probe",
+          rule: "counter-proportional",
+          severity: "warning",
+          scene: c.id.slice(0, c.id.indexOf(".")),
+          element: c.id,
+          message: `counter "${c.id}" is set in ${c.family}, which has no tabular figures — its width jitters as it counts`,
+          suggestion: "set it in font-mono or a sans with tnum, or use <Stat> (the kit's figures role)",
+        });
       }
 
       await page.evaluate(MEASURE_SCRIPT);

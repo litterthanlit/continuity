@@ -16,6 +16,7 @@
 - `exit` — cubic-bezier(0.3, 0, 0.8, 0.15)
 - `hero` — cubic-bezier(0.16, 1, 0.3, 1)
 - `inOut` — cubic-bezier(0.65, 0, 0.35, 1)
+- `sharp` — cubic-bezier(0.83, 0, 0.17, 1)
 - `snappy` — spring(stiffness 380, damping 34, mass 1)
 - `gentle` — spring(stiffness 140, damping 22, mass 1)
 - `bouncy` — spring(stiffness 300, damping 15, mass 1)
@@ -46,6 +47,9 @@
 | `zoomIn` | scale, opacity, blur | hero (0.9s) | hero |  | Arrive from slightly larger and defocused. Big statements, logos. |
 | `flipUp` | rotateX, yPct, opacity | slow (0.64s) | enter |  | 3D hinge up from the baseline (parent needs perspective; Stage provides it). |
 | `draw` | draw | hero (0.9s) | inOut |  | Stroke draws on (SVG paths rendered with the Path kit component). |
+| `weightIn` | wght, opacity | hero (0.9s) | hero |  | Weight swells from light to the kit's settled weight while fading in. Variable families (flexion, swiss, wonk); pair with split chars/words or nowrap. |
+| `widthIn` | wdth, opacity | slow (0.64s) | enter |  | Letters settle from wide to their width (wdth axis — flexion, broadside). Pair with split chars or nowrap. |
+| `softIn` | soft, opacity | slow (0.64s) | enter |  | Fraunces serifs soften from sharp (SOFT 0) to the kit's softness while fading in (wonk). |
 
 ## Exit presets
 | Preset | Animates | Duration | Ease | Mask | Use |
@@ -65,16 +69,27 @@
 | `glow` | brightness | fast (0.24s) | standard |  | Brighten and return. |
 | `nudge` | y | fast (0.24s) | standard |  | Small upward hop. |
 | `underline` | scaleX | slow (0.64s) | hero |  | Grow a bar/underline element from the left (scaleX; set transform-origin: left). |
+| `weightPulse` | wght | fast (0.24s) | standard |  | Weight punches up and settles back — emphasis without moving anything (variable families). |
+| `widthPulse` | wdth | fast (0.24s) | standard |  | Letters stretch wide and settle back (wdth axis — flexion, broadside). |
 
-## Scene transitions
-- `cut` — Hard cut. The default between punchy kinetic-type beats; cut on the beat.
-- `crossfade` — Incoming scene fades over the outgoing one. Calm, continuous.
-- `dip` — Out fades to the background colour, then in fades up. A breath between chapters.
-- `push` — Incoming pushes the outgoing scene off to the left. Sequential steps, carousels.
-- `pushUp` — Incoming pushes up from below. Vertical feeds, lists, 9:16.
-- `blur` — Defocus out, focus in. Premium, dreamy.
-- `zoom` — Zoom-through: out scales up and fades, in settles from smaller. Energy, momentum.
-- `wipe` — Incoming scene wipes on left → right with a clip-path edge.
+## Scene transitions (storyboard `transition`)
+| type | default | range | params | what it is |
+|---|---|---|---|---|
+| `cut` | — | — | — | Hard cut. The default between punchy kinetic-type beats; cut on the beat. |
+| `crossfade` | 0.5s | 0.3–1s | ease | Incoming scene fades over the outgoing one. Calm, continuous — for the same surface in a new state. |
+| `dip` | 0.5s | 0.3–1s | ease | Out fades to the background colour, then in fades up. A breath between chapters. |
+| `push` | 0.5s | 0.3–0.8s | ease, dir, blur | Incoming pushes the outgoing scene off in the direction of travel (dir, default left). blur: true adds speed-matched motion blur. Sequential steps, carousels. |
+| `pushUp` | 0.5s | 0.3–0.8s | ease, blur | push with dir up: incoming pushes up from below. Vertical feeds, lists, 9:16. |
+| `blur` | 0.5s | 0.4–1s | ease | Defocus out, focus in; the outgoing scene stays opaque (no double-exposure dip). Premium, dreamy. |
+| `zoom` | 0.5s | 0.35–0.9s | ease | Zoom-through: out scales up and fades, in settles from slightly larger (1.12 → 1). Energy, momentum — into a detail. |
+| `wipe` | 0.5s | 0.35–0.8s | ease, dir, angle, feather | Incoming wipes on with a moving edge (dir, default right). feather (8–20) softens the edge; angle (e.g. 120) runs it diagonally. |
+| `whip` | 0.33s | 0.2–0.45s | ease, dir, blur | Whip pan: a fast push with heavy motion blur; the swap hides at peak speed. Camera-first product cuts. Keep it short. |
+| `punchCut` | 0.37s | 0.25–0.5s | ease, flash | Editorial punch: the outgoing scene pushes in, a hard swap at 45%, the incoming settles from 1.06 with a two-frame flash. |
+| `iris` | 0.6s | 0.4–0.9s | ease, origin, feather | Circular reveal from origin (default centre), to the farthest corner. Focus on a point — a button, a logo. |
+| `strips` | 0.5s | 0.3–0.8s | ease, dir, n, stagger | n staggered strips (default 6) reveal the next scene toward dir (default up). High-energy accent for social and kinetic cuts. |
+| `lightSweep` | 0.6s | 0.45–0.9s | ease, dir, color (dir: left/right) | A luminous accent band sweeps across the cut (dir left/right) while the next scene is revealed beneath it. Logo and hero moments — once per video. |
+
+One transition language per video (≤ 2 types besides cuts) — see motion-craft §7.
 
 ## Type scale (px at 1080 short side · line-height · tracking)
 - `text-mega` 240px · 0.88 · -0.05em
@@ -87,10 +102,28 @@
 - `text-caption` 30px · 1.35 · 0.005em
 - `text-micro` 26px · 1.3 · 0.02em
 
-## Themes
-- `mono-dark` (dark) — Linear/Vercel-like: near-black canvas, white type, one violet accent, hairline borders, soft aurora glow. Precise and premium. Fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
-- `light-editorial` (light) — Stripe/editorial: warm off-white paper, ink-black type, serif accents, a single saturated accent. Calm, confident, magazine-like. Fonts: display Inter Tight, sans Inter, mono Geist Mono, serif Instrument Serif.
-- `vivid-gradient` (dark) — Bold launch energy: deep indigo canvas, electric gradient mesh, high-contrast white type. For hype cuts and social. Fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
+## Themes (colour)
+- `mono-dark` (dark) — Linear/Vercel-like: near-black canvas, white type, one violet accent, hairline borders, soft aurora glow. Precise and premium. Suggested kit: `swiss`. Classic fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
+- `light-editorial` (light) — Stripe/editorial: warm off-white paper, ink-black type, serif accents, a single saturated accent. Calm, confident, magazine-like. Suggested kit: `atelier`. Classic fonts: display Inter Tight, sans Inter, mono Geist Mono, serif Instrument Serif.
+- `vivid-gradient` (dark) — Bold launch energy: deep indigo canvas, electric gradient mesh, high-contrast white type. For hype cuts and social. Suggested kit: `broadside`. Classic fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
+
+## Type kits (storyboard `type`)
+| kit | evokes | display | text | labels | accent | figures |
+|---|---|---|---|---|---|---|
+| `swiss` | Vercel, Linear, Stripe | Geist 600 | Geist 400 | Geist Mono 400 caps 0.14em | Instrument Serif ×1.04 | display |
+| `atelier` | Anthropic (Tiempos + Styrene), editorial product films | Newsreader 340 | Instrument Sans 400 | Geist Mono 400 caps 0.16em | Newsreader ×1 | sans |
+| `wonk` | Reckless/Recoleta, Arc/Dia's Exposure | Fraunces 400 SOFT 100 WONK 1 | Hanken Grotesk 400 | DM Mono 400 caps 0.12em | Fraunces ×1 | mono |
+| `terminal` | Vercel, Resend, Cursor, dev-tool launches | Geist Mono 500 | Geist 400 | Geist Mono 400 caps 0.1em | Instrument Serif ×1.04 | mono |
+| `broadside` | Figma Config condensed display, brutalist social | Archivo 850 w66 caps | Inter Tight 500 | Martian Mono 400 caps 0.08em | Instrument Serif ×1.03 | display |
+| `flexion` | GitHub Universe, Söhne Breit launches, kinetic type | Mona Sans 600 | Mona Sans 400 | Martian Mono 400 caps 0.1em | Instrument Serif ×1.02 | display |
+
+Omit `type` for `classic` (the theme's own fonts, v1 settings). Per-kit tracking/leading overrides of the scale:
+- `swiss`: mega 0.86/-0.06em · display 0.9/-0.055em · h1 0.95/-0.05em · h2 1/-0.045em · h3 1.06/-0.035em
+- `atelier`: mega 0.98/-0.02em · display 1/-0.02em · h1 1.02/-0.02em · h2 1.06/-0.015em · h3 1.1/-0.01em
+- `wonk`: mega 0.94/-0.03em · display 0.98/-0.03em · h1 1/-0.03em · h2 1.04/-0.025em · h3 1.08/-0.02em
+- `terminal`: mega 0.9/-0.04em · display 0.94/-0.035em · h1 1/-0.03em · h2 1.04/-0.03em · h3 1.1/-0.02em
+- `broadside`: mega 0.86/0em · display 0.88/0.005em · h1 0.9/0.005em · h2 0.94/0.01em · h3 1/0.01em
+- `flexion`: mega 0.88/-0.04em · display 0.92/-0.04em · h1 0.96/-0.04em · h2 1.02/-0.035em · h3 1.08/-0.025em
 
 ## Timeline lint rules
 - `ease-linear` — Spatial motion with a linear ease looks mechanical. Use a token ease (enter/exit/standard/hero/inOut or a spring).
@@ -111,9 +144,17 @@
 - `split-too-busy` — Character split on long copy is slow and noisy. Split by words or lines instead.
 - `stagger-too-long` — The stagger cascade takes too long to complete.
 - `camera-too-fast` — Camera moves faster than ~15% zoom/s or 160px/s feel jarring.
-- `transition-too-long` — Scene transitions over 1s stall the edit.
+- `transition-too-long` — A transition longer than its type's craft range stalls the edit (a 0.8s whip is no longer a whip).
+- `transition-too-short` — A transition shorter than its type's range reads as a glitch, not a move.
+- `transition-language` — More than two transition types in one video reads as a template. Pick one primary (most cuts) and at most one accent; hard cuts are free.
+- `transition-bounce` — Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, sharp, standard).
+- `transition-strobe` — A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or use whip.
 - `mask-needs-split` — Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.
 - `cut-off-beat` — Scene cut is not on the music grid (bpm).
+- `axis-reflow` — Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.
+- `axis-unsupported` — The element's family has no such axis, so the channel animates nothing (e.g. wdth on Geist, soft outside Fraunces).
+- `axis-range` — Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.
+- `hairline-weight` — Serif type below weight 300 shimmers after video compression.
 
 ## Source lint rules
 - `nondeterministic-api` — Wall-clock / random APIs (Math.random, Date.now, new Date(), performance.now, setTimeout/setInterval, requestAnimationFrame) in project code — frames are seeked, so results must be a pure function of time. Use the motion DSL; for variety use fixed data or a seeded sequence.

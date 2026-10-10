@@ -51,6 +51,9 @@ it has nothing to do.
   (`shadow-float`); subtle `rotateY` (−8…−14°) for a 3/4 view, resolved before
   the viewer must read anything.
 - Backgrounds stay quiet behind UI (`grid`, `spotlight`, low-contrast `aurora`).
+- Type kit (see `typography`): `swiss` for most products (Geist, Vercel/Linear
+  grade); `terminal` for dev tools, CLIs and APIs; `atelier` when the brand is
+  editorial/AI; `wonk` for warm consumer products.
 
 ## Copy
 Headline = benefit, not feature ("Ship reviews in minutes", not "Review
@@ -59,5 +62,8 @@ must be on-message too.
 
 ## Pacing
 Feature scenes 4–7s: ~1s headline in, ~2–4s UI action, ~1s hold. Transitions
-between features: `push` (sequential) or `crossfade` (same surface, new state).
-Zoom-through only into a detail.
+follow the **camera-first** language: `push` with `blur: true` between features
+(direction = reading order), one `whip` for the fast beat, `zoom` only into a
+detail, `iris` (origin = the button) to focus, `crossfade` for the same surface
+in a new state. A `lightSweep` into the logo end card, once. Everything else is
+a cut.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MotionBuilder, staggerOffsets } from "../src/motion/dsl.js";
 import { cubicBezier, easeFn, isLinear, springPosition, springSettleTime } from "../src/motion/easing.js";
-import { compileScene, formatCounter, resolveScene, sampleScene, styleOf } from "../src/motion/evaluate.js";
+import { compileScene, formatCounter, mergeVariationSettings, resolveScene, sampleScene, styleOf } from "../src/motion/evaluate.js";
 import { eases, readTime } from "../src/motion/tokens.js";
 import { transitionTweens } from "../src/motion/transitions.js";
 import type { SceneTimeline } from "../src/motion/types.js";
@@ -149,9 +149,48 @@ describe("evaluate", () => {
   });
 });
 
+describe("variable font axes", () => {
+  it("maps font channels to font-weight, font-stretch and variation axes", () => {
+    expect(styleOf({ wght: 650.4, wdth: 87.5 })).toEqual({ fontWeight: "650.4", fontStretch: "87.5%" });
+    expect(styleOf({ soft: 40, opsz: 72 })).toEqual({ fontVariation: { SOFT: 40, opsz: 72 } });
+    expect(styleOf({ wght: 2000, wdth: 10 })).toEqual({ fontWeight: "1000", fontStretch: "50%" });
+  });
+
+  it("merges animated axes over the settled settings (kit axes survive)", () => {
+    expect(mergeVariationSettings('"SOFT" 100, "WONK" 1', { SOFT: 37.5 })).toBe('"SOFT" 37.5, "WONK" 1');
+    expect(mergeVariationSettings("normal", { opsz: 72 })).toBe('"opsz" 72');
+    expect(mergeVariationSettings("normal", {})).toBe("normal");
+  });
+
+  it("inherited from-values and loops start at the element's font base, not 400", () => {
+    const mb = new MotionBuilder("s", 3, {}, undefined, () => ({ values: { wght: 600, wdth: 100 }, ranges: { wght: [200, 900], wdth: [75, 125] } }));
+    mb.tween("t", { wght: [null, 800] }, { at: 0.5, duration: 0.4 });
+    mb.loop("u", { wdth: 10 }, { period: 2 });
+    const sc = { ...scene(mb), bases: { "s.t": { wght: 600 }, "s.u": { wdth: 100 } } };
+    expect(resolveScene(sc, {})[0].props.wght).toEqual([600, 800]);
+    const c = compileScene(sc, {});
+    expect(sampleScene(c, 0).get("s.t")!.wght).toBe(600);
+    expect(sampleScene(c, 0.5).get("s.u")!.wdth).toBeCloseTo(100 + 10 * Math.sin(Math.PI / 2), 6);
+  });
+
+  it("axis presets start from the target's base and stay inside its family's range", () => {
+    const mb = new MotionBuilder("s", 3, {}, undefined, () => ({ values: { wght: 340, wdth: 100, soft: 100 }, ranges: { wght: [200, 800], wdth: [75, 112.5] } }));
+    mb.enter("a", "weightIn");
+    mb.enter("b", "widthIn");
+    mb.enter("c", "softIn");
+    mb.emphasize("d", "weightPulse");
+    const [a, b, c, d1, d2] = mb.tweens;
+    expect(a.props.wght).toEqual([200, 340]);
+    expect(b.props.wdth).toEqual([112.5, 100]);
+    expect(c.props.soft).toEqual([0, 100]);
+    expect(d1.props.wght).toEqual([null, 540]);
+    expect(d2.props.wght).toEqual([null, 340]);
+  });
+});
+
 describe("transitions", () => {
   it("place outgoing tweens at the end of the outgoing scene", () => {
-    const t = transitionTweens("push", 0.5, { id: "a", duration: 3 }, { id: "b" });
+    const t = transitionTweens({ type: "push", duration: 0.5 }, { id: "a", duration: 3 }, { id: "b" });
     expect(t.out[0]).toMatchObject({ target: "a.scene", start: 2.5, duration: 0.5 });
     expect(t.in[0]).toMatchObject({ target: "b.scene", start: 0 });
   });
