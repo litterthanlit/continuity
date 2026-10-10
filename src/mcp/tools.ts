@@ -4,6 +4,8 @@ import type { CallToolResult, McpServer, ServerContext } from "@modelcontextprot
 import { z } from "zod";
 import { catalog } from "../cli/commands/docs.js";
 import { readWorkConfig } from "../paths.js";
+import { themes } from "../themes/index.js";
+import { KIT_NAMES } from "../themes/kits.js";
 import { NEW_SLUG, SandboxError, SLUG, listProjectFiles, readProjectFile, writeProjectFile } from "./files.js";
 import { imageBlocks } from "./images.js";
 import { runCt, serialized, type CtRun } from "./run.js";
@@ -131,12 +133,19 @@ export function registerTools(server: McpServer, ws: Workspace) {
       inputSchema: z.object({
         slug: z.string().regex(NEW_SLUG, "lowercase kebab-case, starting with a letter").describe("New project slug"),
         aspect: z.enum(["16:9", "9:16", "1:1", "4:5"]).default("16:9"),
-        theme: z.enum(["mono-dark", "light-editorial", "vivid-gradient"]).default("mono-dark"),
+        theme: z.enum(Object.keys(themes) as [string, ...string[]]).default("mono-dark"),
+        type: z
+          .enum([...KIT_NAMES, "classic"])
+          .optional()
+          .describe("Type kit (font pairing). Default: the theme's suggested kit. classic = the theme's v1 fonts"),
         title: z.string().max(120).optional(),
       }),
     },
-    async ({ slug, aspect, theme, title }, ctx) =>
-      ct(ws, ctx, ["new", slug, `--aspect=${aspect}`, `--theme=${theme}`, ...flag("title", title)], { key: slug, headline: (r) => `created ${String(r.dir ?? slug)}` }),
+    async ({ slug, aspect, theme, type, title }, ctx) =>
+      ct(ws, ctx, ["new", slug, `--aspect=${aspect}`, `--theme=${theme}`, ...flag("type", type), ...flag("title", title)], {
+        key: slug,
+        headline: (r) => `created ${String(r.dir ?? slug)}`,
+      }),
   );
 
   // ── project files (sandboxed) ────────────────────────────────────────

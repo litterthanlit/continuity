@@ -8,6 +8,7 @@ import { transitionDescriptions } from "../../motion/transitions.js";
 import { PKG_ROOT, rel } from "../../paths.js";
 import { TYPE_SCALE } from "../../build/css.js";
 import { themes } from "../../themes/index.js";
+import { typeKits, type RoleStyle } from "../../themes/kits.js";
 import type { Command } from "../lib/command.js";
 import { flagBool } from "../lib/args.js";
 import { log, ok } from "../lib/log.js";
@@ -23,6 +24,9 @@ function presetRows(defs: Record<string, PresetDef>): string {
     })
     .join("\n");
 }
+
+const roleLine = (r: RoleStyle) =>
+  `${r.family.family} ${r.weight}${r.width !== undefined && r.width !== 100 ? ` w${r.width}` : ""}${r.axes ? ` ${Object.entries(r.axes).map(([a, v]) => `${a} ${v}`).join(" ")}` : ""}${r.case ? " caps" : ""}`;
 
 export function catalog(): string {
   const head = "| Preset | Animates | Duration | Ease | Mask | Use |\n|---|---|---|---|---|---|";
@@ -58,8 +62,16 @@ ${Object.entries(transitionDescriptions).map(([k, v]) => `- \`${k}\` — ${v}`).
 ## Type scale (px at 1080 short side · line-height · tracking)
 ${Object.entries(TYPE_SCALE).map(([k, [s, lh, ls]]) => `- \`text-${k}\` ${s}px · ${lh} · ${ls}`).join("\n")}
 
-## Themes
-${Object.values(themes).map((t) => `- \`${t.name}\` (${t.mode}) — ${t.description} Fonts: display ${t.fonts.display.family}, sans ${t.fonts.sans.family}, mono ${t.fonts.mono.family}, serif ${t.fonts.serif.family}.`).join("\n")}
+## Themes (colour)
+${Object.values(themes).map((t) => `- \`${t.name}\` (${t.mode}) — ${t.description} Suggested kit: \`${t.suggestedType ?? "classic"}\`. Classic fonts: display ${t.fonts.display.family}, sans ${t.fonts.sans.family}, mono ${t.fonts.mono.family}, serif ${t.fonts.serif.family}.`).join("\n")}
+
+## Type kits (storyboard \`type\`)
+| kit | evokes | display | text | labels | accent | figures |
+|---|---|---|---|---|---|---|
+${Object.values(typeKits).map((k) => `| \`${k.name}\` | ${k.evokes} | ${roleLine(k.roles.display)} | ${roleLine(k.roles.sans)} | ${roleLine(k.roles.mono)} ${k.label.case === "uppercase" ? "caps " : ""}${k.label.tracking} | ${k.roles.serif.family.family} ×${k.accent.scale} | ${k.figures} |`).join("\n")}
+
+Omit \`type\` for \`classic\` (the theme's own fonts, v1 settings). Per-kit tracking/leading overrides of the scale:
+${Object.values(typeKits).map((k) => `- \`${k.name}\`: ${Object.entries(k.scale).map(([s, [lh, ls]]) => `${s} ${lh}/${ls}`).join(" · ")}`).join("\n")}
 
 ## Timeline lint rules
 ${Object.entries(RULES).map(([k, v]) => `- \`${k}\` — ${v}`).join("\n")}

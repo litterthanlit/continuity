@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRANSITIONS } from "../motion/transitions.js";
+import { KIT_NAMES } from "../themes/kits.js";
 
 export const ASPECTS = {
   "16:9": { width: 1920, height: 1080 },
@@ -48,6 +49,8 @@ export const SceneSchema = z.object({
   motion: z.string().optional(),
   /** Transition into the NEXT scene. Omit for a hard cut. */
   transition: TransitionSchema.optional(),
+  /** Type kit for this scene only (galleries, a deliberate chapter break). Usually set once at the top. */
+  type: z.enum(KIT_NAMES).optional(),
 });
 
 export const StoryboardSchema = z.object({
@@ -60,6 +63,8 @@ export const StoryboardSchema = z.object({
     fps: z.union([z.literal(24), z.literal(25), z.literal(30), z.literal(60)]).default(30),
   }),
   theme: z.string().default("mono-dark"),
+  /** Type kit (font pairing): swiss, atelier, wonk, terminal, broadside, flexion. Omit for the theme's classic fonts. */
+  type: z.enum(KIT_NAMES).optional(),
   /** Optional musical grid for cutting on the beat (seam for audio). */
   bpm: z.number().positive().optional(),
   scenes: z.array(SceneSchema).min(1),

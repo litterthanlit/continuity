@@ -2,10 +2,22 @@
 /** @jsxImportSource preact */
 import type { ComponentChildren, JSX } from "preact";
 import { formatCounter } from "../motion/evaluate.js";
+import type { TypeSize } from "../themes/kits.js";
 import { ctId, useScene } from "./context.js";
 import { cx, type BaseProps } from "./core.js";
 
-export type TypeSize = "mega" | "display" | "h1" | "h2" | "h3" | "lead" | "body" | "caption" | "micro";
+export type { TypeSize };
+
+/**
+ * Classic (v1) kits keep their literal classes; v2 kits leave weight, width,
+ * case and label tracking to the kit's role rules (src/build/css.ts kitCss),
+ * so one component reads right in every kit — and an explicit utility class
+ * (`font-bold`, `tracking-[…]`) still wins.
+ */
+const v1 = () => {
+  const kit = useScene().typeKit;
+  return !kit || kit.v1 === true;
+};
 
 interface TextProps extends BaseProps {
   as?: string;
@@ -25,7 +37,7 @@ function Text({ ct, as = "p", size = "body", class: cls, style, children, balanc
 
 /** Big display type in the theme's display face. Sizes: mega, display, h1, h2, h3. */
 export function Headline({ size = "display", as = "h1", class: cls, balance = true, ...rest }: TextProps) {
-  return <Text {...rest} base="" as={as} size={size} balance={balance} class={cx("font-display font-semibold text-fg", cls)} />;
+  return <Text {...rest} base="" as={as} size={size} balance={balance} class={cx(v1() ? "font-display font-semibold text-fg" : "font-display text-fg", cls)} />;
 }
 
 /** Secondary line under a headline. */
@@ -40,7 +52,7 @@ export function Body({ size = "body", as = "p", class: cls, ...rest }: TextProps
 /** Small uppercase mono label above a headline ("INTRODUCING", "01 — SPEED"). */
 export function Eyebrow({ size, as = "p", class: cls, ...rest }: TextProps) {
   const s = size ?? (useScene().portrait ? "body" : "micro");
-  return <Text {...rest} base="" as={as} size={s} class={cx("font-mono uppercase tracking-[0.18em] text-subtle", cls)} />;
+  return <Text {...rest} base="" as={as} size={s} class={cx(v1() ? "font-mono uppercase tracking-[0.18em] text-subtle" : "font-mono ct-label text-subtle", cls)} />;
 }
 
 /** Small supporting text. Portrait (9:16) defaults one step larger for phone legibility. */
@@ -58,10 +70,13 @@ export function Accent({ children, class: cls, ct }: { children: ComponentChildr
   );
 }
 
-/** Inline editorial italic serif accent ("Ship *beautiful* motion"). */
+/**
+ * Inline editorial italic serif accent ("Ship *beautiful* motion"). In v2 kits
+ * it is x-height matched to the surrounding type (the kit's accent scale).
+ */
 export function Serif({ children, class: cls, ct }: { children: ComponentChildren; class?: string; ct?: string }) {
   return (
-    <span data-ct={ct ? ctId(ct) : undefined} class={cx("font-serif italic font-normal tracking-normal", cls)}>
+    <span data-ct={ct ? ctId(ct) : undefined} class={cx(v1() ? "font-serif italic font-normal tracking-normal" : "font-serif italic ct-accent", cls)}>
       {children}
     </span>
   );

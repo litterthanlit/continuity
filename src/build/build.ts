@@ -13,7 +13,8 @@ import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDe
 import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
-import { classCandidates, compileCss, fontFaceCss, fontLoadList, uniqueFamilies } from "./css.js";
+import { resolveKit, getKit, type TypeKit } from "../themes/kits.js";
+import { buildFamilies, classCandidates, compileCss, fontFaceCss, fontLoadList } from "./css.js";
 import { missingGlyphs } from "./glyphs.js";
 import { sourceHash } from "./hash.js";
 import { runtimeBundle } from "./runtime-bundle.js";
@@ -42,6 +43,8 @@ export interface BuildResult {
   dir: string;
   storyboard?: Storyboard;
   theme?: Theme;
+  /** The video's type kit (scenes may override it with their own `type`). */
+  typeKit?: TypeKit;
   timeline?: Timeline;
   elements: ElementInfo[];
   partsEstimate: PartCounts;
@@ -140,12 +143,27 @@ export async function buildProject(
   if (!sb) return { ...empty, findings };
 
   let theme: Theme;
+  let kit: TypeKit;
   try {
     theme = await loadTheme(src, sb.theme);
+    kit = resolveKit(theme, sb.type);
   } catch (e) {
     findings.push({ source: "build", rule: "theme", severity: "error", message: errMsg(e) });
     return { ...empty, storyboard: sb, findings };
   }
+  const themeKit = typeof theme.type === "string" ? theme.type : theme.type?.name;
+  if (sb.type && themeKit && sb.type !== themeKit) {
+    findings.push({
+      source: "build",
+      rule: "type-conflict",
+      severity: "info",
+      message: `storyboard type "${sb.type}" overrides the "${themeKit}" kit set in theme.ts`,
+    });
+  }
+  // Per-scene kit overrides (scoped CSS under [data-ct-type]); the same kit as the video's is no override.
+  const sceneKit = new Map<string, TypeKit>();
+  for (const sc of sb.scenes) if (sc.type && sc.type !== kit.name) sceneKit.set(sc.id, getKit(sc.type));
+  const sceneKits = [...new Map([...sceneKit.values()].map((k) => [k.name, k])).values()];
 
   const { width, height } = ASPECTS[sb.format.aspect];
   const timings = sceneTimings(sb);
@@ -195,6 +213,7 @@ export async function buildProject(
           landscape: width > height,
           square: width === height,
           theme,
+          typeKit: sceneKit.get(sc.id) ?? kit,
           beats,
           duration: sc.duration,
           index,
@@ -224,6 +243,7 @@ export async function buildProject(
     }
     sections.push(
       `<section id="sc-${sc.id}" class="clip ct-scene" data-ct-scene="${sc.id}" data-ct="${sc.id}.scene" ` +
+        (sceneKit.has(sc.id) ? `data-ct-type="${sceneKit.get(sc.id)!.name}" ` : "") +
         `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${index + 1}">` +
         `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div></section>`,
     );
@@ -339,9 +359,9 @@ export async function buildProject(
 
   // Every visible character must be drawable by a vendored font (determinism).
   for (const sec of document.querySelectorAll("[data-ct-scene]") as unknown as HTMLElement[]) {
-    const missing = missingGlyphs(sec.textContent ?? "", uniqueFamilies(theme));
+    const sceneId = sec.getAttribute("data-ct-scene")!;
+    const missing = missingGlyphs(sec.textContent ?? "", buildFamilies([sceneKit.get(sceneId) ?? kit]));
     if (missing.length) {
-      const sceneId = sec.getAttribute("data-ct-scene")!;
       findings.push({
         source: "build",
         rule: "glyph-missing",
@@ -355,19 +375,20 @@ export async function buildProject(
 
   const body = document.querySelector("#root")!.outerHTML;
   const ok = !findings.some((f) => f.severity === "error");
-  const result: BuildResult = { ok, slug, dir, storyboard: sb, theme, timeline, elements, partsEstimate, findings, hash };
+  const result: BuildResult = { ok, slug, dir, storyboard: sb, theme, typeKit: kit, timeline, elements, partsEstimate, findings, hash };
   if (!write) return result;
 
   // ---- Emit the HyperFrames project.
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, "fonts"), { recursive: true });
-  for (const fam of uniqueFamilies(theme)) {
+  const families = buildFamilies([kit, ...sceneKits]);
+  for (const fam of families) {
     for (const face of fam.faces) copyFileSync(resolveDep(face.file), join(dir, "fonts", basename(face.file)));
   }
   const assets = join(src, "assets");
   if (existsSync(assets)) cpSync(assets, join(dir, "assets"), { recursive: true });
 
-  const css = fontFaceCss(uniqueFamilies(theme)) + "\n" + (await compileCss(theme, classCandidates(body), PKG_ROOT));
+  const css = fontFaceCss(families) + "\n" + (await compileCss(theme, kit, sceneKits, classCandidates(body), PKG_ROOT));
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -386,7 +407,7 @@ ${body}
 </html>
 `;
   writeFileSync(join(dir, "index.html"), html);
-  writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(uniqueFamilies(theme)) })};\n`);
+  writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(families) })};\n`);
   writeFileSync(join(dir, "continuity-motion.js"), await runtimeBundle());
   // Not named *.motion.json on purpose: HyperFrames auto-runs sidecars and each
   // assertion costs ~10s of timeline sweeping. `ct check --deep` activates it.

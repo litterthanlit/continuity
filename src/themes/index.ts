@@ -1,4 +1,5 @@
 import { fonts, type FontFamily } from "./fonts.js";
+import type { KitName, TypeKit } from "./kits.js";
 
 export type ColorToken =
   | "bg"
@@ -29,6 +30,14 @@ export interface Theme {
   /** 0..1 film grain strength. */
   grain: number;
   radius: { sm: number; md: number; lg: number; xl: number };
+  /**
+   * Type kit for every project on this theme (a brand theme.ts can pin one). The
+   * storyboard's `type` wins over it; with neither, the build uses `classic`
+   * (this theme's `fonts` with v1 settings).
+   */
+  type?: KitName | TypeKit;
+  /** The kit `ct new` writes into new storyboards on this theme. */
+  suggestedType?: KitName;
 }
 
 export const monoDark: Theme = {
@@ -55,6 +64,7 @@ export const monoDark: Theme = {
   background: "aurora",
   grain: 0.06,
   radius: { sm: 8, md: 14, lg: 22, xl: 32 },
+  suggestedType: "swiss",
 };
 
 export const lightEditorial: Theme = {
@@ -81,6 +91,7 @@ export const lightEditorial: Theme = {
   background: "solid",
   grain: 0.04,
   radius: { sm: 6, md: 12, lg: 18, xl: 28 },
+  suggestedType: "atelier",
 };
 
 export const vividGradient: Theme = {
@@ -107,6 +118,7 @@ export const vividGradient: Theme = {
   background: "mesh",
   grain: 0.08,
   radius: { sm: 10, md: 16, lg: 26, xl: 40 },
+  suggestedType: "broadside",
 };
 
 export const themes: Record<string, Theme> = {
