@@ -24,7 +24,15 @@ d("seeded layout defects (projects/_defects-layout)", () => {
     expect(b.ok).toBe(true);
     const [hf, probe] = await Promise.all([hfCheck(b), probeProject(b)]);
     const ids = new Set([...hf.findings, ...probe].map((f) => `${f.source}:${f.rule}`));
-    for (const r of ["probe:text-clipped", "probe:type-too-small", "probe:safe-area", "probe:collide-in-motion", "check:contrast_aa_failure"]) {
+    for (const r of [
+      "probe:text-clipped",
+      "probe:type-too-small",
+      "probe:safe-area",
+      "probe:collide-in-motion",
+      "probe:font-face-missing",
+      "probe:counter-proportional",
+      "check:contrast_aa_failure",
+    ]) {
       expect(ids, r).toContain(r);
     }
   });
