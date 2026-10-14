@@ -1,8 +1,8 @@
 /**
  * Slow, browser-backed tests. Run with `CT_SLOW=1 pnpm test`.
  * - every seeded layout defect is caught by `ct check`
- * - golden frames: the engine + HyperFrames + Chrome still render _smoke, _type and
- *   _transitions the same (refresh deliberately with CT_UPDATE_GOLDEN=1 after a reviewed
+ * - golden frames: the engine + HyperFrames + Chrome still render _smoke, _type,
+ *   _transitions and _kit the same (refresh deliberately with CT_UPDATE_GOLDEN=1 after a reviewed
  *   change; a missing golden is written on first run)
  * - the type kit cascade contract
  */
@@ -44,7 +44,8 @@ d("seeded layout defects (projects/_defects-layout)", () => {
 /**
  * Golden frames per project: coarse 48×27 greyscale signatures at fixed times.
  * _smoke guards the classic engine path (never refreshed by v2 work); _type and
- * _transitions guard the kits and the transition presentations.
+ * _transitions guard the kits and the transition presentations; _kit guards the UI
+ * kit components under the default theme.
  */
 const GOLDENS: Array<{ slug: string; times: number[] }> = [
   { slug: "_smoke", times: [0.5, 1.5, 3.4, 4.6] },
@@ -52,6 +53,8 @@ const GOLDENS: Array<{ slug: string; times: number[] }> = [
   { slug: "_type", times: [2.5, 6.3, 8.55, 10.1, 13.9, 17.7, 20.85, 21.5] },
   // mid-transition: push+blur, whip, punch-cut flash frame, feathered wipe, iris, strips, light sweep
   { slug: "_transitions", times: [7.35, 12.035, 14.5, 16.85, 19.1, 21.3, 23.6] },
+  // the UI kit under mono-dark, one settled frame per scene: guards theme and kit edits
+  { slug: "_kit", times: [3.6, 7.1, 11.4] },
 ];
 
 async function signature(file: string): Promise<number[]> {
