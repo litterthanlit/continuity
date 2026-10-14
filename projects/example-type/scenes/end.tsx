@@ -1,16 +1,18 @@
-import { scene, Stage, Center, Stack, Eyebrow, Headline, Subhead, Glow } from "continuity";
+import { scene, Stage, Safe, Center, Stack, Eyebrow, Headline, Subhead, Glow } from "continuity";
 
 export default scene({
   view: ({ text }) => (
     <Stage bg="aurora">
-      <Glow ct="glow" size={1200} x="50%" y="47%" opacity={0.3} />
-      <Center>
-        <Stack gap={34} class="items-center">
-          <Eyebrow ct="eyebrow" class="text-accent">{text.eyebrow}</Eyebrow>
-          <Headline ct="wordmark" size="display" class="whitespace-nowrap">{text.wordmark}</Headline>
-          <Subhead ct="tagline" size="lead">{text.tagline}</Subhead>
-        </Stack>
-      </Center>
+      <Glow ct="glow" size={1200} x="47%" y="46%" opacity={0.3} />
+      <Safe zone="social">
+        <Center>
+          <Stack gap={34} class="items-center">
+            <Eyebrow ct="eyebrow" class="text-accent">{text.eyebrow}</Eyebrow>
+            <Headline ct="wordmark" size="display" class="whitespace-nowrap">{text.wordmark}</Headline>
+            <Subhead ct="tagline" size="lead">{text.tagline}</Subhead>
+          </Stack>
+        </Center>
+      </Safe>
     </Stage>
   ),
   motion: (m) => {

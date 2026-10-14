@@ -82,16 +82,16 @@
     },
     {
       "id": "blind",
-      "duration": 2.5,
+      "duration": 2.6,
       "intent": "Tension: they can't see what they make.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.05
+          "at": 0.2
         },
         {
           "id": "b2",
-          "at": 1.2,
+          "at": 1.35,
           "note": "'see' defocuses"
         }
       ],

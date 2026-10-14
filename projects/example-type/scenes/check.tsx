@@ -6,8 +6,9 @@ export default scene({
     <Stage bg="aurora">
       <TypeStack>
         <Headline ct="l1" size="display">{text.l1}</Headline>
-        <Headline ct="l2" size="display">{text.l2}</Headline>
-        <div class="flex items-center gap-[30px]">
+        {/* 14px extra per line: at broadside's 0.88 leading the comma of FRAME, touches CHECKED. */}
+        <Headline ct="l2" size="display" class="mt-[14px]">{text.l2}</Headline>
+        <div class="mt-[14px] flex items-center gap-[30px]">
           <Headline ct="l3" size="display">{text.l3}</Headline>
           <Path ct="tick" d="M6 52 L38 84 L104 12" viewBox="0 0 110 96" width={124} height={108} strokeWidth={16} />
         </div>

@@ -71,8 +71,12 @@ export default scene({
               Every
               <br />
               frame,
-              <br />
-              checked. <span class="text-accent">✓</span>
+              <span class="mt-[3px] flex items-center gap-[6px]">
+                checked.
+                <svg class="text-accent" width={28} height={24} viewBox="0 0 110 96" fill="none" aria-hidden="true">
+                  <path d="M6 52 L38 84 L104 12" stroke="currentColor" stroke-width={16} stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
             </Tile>
             <Tile ct="t6" center>
               <span class="font-mono text-[10px] uppercase tracking-[0.08em] text-accent">Open source</span>
@@ -92,7 +96,10 @@ export default scene({
   motion: (m) => {
     m.enter("l1", "maskUp", { at: "b1", split: "lines" });
     m.enter("l2", "maskUp", { at: "b1+0.15", split: "lines" });
-    m.enter(["t1", "t2", "t3", "t4", "t5", "t6"], "scalePop", { at: "b2", stagger: { each: "grid", from: "center" } });
+    // Centre column first, then both sides: a 3×2 grid opening outward (a list stagger from
+    // "center" would count t1…t6 in a row and pop the corners t3/t4 first).
+    m.enter(["t2", "t5"], "scalePop", { at: "b2" });
+    m.enter(["t1", "t3", "t4", "t6"], "scalePop", { at: "b2+0.06" });
     m.emphasize("t5", "pulse", { at: "b2+0.9" });
     m.camera({ scale: [1, 1.04], y: [0, -24] });
   },
