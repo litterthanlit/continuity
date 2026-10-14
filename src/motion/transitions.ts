@@ -29,6 +29,7 @@ export type TransitionType = (typeof TRANSITIONS)[number];
 
 export const DIRS = ["left", "right", "up", "down"] as const;
 export type Dir = (typeof DIRS)[number];
+const OPPOSITE: Record<Dir, Dir> = { up: "down", down: "up", left: "right", right: "left" };
 export const TRANSITION_COLORS = ["accent", "accent-2", "fg", "white"] as const;
 export type TransitionColor = (typeof TRANSITION_COLORS)[number];
 export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "origin" | "n" | "stagger" | "blur" | "color" | "flash";
@@ -133,6 +134,13 @@ function push(c: Ctx, dir: Dir, ease: Ease, blur: boolean | number | undefined):
     if (sigma > 0) {
       res.out.push(...bell(o, c.os));
       res.in.push(...bell(i, 0));
+      // Each scene blurs on its own, so the seam between them would stay razor sharp at peak
+      // speed: feather both sides of it (out's trailing edge, in's leading edge) by about the
+      // blur's reach (3σ).
+      const feather = r3(Math.min(35, (300 * sigma) / distance));
+      const lin = { spec: eases.linear as EaseSpec, name: "linear" };
+      res.out.push(tw(o, c.os, c.d, { fx: [0, 1] }, lin, { kind: "edge", dir: OPPOSITE[dir], feather }));
+      res.in.push(tw(i, 0, c.d, { fx: [0, 1] }, lin, { kind: "edge", dir, feather }));
     }
   }
   return res;

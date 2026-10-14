@@ -97,7 +97,9 @@ export class MotionBuilder {
     /** Part counts estimated from the rendered view (so `after:` knows when a split cascade ends). */
     private readonly partsOf?: (target: string, mode: SplitMode) => number | undefined,
     /** Settled font channel values and ranges of a target, from its type kit (axis presets start from them). */
-    private readonly basesOf?: (target: string) => { values: Partial<Record<PropName, number>>; ranges: Partial<Record<PropName, [number, number]>> } | undefined,
+    private readonly basesOf?: (
+      target: string,
+    ) => { values: Partial<Record<PropName, number>>; ranges: Partial<Record<PropName, [number, number]>>; leading?: number } | undefined,
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -295,7 +297,7 @@ export class MotionBuilder {
     const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;
     list.forEach((el, i) => {
       const fb = this.basesOf?.(this.id(el));
-      const segments = def.segments({ ...opts, base: fb?.values, range: fb?.ranges });
+      const segments = def.segments({ ...opts, base: fb?.values, range: fb?.ranges, leading: fb?.leading });
       for (const seg of segments) {
         const { spec, name } = resolveEase(opts.ease ?? seg.ease);
         const segDuration =

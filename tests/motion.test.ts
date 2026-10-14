@@ -173,6 +173,17 @@ describe("variable font axes", () => {
     expect(sampleScene(c, 0.5).get("s.u")!.wdth).toBeCloseTo(100 + 10 * Math.sin(Math.PI / 2), 6);
   });
 
+  it("mask presets travel far enough to clear the line mask at the kit's leading (v1 keeps 110%)", () => {
+    const v1 = new MotionBuilder("s", 3, {});
+    v1.enter("a", "maskUp", { split: "lines" });
+    expect(v1.tweens[0].props.yPct).toEqual([110, 0]);
+    const tight = new MotionBuilder("s", 3, {}, undefined, () => ({ values: {}, ranges: {}, leading: 0.88 }));
+    tight.enter("a", "maskUp", { split: "lines" });
+    tight.exit("a", "maskOut", { split: "lines", at: 2 });
+    expect(tight.tweens[0].props.yPct).toEqual([135, 0]);
+    expect(tight.tweens[1].props.yPct).toEqual([null, -135]);
+  });
+
   it("axis presets start from the target's base and stay inside its family's range", () => {
     const mb = new MotionBuilder("s", 3, {}, undefined, () => ({ values: { wght: 340, wdth: 100, soft: 100 }, ranges: { wght: [200, 800], wdth: [75, 112.5] } }));
     mb.enter("a", "weightIn");

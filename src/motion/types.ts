@@ -115,7 +115,13 @@ export type FxSpec =
   /** Feathered circular mask from (x%, y%), radius to the farthest corner. */
   | { kind: "iris"; x: number; y: number; feather: number }
   /** `n` strips revealed toward `dir`, each eased, `stagger` as a fraction of the tween. */
-  | { kind: "strips"; n: number; dir: "up" | "down" | "left" | "right"; stagger: number; ease: EaseSpec };
+  | { kind: "strips"; n: number; dir: "up" | "down" | "left" | "right"; stagger: number; ease: EaseSpec }
+  /**
+   * One soft edge while a scene travels (`dir` names the edge: up = top): the
+   * feather swells to `feather`% at mid-progress and is gone at both ends, so a
+   * motion-blurred seam between two scenes blurs too.
+   */
+  | { kind: "edge"; dir: "up" | "down" | "left" | "right"; feather: number };
 
 export type StaggerFrom = "start" | "end" | "center" | "edges";
 

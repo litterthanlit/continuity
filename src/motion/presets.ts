@@ -31,9 +31,18 @@ export interface PresetOptions {
   base?: Partial<Record<PropName, number>>;
   /** What the target's family can draw, per font channel (filled in by the builder). */
   range?: Partial<Record<PropName, [number, number]>>;
+  /** Line-height ratio of the target's text (v2 kits; filled in by the builder). */
+  leading?: number;
 }
 
 const d = (o: PresetOptions, fallback: number) => o.distance ?? fallback;
+/**
+ * Mask presets travel yPct (% of the line). The line mask is padded 0.1em above
+ * and 0.16em below so ascenders aren't clipped at rest, so a glyph is hidden only
+ * after (leading + 0.26em) — 110% leaks at tight leading. v2 kits pass the
+ * line's leading; without it (classic) the v1 value stands.
+ */
+const maskTravel = (o: PresetOptions) => (o.leading ? Math.max(110, Math.ceil((100 * (o.leading + 0.3)) / o.leading)) : 110);
 const DEFAULT_RANGE: Partial<Record<PropName, [number, number]>> = { wght: [100, 900], wdth: [75, 125], soft: [0, 100] };
 /** Settled value of a font channel, and a value clamped into what the family can draw. */
 const fb = (o: PresetOptions, p: PropName, fallback: number) => o.base?.[p] ?? fallback;
@@ -98,13 +107,13 @@ export const enterPresets = {
     kind: "enter",
     mask: true,
     description: "Lines/words rise from behind an invisible baseline mask. Signature kinetic-type reveal.",
-    segments: () => [{ props: { yPct: [110, 0] }, duration: "hero", ease: "hero" }],
+    segments: (o) => [{ props: { yPct: [maskTravel(o), 0] }, duration: "hero", ease: "hero" }],
   },
   maskDown: {
     kind: "enter",
     mask: true,
     description: "Drop in from behind a top mask.",
-    segments: () => [{ props: { yPct: [-110, 0] }, duration: "hero", ease: "hero" }],
+    segments: (o) => [{ props: { yPct: [-maskTravel(o), 0] }, duration: "hero", ease: "hero" }],
   },
   wipeRight: {
     kind: "enter",
@@ -217,7 +226,7 @@ export const exitPresets = {
     kind: "exit",
     mask: true,
     description: "Lines/words leave upward behind the mask.",
-    segments: () => [{ props: { yPct: [null, -110] }, duration: "slow", ease: "exit" }],
+    segments: (o) => [{ props: { yPct: [null, -maskTravel(o)] }, duration: "slow", ease: "exit" }],
   },
   wipeOut: {
     kind: "exit",

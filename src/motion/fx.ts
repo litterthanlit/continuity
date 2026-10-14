@@ -9,6 +9,8 @@ import type { EaseSpec, FxSpec } from "./types.js";
  * - wipe:   linear-gradient mask, feathered edge, any angle (CSS gradient angle: 90 = edge travels right)
  * - iris:   radial-gradient mask from an origin, radius to the farthest corner
  * - strips: one "skyline" polygon clip — n strips revealed with a stagger, each eased
+ * - edge:   a moving scene's leading/trailing edge feathered for the length of a blurred move
+ *           (a sine bell: 0 at both ends, `feather`% at the midpoint) — softens the seam
  */
 export interface FxStyle {
   maskImage?: string;
@@ -34,10 +36,18 @@ function edge(p: number, feather: number): [number, number] {
   return [a, a + Math.max(feather, 0.01)];
 }
 
+/** Gradient angle pointing from the named edge into the element. */
+const INTO: Record<"up" | "down" | "left" | "right", number> = { up: 180, down: 0, left: 90, right: 270 };
+
 export function fxStyle(spec: FxSpec, p: number): FxStyle {
-  if (p >= 1) return spec.kind === "strips" ? { clipPath: "none" } : { maskImage: "none" };
+  if (p >= 1 || (spec.kind === "edge" && p <= 0)) return spec.kind === "strips" ? { clipPath: "none" } : { maskImage: "none" };
   const q = Math.max(0, p);
   switch (spec.kind) {
+    case "edge": {
+      const f = spec.feather * Math.sin(Math.PI * q);
+      if (f < 0.05) return { maskImage: "none" };
+      return { maskImage: "linear-gradient(" + INTO[spec.dir] + "deg, transparent 0%, #000 " + f2(f) + "%)" };
+    }
     case "wipe": {
       const [a, b] = edge(q, spec.feather);
       return { maskImage: "linear-gradient(" + f2(spec.angle) + "deg, #000 " + f2(a) + "%, transparent " + f2(b) + "%)" };

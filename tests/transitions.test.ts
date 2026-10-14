@@ -69,6 +69,20 @@ describe("new transitions", () => {
     expect(run({ type: "whip", dir: "up" }).in.some((tw) => tw.props.blurY)).toBe(true);
   });
 
+  it("blurred pushes feather both sides of the seam (it blurs too)", () => {
+    const t = run({ type: "whip", dir: "up" });
+    const lead = t.in.find((tw) => tw.fx?.kind === "edge")!;
+    const trail = t.out.find((tw) => tw.fx?.kind === "edge")!;
+    expect(lead.target).toBe("b.scene");
+    expect(lead.fx).toMatchObject({ kind: "edge", dir: "up" }); // in's top edge
+    expect(trail.target).toBe("a.scene");
+    expect(trail.fx).toMatchObject({ kind: "edge", dir: "down" }); // out's bottom edge
+    expect(trail.start).toBe(t.out[0].start); // rides the move, in out's own time
+    expect((lead.fx as { feather: number }).feather).toBeGreaterThan(5);
+    const plain = run({ type: "push" });
+    expect([...plain.in, ...plain.out].some((tw) => tw.fx)).toBe(false); // no blur → no feather
+  });
+
   it("punchCut swaps at 45% in one frame and flashes", () => {
     const t = run({ type: "punchCut" });
     const step = t.in.find((tw) => tw.props.opacity && tw.target === "b.scene")!;
@@ -99,6 +113,14 @@ describe("fx presentations", () => {
     expect(fxStyle({ kind: "wipe", angle: 90, feather: 10 }, 0.5)).toEqual({ maskImage: "linear-gradient(90deg, #000 45%, transparent 55%)" });
     expect(fxStyle({ kind: "wipe", angle: 90, feather: 10 }, 1)).toEqual({ maskImage: "none" });
     expect(fxStyle({ kind: "iris", x: 50, y: 50, feather: 2 }, 0.5).maskImage).toBe("radial-gradient(circle farthest-corner at 50% 50%, #000 49%, transparent 51%)");
+  });
+
+  it("edge feathers swell mid-move and vanish at both ends", () => {
+    const spec = { kind: "edge" as const, dir: "up" as const, feather: 20 };
+    expect(fxStyle(spec, 0)).toEqual({ maskImage: "none" });
+    expect(fxStyle(spec, 0.5)).toEqual({ maskImage: "linear-gradient(180deg, transparent 0%, #000 20%)" });
+    expect(fxStyle(spec, 1)).toEqual({ maskImage: "none" });
+    expect(fxStyle({ ...spec, dir: "left" }, 0.5).maskImage).toMatch(/^linear-gradient\(90deg/);
   });
 
   it("strips build one skyline polygon: degenerate at 0, none at 1", () => {

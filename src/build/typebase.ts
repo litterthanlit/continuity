@@ -1,6 +1,6 @@
 import type { PropName } from "../motion/types.js";
 import type { Axis, FontFamily } from "../themes/fonts.js";
-import type { Role, TypeKit } from "../themes/kits.js";
+import type { Role, TypeKit, TypeSize } from "../themes/kits.js";
 import { TYPE_SCALE } from "./css.js";
 
 /** Font channels and the variation axis each one drives. */
@@ -15,6 +15,11 @@ export interface TypeBase {
   ranges: Partial<Record<PropName, [number, number]>>;
   /** Text can't re-wrap: nowrap / Fit on itself or an ancestor. */
   nowrap: boolean;
+  /**
+   * Line-height ratio of its text (v2 kits only — classic keeps v1 motion
+   * exactly): mask presets use it to travel far enough to clear the mask.
+   */
+  leading?: number;
 }
 
 const WEIGHTS: Record<string, number> = {
@@ -45,6 +50,8 @@ export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
   let weight: number | undefined;
   let width: number | undefined;
   let size: number | undefined;
+  let sizeToken: string | undefined;
+  let leading: number | undefined;
   let nowrap = false;
   for (let n: Node | null = el; n; n = n.parentElement) {
     if (n.hasAttribute("data-ct-fit")) nowrap = true;
@@ -55,7 +62,10 @@ export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
       else if (weight === undefined && (m = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.exec(bare))) weight = WEIGHTS[m[1]];
       else if (weight === undefined && (m = /^font-\[(\d+)\]$/.exec(bare))) weight = Number(m[1]);
       else if (width === undefined && (m = /^font-stretch-(\d+(?:\.\d+)?)%$/.exec(bare))) width = Number(m[1]);
-      else if (size === undefined && (m = /^text-(mega|display|h1|h2|h3|lead|body|caption|micro)$/.exec(bare))) size = TYPE_SCALE[m[1]][0];
+      else if (size === undefined && (m = /^text-(mega|display|h1|h2|h3|lead|body|caption|micro)$/.exec(bare))) {
+        size = TYPE_SCALE[m[1]][0];
+        sizeToken = m[1];
+      } else if (leading === undefined && (m = /^leading-\[(\d*\.?\d+)\]$/.exec(bare))) leading = Number(m[1]);
       else if (size === undefined && (m = /^text-\[(\d+(?:\.\d+)?)px\]$/.exec(bare))) size = Number(m[1]);
       else if (/^(whitespace-nowrap|text-nowrap)$/.test(bare)) nowrap = true;
     }
@@ -77,5 +87,6 @@ export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
     values: { wght: weight ?? style.weight, wdth: width ?? style.width ?? 100, opsz, soft: style.axes?.SOFT ?? 0 },
     ranges,
     nowrap,
+    ...(kit.v1 ? {} : { leading: leading ?? kit.scale[(sizeToken ?? "body") as TypeSize]?.[0] ?? TYPE_SCALE[sizeToken ?? "body"][1] }),
   };
 }

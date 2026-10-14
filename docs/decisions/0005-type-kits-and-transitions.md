@@ -42,7 +42,10 @@ role CSS. Builds of every pre-v2 project are byte-identical, and the `_smoke` go
 clamps it), `opsz` and `soft` → font-variation-settings, merged at runtime over the element's
 settled settings (so animating SOFT keeps the kit's WONK). Each animated element's settled values
 come from its kit role and classes at build time (`SceneTimeline.bases`), so `from: null` and
-loops start from the real face. WONK is never animated (fractional values swap glyphs).
+loops start from the real face. WONK is never animated (fractional values swap glyphs). The base
+also carries the text's leading (v2 kits only): line-mask presets travel `(leading + 0.3) / leading`
+of the line so tight display leading (broadside's 0.88) never shows a sliver at frame 0; classic
+keeps v1's 110%.
 
 ### 5. Transitions are a table of presentations
 `TRANSITION_DEFS` (description, default duration, craft range, params, layers, `build()`) drives
@@ -50,7 +53,10 @@ the build, the schema, lint and the docs. Shape reveals are one `fx` progress ch
 `FxSpec` interpreted by a pure `fxStyle()` (feathered linear/radial masks, a staggered "skyline"
 polygon). Directional motion blur is `blurX`/`blurY`, backed by per-element SVG `feGaussianBlur`
 filters created once in `prepare()`; σ follows the 180° shutter rule (≈ 0.144 × peak px/frame,
-capped at 6% of the travel) and the filter is skipped near zero. Overlays (a punch-cut flash, a
+capped at 6% of the travel) and the filter is skipped near zero. Each scene blurs on its own, so a
+blurred push also feathers both sides of the seam (an `edge` fx on the outgoing trailing edge and the
+incoming leading edge, ≈3σ wide, swelling and vanishing with the move) — otherwise the seam stays
+razor sharp at peak speed. Overlays (a punch-cut flash, a
 light band) are real DOM layers the incoming scene grows only when its transition needs them
 (`<id>.reveal`, `<id>.fx` — reserved ids). The incoming scene stays on top. Legacy
 `{type, duration}` transitions produce exactly the v1 tweens (characterization snapshot); `blur`
