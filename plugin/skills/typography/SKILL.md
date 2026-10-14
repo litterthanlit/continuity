@@ -1,6 +1,6 @@
 ---
 name: typography
-description: Type kits for Continuity videos — the six curated font pairings (swiss, atelier, wonk, terminal, broadside, flexion), when to use which, how kit roles drive the kit components, serif-accent sizing, tracking/leading numbers, tabular figures, no faux styles, and variable-axis motion (weight, width, softness). Load when choosing a video's look (director) and whenever setting type in scene code.
+description: Type kits for Continuity videos — the seven curated font pairings (swiss, atelier, wonk, terminal, broadside, flexion, litt), when to use which, how kit roles drive the kit components, serif-accent sizing, tracking/leading numbers, tabular figures, no faux styles, and variable-axis motion (weight, width, softness). Load when choosing a video's look (director) and whenever setting type in scene code.
 ---
 
 # Typography: type kits
@@ -24,15 +24,54 @@ Raycast, Cursor, Arc/Dia, Anthropic and motion studios ship).
 | `terminal` | Vercel, Resend, Cursor | Geist Mono 500 · Geist · Geist Mono caps | CLIs, APIs, infra, changelogs | mono-dark |
 | `broadside` | Figma Config, brutalist social | Archivo 66% width, 850, CAPS · Inter Tight · Martian Mono | 9:16 social cuts, hype, events | vivid-gradient, mono-dark |
 | `flexion` | GitHub Universe, Söhne Breit | Mona Sans (width/weight animate) · Mona Sans · Martian Mono | kinetic type, variable-axis showpieces | mono-dark, vivid-gradient |
+| `litt` | litt.md, Linear, Vercel; Helvetica Now Display setting | Host Grotesk 400, tight · Host Grotesk · Geist Mono, sentence case | quiet, lit, precise product and brand films; one weight, no picked-out word | litt, litt-light |
 
 - Set it in `storyboard.json`: `"type": "swiss"`. `ct new` writes the theme's suggested kit
-  (mono-dark → swiss, light-editorial → atelier, vivid-gradient → broadside); `--type` overrides.
-- Without `type` a project renders **classic** (the theme's v1 fonts) — fine for old work, but
-  new videos should pick a kit.
+  (mono-dark → swiss, light-editorial → atelier, vivid-gradient → broadside, litt and
+  litt-light → litt); `--type` overrides. The litt themes also pin `type: "litt"`, so a
+  project on them gets the kit even with `type` omitted (the storyboard still wins).
+- Without `type` (and a theme that pins none) a project renders **classic** (the theme's v1
+  fonts) — fine for old work, but new videos should pick a kit.
 - A scene may set its own `type` only for a deliberate chapter break or a gallery. One kit per
   video is the rule; mixing kits reads as a template.
 - Brand kit: `theme.ts` → `defineTheme("mono-dark", { type: defineKit("swiss", { roles: { display: { weight: 700 } } }) })`.
   Families must come from the registry (`fonts` export) — no other fonts exist at render time.
+
+## The litt kit (litt.md)
+
+The look of litt.md as type: one grotesk at one weight, set tight, in sentence case, with
+hierarchy from size and colour instead of weight, italics or a picked-out word. It is the
+opposite of a kinetic or editorial kit — pick it for calm, precise, lit work, and pair it
+with the `litt` / `litt-light` themes (the `lit` backdrop, glow-and-ring depth).
+
+**Why Host Grotesk.** It is the closest open-source (OFL) stand-in for the Helvetica Now
+Display setting of the reference frame; Continuity ships no non-OFL faces. litt.md's own web
+UI face is Hanken Grotesk, which stays there (whether a Helvetica-style neo-grotesk replaces
+it on the web is litt.md's open question Q20). Host Grotesk is wght-only (300–800), has no
+tabular figures, and lacks `→ ↵ ✓` (they fall back to CT Symbols).
+
+**litt kit rules**
+1. **One weight.** Every role is 400, and the build flattens `font-medium` … `font-black` to
+   400 for a `litt` video, so `font-bold` (also inside the UI kit's Button, Pill, …) draws at
+   400 *by design*. Never reach for weight to make hierarchy. `font-[700]` is not flattened:
+   don't write it. The flattening follows the video-level kit; a `litt` *scene* kit inside
+   another kit's video does not flatten.
+2. **Sentence case.** `Eyebrow` is untracked and not uppercase; don't add `uppercase` or
+   `tracking-*`. A label above every scene is a generic-AI tell — use one only when it
+   carries information (a version, a status).
+3. **Never pick out a word.** No `Serif`, `Emph`, `Accent`, `GradientText` or `Highlight` on a
+   headline, no italic, no accent-coloured word. Hierarchy is size first (≥ 2.5× steps),
+   then colour: `text-fg` → `text-muted` → `text-subtle`.
+4. **Figures in mono.** Host Grotesk has no tabular figures: counters and stats go in
+   `font-mono` (`Stat` and the kit's figures role already do; a raw `<Counter>` needs
+   `font-mono` or `counter-proportional` warns).
+5. **No weight or width tweens.** The look is one weight. Host Grotesk is wght-only, so
+   `weightIn` / `weightPulse` would run but break rule 1, and `widthIn` / `widthPulse` /
+   `wdth` animate nothing (`axis-unsupported`). Type moves by position and opacity only.
+6. **Tracking stays tight** (Helvetica-style): mega −0.045em · display −0.04em · h1 −0.035em ·
+   h2 −0.03em · h3 −0.022em, leading 0.92–1.1, and the display role closes the word space
+   (`word-spacing: −0.05em`; Host Grotesk's default reads wide beside tight tracking). Don't
+   loosen either. Left-align by default; centre once per video.
 
 ## Roles → components
 
@@ -60,8 +99,8 @@ Raycast, Cursor, Arc/Dia, Anthropic and motion studios ship).
   −0.02…−0.03em, condensed caps 0…+0.01em, mono caps labels +0.08…+0.16em. Kits set these per
   size; don't fight them.
 - **Leading**: display 0.86–1.0, serif display 0.98–1.06, body 1.38–1.5.
-- **Figures**: counters and stats need tabular figures. Fraunces, Hanken Grotesk and Instrument
-  Serif have none — `Stat` uses the kit's figures role; a raw `<Counter>` should sit in
+- **Figures**: counters and stats need tabular figures. Fraunces, Hanken Grotesk, Host Grotesk
+  and Instrument Serif have none — `Stat` uses the kit's figures role; a raw `<Counter>` should sit in
   `font-mono` or a sans with tnum (`counter-proportional` warns otherwise).
 - **Hairlines**: serif display ≥ 320–400 weight; light weights shimmer after H.264 and social
   re-encodes (`hairline-weight`). Didones and thin strokes only ≥ 96px.
@@ -105,3 +144,5 @@ m.tween("title", { soft: [0, 100] }, { at: "b1", duration: "linger", ease: "hero
 7. Proportional figures in counters (width jitter).
 8. Reaching for Playfair / Space Grotesk / Poppins looks — they don't exist here, and the kits
    cover the tasteful versions (atelier, swiss).
+9. Under `litt`: bold anything (it renders at 400 anyway, so the intent is lost), an accent or
+   italic word in a headline, uppercase mono eyebrows on every scene, weight/width motion.

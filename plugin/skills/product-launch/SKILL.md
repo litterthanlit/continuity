@@ -50,10 +50,34 @@ it has nothing to do.
 - Depth: floating cards at slightly different scales/blur; soft shadow
   (`shadow-float`); subtle `rotateY` (−8…−14°) for a 3/4 view, resolved before
   the viewer must read anything.
-- Backgrounds stay quiet behind UI (`grid`, `spotlight`, low-contrast `aurora`).
+- Backgrounds stay quiet behind UI (`grid`, `spotlight`, low-contrast `aurora`, or `lit` on the litt themes).
 - Type kit (see `typography`): `swiss` for most products (Geist, Vercel/Linear
   grade); `terminal` for dev tools, CLIs and APIs; `atelier` when the brand is
-  editorial/AI; `wonk` for warm consumer products.
+  editorial/AI; `wonk` for warm consumer products; `litt` for the litt.md look (below).
+
+## The litt look (`litt` / `litt-light` themes, `litt` kit)
+Technical precision, lit from above (litt.md). The product is still the hero; the frame gets
+quieter and every depth cue becomes light.
+- **Backdrop:** `bg="lit"` is the themes' default: one accent radial light falling from the top
+  edge (22% dark, 12% light) plus static grain. Don't add `spotlight`, `aurora`, `mesh` or a
+  `<Glow>` blob on top: one light source, from above, falling on the headline or the product.
+- **Depth is glow and ring, never an offset shadow.** A `Card` in the flow is border plus
+  `bg-surface` (step to `bg-surface-2` for nested rows); no `glass` on it. `shadow-float` here is
+  a zero-offset blur and 1px ring, nearly invisible on dark: the card reads by its border and
+  surface step, so don't compensate with a heavier shadow.
+- **One `shadow-glow` primary per view.** `shadow-glow` is a 2px accent ring plus 48px accent
+  light. Put it on the single primary action (`<Button class="shadow-glow">`, or `<Card glow>`
+  when the card itself is the action) and nowhere else: one accent fill and one glow per view.
+- **Known gaps, avoid them:** the traffic-light dots of `Window` and `Browser`, the `Toast`
+  accent disc and the `Avatar` gradient are off-language. Build the surface from `Card`,
+  `Row`, `Pill`, `Kbd`, `List`, `Input` and `Stat` instead (a toast is a `Card` with two lines;
+  `Pill dot` is fine, litt allows pills for status dots). Radii already nest: `Button` and
+  `Input` 8px, `Card` 16px.
+- **Airy and flat:** 3–4 elements per scene, left-aligned, centre only the end card. Reveal with
+  a plain `rise` (distance 32), no 3D tilt. Buttons draw at weight 400 (the kit flattens
+  `font-semibold`); that is intended.
+- **Transitions:** Lit precision (motion-craft §7), not camera-first: `crossfade` 0.4, one `dip`
+  before the end card, cuts on the beat.
 
 ## Copy
 Headline = benefit, not feature ("Ship reviews in minutes", not "Review

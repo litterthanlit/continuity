@@ -92,7 +92,7 @@ export const StoryboardSchema = z.object({
     fps: z.union([z.literal(24), z.literal(25), z.literal(30), z.literal(60)]).default(30),
   }),
   theme: z.string().default("mono-dark"),
-  /** Type kit (font pairing): swiss, atelier, wonk, terminal, broadside, flexion. Omit for the theme's classic fonts. */
+  /** Type kit (font pairing): swiss, atelier, wonk, terminal, broadside, flexion, litt. Omit for the theme's classic fonts. */
   type: z.enum(KIT_NAMES).optional(),
   /** Optional musical grid for cutting on the beat (seam for audio). */
   bpm: z.number().positive().optional(),

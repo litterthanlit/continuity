@@ -24,8 +24,12 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
 - **text** holds all copy by element id. Budget words: ≤ 7 words on screen at once
   for social, ≤ 12 for 16:9. Every text needs read time (≈17 chars/s + 0.4s).
 - **elements** list ids, roles and coarse anchors (6×6 grid A1–F6).
+- **theme** — colour: `mono-dark`, `light-editorial`, `vivid-gradient`, `litt`,
+  `litt-light`. The two `litt` themes are the litt.md look (cool neutrals, one
+  accent used as light, `lit` backdrop, glow-and-ring depth); they pin the
+  `litt` kit, and read best with the **Lit precision** transitions (motion-craft §7).
 - **type** — the type kit (load `typography`): `swiss`, `atelier`, `wonk`,
-  `terminal`, `broadside`, `flexion`. One per video.
+  `terminal`, `broadside`, `flexion`, `litt`. One per video.
 - **transition** into the next scene, from ONE transition language (motion-craft
   §7): `cut` (default for punchy type), `crossfade`, `dip`, `push`, `pushUp`,
   `whip`, `punchCut`, `wipe`, `iris`, `strips`, `lightSweep`, `blur`, `zoom` —

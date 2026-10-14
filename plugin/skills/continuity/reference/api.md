@@ -46,7 +46,8 @@ Styling: Tailwind v4 classes. Theme tokens are utilities:
   `tracking-[…]`, `font-stretch-75%`) still win.
 - type scale (px at 1080 short side, with tuned leading/tracking):
   `text-mega 240 · text-display 168 · text-h1 120 · text-h2 88 · text-h3 64 · text-lead 48 · text-body 38 · text-caption 30 · text-micro 26`
-- radius `rounded-sm/md/lg/xl`, shadows `shadow-glow shadow-float`
+- radius `rounded-sm/md/lg/xl`, plus `rounded-control` (Button, the Browser address bar; pill unless the theme sets `radius.control`) and `rounded-field` (Input; `radius.lg` unless `radius.control` is set); shadows `shadow-glow shadow-float` (a theme's `shadows: { glow?, float? }` overrides them: the litt themes use a 2px accent ring + 48px accent light for glow and a zero-offset blur + ring for float, so cards read by border and surface, not by a drop shadow)
+- weights: under a `oneWeight` kit (`litt`, video level) `font-medium … font-black` all draw at 400 — hierarchy comes from size and colour. `font-[700]` is not flattened; a scene-scoped `litt` does not flatten.
 - CSS vars available inline: `var(--color-accent)` etc.
 
 **Rule:** motion owns `transform`, `opacity`, `filter`, `clip-path`, `mask-image`,
@@ -58,7 +59,7 @@ wrap in a parent if you need both.
 ## Kit components
 
 Layout
-- `<Stage bg? grain?>` — every view's root. `bg`: `solid aurora grid dots spotlight mesh none` (default from theme). Background is animatable as `bg`.
+- `<Stage bg? grain?>` — every view's root. `bg`: `solid aurora grid dots spotlight mesh lit none` (default from theme; `lit` = one accent light falling from the top edge, 22% dark / 12% light, static — the litt themes' default). Background is animatable as `bg`.
 - `<Safe zone="title|action|social|none">` — inset content area.
 - `<Center>`, `<Stack gap>`, `<Row gap>` — flex helpers (accept `ct`, `class`).
 - `<El as="div" ct="…">` — any element with an id.
@@ -67,8 +68,8 @@ Layout
 
 Type
 - `<Headline size="mega|display|h1|h2|h3" as="h1">` — the kit's display role (weight/width/case from the kit), balanced.
-- `<Subhead size="lead">`, `<Body>`, `<Caption>`, `<Eyebrow>` (the kit's mono label: caps, tracked).
-- Inline: `<Accent>`, `<Serif>` (italic serif accent, x-height matched by the kit), `<GradientText>`, `<Highlight ct>` (marker bar `ct-bar`, animate with `emphasize("<ct>-bar","underline")`).
+- `<Subhead size="lead">`, `<Body>`, `<Caption>`, `<Eyebrow>` (the kit's mono label: caps, tracked; under `litt` sentence case, untracked).
+- Inline: `<Accent>`, `<Serif>` (italic serif accent, x-height matched by the kit), `<GradientText>`, `<Highlight ct>` (marker bar `ct-bar`, animate with `emphasize("<ct>-bar","underline")`). Not on `litt` headlines: that language never picks out a word.
 - `<Fit ct max min>` — single-line text auto-fit to container width at load.
 - `<Counter ct from decimals prefix suffix>` + `m.counter(ct, { to })`.
 
@@ -123,8 +124,8 @@ build error (`reserved-id`).
 {
   "title": "…", "logline": "…",
   "format": { "aspect": "16:9 | 9:16 | 1:1 | 4:5", "fps": 30 },
-  "theme": "mono-dark | light-editorial | vivid-gradient",
-  "type": "swiss | atelier | wonk | terminal | broadside | flexion",
+  "theme": "mono-dark | light-editorial | vivid-gradient | litt | litt-light",
+  "type": "swiss | atelier | wonk | terminal | broadside | flexion | litt",
   "bpm": 120,
   "scenes": [{
     "id": "hook", "duration": 2.8, "intent": "…",

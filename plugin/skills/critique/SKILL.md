@@ -31,6 +31,26 @@ look/composition/legibility verdicts lean on the images.
 Score **Temporal** from timeline/lint evidence first, sheet second. A frame grid
 cannot show easing; the numbers can.
 
+## litt checks (theme `litt` / `litt-light`)
+Add these to the rubric; a failure caps its axis at 3 and goes in the fix list by element id.
+- **One weight (Typography):** nothing reads bolder than its neighbours; hierarchy is size, then
+  `text-fg` → `text-muted` → `text-subtle`. Sentence-case labels, no uppercase mono eyebrow on
+  every scene, no accent-coloured, italic, serif or gradient word in a headline. Counters and
+  stats are in mono. No weight or width tweens in the timeline.
+- **Still material (Craft):** the `lit` light, the grain and the glow ring are identical in
+  stills taken a second apart; `ct timeline` shows no tween or loop on `bg`, `<Glow>`, `Sheen`
+  or a brightness/blur/filter preset. Only transform and opacity move.
+- **One accent fill and one glow per view (Composition):** count `bg-accent` fills and
+  `shadow-glow` elements in each settled still; more than one of either fails. Exactly one
+  light source, from the top; no offset drop shadow anywhere.
+- **Airy (Composition):** one idea per scene, 3–4 elements, left-aligned, at most one centred
+  scene (the end card); not three equal icon cards.
+- **Tiers (Temporal):** at most one expressive (`snappy` / `scalePop`) moment per scene, exits one
+  duration token down with `standard` and never bouncy, stagger ≤ 0.4s, transitions only
+  `crossfade` / `dip` / `cut`.
+- **Off-language kit parts (Craft):** traffic-light dots (`Window`, `Browser`), the `Toast` accent
+  disc, the `Avatar` gradient.
+
 ## Output format (write to the iteration as critique.md, and report)
 ```
 Scores: intent 4 · composition 3 · typography 4 · temporal 3 · craft 3   (mean 3.4)

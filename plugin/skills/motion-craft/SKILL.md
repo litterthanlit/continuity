@@ -78,7 +78,8 @@ behind a mask — big movement, no layout jump.
 - Holds longer than ~1.6s need **ambient life**: `m.camera({ scale: [1, 1.03] })`
   over the scene, `m.loop("bg", { scale: 0.02 }, { period: 8 })`, a drifting
   `<Glow>`. Amplitudes stay tiny (scale ≤ 0.03, translate ≤ 12px, rotate ≤ 2°).
-  Dead air > 2.5s is a lint warning.
+  Dead air > 2.5s is a lint warning. (Lit precision: take the life from content, not
+  the backdrop — see §7.)
 
 ## 7. Transitions (storyboard `transition`)
 Research: `docs/research/2026-10-transitions.md`. Gallery: `projects/_transitions`.
@@ -112,11 +113,41 @@ Research: `docs/research/2026-10-transitions.md`. Gallery: `projects/_transition
 | Camera-first product | `push` + `blur: true` (reading direction) or `whip` | `zoom` into detail, `iris` to focus | the camera does every transition |
 | Luminous | `blur`, `crossfade` | one `lightSweep` on the logo | Apple/Stripe calm energy |
 | Kinetic / social punch | `cut` on the beat | `punchCut`, vertical `whip`, `strips` (pick two) | 9:16 rhythm, 8–12 frame moves |
+| Lit precision | `crossfade` 0.4 `standard` | one `dip` before the end card; `cut` on the beat | litt.md: quick, exact, lit; one expressive moment per scene |
 
 Rules: keep one direction of travel through a sequence; exit ease-in, enter
 ease-out (the defs already pair them); never a spring on a full-frame move
 (`transition-bounce`); fast pushes need motion blur (`transition-strobe`); a
 scene's incoming and outgoing transitions must not overlap (schema error).
+
+### Lit precision (the litt.md look)
+Pair it with the `litt` / `litt-light` themes and the `litt` kit. It adds no tokens and no
+lint: it is litt.md's motion rules (three tiers, one expressive moment, nothing material
+moves) mapped onto the tokens above, so the existing lints apply unchanged.
+
+| litt.md tier | Continuity |
+|---|---|
+| Instant: 100ms ease-out; press 0.98, state swaps | `instant` (0.12) + `standard`. Press = `scale: [1, 0.98]` and back. There is no colour channel: swap state by cross-fading a state layer's `opacity` |
+| Responsive: spring 200ms, bounce 0 (settles ≈ 0.43s) | `base` (0.4; small elements `fast` 0.24) + `standard`; `rise` with `distance: 32` (litt's 16px travel at video scale), or `fade` |
+| Expressive: spring 350ms, bounce 0.12, **one per view** | `snappy` (damping ratio 0.87, bounce ≈ 0.13) at `slow`; the spring settles in ≈ 0.45s. `scalePop` is exactly this, or `rise` with `ease: "snappy"`. Exactly one per scene |
+| Exits: 0.75×, ease-out, never bounce | one duration token down from the entrance (`slow` → `base`, `base` → `fast`), `ease: "standard"`, never `snappy` / `bouncy`. `fadeOut` and `sinkOut` default to `exit`: pass `ease: "standard"`. This differs from §2 on purpose: litt exits decelerate |
+| Stagger 40ms | `grid` (50ms) or `word` (60ms) — pass it, an array defaults to `list` (80ms); the whole cascade ≤ 0.4s |
+
+- **Transitions:** `crossfade` 0.4 (default ease `standard`) between scenes, one `dip` 0.4
+  with `ease: "standard"` before the end card, `cut` on the beat. That is two types, inside
+  every craft range, and `lintStoryboard` is clean. Everything else is out: `lightSweep`
+  (an animated light band), `blur` and `zoom` (filters), `whip` and `punchCut` (blur, flash),
+  `iris`, `wipe` and `strips` (masks), `push` and `pushUp` (full-frame travel). Never a spring
+  ease (`transition-bounce`).
+- **Material never animates:** the `lit` backdrop, grain, the glow ring and `shadow-glow` stay
+  put. No tween or `m.loop` on `bg` or `<Glow>`, no `glow` (brightness) emphasis, no `Sheen`.
+  Only `transform` and `opacity` move, so skip the presets that animate filter, clip or
+  letter-spacing (`fadeBlur`, `blurOut`, `zoomIn`, `trackIn`, `wipeRight`/`wipeUp`/`wipeOut`) and
+  stay with `fade rise scalePop maskUp typeOn fadeOut sinkOut`.
+- **Ambient life comes from content** (cursor path, typing, counters, a row highlight), not
+  from the backdrop. `m.camera` scales the backdrop with the content, so the light would move
+  with it: no ambient camera drift; a small deliberate focus move is fine.
+- **Airy:** few movers at once, one focal point, left-aligned entrances from 32px below.
 
 ## 8. Camera
 Slow push-ins (1 → 1.03–1.06) build tension; lateral drift 20–60px adds depth;
@@ -144,8 +175,10 @@ a single `pulse` on the key word. Pick ONE per line. (See the `typography` skill
 11. A different transition on every cut; 50/50 dissolves between unrelated frames.
 12. Hard-edged diagonal wipes with no feather; fast pushes with no motion blur.
 13. Bounce or overshoot on a full-frame scene move; light sweeps on every cut.
+14. (Lit precision) More than one `snappy`/`scalePop` moment per scene; an animated backdrop,
+    glow or grain; a bouncy exit.
 
 ## Recipes
 See `recipes.md` for copy-ready motion for: statement headline, eyebrow +
 headline + subhead, feature list, stat reveal, logo resolve, end card, UI card
-entrance, quote.
+entrance, quote, the transition languages, and the Lit precision tiers.

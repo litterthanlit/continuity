@@ -29,9 +29,15 @@ Each beat = one scene (or one line within a scene). Cuts land on beats.
 - **wonk** — soft, characterful Fraunces serif: warm brands, editorial social.
 - **flexion** — Mona Sans whose width and weight move: the kinetic showpiece.
 - **swiss** / **atelier** for calm, premium type-led promos (16:9).
+- **litt** — Host Grotesk at one weight, sentence case: quiet, lit, left-aligned
+  statements (the litt.md look). It is the anti-kinetic kit: no picked-out word
+  (`Serif`, `Accent`, `Highlight`, `GradientText` are off), no weight or width
+  motion; scale contrast and line timing carry the rhythm. Pairs with `litt` /
+  `litt-light` and the Lit precision transitions.
 One kit per video; the components (`Headline`, `Serif`, `Eyebrow`, `Stat`) follow it.
 
 ## Type treatments (pick one emphasis per line)
+Under `litt`, scale contrast is the only treatment on offer (hierarchy: size, then fg → muted → subtle).
 - **Scale contrast:** the key word 1.5–2× its neighbours.
 - **Serif swap:** `<Serif>` for one word in an otherwise grotesk line — instant
   editorial polish.

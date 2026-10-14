@@ -21,7 +21,9 @@ Rules:
   edges, type scale, backgrounds — continuity is the product.
 - Set type through the kit components (`Headline`, `Eyebrow`, `Serif`, `Stat`);
   don't add font families or weights the kit didn't choose unless the treatment
-  asks for it.
+  asks for it. On the `litt` kit, follow its rules in `typography` (one weight,
+  no `Serif`/`Accent`/`GradientText`/`Highlight` word, counters in `font-mono`)
+  and `product-launch` (one glow primary, no traffic-light chrome).
 
 Procedure:
 1. **Style frame.** Write the view with minimal motion. Run

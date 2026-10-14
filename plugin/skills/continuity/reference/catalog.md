@@ -106,6 +106,8 @@ One transition language per video (≤ 2 types besides cuts) — see motion-craf
 - `mono-dark` (dark) — Linear/Vercel-like: near-black canvas, white type, one violet accent, hairline borders, soft aurora glow. Precise and premium. Suggested kit: `swiss`. Classic fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
 - `light-editorial` (light) — Stripe/editorial: warm off-white paper, ink-black type, serif accents, a single saturated accent. Calm, confident, magazine-like. Suggested kit: `atelier`. Classic fonts: display Inter Tight, sans Inter, mono Geist Mono, serif Instrument Serif.
 - `vivid-gradient` (dark) — Bold launch energy: deep indigo canvas, electric gradient mesh, high-contrast white type. For hype cuts and social. Suggested kit: `broadside`. Classic fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
+- `litt` (dark) — litt.md: cool near-black, one signal-blue accent used as light from above, glow-and-ring depth, slight radius. Suggested kit: `litt`. Classic fonts: display Host Grotesk, sans Host Grotesk, mono Geist Mono, serif Host Grotesk.
+- `litt-light` (light) — litt.md, light: cool off-white, one cobalt accent used as light from above, glow-and-ring depth, slight radius. Suggested kit: `litt`. Classic fonts: display Host Grotesk, sans Host Grotesk, mono Geist Mono, serif Host Grotesk.
 
 ## Type kits (storyboard `type`)
 | kit | evokes | display | text | labels | accent | figures |
@@ -116,6 +118,7 @@ One transition language per video (≤ 2 types besides cuts) — see motion-craf
 | `terminal` | Vercel, Resend, Cursor, dev-tool launches | Geist Mono 500 | Geist 400 | Geist Mono 400 caps 0.1em | Instrument Serif ×1.04 | mono |
 | `broadside` | Figma Config condensed display, brutalist social | Archivo 850 w66 caps | Inter Tight 500 | Martian Mono 400 caps 0.08em | Instrument Serif ×1.03 | display |
 | `flexion` | GitHub Universe, Söhne Breit launches, kinetic type | Mona Sans 600 | Mona Sans 400 | Martian Mono 400 caps 0.1em | Instrument Serif ×1.02 | display |
+| `litt` | litt.md, Linear, Vercel; Helvetica Now Display setting | Host Grotesk 400 | Host Grotesk 400 | Geist Mono 400 0em | Host Grotesk ×1 | mono |
 
 Omit `type` for `classic` (the theme's own fonts, v1 settings). Per-kit tracking/leading overrides of the scale:
 - `swiss`: mega 0.86/-0.06em · display 0.9/-0.055em · h1 0.95/-0.05em · h2 1/-0.045em · h3 1.06/-0.035em
@@ -124,6 +127,7 @@ Omit `type` for `classic` (the theme's own fonts, v1 settings). Per-kit tracking
 - `terminal`: mega 0.9/-0.04em · display 0.94/-0.035em · h1 1/-0.03em · h2 1.04/-0.03em · h3 1.1/-0.02em
 - `broadside`: mega 0.86/0em · display 0.88/0.005em · h1 0.9/0.005em · h2 0.94/0.01em · h3 1/0.01em
 - `flexion`: mega 0.88/-0.04em · display 0.92/-0.04em · h1 0.96/-0.04em · h2 1.02/-0.035em · h3 1.08/-0.025em
+- `litt`: mega 0.92/-0.045em · display 0.94/-0.04em · h1 0.98/-0.035em · h2 1.04/-0.03em · h3 1.1/-0.022em
 
 ## Timeline lint rules
 - `ease-linear` — Spatial motion with a linear ease looks mechanical. Use a token ease (enter/exit/standard/hero/inOut or a spring).

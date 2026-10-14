@@ -94,4 +94,22 @@ m.tween("title", { soft: [0, 100] }, { at: "b1", duration: "linger", ease: "hero
 { "type": "blur" } · { "type": "crossfade" } · { "type": "lightSweep", "color": "accent" }  // into the logo, once
 // Kinetic / social punch (9:16): cuts on the beat + two accents
 { "type": "punchCut" } · { "type": "whip", "dir": "up", "duration": 0.28 } · { "type": "strips", "n": 6 }
+// Lit precision (litt): crossfade between scenes, one dip into the end card, cuts on the beat
+{ "type": "crossfade", "duration": 0.4 } · { "type": "dip", "duration": 0.4, "ease": "standard" } · { "type": "cut" }
+```
+
+## Lit precision (litt / litt-light)
+```ts
+// responsive: base + standard, 32px rise (litt's 16px)
+m.enter("headline", "rise", { at: "b1", distance: 32, duration: "base", ease: "standard" });
+// a list: say the stagger (arrays default to list = 80ms); 3 rows land within 0.1s of each other
+m.enter(["r1", "r2", "r3"], "rise", { at: "after:headline-0.2", distance: 32, duration: "base", ease: "standard", stagger: "grid" });
+// expressive: snappy at slow. The scene's ONE; everything else stays responsive or instant
+m.enter("card", "scalePop", { at: "b2" });
+// instant: press to 0.98 and release around the click
+m.tween("cta", { scale: [1, 0.98] }, { at: "b3", duration: "instant", ease: "standard" });
+m.tween("cta", { scale: [0.98, 1] }, { at: "b3+0.12", duration: "instant", ease: "standard" });
+// exit: one token down from the entrance (slow -> base), decelerating, no bounce
+m.exit("card", "fadeOut", { at: "b4", duration: "base", ease: "standard" });
+// never: m.loop("bg", …), a drifting <Glow>, Sheen, blur or filter presets: material doesn't move
 ```

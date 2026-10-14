@@ -19,8 +19,10 @@ Deliverables, in `projects/<slug>/`:
    → payoff), visual language (colour theme, **type kit** and why, type
    treatments, colour usage, backgrounds), motion language (which presets/eases
    dominate, the **transition language** by name — Swiss cuts / Camera-first
-   product / Luminous / Kinetic punch — camera), rhythm (where it breathes,
-   where it punches), and 2–3 references.
+   product / Luminous / Kinetic punch / Lit precision — camera), rhythm (where
+   it breathes, where it punches), and 2–3 references. For the litt look
+   (`litt` / `litt-light` theme + `litt` kit) also name the one expressive
+   moment per scene and the single primary action that gets the glow.
 3. `storyboard.json` — following the Storyboard schema in the `continuity` skill's `reference/api.md`:
    - one idea per scene (`intent`), beats for every landing moment,
    - ALL on-screen copy in `text` (count words: ≤ 7 on screen for 9:16, ≤ 12 for 16:9),
@@ -28,7 +30,9 @@ Deliverables, in `projects/<slug>/`:
    - `motion` notes concrete enough for a builder (preset names, order, emphasis),
    - durations that respect read time (≈17 chars/s + 0.4s after the copy starts
      appearing, ≥ 0.6s fully landed) plus transition overlap,
-   - top-level `type` set to the chosen kit (one per video),
+   - top-level `type` set to the chosen kit (one per video; a `litt` theme pins
+     `litt`, which has no accent or italic word, so write copy that doesn't
+     need one),
    - transitions from that one language (≤ 2 types besides cuts), always with an
      explicit `duration` inside the type's range, plus the params it needs
      (`dir`, `blur: true`, `origin`, `feather`…).
