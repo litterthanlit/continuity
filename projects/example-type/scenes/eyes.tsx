@@ -19,13 +19,13 @@ function Tile({ ct, lines, accent, flagged }: { ct: string; lines: [string, stri
         class="absolute inset-0"
         style="background:radial-gradient(70% 40% at 20% 0%,color-mix(in oklab,var(--color-accent) 30%,transparent),transparent 70%),radial-gradient(60% 35% at 90% 5%,color-mix(in oklab,var(--color-accent-2) 18%,transparent),transparent 70%)"
       />
-      <div class="absolute left-[18px] top-[150px] font-display text-[30px] font-semibold leading-[0.95] tracking-[-0.04em] text-fg">
+      <div class="absolute left-[18px] top-[150px] font-display text-[30px] leading-[0.9] text-fg">
         {lines[0]}
         <br />
         {accent ? (
           <>
             {lines[1].replace(accent, "")}
-            <span class="font-serif font-normal italic tracking-normal text-accent">{accent}</span>
+            <span class="font-serif italic ct-accent text-accent">{accent}</span>
           </>
         ) : (
           lines[1]
@@ -43,7 +43,7 @@ export default scene({
           <div class="grid w-fit grid-cols-3 gap-[18px]">
             <Tile ct="t1" lines={["Motion is", "a craft."]} accent="craft." />
             <Tile ct="t2" lines={["Agents can", "write it."]} />
-            <Tile ct="t3" lines={["But they", "can't see it."]} />
+            <Tile ct="t3" lines={["But they", "can’t see it."]} />
             <Tile ct="t4" lines={["So we gave", "them eyes."]} accent="eyes." />
             <Tile ct="t5" lines={["Every frame,", "checked."]} flagged />
             <Tile ct="t6" lines={["Continuity", "as code."]} />
