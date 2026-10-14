@@ -112,12 +112,15 @@ ${v1 ? `.font-display { font-feature-settings: "ss01" on, "cv11" on, "calt" on; 
 
 const ROLES = ["display", "sans", "mono", "serif"] as const;
 
+/**
+ * Width and variation axes are face selection, not styling: every role sets its
+ * own (a serif accent inside broadside's 66%-wide caps must not ask Instrument
+ * Serif for 66%). Case and features only reset in scoped kits.
+ */
 function roleDecl(role: RoleStyle, reset: boolean): string {
   const d = [`font-weight:${role.weight}`];
-  if (role.width !== undefined) d.push(`font-stretch:${role.width}%`);
-  else if (reset) d.push("font-stretch:normal");
-  if (role.axes && Object.keys(role.axes).length) d.push(`font-variation-settings:${variationSettings(role.axes)}`);
-  else if (reset) d.push("font-variation-settings:normal");
+  d.push(`font-stretch:${role.width !== undefined ? `${role.width}%` : "normal"}`);
+  d.push(`font-variation-settings:${role.axes && Object.keys(role.axes).length ? variationSettings(role.axes) : "normal"}`);
   if (role.case) d.push(`text-transform:${role.case}`);
   else if (reset) d.push("text-transform:none");
   if (reset) d.push("font-feature-settings:normal");

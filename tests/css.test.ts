@@ -57,11 +57,13 @@ describe("kit CSS", () => {
 
   it("v2 roles carry weight, width, axes and case", () => {
     const css = kitCss(typeKits.broadside);
-    expect(css).toContain(".font-display{font-weight:850;font-stretch:66%;text-transform:uppercase}");
-    expect(css).toContain("#root{font-synthesis:none;font-weight:500}");
+    expect(css).toContain(".font-display{font-weight:850;font-stretch:66%;font-variation-settings:normal;text-transform:uppercase}");
+    expect(css).toContain("#root{font-synthesis:none;font-weight:500;font-stretch:normal;font-variation-settings:normal}");
+    // the serif accent sets its own width: it must not inherit the display's 66%
+    expect(css).toContain(".font-serif{font-weight:400;font-stretch:normal;font-variation-settings:normal}");
     expect(css).toContain(".ct-label{text-transform:uppercase;--tw-tracking:0.08em;letter-spacing:0.08em}");
     expect(css).toContain(".ct-accent{font-size:1.03em;--tw-tracking:0em;letter-spacing:0em;text-transform:none}");
-    expect(kitCss(typeKits.wonk)).toContain('.font-display{font-weight:400;font-variation-settings:"SOFT" 100, "WONK" 1}');
+    expect(kitCss(typeKits.wonk)).toContain('.font-display{font-weight:400;font-stretch:normal;font-variation-settings:"SOFT" 100, "WONK" 1}');
   });
 
   it("scoped kits re-declare fonts and reset every role property", () => {
