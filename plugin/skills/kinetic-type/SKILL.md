@@ -24,15 +24,24 @@ Each beat = one scene (or one line within a scene). Cuts land on beats.
   `Motion<br/>is a<br/>craft.` beats a paragraph.
 - Body/supporting copy ≥ 38px (`text-body`); captions ≥ 34px in portrait.
 
+## Type kit (load the `typography` skill)
+- **broadside** — condensed 850-weight caps (Archivo): the default for 9:16 social and hype.
+- **wonk** — soft, characterful Fraunces serif: warm brands, editorial social.
+- **flexion** — Mona Sans whose width and weight move: the kinetic showpiece.
+- **swiss** / **atelier** for calm, premium type-led promos (16:9).
+One kit per video; the components (`Headline`, `Serif`, `Eyebrow`, `Stat`) follow it.
+
 ## Type treatments (pick one emphasis per line)
 - **Scale contrast:** the key word 1.5–2× its neighbours.
 - **Serif swap:** `<Serif>` for one word in an otherwise grotesk line — instant
   editorial polish.
 - **Accent color** on the single most important word.
 - **Marker:** `<Highlight ct="x">` + `m.emphasize("x-bar", "underline")`.
-- **Weight shift / outline:** e.g. `font-light` setup → `font-semibold` payoff.
-- Tight tracking at display sizes is already in the scale (−0.045em); don't
-  loosen it unless it's an eyebrow.
+- **Weight shift:** `weightPulse` on the payoff word, or `weightIn` on a statement
+  (variable kits); static: `font-light` setup → `font-semibold` payoff.
+- **Width breath:** `widthIn` / `widthPulse` with `split: "chars"` (flexion, broadside).
+- Tracking and leading come from the kit (swiss is tight, broadside open caps);
+  don't loosen display tracking unless it's an eyebrow.
 
 ## Motion patterns
 | Pattern | Code | Feel |
@@ -44,13 +53,16 @@ Each beat = one scene (or one line within a scene). Cuts land on beats.
 | Track-in | `enter(id, "trackIn")` | wordmarks, single words |
 | Swap | `exit(a, "maskOut", { split: "words" })` then `enter(b, "maskUp", …)` at `after:a` | replace a word in place |
 | Zoom punch | `enter(id, "zoomIn")` | single huge word on a beat |
+| Width wave | `enter(id, "widthIn", { split: "chars" })` → `emphasize(id, "widthPulse", { split: "chars" })` | flexion: type that breathes |
+| Soften | `tween(id, { soft: [0, 100] }, { ease: "hero" })` | wonk: serifs melt as it lands |
 
 Rules of thumb:
 - Reveal **lines**, not paragraphs. A new line lands every 0.4–0.9s in hype
   edits, every 1–2s in calm ones.
 - After the last word lands, hold for read time before cutting (lint enforces).
 - Cut between scenes rather than exiting text — kinetic type lives on hard cuts.
-  Use `zoom` or `pushUp` once or twice for escalation; never on every cut.
+  The kinetic language: cuts on the beat + at most two accents from `punchCut`,
+  vertical `whip` (`dir: "up"`, 0.25–0.33s), `strips` (n 5–7) — never on every cut.
 - Add ambient motion during holds: `m.camera({ scale: [1, 1.04] })` and/or a
   slow `m.loop("bg", …)`.
 - With music (`bpm` in the storyboard): put beats on the grid (`60/bpm` s) and

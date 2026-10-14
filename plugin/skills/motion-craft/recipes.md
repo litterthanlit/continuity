@@ -70,3 +70,28 @@ m.enter("author", "fade", { at: "after:quote+0.1" });
 ```ts
 m.exit(["subhead", "headline"], "sinkOut", { at: "b3", stagger: 0.06 }); // reverse order of entry
 ```
+
+## Variable-axis type (flexion / wonk / swiss)
+```ts
+// letters settle from wide, then a width wave breathes through the line (flexion)
+m.enter("title", "widthIn", { at: "b1", split: "chars", stagger: "char" });
+m.emphasize("title", "widthPulse", { at: "b1+1.6", split: "chars", stagger: "char" });
+// weight swells in on a one-line statement (keep it nowrap or split it)
+m.enter("statement", "weightIn", { at: "b1", split: "words", stagger: "word" });
+// serifs soften as the line lands (wonk)
+m.enter("title", "maskUp", { at: "b1", split: "lines" });
+m.tween("title", { soft: [0, 100] }, { at: "b1", duration: "linger", ease: "hero", kind: "emphasis" });
+```
+
+## Transition languages (storyboard)
+```jsonc
+// Camera-first product: every feature arrives the way you read
+{ "type": "push", "dir": "left", "blur": true }      // between features (primary)
+{ "type": "whip", "dir": "left" }                     // the one fast beat
+// Swiss cuts: cut on the beat; chapters breathe
+{ "type": "cut" } · { "type": "dip", "duration": 0.5 } · { "type": "wipe", "feather": 12 }
+// Luminous: soft continuity, one light moment
+{ "type": "blur" } · { "type": "crossfade" } · { "type": "lightSweep", "color": "accent" }  // into the logo, once
+// Kinetic / social punch (9:16): cuts on the beat + two accents
+{ "type": "punchCut" } · { "type": "whip", "dir": "up", "duration": 0.28 } · { "type": "strips", "n": 6 }
+```

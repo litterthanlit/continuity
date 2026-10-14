@@ -3,6 +3,7 @@
   "logline": "Who this is for, what it shows, and what it should make them do.",
   "format": { "aspect": "16:9", "fps": 30 },
   "theme": "mono-dark",
+  "type": "swiss",
   "scenes": [
     {
       "id": "hook",

@@ -28,6 +28,15 @@ describe("seeded static defects (projects/_defects)", () => {
       "lint:late-entrance",
       "lint:slow-open",
       "lint:dead-air",
+      "lint:axis-reflow",
+      "lint:axis-unsupported",
+      "lint:axis-range",
+      "lint:hairline-weight",
+      "lint:transition-too-long",
+      "lint:transition-too-short",
+      "lint:transition-language",
+      "lint:transition-bounce",
+      "lint:transition-strobe",
     ]) {
       expect(ids, r).toContain(r);
     }
@@ -35,7 +44,7 @@ describe("seeded static defects (projects/_defects)", () => {
 });
 
 describe("good projects stay clean (no false positives)", () => {
-  for (const slug of ["example-type", "_kit", "_smoke", "_template"]) {
+  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions"]) {
     it(slug, async () => {
       const { findings } = await rules(slug);
       const errors = findings.filter((f) => f.severity === "error");

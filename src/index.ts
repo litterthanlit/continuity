@@ -38,4 +38,8 @@ export type { MotionBuilder, At, PresetCallOptions, TweenCallOptions } from "./m
 export { durations, eases, staggers, readTime } from "./motion/tokens.js";
 export type { DurationToken, EaseToken, StaggerToken } from "./motion/tokens.js";
 export { defineTheme, themes } from "./themes/index.js";
-export type { Theme } from "./themes/index.js";
+export type { StageBackground, Theme } from "./themes/index.js";
+export { defineKit, typeKits, KIT_NAMES } from "./themes/kits.js";
+export type { KitName, Role, RoleStyle, TypeKit } from "./themes/kits.js";
+export { fonts } from "./themes/fonts.js";
+export type { FontFamily } from "./themes/fonts.js";

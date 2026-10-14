@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 import type { ComponentChildren } from "preact";
-import { ctId } from "./context.js";
+import { ctId, useScene } from "./context.js";
 import { cx, type Style } from "./core.js";
 
 /**
@@ -351,12 +351,19 @@ export function LineChart({ ct, data, width = 640, height = 260, class: cls }: B
   );
 }
 
+/** Stat numbers: v1 display semibold; v2 the kit's figures role (always tabular or monospace). */
+function figuresClass(): string {
+  const kit = useScene().typeKit;
+  if (!kit || kit.v1) return "font-display text-h1 font-semibold tabular-nums text-fg";
+  return `font-${kit.figures} text-h1 tabular-nums text-fg`;
+}
+
 /** Big number + label. Number is `<ct>` (use m.counter), label `<ct>-label`. */
 export function Stat({ ct, value, label, class: cls, prefix, suffix, decimals = 0 }: { ct: string; value: number; label: string; class?: string; prefix?: string; suffix?: string; decimals?: number }) {
   const shown = (prefix ?? "") + value.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (suffix ?? "");
   return (
     <div class={cx("flex flex-col gap-[8px]", cls)}>
-      <span data-ct={id(ct)} class="font-display text-h1 font-semibold tabular-nums text-fg">
+      <span data-ct={id(ct)} class={figuresClass()}>
         {shown}
       </span>
       <span data-ct={id(ct, "label")} class="font-sans text-caption text-muted">

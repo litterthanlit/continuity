@@ -1,0 +1,658 @@
+{
+ "cut@0.4": {
+  "out": [],
+  "in": []
+ },
+ "cut@0.5": {
+  "out": [],
+  "in": []
+ },
+ "crossfade@0.4": {
+  "out": [],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.2,
+      0,
+      0,
+      1
+     ]
+    },
+    "easeName": "standard",
+    "props": {
+     "opacity": [
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ "crossfade@0.5": {
+  "out": [],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.2,
+      0,
+      0,
+      1
+     ]
+    },
+    "easeName": "standard",
+    "props": {
+     "opacity": [
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ "dip@0.4": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.6,
+    "duration": 0.2,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.3,
+      0,
+      0.8,
+      0.15
+     ]
+    },
+    "easeName": "exit",
+    "props": {
+     "opacity": [
+      null,
+      0
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0.2,
+    "duration": 0.2,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.05,
+      0.7,
+      0.1,
+      1
+     ]
+    },
+    "easeName": "enter",
+    "props": {
+     "opacity": [
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ "dip@0.5": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.5,
+    "duration": 0.25,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.3,
+      0,
+      0.8,
+      0.15
+     ]
+    },
+    "easeName": "exit",
+    "props": {
+     "opacity": [
+      null,
+      0
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0.25,
+    "duration": 0.25,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.05,
+      0.7,
+      0.1,
+      1
+     ]
+    },
+    "easeName": "enter",
+    "props": {
+     "opacity": [
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ "push@0.4": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.6,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "xPct": [
+      0,
+      -100
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "xPct": [
+      100,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "push@0.5": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.5,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "xPct": [
+      0,
+      -100
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "xPct": [
+      100,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "pushUp@0.4": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.6,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "yPct": [
+      0,
+      -100
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "yPct": [
+      100,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "pushUp@0.5": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.5,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "yPct": [
+      0,
+      -100
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "yPct": [
+      100,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "blur@0.4": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.6,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "blur": [
+      null,
+      24
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "opacity": [
+      0,
+      1
+     ],
+     "blur": [
+      24,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "blur@0.5": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.5,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "blur": [
+      null,
+      24
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "opacity": [
+      0,
+      1
+     ],
+     "blur": [
+      24,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "zoom@0.4": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.6,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.3,
+      0,
+      0.8,
+      0.15
+     ]
+    },
+    "easeName": "exit",
+    "props": {
+     "scale": [
+      null,
+      1.3
+     ],
+     "opacity": [
+      null,
+      0
+     ],
+     "blur": [
+      null,
+      10
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.16,
+      1,
+      0.3,
+      1
+     ]
+    },
+    "easeName": "hero",
+    "props": {
+     "scale": [
+      1.12,
+      1
+     ],
+     "opacity": [
+      0,
+      1
+     ],
+     "blur": [
+      12,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "zoom@0.5": {
+  "out": [
+   {
+    "target": "a.scene",
+    "kind": "transition",
+    "start": 2.5,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.3,
+      0,
+      0.8,
+      0.15
+     ]
+    },
+    "easeName": "exit",
+    "props": {
+     "scale": [
+      null,
+      1.3
+     ],
+     "opacity": [
+      null,
+      0
+     ],
+     "blur": [
+      null,
+      10
+     ]
+    }
+   }
+  ],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.16,
+      1,
+      0.3,
+      1
+     ]
+    },
+    "easeName": "hero",
+    "props": {
+     "scale": [
+      1.12,
+      1
+     ],
+     "opacity": [
+      0,
+      1
+     ],
+     "blur": [
+      12,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "wipe@0.4": {
+  "out": [],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.4,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "clipRight": [
+      100,
+      0
+     ]
+    }
+   }
+  ]
+ },
+ "wipe@0.5": {
+  "out": [],
+  "in": [
+   {
+    "target": "b.scene",
+    "kind": "transition",
+    "start": 0,
+    "duration": 0.5,
+    "ease": {
+     "type": "bezier",
+     "p": [
+      0.65,
+      0,
+      0.35,
+      1
+     ]
+    },
+    "easeName": "inOut",
+    "props": {
+     "clipRight": [
+      100,
+      0
+     ]
+    }
+   }
+  ]
+ }
+}

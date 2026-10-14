@@ -49,9 +49,9 @@ export function createServer(): McpServer {
     {
       title: "Make a video",
       description: "Make a motion design video end-to-end from a brief: plan → style frames → motion → gate → look → critique → iterate → render.",
-      argsSchema: z.object({ brief: z.string().describe("What the video is for, who it's for, the one thing to remember, CTA, format"), aspect: z.string().optional(), theme: z.string().optional() }),
+      argsSchema: z.object({ brief: z.string().describe("What the video is for, who it's for, the one thing to remember, CTA, format"), aspect: z.string().optional(), theme: z.string().optional(), type: z.string().optional() }),
     },
-    ({ brief, aspect, theme }) => ({ messages: [{ role: "user" as const, content: { type: "text" as const, text: makeVideoPrompt({ brief, aspect, theme }) } }] }),
+    ({ brief, aspect, theme, type }) => ({ messages: [{ role: "user" as const, content: { type: "text" as const, text: makeVideoPrompt({ brief, aspect, theme, type }) } }] }),
   );
 
   server.registerPrompt(

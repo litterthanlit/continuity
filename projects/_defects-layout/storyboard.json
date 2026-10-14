@@ -1,5 +1,5 @@
 {
-  "title": "Seeded layout defects (test fixture \u2014 every browser rule must fire)",
+  "title": "Seeded layout defects (test fixture — every browser rule must fire)",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -18,6 +18,17 @@
         "dim": "Barely visible",
         "x1": "Crossing one",
         "x2": "Crossing two"
+      }
+    },
+    {
+      "id": "fonts",
+      "type": "wonk",
+      "duration": 3,
+      "intent": "Font capability defects (v2 kit, synthesis off).",
+      "beats": [],
+      "text": {
+        "bold": "Mono in bold",
+        "label": "frames"
       }
     }
   ]

@@ -36,18 +36,22 @@ export default scene({
 ```
 
 `ctx` (view & motion 2nd arg): `id, text, aspect, width, height, portrait,
-landscape, square, theme, beats, duration, index, total`.
+landscape, square, theme, typeKit, beats, duration, index, total`.
 
 Styling: Tailwind v4 classes. Theme tokens are utilities:
 - colors `bg-bg text-fg text-muted text-subtle bg-surface bg-surface-2 border-border text-accent bg-accent text-accent-2 text-accent-fg text-positive …`
-- fonts `font-display font-sans font-mono font-serif`
+- fonts `font-display font-sans font-mono font-serif` — the **type kit's** roles
+  (storyboard `type`; see the `typography` skill). In v2 kits the role classes
+  carry weight, width, axes and case; explicit utilities (`font-bold`,
+  `tracking-[…]`, `font-stretch-75%`) still win.
 - type scale (px at 1080 short side, with tuned leading/tracking):
   `text-mega 240 · text-display 168 · text-h1 120 · text-h2 88 · text-h3 64 · text-lead 48 · text-body 38 · text-caption 30 · text-micro 26`
 - radius `rounded-sm/md/lg/xl`, shadows `shadow-glow shadow-float`
 - CSS vars available inline: `var(--color-accent)` etc.
 
-**Rule:** motion owns `transform`, `opacity`, `filter`, `clip-path`,
-`letter-spacing` on `ct` elements. Position with layout (flex/grid/absolute
+**Rule:** motion owns `transform`, `opacity`, `filter`, `clip-path`, `mask-image`,
+`letter-spacing`, `font-weight`, `font-stretch` and `font-variation-settings` on
+`ct` elements it animates. Position with layout (flex/grid/absolute
 `left/top`), not Tailwind `translate-*`/`scale-*`/`rotate-*` on animated nodes —
 wrap in a parent if you need both.
 
@@ -62,9 +66,9 @@ Layout
 - `<Path ct d viewBox width height stroke strokeWidth>` — SVG stroke for the `draw` preset.
 
 Type
-- `<Headline size="mega|display|h1|h2|h3" as="h1">` — display face, semibold, balanced.
-- `<Subhead size="lead">`, `<Body>`, `<Caption>`, `<Eyebrow>` (mono, uppercase, tracked).
-- Inline: `<Accent>`, `<Serif>` (italic serif swap), `<GradientText>`, `<Highlight ct>` (marker bar `ct-bar`, animate with `emphasize("<ct>-bar","underline")`).
+- `<Headline size="mega|display|h1|h2|h3" as="h1">` — the kit's display role (weight/width/case from the kit), balanced.
+- `<Subhead size="lead">`, `<Body>`, `<Caption>`, `<Eyebrow>` (the kit's mono label: caps, tracked).
+- Inline: `<Accent>`, `<Serif>` (italic serif accent, x-height matched by the kit), `<GradientText>`, `<Highlight ct>` (marker bar `ct-bar`, animate with `emphasize("<ct>-bar","underline")`).
 - `<Fit ct max min>` — single-line text auto-fit to container width at load.
 - `<Counter ct from decimals prefix suffix>` + `m.counter(ct, { to })`.
 
@@ -102,12 +106,16 @@ m.time(at) → seconds · m.endOf(id) → seconds
 - `split: "chars" | "words" | "lines"` animates parts; default stagger
   `char/word/line`; mask presets add an overflow mask automatically.
 - `stagger`: token, seconds, or `{ each, from: "start|end|center|edges" }`.
-- Props: `x y (px) xPct yPct (% of own size) z scale scaleX scaleY rotate rotateX rotateY skewX opacity blur brightness saturate clipTop clipRight clipBottom clipLeft (% inset) tracking (em) draw (0..1) counter`.
+- Props: `x y (px) xPct yPct (% of own size) z scale scaleX scaleY rotate rotateX rotateY skewX opacity blur brightness saturate clipTop clipRight clipBottom clipLeft (% inset) tracking (em) draw (0..1) counter`
+  · font axes `wght wdth (%) opsz soft` (start from the element's kit values; split or nowrap the text)
+  · `blurX blurY` (px, directional motion blur) · `fx` (0..1 progress of a tween's shape mask — used by transitions).
 - `[from, to]` or just `to` (inherits the current value).
 - `allow: ["rule-id"]` silences a lint rule for that tween — justify in a comment.
 
-Reserved ids per scene: `scene` (the scene root; used by transitions) and
-`camera` (wrapper used by `m.camera`).
+Reserved ids per scene: `scene` (the scene root; used by transitions),
+`camera` (wrapper used by `m.camera`), and `reveal` / `fx` (layers some
+transitions add: a mask wrapper and an overlay). Using them in a view is a
+build error (`reserved-id`).
 
 ## Storyboard (`storyboard.json`)
 
@@ -116,6 +124,7 @@ Reserved ids per scene: `scene` (the scene root; used by transitions) and
   "title": "…", "logline": "…",
   "format": { "aspect": "16:9 | 9:16 | 1:1 | 4:5", "fps": 30 },
   "theme": "mono-dark | light-editorial | vivid-gradient",
+  "type": "swiss | atelier | wonk | terminal | broadside | flexion",
   "bpm": 120,
   "scenes": [{
     "id": "hook", "duration": 2.8, "intent": "…",
@@ -123,12 +132,22 @@ Reserved ids per scene: `scene` (the scene root; used by transitions) and
     "text": { "headline": "…" },
     "elements": [{ "id": "headline", "role": "headline", "anchor": "B2:E3" }],
     "motion": "director notes for the builder",
-    "transition": { "type": "push", "duration": 0.5 }
+    "transition": { "type": "push", "dir": "left", "blur": true },
+    "type": "(optional) a scene's own kit — chapter breaks and galleries only"
   }]
 }
 ```
 Scene `duration` includes the outgoing transition overlap; the next scene starts
-`duration − transition.duration` later.
+`duration − transition.duration` later. A scene's incoming and outgoing
+transitions must fit inside it together.
+
+Transition params (validated per type; `duration` defaults per type):
+`ease` (token or `[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, whip,
+strips, wipe; lightSweep left/right) · `angle` + `feather` (wipe) · `origin
+{x,y}` % + `feather` (iris) · `n` + `stagger` s (strips) · `blur` (push/whip:
+`true` = speed-matched, number = σ px, `false`) · `color` (lightSweep: `accent
+accent-2 fg white`) · `flash` 0–0.5 (punchCut). Types, defaults and ranges:
+`catalog.md` → Scene transitions.
 
 ## Custom brand theme
 
@@ -137,3 +156,6 @@ Scene `duration` includes the outgoing transition overlap; the next scene starts
 import { defineTheme } from "continuity";
 export default defineTheme("mono-dark", { colors: { accent: "#ff5a1f" } });
 ```
+A brand kit: `defineTheme("mono-dark", { type: defineKit("swiss", { roles: { display: { weight: 700 } } }) })`
+(families come from the registry: `import { fonts } from "continuity"`). The
+storyboard's `type` wins over a theme's `type`.

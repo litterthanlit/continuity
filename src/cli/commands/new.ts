@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { PKG_ROOT, PROJECTS_DIR, projectDir, rel } from "../../paths.js";
 import { ASPECTS, type Aspect } from "../../spec/storyboard.js";
 import { themes } from "../../themes/index.js";
+import { KIT_NAMES, isKitName } from "../../themes/kits.js";
 import { flagStr, requireSlug, UsageError } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { log, ok } from "../lib/log.js";
@@ -26,7 +27,10 @@ export function ensureEsmProjects(): boolean {
 export const newProject: Command = {
   name: "new",
   summary: "Scaffold a project from the template (brief, storyboard, one scene).",
-  usage: "ct new <project> [--aspect 16:9|9:16|1:1|4:5] [--theme mono-dark|light-editorial|vivid-gradient] [--title \"…\"]",
+  usage:
+    `ct new <project> [--aspect ${Object.keys(ASPECTS).join("|")}] [--theme ${Object.keys(themes).join("|")}] ` +
+    `[--type ${[...KIT_NAMES, "classic"].join("|")}] [--title "…"]\n` +
+    "  --type  type kit (font pairing); defaults to the theme's suggested kit. classic = the theme's v1 fonts",
   async run(a) {
     const slug = requireSlug(a);
     if (!/^[a-z][a-z0-9-]*$/.test(slug)) throw new UsageError("project names are lowercase kebab-case");
@@ -36,6 +40,8 @@ export const newProject: Command = {
     if (!(aspect in ASPECTS)) throw new UsageError(`--aspect must be one of ${Object.keys(ASPECTS).join(", ")}`);
     const theme = flagStr(a, "theme") ?? "mono-dark";
     if (!themes[theme]) throw new UsageError(`--theme must be one of ${Object.keys(themes).join(", ")}`);
+    const type = flagStr(a, "type") ?? themes[theme].suggestedType ?? "classic";
+    if (type !== "classic" && !isKitName(type)) throw new UsageError(`--type must be one of ${[...KIT_NAMES, "classic"].join(", ")}`);
     if (ensureEsmProjects()) ok(`wrote ${rel(join(PROJECTS_DIR, "package.json"))} (scene files are ES modules)`);
     cpSync(join(PKG_ROOT, "templates", "project"), dir, { recursive: true, filter: (src) => !src.includes(".continuity") });
     const sbPath = join(dir, "storyboard.json");
@@ -43,8 +49,10 @@ export const newProject: Command = {
     sb.title = flagStr(a, "title") ?? slug.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
     sb.format.aspect = aspect;
     sb.theme = theme;
+    if (type === "classic") delete sb.type;
+    else sb.type = type;
     writeFileSync(sbPath, JSON.stringify(sb, null, 2) + "\n");
-    emitResult({ slug, dir, aspect, theme, files: ["brief.md", "storyboard.json", "scenes/hook.tsx"].map((f) => join(dir, f)) });
+    emitResult({ slug, dir, aspect, theme, type, files: ["brief.md", "storyboard.json", "scenes/hook.tsx"].map((f) => join(dir, f)) });
     ok(`created ${rel(dir)}`);
     log(`next: fill ${rel(join(dir, "brief.md"))}, write the storyboard, then \`npx ct check ${slug}\``);
     return 0;

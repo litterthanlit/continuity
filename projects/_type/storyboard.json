@@ -1,0 +1,146 @@
+{
+  "title": "Type kits gallery",
+  "logline": "One specimen per v2 type kit, same layout, so the pairings can be compared cut to cut.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "mono-dark",
+  "type": "swiss",
+  "scenes": [
+    {
+      "id": "swiss",
+      "type": "swiss",
+      "duration": 4.2,
+      "intent": "Swiss: pure grotesk, tight and precise.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "01 — Swiss · Vercel, Linear",
+        "title": "Ship faster, without the noise.",
+        "accent": "noise.",
+        "body": "Geist 600 · Geist · Geist Mono",
+        "stat": "uptime"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
+      }
+    },
+    {
+      "id": "atelier",
+      "type": "atelier",
+      "duration": 4.2,
+      "intent": "Atelier: editorial serif over a clean grotesk.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "02 — Atelier · Editorial",
+        "title": "The quiet infrastructure of everything.",
+        "accent": "infrastructure",
+        "body": "Newsreader · Instrument Sans",
+        "stat": "pages set"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
+      }
+    },
+    {
+      "id": "wonk",
+      "type": "wonk",
+      "duration": 4.2,
+      "intent": "Wonk: the expressive soft serif, with restraint.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "03 — Wonk · Soft serif",
+        "title": "Software with a pulse.",
+        "accent": "pulse.",
+        "body": "Fraunces soft · Hanken Grotesk",
+        "stat": "frames drawn"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
+      }
+    },
+    {
+      "id": "terminal",
+      "type": "terminal",
+      "duration": 4.2,
+      "intent": "Terminal: mono-led and technical.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "04 — Terminal · Dev tools",
+        "title": "Deploys in seconds, not minutes.",
+        "accent": "seconds,",
+        "body": "Geist Mono · Geist",
+        "stat": "ms p95"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
+      }
+    },
+    {
+      "id": "broadside",
+      "type": "broadside",
+      "duration": 4.2,
+      "intent": "Broadside: bold condensed caps for social.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "05 — Broadside · Social",
+        "title": "Stop scrolling. Start shipping.",
+        "accent": "shipping.",
+        "body": "Archivo 66% / 850 · Inter Tight",
+        "stat": "views"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
+      }
+    },
+    {
+      "id": "flexion",
+      "type": "flexion",
+      "duration": 4.2,
+      "intent": "Flexion: a variable-axis showpiece.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "06 — Flexion · Variable",
+        "title": "Type that breathes.",
+        "accent": "breathes.",
+        "body": "Mona Sans · width 75–125",
+        "stat": "% width"
+      }
+    }
+  ]
+}

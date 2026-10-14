@@ -28,6 +28,7 @@ const GROUPS: Array<[string, RegExp]> = [
   ["font-weight", /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])$/],
   ["tracking", /^tracking-/],
   ["leading", /^leading-/],
+  ["font-stretch", /^font-stretch-/],
   ["case", /^(uppercase|lowercase|capitalize|normal-case)$/],
   ["italic", /^(italic|not-italic)$/],
 ];

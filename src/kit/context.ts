@@ -1,5 +1,6 @@
 import type { Aspect } from "../spec/storyboard.js";
 import type { Theme } from "../themes/index.js";
+import type { TypeKit } from "../themes/kits.js";
 
 export interface SceneContext {
   /** Scene id (from the storyboard). */
@@ -13,6 +14,8 @@ export interface SceneContext {
   landscape: boolean;
   square: boolean;
   theme: Theme;
+  /** The scene's type kit (the video's, or the scene's own `type`). */
+  typeKit: TypeKit;
   beats: Record<string, number>;
   duration: number;
   /** Position of this scene in the video. */

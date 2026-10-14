@@ -24,9 +24,9 @@ look/composition/legibility verdicts lean on the images.
 |---|---|---|
 | **Intent** — does it say the one thing in the brief? | Message lands in the first 2s; every scene earns its place; CTA unmistakable | Generic, wandering, message unclear |
 | **Composition** — the settled frames | Clear focal point, strong hierarchy (≥2.5× scale contrast), generous negative space, consistent alignment, one accent | Cluttered, centered-everything, competing elements, cramped or off-safe |
-| **Typography** | Right sizes for format, tight display tracking, meaningful line breaks, legible holds, no widows/orphans | Too small, awkward breaks, shrunk-to-fit, unreadable holds |
+| **Typography** | One type kit used through its roles (no stray weights/faces), right sizes for format, kit tracking, meaningful line breaks, one x-height-matched serif accent at most per line, tabular counters, no faux or hairline weights, no widows/orphans | Too small, awkward breaks, shrunk-to-fit, mixed kits, a serif accent everywhere, faux bold, jittering counters |
 | **Temporal** — timing, easing, rhythm | Everything eases and settles; lead→follow; varied rhythm; holds match reading; cuts on beats | Linear, simultaneous, interrupted, dead air, too fast to read |
-| **Craft** — finish & consistency | Consistent physics and transitions, cohesive palette, ambient life, polish details | Mixed directions, random transitions, flat frames, glitches |
+| **Craft** — finish & consistency | One transition language (≤ 2 types), consistent direction of travel, motion blur on fast moves, feathered edges, cohesive palette, ambient life | Mixed directions, a different transition per cut, strobing pushes, hard-edged wipes, flat frames, glitches |
 
 Score **Temporal** from timeline/lint evidence first, sheet second. A frame grid
 cannot show easing; the numbers can.

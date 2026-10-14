@@ -1,0 +1,264 @@
+{
+  "title": "Transitions gallery",
+  "logline": "Every v2 scene transition in one chain, each scene naming the transition that brought it in, over contrasting backgrounds so edges, masks and blur read.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "mono-dark",
+  "type": "swiss",
+  "scenes": [
+    {
+      "id": "intro",
+      "duration": 3.0,
+      "intent": "Show the transition into this scene: Transitions.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "00 / 12",
+        "title": "Transitions",
+        "sub": "v2 library · 12 cuts"
+      },
+      "transition": {
+        "type": "crossfade"
+      }
+    },
+    {
+      "id": "crossfade",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Crossfade.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "01 / 12",
+        "title": "Crossfade",
+        "sub": "same surface, new state"
+      },
+      "transition": {
+        "type": "dip"
+      }
+    },
+    {
+      "id": "dip",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Dip.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "02 / 12",
+        "title": "Dip",
+        "sub": "a breath between chapters"
+      },
+      "transition": {
+        "type": "push",
+        "dir": "right",
+        "blur": true
+      }
+    },
+    {
+      "id": "push",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Push + blur.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "03 / 12",
+        "title": "Push + blur",
+        "sub": "speed-matched motion blur"
+      },
+      "transition": {
+        "type": "pushUp"
+      }
+    },
+    {
+      "id": "pushup",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Push up.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "04 / 12",
+        "title": "Push up",
+        "sub": "vertical feeds, 9:16"
+      },
+      "transition": {
+        "type": "whip"
+      }
+    },
+    {
+      "id": "whip",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Whip.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "05 / 12",
+        "title": "Whip",
+        "sub": "the swap hides at peak speed"
+      },
+      "transition": {
+        "type": "punchCut"
+      }
+    },
+    {
+      "id": "punch",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Punch cut.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "06 / 12",
+        "title": "Punch cut",
+        "sub": "push in, swap, two-frame flash"
+      },
+      "transition": {
+        "type": "wipe",
+        "angle": 120,
+        "feather": 14
+      }
+    },
+    {
+      "id": "wipe",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Wipe.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "07 / 12",
+        "title": "Wipe",
+        "sub": "feathered, on a diagonal"
+      },
+      "transition": {
+        "type": "iris",
+        "origin": {
+          "x": 70,
+          "y": 40
+        }
+      }
+    },
+    {
+      "id": "iris",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Iris.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "08 / 12",
+        "title": "Iris",
+        "sub": "focus on a point"
+      },
+      "transition": {
+        "type": "strips"
+      }
+    },
+    {
+      "id": "strips",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Strips.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "09 / 12",
+        "title": "Strips",
+        "sub": "staggered, eased per strip"
+      },
+      "transition": {
+        "type": "lightSweep"
+      }
+    },
+    {
+      "id": "sweep",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Light sweep.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "10 / 12",
+        "title": "Light sweep",
+        "sub": "light across the cut"
+      },
+      "transition": {
+        "type": "blur"
+      }
+    },
+    {
+      "id": "blur",
+      "duration": 2.8,
+      "intent": "Show the transition into this scene: Blur.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "11 / 12",
+        "title": "Blur",
+        "sub": "defocus out, focus in"
+      },
+      "transition": {
+        "type": "zoom"
+      }
+    },
+    {
+      "id": "zoom",
+      "duration": 3.0,
+      "intent": "Show the transition into this scene: Zoom.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "num": "12 / 12",
+        "title": "Zoom",
+        "sub": "through, into a detail"
+      }
+    }
+  ]
+}

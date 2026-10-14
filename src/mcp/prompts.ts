@@ -5,7 +5,7 @@
 
 export const INSTRUCTIONS = `Continuity makes motion design videos as code (product launches, kinetic typography, social cuts) and gives you eyes to check them.
 
-Read continuity://guide/continuity first; load continuity://guide/motion-craft before writing motion, and continuity://guide/critique before judging.
+Read continuity://guide/continuity first; load continuity://guide/typography when choosing the type kit, continuity://guide/motion-craft before writing motion (and transitions), and continuity://guide/critique before judging.
 
 The loop: brief.md → storyboard.json → style frames → scenes → GATE (check, 0 errors) → LOOK (contact_sheet + stills — study the images) → fix → … (≤ 3 rounds, keep the best) → render.
 
@@ -14,16 +14,16 @@ Hard rules: motion only through the scene's motion(m) function — never CSS ani
 Tools: new_project · list/read/write_project_file (sandboxed to the project's sources; writes return lint findings) · lint · check · timeline · stills · contact_sheet · motion_strip · render · motion_analysis · status · score · compare · verdict · restore · report · catalog · doctor · init_repo · list_projects.
 Long operations (check, render) report progress; prefer check with scene=… and render with draft=true while iterating.`;
 
-export function makeVideoPrompt(a: { brief: string; aspect?: string; theme?: string }): string {
+export function makeVideoPrompt(a: { brief: string; aspect?: string; theme?: string; type?: string }): string {
   return `Make a state-of-the-art motion design video with Continuity for this brief:
 
 ${a.brief}
 
-${a.aspect ? `Aspect: ${a.aspect}. ` : ""}${a.theme ? `Theme: ${a.theme}. ` : ""}Work through the studio roles yourself, in order. Read continuity://guide/continuity before starting and keep its loop.
+${a.aspect ? `Aspect: ${a.aspect}. ` : ""}${a.theme ? `Theme: ${a.theme}. ` : ""}${a.type ? `Type kit: ${a.type}. ` : ""}Work through the studio roles yourself, in order. Read continuity://guide/continuity before starting and keep its loop.
 
 0. Toolchain — call doctor. If it isn't ready, tell the user exactly what to install and stop.
-1. Setup — pick a kebab-case slug, aspect (social → 9:16, launch/product → 16:9) and theme; call new_project. Write the brief into brief.md (write_project_file).
-2. Director — read continuity://guide/continuity/reference/api.md (storyboard schema) and, for products, continuity://guide/product-launch or, for type-led pieces, continuity://guide/kinetic-type. Write treatment.md (concept, arc, visual + motion language, rhythm) and storyboard.json: one idea per scene, beats for every landing moment, ALL copy in text (≤ 12 words on screen for 16:9, ≤ 7 for 9:16), element ids, transitions. lint with storyboardOnly=true must pass.
+1. Setup — pick a kebab-case slug, aspect (social → 9:16, launch/product → 16:9), colour theme and type kit (read continuity://guide/typography: swiss, atelier, wonk, terminal, broadside, flexion); call new_project. Write the brief into brief.md (write_project_file).
+2. Director — read continuity://guide/continuity/reference/api.md (storyboard schema) and, for products, continuity://guide/product-launch or, for type-led pieces, continuity://guide/kinetic-type. Write treatment.md (concept, arc, visual + motion language, rhythm) and storyboard.json: one idea per scene, beats for every landing moment, ALL copy in text (≤ 12 words on screen for 16:9, ≤ 7 for 9:16), element ids, and one transition language (1–2 transition types, see motion-craft). lint with storyboardOnly=true must pass.
 3. Style frames — for each scene write scenes/<id>.tsx with the settled layout and minimal motion; call stills and study each image at full size. Fix composition, type scale, hierarchy and spacing before animating.
 4. Motion — read continuity://guide/motion-craft. Add motion with presets and tokens: one focal point at a time, lead → follow, everything eases and settles. Check numbers with timeline.
 5. Gate — check (use scene=<id> while working on one scene; finish with a full check). Fix every error; treat warnings as defects unless the craft is right anyway.

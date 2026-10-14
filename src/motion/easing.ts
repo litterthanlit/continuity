@@ -133,3 +133,22 @@ export function isLinear(ease: EaseSpec): boolean {
   }
   return false;
 }
+
+/** Steepest slope of an eased 0..1 curve (≈ peak velocity relative to linear). */
+export function peakSlope(ease: EaseSpec, samples = 200): number {
+  const f = easeFn(ease);
+  let max = 0;
+  for (let i = 0; i < samples; i++) max = Math.max(max, (f((i + 1) / samples) - f(i / samples)) * samples);
+  return max;
+}
+
+/**
+ * Directional blur (Gaussian σ, px) matching a move of `distance` px over
+ * `duration` s at its peak speed: a 180° shutter smears 0.5·v px per frame,
+ * and a box of length L is ≈ a Gaussian of σ 0.29·L — so σ ≈ 0.144·v.
+ * Capped (default 6% of the travel) so whips streak without dissolving.
+ */
+export function sigmaFor(ease: EaseSpec, distance: number, duration: number, fps: number, cap = 0.06 * distance): number {
+  const v = (peakSlope(ease) * distance) / Math.max(1e-3, duration * fps);
+  return Math.round(Math.min(cap, 0.144 * v) * 10) / 10;
+}

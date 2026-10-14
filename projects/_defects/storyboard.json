@@ -1,5 +1,5 @@
 {
-  "title": "Seeded static defects (test fixture \u2014 every lint/build rule must fire)",
+  "title": "Seeded static defects (test fixture — every lint/build rule must fire)",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -21,6 +21,61 @@
         "a": "Alpha",
         "b": "Beta",
         "c": "Gamma"
+      },
+      "transition": {
+        "type": "whip",
+        "duration": 0.8
+      }
+    },
+    {
+      "id": "axes",
+      "type": "atelier",
+      "duration": 3,
+      "intent": "Variable-axis defects (atelier: Newsreader display, wght 200–800, no wdth).",
+      "beats": [],
+      "text": {
+        "thin": "Hairline serif display",
+        "wide": "Too wide to stretch",
+        "heavy": "Heavy"
+      },
+      "transition": {
+        "type": "iris",
+        "ease": "bouncy"
+      }
+    },
+    {
+      "id": "t3",
+      "duration": 2,
+      "intent": "Transition defects.",
+      "beats": [],
+      "text": {
+        "word": "T3"
+      },
+      "transition": {
+        "type": "strips",
+        "duration": 0.1
+      }
+    },
+    {
+      "id": "t4",
+      "duration": 2,
+      "intent": "Transition defects.",
+      "beats": [],
+      "text": {
+        "word": "T4"
+      },
+      "transition": {
+        "type": "push",
+        "duration": 0.3
+      }
+    },
+    {
+      "id": "t5",
+      "duration": 2,
+      "intent": "Transition defects.",
+      "beats": [],
+      "text": {
+        "word": "T5"
       }
     }
   ]

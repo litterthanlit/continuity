@@ -12,7 +12,7 @@
  * NOTE: avoid template literals in this file's output — the HyperFrames bundler
  * rejects interpolated selectors; esbuild is configured to lower them anyway.
  */
-import { compileScene, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
+import { compileScene, mergeVariationSettings, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
 import type { PartCounts, SplitMode, Timeline } from "../motion/types.js";
 
 interface CtData {
@@ -51,6 +51,10 @@ const sceneEls = new Map<string, HTMLElement>();
 const partEls = new Map<string, HTMLElement[]>();
 const partCounts: PartCounts = {};
 const compiled = new Map<string, CompiledScene>();
+/** Settled font-variation-settings of elements whose axes animate (kit axes such as WONK survive). */
+const variationBase = new Map<HTMLElement, string>();
+/** Per-element SVG filters for directional motion blur (created once, in compiled order). */
+const motionBlurs = new Map<HTMLElement, { id: string; node: SVGFEGaussianBlurElement }>();
 
 function collect() {
   document.querySelectorAll<HTMLElement>("[data-ct]").forEach((el) => {
@@ -228,15 +232,81 @@ function apply(sceneId: string, t: number) {
   sampleScene(c, t).forEach((v, key) => {
     const el = resolveKey(key);
     if (!el) return;
-    const s = styleOf(v, c.counters.get(key));
+    const s = styleOf(v, c.counters.get(key), c.fx.get(key));
     const st = el.style;
     if (s.transform !== undefined) st.transform = s.transform;
     if (s.opacity !== undefined) st.opacity = s.opacity;
-    if (s.filter !== undefined) st.filter = s.filter;
+    if (s.motionBlur !== undefined) {
+      const mb = motionBlurs.get(el);
+      const [bx, by] = s.motionBlur;
+      // Below a twentieth of a pixel there is nothing to see: skip the offscreen filter pass.
+      if (mb && (bx >= 0.05 || by >= 0.05)) {
+        mb.node.setAttribute("stdDeviation", bx.toFixed(2) + " " + by.toFixed(2));
+        st.filter = "url(#" + mb.id + ")" + (s.filter ? " " + s.filter : "");
+      } else st.filter = s.filter ?? "";
+    } else if (s.filter !== undefined) st.filter = s.filter;
     if (s.clipPath !== undefined) st.clipPath = s.clipPath;
+    if (s.maskImage !== undefined) {
+      st.maskImage = s.maskImage;
+      st.setProperty("-webkit-mask-image", s.maskImage);
+    }
     if (s.letterSpacing !== undefined) st.letterSpacing = s.letterSpacing;
     if (s.strokeDashoffset !== undefined) st.strokeDashoffset = s.strokeDashoffset;
     if (s.text !== undefined && el.textContent !== s.text) el.textContent = s.text;
+    if (s.fontWeight !== undefined) st.fontWeight = s.fontWeight;
+    if (s.fontStretch !== undefined) st.fontStretch = s.fontStretch;
+    if (s.fontVariation !== undefined) st.fontVariationSettings = mergeVariationSettings(variationBase.get(el) ?? "normal", s.fontVariation);
+  });
+}
+
+/** One hidden SVG holding a blur filter per motion-blurred element, in compiled (deterministic) order. */
+function createMotionBlurs() {
+  let svg: SVGSVGElement | null = null;
+  const NS = "http://www.w3.org/2000/svg";
+  compiled.forEach((c) => {
+    c.channels.forEach((byProp, key) => {
+      if (!byProp.has("blurX") && !byProp.has("blurY")) return;
+      const el = resolveKey(key);
+      if (!el || motionBlurs.has(el)) return;
+      if (!svg) {
+        svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("width", "0");
+        svg.setAttribute("height", "0");
+        svg.setAttribute("aria-hidden", "true");
+        svg.style.position = "absolute";
+        document.body.appendChild(svg);
+      }
+      const id = "ct-mb-" + motionBlurs.size;
+      const filter = document.createElementNS(NS, "filter");
+      filter.setAttribute("id", id);
+      filter.setAttribute("color-interpolation-filters", "sRGB");
+      // A full-frame scene smears its own edge pixels (no transparent fringe showing the
+      // other scene); any other element gets room for the streak on its blurred axis.
+      const frame = el.classList.contains("ct-scene");
+      const x = byProp.has("blurX") && !frame;
+      const y = byProp.has("blurY") && !frame;
+      filter.setAttribute("x", x ? "-15%" : "0%");
+      filter.setAttribute("width", x ? "130%" : "100%");
+      filter.setAttribute("y", y ? "-15%" : "0%");
+      filter.setAttribute("height", y ? "130%" : "100%");
+      const node = document.createElementNS(NS, "feGaussianBlur");
+      node.setAttribute("stdDeviation", "0 0");
+      node.setAttribute("edgeMode", frame ? "duplicate" : "none");
+      filter.appendChild(node);
+      (svg as SVGSVGElement).appendChild(filter);
+      motionBlurs.set(el, { id, node });
+    });
+  });
+}
+
+/** Read each axis-animated element's settled variation settings before any inline style is written. */
+function captureVariationBases() {
+  compiled.forEach((c) => {
+    c.channels.forEach((byProp, key) => {
+      if (!byProp.has("opsz") && !byProp.has("soft")) return;
+      const el = resolveKey(key);
+      if (el && !variationBase.has(el)) variationBase.set(el, getComputedStyle(el).fontVariationSettings);
+    });
   });
 }
 
@@ -252,6 +322,8 @@ async function prepare() {
     document.documentElement.classList.remove("ct-measuring");
   }
   for (const s of data.timeline.scenes) compiled.set(s.scene, compileScene(s, partCounts));
+  captureVariationBases();
+  createMotionBlurs();
   // Paint the first frame of every scene so nothing flashes in its final state.
   for (const s of data.timeline.scenes) apply(s.scene, 0);
 }
