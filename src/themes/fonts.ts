@@ -114,6 +114,7 @@ export const fonts = {
     file: "full", weight: [100, 900], axes: { opsz: [9, 144], SOFT: [0, 100], WONK: [0, 1] }, italic: true, tnum: false,
   }),
   hankenGrotesk: fontsourceVariable({ pkg: "hanken-grotesk", family: "Hanken Grotesk", fallback: sans, category: "sans", file: "wght", weight: [100, 900], italic: true, tnum: false }),
+  hostGrotesk: fontsourceVariable({ pkg: "host-grotesk", family: "Host Grotesk", fallback: sans, category: "sans", file: "wght", weight: [300, 800], italic: true, tnum: false }),
   dmMono: fontsourceStatic({ pkg: "dm-mono", family: "DM Mono", fallback: "monospace", category: "mono", weights: [300, 400, 500], italic: true, tnum: false }),
   archivo: fontsourceVariable({
     pkg: "archivo", family: "Archivo", fallback: sans, category: "sans",

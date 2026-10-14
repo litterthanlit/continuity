@@ -19,9 +19,9 @@ unless noted):
 - puppeteer-core — Apache-2.0
 - Fonts via @fontsource: Geist, Geist Mono, Inter, Inter Tight,
   Instrument Serif, Instrument Sans, Newsreader, Fraunces, Hanken Grotesk,
-  DM Mono, Archivo, Martian Mono, Mona Sans, Noto Sans Symbols, Noto Sans
-  Symbols 2 — SIL Open Font License 1.1 (font files are copied into each
-  build output).
+  Host Grotesk, DM Mono, Archivo, Martian Mono, Mona Sans, Noto Sans Symbols,
+  Noto Sans Symbols 2 — SIL Open Font License 1.1 (font files are copied into
+  each build output).
 - fontkit — MIT (glyph coverage checks)
 
 GSAP is NOT used by Continuity compositions. (The HyperFrames CLI's optional
