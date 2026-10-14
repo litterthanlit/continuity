@@ -57,6 +57,8 @@ const GOLDENS: Array<{ slug: string; name?: string; times: number[] }> = [
   { slug: "_transitions", times: [7.35, 12.035, 14.5, 16.85, 19.1, 21.3, 23.6] },
   // the UI kit under mono-dark, one settled frame per scene: guards theme and kit edits
   { slug: "_kit", times: [3.6, 7.1, 11.4] },
+  // the litt look under its own theme: lit backdrop, glow-and-ring depth, one-weight UI kit
+  { slug: "example-litt", times: [2.3, 6.6, 9.5, 13.4] },
 ];
 
 async function signature(file: string): Promise<number[]> {
