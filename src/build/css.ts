@@ -67,6 +67,18 @@ export function fontLoadList(families: FontFamily[]): string[] {
   );
 }
 
+/**
+ * A one-weight kit (litt: no weight above 400 anywhere) flattens Tailwind's named
+ * weights, so the UI kit's hard-coded `font-semibold` / `font-medium` classes draw
+ * at the kit's weight. Video-level kits only: a scene-scoped kit does not reset
+ * or flatten these variables (the theme layer is global).
+ */
+function oneWeightCss(kit: TypeKit): string {
+  if (!kit.oneWeight) return "";
+  const w = kit.roles.sans.weight;
+  return ["medium", "semibold", "bold", "extrabold", "black"].map((n) => `\n  --font-weight-${n}: ${w};`).join("");
+}
+
 function themeCss(theme: Theme, kit: TypeKit): string {
   const colors = Object.entries(theme.colors)
     .map(([k, v]) => `  --color-${k}: ${v};`)
@@ -90,8 +102,10 @@ ${type}
   --radius-md: ${theme.radius.md}px;
   --radius-lg: ${theme.radius.lg}px;
   --radius-xl: ${theme.radius.xl}px;
-  --shadow-glow: 0 0 120px color-mix(in oklab, var(--color-accent) 35%, transparent);
-  --shadow-float: 0 40px 120px -20px rgba(0,0,0,${theme.mode === "dark" ? "0.65" : "0.22"}), 0 0 0 1px var(--color-border);
+  --radius-control: ${theme.radius.control !== undefined ? `${theme.radius.control}px` : "calc(infinity * 1px)"};
+  --radius-field: ${theme.radius.control ?? theme.radius.lg}px;
+  --shadow-glow: ${theme.shadows?.glow ?? "0 0 120px color-mix(in oklab, var(--color-accent) 35%, transparent)"};
+  --shadow-float: ${theme.shadows?.float ?? `0 40px 120px -20px rgba(0,0,0,${theme.mode === "dark" ? "0.65" : "0.22"}), 0 0 0 1px var(--color-border)`};${oneWeightCss(kit)}
 }`;
 }
 

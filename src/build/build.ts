@@ -242,7 +242,7 @@ export async function buildProject(
           };
           const baseOf = (target: string) => {
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
-            return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
+            return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit, kit) : undefined;
           };
           const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf);
           try {

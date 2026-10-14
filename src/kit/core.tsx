@@ -96,6 +96,9 @@ export function Stage({ bg, grain, class: cls, style, children }: StageProps) {
   );
 }
 
+/** Accent strength (%) of the `lit` backdrop: stronger on dark canvases, subtler on light. */
+const litStrength = () => (useScene().theme.mode === "light" ? 12 : 22);
+
 export function Backdrop({ kind, ct = "bg" }: { kind: StageBackground; ct?: string }) {
   const layers: Record<StageBackground, string> = {
     solid: "background: var(--color-bg);",
@@ -120,6 +123,12 @@ export function Backdrop({ kind, ct = "bg" }: { kind: StageBackground; ct?: stri
       "radial-gradient(color-mix(in oklab, var(--color-fg) 16%, transparent) 1.5px, transparent 1.6px) 0 0 / 36px 36px,",
       "var(--color-bg);",
       "mask-image: radial-gradient(70% 65% at 50% 45%, #000 35%, transparent 100%);",
+    ].join(""),
+    // litt.md "light from above": one accent wash falling from the top edge. Static, like the grain.
+    lit: [
+      "background:",
+      `radial-gradient(120% 70% at 50% -6%, color-mix(in oklab, var(--color-accent) ${litStrength()}%, transparent) 0%, transparent 65%),`,
+      "var(--color-bg);",
     ].join(""),
     mesh: [
       "background:",

@@ -16,7 +16,7 @@ export type ColorToken =
   | "warning"
   | "danger";
 
-export type StageBackground = "solid" | "aurora" | "grid" | "spotlight" | "dots" | "mesh";
+export type StageBackground = "solid" | "aurora" | "grid" | "spotlight" | "dots" | "mesh" | "lit";
 
 export interface Theme {
   name: string;
@@ -29,7 +29,22 @@ export interface Theme {
   background: StageBackground;
   /** 0..1 film grain strength. */
   grain: number;
-  radius: { sm: number; md: number; lg: number; xl: number };
+  radius: {
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+    /**
+     * Buttons, inputs and address bars (`rounded-control`, and `rounded-field` for
+     * inputs). Unset keeps the legacy look: pill buttons and `lg`-radius inputs.
+     */
+    control?: number;
+  };
+  /**
+   * Depth recipes (`shadow-glow`, `shadow-float`) as CSS box-shadow values. Unset
+   * keeps the built-in soft glow and drop shadow.
+   */
+  shadows?: { glow?: string; float?: string };
   /**
    * Type kit for every project on this theme (a brand theme.ts can pin one). The
    * storyboard's `type` wins over it; with neither, the build uses `classic`
@@ -142,6 +157,7 @@ export function defineTheme(base: string | Theme, overrides: Partial<Omit<Theme,
     colors: { ...b.colors, ...(overrides.colors ?? {}) },
     fonts: { ...b.fonts, ...(overrides.fonts ?? {}) },
     radius: { ...b.radius, ...(overrides.radius ?? {}) },
+    ...(b.shadows || overrides.shadows ? { shadows: { ...b.shadows, ...(overrides.shadows ?? {}) } } : {}),
   };
 }
 

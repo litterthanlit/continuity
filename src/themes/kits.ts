@@ -45,6 +45,13 @@ export interface TypeKit {
   pairs: string[];
   /** v1 behaviour: emit the v1 classes and no role CSS (classic only). */
   v1?: boolean;
+  /**
+   * One weight everywhere (litt.md rule P9: no weight above 400). The build also
+   * flattens Tailwind's named weights (`font-medium` to `font-black`) to the sans
+   * role's weight, so UI kit components and an explicit `font-bold` stay at one
+   * weight. Applies to the video-level kit only; a scene-scoped kit does not flatten.
+   */
+  oneWeight?: true;
 }
 
 const r = (family: FontFamily, weight: number, extra: Partial<RoleStyle> = {}): RoleStyle => ({ family, weight, ...extra });

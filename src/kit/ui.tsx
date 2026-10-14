@@ -65,7 +65,7 @@ export function Browser({ ct, url = "app.example.com", width = 1400, height = 82
         <span class="h-[18px] w-[18px] rounded-full bg-[#ff5f57]" />
         <span class="h-[18px] w-[18px] rounded-full bg-[#febc2e]" />
         <span class="h-[18px] w-[18px] rounded-full bg-[#28c840]" />
-        <div class="mx-auto flex h-[46px] w-[52%] items-center justify-center gap-[10px] rounded-full bg-bg/70 font-sans text-[26px] text-muted">
+        <div class="mx-auto flex h-[46px] w-[52%] items-center justify-center gap-[10px] rounded-control bg-bg/70 font-sans text-[26px] text-muted">
           <svg width="18" height="20" viewBox="0 0 18 20" fill="none" data-layout-ignore>
             <rect x="2" y="9" width="14" height="10" rx="2" fill="currentColor" />
             <path d="M5 9V6a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.2" />
@@ -124,7 +124,7 @@ export function Button({ ct, children, variant = "primary", class: cls }: Box & 
     ghost: "text-fg",
   }[variant];
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("inline-flex h-[76px] items-center justify-center gap-[12px] rounded-full px-[40px] font-sans text-[30px] font-semibold", v, cls)}>
+    <div data-ct={id(ct)} data-ct-ui class={cx("inline-flex h-[76px] items-center justify-center gap-[12px] rounded-control px-[40px] font-sans text-[30px] font-semibold", v, cls)}>
       {children}
     </div>
   );
@@ -150,7 +150,7 @@ export function Kbd({ ct, children, class: cls }: Box) {
 /** Text field. Typed text is `<ct>-text` (animate with typeOn), caret is `<ct>-caret`. */
 export function Input({ ct, value = "", placeholder, icon = true, class: cls, width = 760 }: Box & { value?: string; placeholder?: string; icon?: boolean; width?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("flex h-[84px] items-center gap-[16px] rounded-lg border border-border bg-surface-2 px-[26px] font-sans text-[30px]", cls)} style={{ width: `${width}px` }}>
+    <div data-ct={id(ct)} data-ct-ui class={cx("flex h-[84px] items-center gap-[16px] rounded-field border border-border bg-surface-2 px-[26px] font-sans text-[30px]", cls)} style={{ width: `${width}px` }}>
       {icon && (
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" class="text-subtle" data-layout-ignore>
           <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.4" />

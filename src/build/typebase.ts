@@ -17,6 +17,9 @@ export interface TypeBase {
   nowrap: boolean;
 }
 
+/** Named weights a one-weight kit flattens (css.ts `oneWeightCss`); thin to normal never exceed 400. */
+const FLATTENED = new Set(["medium", "semibold", "bold", "extrabold", "black"]);
+
 const WEIGHTS: Record<string, number> = {
   thin: 100,
   extralight: 200,
@@ -39,8 +42,14 @@ interface Node {
  * The font an element is drawn in, from its classes and its kit — resolved on
  * the static view DOM, the way the cascade will: the nearest weight / stretch
  * utility, role class (font-display/sans/mono/serif) and text size win.
+ *
+ * Under a `oneWeight` kit the named weight classes (`font-medium` … `font-black`)
+ * resolve to the kit's sans weight, as the flattened theme variables draw them.
+ * The flattening follows the VIDEO-level kit (`videoKit`, default `kit`): a scene
+ * kit under a normal video does not flatten.
  */
-export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
+export function typeBaseOf(el: Node, kit: TypeKit, videoKit: TypeKit = kit): TypeBase {
+  const flat = videoKit.oneWeight ? videoKit.roles.sans.weight : undefined;
   let role: Role | undefined;
   let weight: number | undefined;
   let width: number | undefined;
@@ -52,7 +61,8 @@ export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
       const bare = c.replace(/^[a-z-]+:/, "");
       let m: RegExpExecArray | null;
       if (!role && (m = /^font-(display|sans|mono|serif)$/.exec(bare))) role = m[1] as Role;
-      else if (weight === undefined && (m = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.exec(bare))) weight = WEIGHTS[m[1]];
+      else if (weight === undefined && (m = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.exec(bare)))
+        weight = flat !== undefined && FLATTENED.has(m[1]) ? flat : WEIGHTS[m[1]];
       else if (weight === undefined && (m = /^font-\[(\d+)\]$/.exec(bare))) weight = Number(m[1]);
       else if (width === undefined && (m = /^font-stretch-(\d+(?:\.\d+)?)%$/.exec(bare))) width = Number(m[1]);
       else if (size === undefined && (m = /^text-(mega|display|h1|h2|h3|lead|body|caption|micro)$/.exec(bare))) size = TYPE_SCALE[m[1]][0];
