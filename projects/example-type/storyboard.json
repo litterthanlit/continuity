@@ -176,8 +176,9 @@
         }
       ],
       "text": {
-        "l1": "Every frame,",
-        "l2": "checked."
+        "l1": "Every",
+        "l2": "frame,",
+        "l3": "checked."
       },
       "elements": [
         {
@@ -189,11 +190,15 @@
           "role": "headline"
         },
         {
+          "id": "l3",
+          "role": "headline"
+        },
+        {
           "id": "tick",
           "role": "decor"
         }
       ],
-      "motion": "Lines mask up; an accent check-mark strokes on beside 'checked.'",
+      "motion": "Three display lines mask up; an accent check-mark strokes on beside 'checked.' Then a punch cut into the brand.",
       "transition": {
         "type": "punchCut",
         "duration": 0.37,
@@ -202,20 +207,23 @@
     },
     {
       "id": "end",
-      "duration": 2.9,
+      "duration": 3.2,
       "intent": "Brand + promise + CTA.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.15
+          "at": 0.2,
+          "note": "wordmark settles from wide, after the flash"
         },
         {
           "id": "b2",
-          "at": 0.6
+          "at": 0.75,
+          "note": "CTA eyebrow"
         },
         {
           "id": "b3",
-          "at": 1.0
+          "at": 0.9,
+          "note": "tagline"
         }
       ],
       "text": {
@@ -240,7 +248,7 @@
           "anchor": "B4:E4"
         }
       ],
-      "motion": "CONTINUITY settles from wide to its 66% width, char by char (widthIn); tagline rises; eyebrow fades; glow breathes."
+      "motion": "CONTINUITY settles from 78% to its 66% width, outward from the centre (widthIn by chars) once the punch has landed; then the eyebrow (CTA) and the tagline, top to bottom; glow breathes."
     }
   ]
 }

@@ -14,10 +14,11 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    // Broadside's signature, used once: the wordmark settles from wide to its 66% width.
-    m.enter("wordmark", "widthIn", { at: "b1", split: "chars", stagger: "char" });
-    m.enter("tagline", "rise", { at: "b2", distance: 20 });
-    m.enter("eyebrow", "fadeBlur", { at: "b3" });
+    // Broadside's signature, used once: after the punch lands, the wordmark settles
+    // from 78% to its 66% width, outward from the centre.
+    m.enter("wordmark", "widthIn", { at: "b1", split: "chars", stagger: { each: "char", from: "center" }, width: 78, duration: "hero" });
+    m.enter("eyebrow", "fadeBlur", { at: "b2" });
+    m.enter("tagline", "rise", { at: "b3", distance: 20 });
     m.loop("glow", { scale: 0.06 }, { period: 5 });
     m.camera({ scale: [1.03, 1] });
   },
