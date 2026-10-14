@@ -68,7 +68,7 @@ describe("kit CSS", () => {
     const css = kitCss(typeKits.swiss, '[data-ct-type="swiss"]');
     expect(css).toMatch(/^\[data-ct-type="swiss"\]\{--font-display:"Geist"/);
     expect(css).toContain("font-family:var(--font-sans)");
-    expect(css).toContain('[data-ct-type="swiss"] .font-display{font-weight:600;font-stretch:normal;font-variation-settings:normal;text-transform:none;font-feature-settings:normal}');
+    expect(css).toContain('[data-ct-type="swiss"] .font-display{font-weight:600;font-stretch:normal;font-variation-settings:normal;text-transform:none;word-spacing:normal;font-feature-settings:normal}');
     expect(css).toContain("--text-h1--letter-spacing:-0.05em");
   });
 
@@ -138,6 +138,7 @@ describe("theme knobs compile to the CSS variables the kit reads", () => {
   it("the litt kit has no uppercase labels and one weight", () => {
     const css = kitCss(typeKits.litt);
     expect(css).toContain(".ct-label{text-transform:none;--tw-tracking:0em;letter-spacing:0em}");
-    expect(css).toContain(".font-display{font-weight:400}");
+    expect(css).toContain(".font-display{font-weight:400;word-spacing:-0.05em}");
+    expect(css).toContain(".font-sans{font-weight:400}");
   });
 });

@@ -22,6 +22,8 @@ export interface RoleStyle {
   weight: number;
   /** font-stretch in % (needs a width-variable family). */
   width?: number;
+  /** word-spacing (em), e.g. tighter word gaps for a Helvetica-style display setting. */
+  wordSpacing?: string;
   /** Custom variation axes, e.g. { SOFT: 100, WONK: 1 }. wght/wdth go through weight/width. */
   axes?: Record<string, number>;
   case?: "uppercase";
@@ -149,7 +151,7 @@ export const typeKits: Record<KitName, TypeKit> = {
     description:
       "One grotesk at one weight. Host Grotesk 400 for display and text with tight Helvetica Now Display-style tracking, Geist Mono for code, keys and figures, sentence-case labels, no bold anywhere.",
     evokes: "litt.md, Linear, Vercel; Helvetica Now Display setting",
-    roles: { display: r(fonts.hostGrotesk, 400), sans: r(fonts.hostGrotesk, 400), mono: r(fonts.geistMono, 400), serif: r(fonts.hostGrotesk, 400) },
+    roles: { display: r(fonts.hostGrotesk, 400, { wordSpacing: "-0.05em" }), sans: r(fonts.hostGrotesk, 400), mono: r(fonts.geistMono, 400), serif: r(fonts.hostGrotesk, 400) },
     label: { tracking: "0em", case: "none" },
     accent: { scale: 1, tracking: "0em", case: "none" },
     // Host Grotesk has no tabular figures, so counters and Stat numbers go to the mono role.

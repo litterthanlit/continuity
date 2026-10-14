@@ -134,6 +134,8 @@ function roleDecl(role: RoleStyle, reset: boolean): string {
   else if (reset) d.push("font-variation-settings:normal");
   if (role.case) d.push(`text-transform:${role.case}`);
   else if (reset) d.push("text-transform:none");
+  if (role.wordSpacing) d.push(`word-spacing:${role.wordSpacing}`);
+  else if (reset) d.push("word-spacing:normal");
   if (reset) d.push("font-feature-settings:normal");
   return d.join(";");
 }
