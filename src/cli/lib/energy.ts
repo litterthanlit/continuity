@@ -10,6 +10,23 @@ export interface EnergyCurve {
   baseline: number;
 }
 
+/**
+ * `[time, YAVG]` pairs from ffmpeg's `metadata=print` output. Near-still frames print
+ * in exponent form (`YAVG=5.20833e-05`), so the number must keep its exponent: read
+ * without it, a calm frame becomes a 5.2-level "jolt".
+ */
+export function parseEnergy(text: string): Array<[number, number]> {
+  const points: Array<[number, number]> = [];
+  let t = 0;
+  for (const line of text.split("\n")) {
+    const m = /pts_time:([\d.]+)/.exec(line);
+    if (m) t = Number(m[1]);
+    const y = /YAVG=([\d.]+(?:e[+-]?\d+)?)/i.exec(line);
+    if (y) points.push([t, Number(y[1])]);
+  }
+  return points;
+}
+
 /** Frame-to-frame change across the encoded video — the edit's motion "cardiogram". */
 export async function energyCurve(file: string): Promise<EnergyCurve> {
   const r = await ffmpeg([
@@ -17,15 +34,7 @@ export async function energyCurve(file: string): Promise<EnergyCurve> {
     "-vf", "scale=320:-2,tblend=all_mode=difference,signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-",
     "-f", "null", "-",
   ]);
-  const text = r.stdout + r.stderr;
-  const points: Array<[number, number]> = [];
-  let t = 0;
-  for (const line of text.split("\n")) {
-    const m = /pts_time:([\d.]+)/.exec(line);
-    if (m) t = Number(m[1]);
-    const y = /YAVG=([\d.]+)/.exec(line);
-    if (y) points.push([t, Number(y[1])]);
-  }
+  const points = parseEnergy(r.stdout + r.stderr);
   const sorted = points.map((p) => p[1]).sort((a, b) => a - b);
   const baseline = sorted[Math.floor(sorted.length * 0.1)] ?? 0;
   const fps = points.length > 1 ? Math.round(1 / (points[1][0] - points[0][0])) : 30;
