@@ -50,3 +50,42 @@ describe("kit components follow the scene's type kit", async () => {
     expect(cx("font-stretch-75%", "font-stretch-125%")).toBe("font-stretch-125%");
   });
 });
+
+describe("the litt look in the kit", async () => {
+  const { h } = await import("preact");
+  const { renderToString } = await import("preact-render-to-string");
+  const { withScene } = await import("../src/kit/context.js");
+  const { Backdrop } = await import("../src/kit/core.js");
+  const { Eyebrow } = await import("../src/kit/type.js");
+  const { Button } = await import("../src/kit/ui.js");
+  const { litt, littLight, monoDark } = await import("../src/themes/index.js");
+  const { resolveKit } = await import("../src/themes/kits.js");
+  const ctx = (theme: import("../src/themes/index.js").Theme) =>
+    ({ id: "s", text: {}, aspect: "16:9", width: 1920, height: 1080, portrait: false, landscape: true, square: false, theme, typeKit: resolveKit(theme), beats: {}, duration: 3, index: 0, total: 1 }) as const;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const render = (theme: import("../src/themes/index.js").Theme, node: import("preact").VNode<any>) => withScene(ctx(theme), () => renderToString(node));
+
+  it('Backdrop kind="lit" is a top-edge accent wash: 22% on dark, 12% on light', () => {
+    const dark = render(litt, h(Backdrop, { kind: "lit" }));
+    expect(dark).toContain("radial-gradient(120% 70% at 50% -6%, color-mix(in oklab, var(--color-accent) 22%, transparent) 0%, transparent 65%)");
+    expect(dark).toContain("var(--color-bg)");
+    const light = render(littLight, h(Backdrop, { kind: "lit" }));
+    expect(light).toContain("color-mix(in oklab, var(--color-accent) 12%, transparent) 0%, transparent 65%)");
+    expect(light).not.toContain("22%");
+  });
+
+  it("the litt kit's Eyebrow is sentence case, not uppercase", () => {
+    const html = render(litt, h(Eyebrow, { ct: "e" }, "Introducing"));
+    expect(html).toContain("font-mono ct-label text-subtle");
+    expect(html).not.toContain("uppercase");
+  });
+
+  it("Button and the address bar take the theme's control radius; Input takes its field radius", async () => {
+    expect(render(litt, h(Button, { ct: "b" }, "Go"))).toContain("rounded-control");
+    expect(render(monoDark, h(Button, { ct: "b" }, "Go"))).toContain("rounded-control");
+    expect(render(litt, h(Button, { ct: "b" }, "Go"))).not.toContain("rounded-full");
+    const { Browser, Input } = await import("../src/kit/ui.js");
+    expect(render(litt, h(Browser, { ct: "br" }))).toContain("rounded-control");
+    expect(render(litt, h(Input, { ct: "i" }))).toContain("rounded-field");
+  });
+});

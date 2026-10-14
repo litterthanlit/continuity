@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildFamilies, compileCss, fontFaceCss, kitCss } from "../src/build/css.js";
 import { PKG_ROOT } from "../src/paths.js";
 import { hasTabularFigures } from "../src/themes/fonts.js";
-import { monoDark } from "../src/themes/index.js";
+import { lightEditorial, litt, littLight, monoDark } from "../src/themes/index.js";
 import { classicKit, defineKit, KIT_NAMES, resolveKit, typeKits } from "../src/themes/kits.js";
 
 describe("type kits", () => {
@@ -88,5 +88,56 @@ describe("kit CSS", () => {
     expect(comp).toContain('[data-ct-type="wonk"] .font-display');
     expect(v2).toContain('--font-display: "Geist"');
     expect(v2).toContain("--text-h1--letter-spacing: -0.05em");
+  });
+});
+
+describe("theme knobs compile to the CSS variables the kit reads", () => {
+  const candidates = ["rounded-control", "rounded-field", "rounded-full", "font-semibold", "shadow-glow", "shadow-float"];
+
+  it("a theme with no knobs keeps the legacy look byte for byte (mono-dark)", async () => {
+    for (const kit of [classicKit(monoDark), typeKits.swiss]) {
+      const css = await compileCss(monoDark, kit, [], candidates, PKG_ROOT);
+      expect(css, kit.name).toContain("--radius-control: calc(infinity * 1px);");
+      expect(css, kit.name).toContain("--radius-field: 22px;");
+      expect(css, kit.name).toContain("--shadow-glow: 0 0 120px color-mix(in oklab, var(--color-accent) 35%, transparent);");
+      expect(css, kit.name).toContain("--shadow-float: 0 40px 120px -20px rgba(0,0,0,0.65), 0 0 0 1px var(--color-border);");
+      // rounded-control is exactly what rounded-full computes, so pill buttons do not move
+      expect(css, kit.name).toContain(".rounded-control {\n    border-radius: var(--radius-control);");
+      expect(css, kit.name).toContain(".rounded-full {\n    border-radius: calc(infinity * 1px);");
+      // no one-weight kit: Tailwind's own weights stay
+      expect(css, kit.name).not.toContain("--font-weight-semibold: 400");
+      expect(css, kit.name).toContain("--font-weight-semibold: 600");
+    }
+  });
+
+  it("a light theme with no knobs keeps its softer legacy float and field radius", async () => {
+    const css = await compileCss(lightEditorial, classicKit(lightEditorial), [], candidates, PKG_ROOT);
+    expect(css).toContain("--shadow-float: 0 40px 120px -20px rgba(0,0,0,0.22), 0 0 0 1px var(--color-border);");
+    expect(css).toContain("--radius-field: 18px;");
+  });
+
+  it("litt sets the control radius, zero-offset depth and one weight", async () => {
+    const css = await compileCss(litt, resolveKit(litt), [], candidates, PKG_ROOT);
+    expect(css).toContain("--radius-control: 8px;");
+    expect(css).toContain("--radius-field: 8px;");
+    expect(css).toContain("--shadow-float: 0 0 16px rgba(0,0,0,0.4), 0 0 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.5);");
+    expect(css).toContain(
+      "--shadow-glow: 0 0 0 2px color-mix(in oklab, var(--color-accent) 55%, transparent), 0 0 48px color-mix(in oklab, var(--color-accent) 40%, transparent);",
+    );
+    for (const w of ["medium", "semibold", "bold", "extrabold", "black"]) expect(css).toContain(`--font-weight-${w}: 400;`);
+    expect(css).not.toContain("--font-weight-semibold: 600");
+    expect(css).toContain('--font-display: "Host Grotesk"');
+  });
+
+  it("litt-light dials the glow down", async () => {
+    const css = await compileCss(littLight, resolveKit(littLight), [], candidates, PKG_ROOT);
+    expect(css).toContain("0 0 48px color-mix(in oklab, var(--color-accent) 28%, transparent);");
+    expect(css).toContain("--shadow-float: 0 0 16px rgba(14,15,17,0.08), 0 0 48px rgba(14,15,17,0.06), 0 0 0 1px rgba(14,15,17,0.06);");
+  });
+
+  it("the litt kit has no uppercase labels and one weight", () => {
+    const css = kitCss(typeKits.litt);
+    expect(css).toContain(".ct-label{text-transform:none;--tw-tracking:0em;letter-spacing:0em}");
+    expect(css).toContain(".font-display{font-weight:400}");
   });
 });
