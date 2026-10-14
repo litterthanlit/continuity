@@ -38,7 +38,7 @@ The hook and the end card bookend one sentence ("written as code" → "as code")
 - **Transitions: Lit precision** (two timed types plus a cut, all inside their craft ranges):
   - `hook → gate`: `crossfade` 0.4, ease `standard`: the same lit surface, a new state.
   - `gate → proof`: `cut` on the beat: the verdict lands, holds ~0.9s, the frame changes.
-  - `proof → end`: `dip` 0.4, ease `standard`: the one breath before the end card.
+  - `proof → end`: `dip` 0.3, ease `standard` (0.3 keeps the black trough under render QC's 0.25s black-frames threshold on this near-black canvas): the one breath before the end card.
 - **Camera.** Locked. `m.camera` would scale the backdrop with the content and move the light, so no scene uses it.
 
 ## Rhythm

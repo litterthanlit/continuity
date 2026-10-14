@@ -205,10 +205,10 @@
           "note": "<Stat value={0}> from text.errors; label `errors-label`. Same size and colour as the others: the pop, not the size, makes it the point."
         }
       ],
-      "motion": "Cut in on the beat. Backdrop `lit`, static; camera locked. b1 (0.1): lead `rise` (base, standard, 32). b2 (0.2): m.enter(['axes','floor'], 'rise', { stagger: 'grid', distance: 32, duration: 'base', ease: 'standard' }); m.counter('axes', { from: 0, to: 5, at: 'b2', duration: 'slow' }); m.counter('floor', { from: 0, to: 26, at: 'b2+0.05', duration: 'slow' }); labels `fade` (opacity only) at b2+0.15. Figures stay in Geist Mono (Stat default): no weight or width tween. b3 (1.1): 'errors' `scalePop` (snappy at slow), the scene's ONE expressive moment; 'errors-label' `fade` at b3+0.2. The 0 has nothing to count from, so it pops. Then hold >= 1.3s (the key stat's read); the dip is the exit, nothing leaves earlier. No accent fill, no glow.",
+      "motion": "Cut in on the beat. Backdrop `lit`, static; camera locked. b1 (0.0): lead `rise` (base, standard, 32). b2 (0.2): m.enter(['axes','floor'], 'rise', { stagger: 'grid', distance: 32, duration: 'base', ease: 'standard' }); m.counter('axes', { from: 0, to: 5, at: 'b2', duration: 'slow' }); m.counter('floor', { from: 0, to: 26, at: 'b2+0.05', duration: 'slow' }); labels `fade` (opacity only) at b2+0.15. Figures stay in Geist Mono (Stat default): no weight or width tween. b3 (1.1): 'errors' `scalePop` (snappy at slow), the scene's ONE expressive moment; 'errors-label' `fade` at b3+0.2. The 0 has nothing to count from, so it pops. Then hold >= 1.3s (the key stat's read); the dip is the exit, nothing leaves earlier. No accent fill, no glow.",
       "transition": {
         "type": "dip",
-        "duration": 0.4,
+        "duration": 0.3,
         "ease": "standard"
       }
     },
@@ -282,7 +282,7 @@
           "note": "Thin caret after the text in text-fg / bg-fg. NOT accent (the button holds the only accent)."
         }
       ],
-      "motion": "Backdrop `lit`, static; camera locked. The dip's second half brings the scene up; first motion at b1 (0.4). b1: wordmark `rise` (base, standard, 32). b2 (0.7): tagline `rise` (base, standard, 32). b3 (1.0): cta `scalePop` (snappy at slow): the scene's ONE expressive moment. The glow is the Button's own shadow-glow and never animates (no brightness, pulse or loop on it). b4 (1.4): cmd `fade` (base), then m.type('cmd-text', { at: 1.5, cps: 26 }) ends ~1.9s; m.blink('cmd-caret', { at: 1.95, until: 'end-0.3' }) is the ambient life from content. Hold >= 1.5s after the last element lands. No exit: the film ends on the held card."
+      "motion": "Backdrop `lit`, static; camera locked. The dip's second half brings the scene up; first motion at b1 (0.4). b1: wordmark `rise` (base, standard, 32). b2 (0.7): tagline `rise` (base, standard, 32). b3 (1.0): cta `scalePop` (snappy at slow): the scene's ONE expressive moment. The glow is the Button's own shadow-glow and never animates (no brightness, pulse or loop on it). b4 (1.1): cmd `fade` (base), following the button's pop, then m.type('cmd-text', { at: 1.3, cps: 26 }) ends ~1.61s; m.blink('cmd-caret', { at: 1.75, until: 'end-0.3' }) is the ambient life from content. Hold >= 1.5s after the last element lands. No exit: the film ends on the held card."
     }
   ]
 }
