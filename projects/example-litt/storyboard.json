@@ -1,0 +1,288 @@
+{
+  "title": "Continuity — motion design, as code (litt look)",
+  "logline": "For design engineers and motion designers meeting the litt look for the first time: motion design written as code, every frame of it checked (precise, quiet, provable), ending on one action, Get started.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt",
+  "type": "litt",
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": 3,
+      "intent": "Stake the promise in one calm line: motion design is written as code.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1,
+          "note": "five words rise on snappy: the scene's expressive moment"
+        },
+        {
+          "id": "b2",
+          "at": 1.2,
+          "note": "the file behind this frame types on in mono"
+        }
+      ],
+      "text": {
+        "l1": "Motion design,",
+        "l2": "written as code.",
+        "file": "hook.tsx"
+      },
+      "elements": [
+        {
+          "id": "l1",
+          "role": "headline",
+          "anchor": "A4:D4",
+          "note": "Headline line 1, text-display (168px), fg, left edge of the safe area. Lower-left composition: the lit top edge stays empty."
+        },
+        {
+          "id": "l2",
+          "role": "headline",
+          "anchor": "A5:D5",
+          "note": "Headline line 2, same size and edge, directly under l1. One colour (fg): no word is picked out."
+        },
+        {
+          "id": "file",
+          "role": "caption",
+          "anchor": "A6",
+          "note": "Mono (Geist Mono) text-caption (30px), text-subtle, left edge, ~40px under l2. It names this very scene's source file (scenes/hook.tsx). The only label in the film; no eyebrow."
+        }
+      ],
+      "motion": "Backdrop `lit` (default), static. Camera locked: no m.camera, no m.loop (the light must not move). b1 (0.1): m.enter(['l1','l2'], 'rise', { at: 'b1', split: 'words', stagger: 'word', distance: 32, duration: 'slow', ease: 'snappy' }): five words, 60ms apart, landed by ~1.0s. This is the scene's ONE expressive moment (snappy, bounce ~0.13); nothing else here uses a spring. b2 (1.2): m.type('file', { at: 'b2', cps: 36 }), ends ~1.45s: ambient life from content, no caret, no accent. Then ~1.1s of stillness. Nothing exits: the crossfade (starts 2.6s) is the exit.",
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4,
+        "ease": "standard"
+      }
+    },
+    {
+      "id": "gate",
+      "duration": 4.3,
+      "intent": "Prove the claim: a gate checks every frame, and a findings list resolves to 0 errors.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.3,
+          "note": "headline words rise"
+        },
+        {
+          "id": "b2",
+          "at": 0.6,
+          "note": "findings card rises; rows fade in 0.2s later (red, red, amber)"
+        },
+        {
+          "id": "b3",
+          "at": 2.3,
+          "note": "the fix: three status dots flip to green, one after another"
+        },
+        {
+          "id": "b4",
+          "at": 2.7,
+          "note": "'0 errors' verdict pill pops: the expressive moment; cut follows after a ~0.9s hold"
+        }
+      ],
+      "text": {
+        "l1": "Every frame,",
+        "l2": "checked.",
+        "f0": "Overflow",
+        "f1": "Contrast",
+        "f2": "Easing",
+        "t0": "00:01.2",
+        "t1": "00:03.6",
+        "t2": "00:05.1",
+        "verdict": "0 errors"
+      },
+      "elements": [
+        {
+          "id": "l1",
+          "role": "headline",
+          "anchor": "A2:C2",
+          "note": "Headline line 1, text-h1 (120px), fg, left edge. Sits in rows 2-3, above the hook's text band, so the crossfade never overlays text on text."
+        },
+        {
+          "id": "l2",
+          "role": "headline",
+          "anchor": "A3:C3",
+          "note": "Headline line 2, directly under l1."
+        },
+        {
+          "id": "card",
+          "role": "ui",
+          "anchor": "D2:F4",
+          "note": "<Card> ~840px wide, top edge aligned with l1. No glow, no glass: it reads by border and surface. Holds `findings` and `verdict`."
+        },
+        {
+          "id": "findings",
+          "role": "ui",
+          "anchor": "D2:F3",
+          "note": "<List> of 3 rows (findings-r0..r2). Titles = text.f0..f2 (sans 28px, fg); meta = text.t0..t2 (mono, subtle: the time stamps). Status dots: danger, danger, warning."
+        },
+        {
+          "id": "ok0",
+          "role": "decor",
+          "anchor": "D2",
+          "note": "Positive ring dot laid exactly over row 0's status dot, opacity 0. State layer for the flip (no colour channel: cross-fade)."
+        },
+        {
+          "id": "ok1",
+          "role": "decor",
+          "anchor": "D3",
+          "note": "Same, row 1."
+        },
+        {
+          "id": "ok2",
+          "role": "decor",
+          "anchor": "D3",
+          "note": "Same, row 2."
+        },
+        {
+          "id": "verdict",
+          "role": "ui",
+          "anchor": "D4",
+          "note": "<Pill dot=\"positive\"> at the card's bottom-left under the list, ~28px below the last row; enlarged on purpose (class h-[68px] text-[32px] text-fg) because it is the payoff. It is a verdict, not an action: no accent fill, no glow."
+        }
+      ],
+      "motion": "Backdrop `lit`, static; camera locked. b1 (0.3): m.enter(['l1','l2'], 'rise', { at: 'b1', split: 'words', stagger: 'word', distance: 32, duration: 'base', ease: 'standard' }), landed ~0.8s. b2 (0.6): card `rise` (base, standard, 32), then at b2+0.2 the rows as one array with `fade` (base, stagger 'grid') so they land ~1.3s showing the failing state; keep the red state still for >= 1.0s (that is the read). b3 (2.3): the fix: ok0..ok2 `fade` in over the status dots (fast, stagger 'grid', ~2.65s done); nothing else moves (no strike-through, no colour tween). b4 (2.7): verdict `scalePop` (snappy at slow), the scene's ONE expressive moment, landed ~3.3s; hold >= 0.9s. The cut is on the beat after the hold. No exits. No accent fill and no shadow-glow in this scene.",
+      "transition": {
+        "type": "cut",
+        "duration": 0
+      }
+    },
+    {
+      "id": "proof",
+      "duration": 3.5,
+      "intent": "Proof in numbers: three stable facts in mono; the last one, 0, is the point.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1,
+          "note": "lead line rises"
+        },
+        {
+          "id": "b2",
+          "at": 0.2,
+          "note": "5 and 30 rise and count up"
+        },
+        {
+          "id": "b3",
+          "at": 1.1,
+          "note": "the 0 pops: the expressive moment, then the longest hold"
+        }
+      ],
+      "text": {
+        "lead": "Measured, not guessed.",
+        "axes": "5",
+        "axes-label": "critique axes",
+        "fps": "30",
+        "fps-label": "fps",
+        "errors": "0",
+        "errors-label": "gate errors"
+      },
+      "elements": [
+        {
+          "id": "lead",
+          "role": "subhead",
+          "anchor": "A2:C2",
+          "note": "text-lead (48px), text-muted, left edge. Quiet on purpose: the figures are the hero (120px : 48px = 2.5x)."
+        },
+        {
+          "id": "axes",
+          "role": "stat",
+          "anchor": "A3:B4",
+          "note": "<Stat value={5}> from text.axes: Geist Mono figure at text-h1 (120px), fg. Label `axes-label` = text.axes-label (30px, muted)."
+        },
+        {
+          "id": "fps",
+          "role": "stat",
+          "anchor": "C3:D4",
+          "note": "<Stat value={30}> from text.fps; label `fps-label`."
+        },
+        {
+          "id": "errors",
+          "role": "stat",
+          "anchor": "E3:F4",
+          "note": "<Stat value={0}> from text.errors; label `errors-label`. Same size and colour as the others: the pop, not the size, makes it the point."
+        }
+      ],
+      "motion": "Cut in on the beat. Backdrop `lit`, static; camera locked. b1 (0.1): lead `rise` (base, standard, 32). b2 (0.2): m.enter(['axes','fps'], 'rise', { stagger: 'grid', distance: 32, duration: 'base', ease: 'standard' }); m.counter('axes', { from: 0, to: 5, at: 'b2', duration: 'slow' }); m.counter('fps', { from: 0, to: 30, at: 'b2+0.05', duration: 'slow' }); labels `fade` (opacity only) at b2+0.15. Figures stay in Geist Mono (Stat default): no weight or width tween. b3 (1.1): 'errors' `scalePop` (snappy at slow), the scene's ONE expressive moment; 'errors-label' `fade` at b3+0.2. The 0 has nothing to count from, so it pops. Then hold >= 1.3s (the key stat's read); the dip is the exit, nothing leaves earlier. No accent fill, no glow.",
+      "transition": {
+        "type": "dip",
+        "duration": 0.4,
+        "ease": "standard"
+      }
+    },
+    {
+      "id": "end",
+      "duration": 3.5,
+      "intent": "Name it and ask for one action: Continuity, Motion design, as code., Get started beside npx ct init.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.4,
+          "note": "wordmark rises as the dip clears"
+        },
+        {
+          "id": "b2",
+          "at": 0.7,
+          "note": "tagline rises"
+        },
+        {
+          "id": "b3",
+          "at": 1,
+          "note": "Get started pops with its glow ring: the expressive moment and the one primary action"
+        },
+        {
+          "id": "b4",
+          "at": 1.4,
+          "note": "the command chip fades in and types npx ct init"
+        }
+      ],
+      "text": {
+        "wordmark": "Continuity",
+        "tagline": "Motion design, as code.",
+        "cta": "Get started",
+        "cmd": "npx ct init"
+      },
+      "elements": [
+        {
+          "id": "wordmark",
+          "role": "logo",
+          "anchor": "B3:E3",
+          "note": "text-display (168px) in the litt display role, fg, centred. The film's only centred frame. Plain text, no logo mark, no picked-out letter."
+        },
+        {
+          "id": "tagline",
+          "role": "subhead",
+          "anchor": "B4:E4",
+          "note": "text-lead (48px), text-muted, centred under the wordmark (168px : 48px = 3.5x)."
+        },
+        {
+          "id": "cta",
+          "role": "cta",
+          "anchor": "C5",
+          "note": "<Button variant=\"primary\" class=\"shadow-glow\"> 'Get started', 76px high, left of the chip. The only accent fill and the only shadow-glow in the film. No arrow glyph."
+        },
+        {
+          "id": "cmd",
+          "role": "ui",
+          "anchor": "D5",
+          "note": "Command chip, same 76px height as the button, 24px gap: bg-surface-2, 1px border, rounded-control, Geist Mono 30px, text-fg. No accent, no glow. Row [cta | cmd] centred as one unit."
+        },
+        {
+          "id": "cmd-text",
+          "role": "label",
+          "anchor": "D5",
+          "note": "The typed string, text.cmd, inside the chip."
+        },
+        {
+          "id": "cmd-caret",
+          "role": "decor",
+          "anchor": "D5",
+          "note": "Thin caret after the text in text-fg / bg-fg. NOT accent (the button holds the only accent)."
+        }
+      ],
+      "motion": "Backdrop `lit`, static; camera locked. The dip's second half brings the scene up; first motion at b1 (0.4). b1: wordmark `rise` (base, standard, 32). b2 (0.7): tagline `rise` (base, standard, 32). b3 (1.0): cta `scalePop` (snappy at slow): the scene's ONE expressive moment. The glow is the Button's own shadow-glow and never animates (no brightness, pulse or loop on it). b4 (1.4): cmd `fade` (base), then m.type('cmd-text', { at: 1.5, cps: 26 }) ends ~1.9s; m.blink('cmd-caret', { at: 1.95, until: 'end-0.3' }) is the ambient life from content. Hold >= 1.5s after the last element lands. No exit: the film ends on the held card."
+    }
+  ]
+}
