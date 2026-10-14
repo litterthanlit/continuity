@@ -140,6 +140,28 @@
         "accent": "breathes.",
         "body": "Mona Sans · width 75–125",
         "stat": "% width"
+      },
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.4
+      }
+    },
+    {
+      "id": "litt",
+      "type": "litt",
+      "duration": 4.2,
+      "intent": "Litt: one grotesk at one weight, hierarchy by size then colour, no accent word.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        }
+      ],
+      "text": {
+        "eyebrow": "07 — Litt · One grotesk, one weight",
+        "title": "Precision, lit from above.",
+        "body": "Host Grotesk 400 with Geist Mono for figures",
+        "stat": "the only weight"
       }
     }
   ]

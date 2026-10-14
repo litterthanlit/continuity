@@ -47,10 +47,12 @@ d("seeded layout defects (projects/_defects-layout)", () => {
  * _transitions guard the kits and the transition presentations; _kit guards the UI
  * kit components under the default theme.
  */
-const GOLDENS: Array<{ slug: string; times: number[] }> = [
+const GOLDENS: Array<{ slug: string; name?: string; times: number[] }> = [
   { slug: "_smoke", times: [0.5, 1.5, 3.4, 4.6] },
   // settled specimen per kit, wonk's soft-in and flexion's width wave mid-motion
   { slug: "_type", times: [2.5, 6.3, 8.55, 10.1, 13.9, 17.7, 20.85, 21.5] },
+  // litt, the seventh scene (starts at 22.8): its own golden file so _type.json stays untouched
+  { slug: "_type", name: "_type-litt", times: [25.3] },
   // mid-transition: push+blur, whip, punch-cut flash frame, feathered wipe, iris, strips, light sweep
   { slug: "_transitions", times: [7.35, 12.035, 14.5, 16.85, 19.1, 21.3, 23.6] },
   // the UI kit under mono-dark, one settled frame per scene: guards theme and kit edits
@@ -62,10 +64,10 @@ async function signature(file: string): Promise<number[]> {
   return Array.from(raw);
 }
 
-for (const { slug, times } of GOLDENS) {
-  d(`golden frames (${slug})`, () => {
+for (const { slug, name, times } of GOLDENS) {
+  d(`golden frames (${name ?? slug})`, () => {
     it("renders within tolerance of the goldens", async () => {
-      const golden = join(ROOT, `tests/golden/${slug}.json`);
+      const golden = join(ROOT, `tests/golden/${name ?? slug}.json`);
       const b = await buildProject(slug);
       expect(b.ok).toBe(true);
       const dir = mkdtempSync(join(tmpdir(), "ct-golden-"));

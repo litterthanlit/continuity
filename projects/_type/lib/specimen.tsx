@@ -5,15 +5,18 @@ import { Body, Emph, Eyebrow, Headline, Safe, Serif, Stage, Stat } from "continu
  * One specimen layout for every kit: eyebrow, a two-line headline with one
  * serif accent word, a body line, and a stat — the same grid in every scene so
  * cutting between kits compares only the type.
+ *
+ * `plain` sets the headline as plain text, with no word picked out in a serif
+ * accent: for kits whose rules forbid it (litt: one weight, no accent word).
  */
-export function Specimen({ text, value, decimals = 0 }: { text: Record<string, string>; value: number; decimals?: number }) {
+export function Specimen({ text, value, decimals = 0, plain = false }: { text: Record<string, string>; value: number; decimals?: number; plain?: boolean }) {
   return (
     <Stage bg="grid">
       <Safe>
         <div class="absolute inset-0 flex flex-col justify-center gap-[40px] pr-[22%]">
           <Eyebrow ct="eyebrow">{text.eyebrow}</Eyebrow>
           <Headline ct="title" size="h1">
-            <Emph text={text.title} word={text.accent}>{(w) => <Serif class="text-accent">{w}</Serif>}</Emph>
+            {plain ? text.title : <Emph text={text.title} word={text.accent}>{(w) => <Serif class="text-accent">{w}</Serif>}</Emph>}
           </Headline>
           <Body ct="body">{text.body}</Body>
         </div>
