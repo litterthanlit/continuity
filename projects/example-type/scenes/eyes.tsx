@@ -96,10 +96,11 @@ export default scene({
   motion: (m) => {
     m.enter("l1", "maskUp", { at: "b1", split: "lines" });
     m.enter("l2", "maskUp", { at: "b1+0.15", split: "lines" });
-    // Centre column first, then both sides: a 3×2 grid opening outward (a list stagger from
-    // "center" would count t1…t6 in a row and pop the corners t3/t4 first).
-    m.enter(["t2", "t5"], "scalePop", { at: "b2" });
-    m.enter(["t1", "t3", "t4", "t6"], "scalePop", { at: "b2+0.06" });
+    // The 3×2 grid opens from its centre column, then the top corners, then the bottom ones
+    // (a list stagger from "center" would count t1…t6 in a row and pop the corners t3/t4 first).
+    m.enter(["t2", "t5"], "scalePop", { at: "b2", stagger: 0 });
+    m.enter(["t1", "t3"], "scalePop", { at: "b2+0.05", stagger: 0 });
+    m.enter(["t4", "t6"], "scalePop", { at: "b2+0.1", stagger: 0 });
     m.emphasize("t5", "pulse", { at: "b2+0.9" });
     m.camera({ scale: [1, 1.04], y: [0, -24] });
   },

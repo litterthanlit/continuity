@@ -26,7 +26,7 @@ No GSAP, no network at render time, byte-identical frames across worker counts.
 | | |
 |---|---|
 | ![example-launch contact sheet](projects/example-launch/.continuity/sheet.png) | **example-launch** — 31.4s 16:9 launch film for Continuity itself, made by the agent team (director → 7 parallel scene-builders → critic, two improvement rounds). Gate 0/0, critique 3.8 → 4.4 → **4.6**/5. |
-| ![example-type contact sheet](projects/example-type/.continuity/sheet.png) | **example-type** — 14.7s 9:16 kinetic type, made through the harness. Gate: 0 errors. Critique mean 4.2/5. |
+| ![example-type contact sheet](projects/example-type/.continuity/sheet.png) | **example-type** — 15s 9:16 kinetic type in the v2 look: the `broadside` type kit (Archivo condensed caps, one Instrument Serif accent) and a "kinetic punch" transition language (cuts, two punch cuts, one feathered whip). Made through the harness, three critique rounds. Gate 0/0, critique 3.8 → 4.0 → **4.6**/5. |
 
 ## Install
 

@@ -16,7 +16,8 @@ brand. One line pair per scene; the argument reads even muted.
   (`craft.`, `eyes.`) — the contrast does the work; a marker bar under `WRITE`; `SEE` defocusing;
   a drawn check.
 - Same left edge and baseline rhythm in every scene (`TypeStack`), so cuts read as one layout
-  changing state.
+  changing state. The end card breaks it on purpose — centred, but inside the social safe zone
+  (clear of the platform's right-hand rail), not on the frame.
 
 **Motion language.**
 - Lines mask up (`maskUp` by line, `hero`), words punch on the turn (`rise` by words).
@@ -28,8 +29,9 @@ brand. One line pair per scene; the argument reads even muted.
 accents where the story turns: a `punchCut` into the tension (*but they can't see it*) and into
 the brand, and one vertical `whip` from blindness up into *so we gave them eyes*. Nothing else.
 
-**Rhythm.** 2.3–2.9s per beat, ~14s total. Punches on the turns, a breath on the contact sheet,
-the end card holds ≥ 1.5s.
+**Rhythm.** 2.3–2.9s per beat (the end card 3.2s), ~15s total. Punches on the turns, a breath on
+the contact sheet, the end card holds ≥ 1.5s. After a punch, the incoming scene starts moving only
+once the flash has landed.
 
 **References.** Figma Config 2025 identity (condensed display), Vercel Ship type films,
 Pentagram kinetic identities.
