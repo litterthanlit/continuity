@@ -15,10 +15,10 @@ export default scene({
           </Subhead>
           <div class="mt-[96px] grid grid-cols-3 gap-x-[48px]">
             <div class="border-t-2 border-border pt-[48px]">
-              <Stat ct="axes" value={Number(text.axes)} label={text["axes-label"]} class="items-start" />
+              <Stat ct="axes" value={Number(text.axes)} label={text["axes-label"]} class="items-start [&>span:first-child]:text-muted [&>span:last-child]:text-subtle" />
             </div>
             <div class="border-t-2 border-border pt-[48px]">
-              <Stat ct="fps" value={Number(text.fps)} label={text["fps-label"]} class="items-start" />
+              <Stat ct="fps" value={Number(text.fps)} label={text["fps-label"]} class="items-start [&>span:first-child]:text-muted [&>span:last-child]:text-subtle" />
             </div>
             <div class="border-t-2 border-border pt-[48px]">
               <Stat ct="errors" value={Number(text.errors)} label={text["errors-label"]} class="items-start" />

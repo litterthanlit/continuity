@@ -17,9 +17,9 @@ export default scene({
   view: ({ text }) => (
     <Stage>
       <Safe>
-        {/* Headline: high-left, rows 2-3 of the grid, clear of the hook's text band. top 146 (not
-            the 162px row line) puts the cap top of "Every" on y=216, level with the card's top border. */}
-        <Stack gap={0} class="absolute left-0 top-[146px]">
+        {/* Headline: high-left, rows 2-3 of the grid, clear of the hook's text band. top 242 (not
+            the 258px card line) puts the cap top of "Every" on y=312, level with the card's top border. */}
+        <Stack gap={0} class="absolute left-0 top-[242px]">
           <Headline ct="l1" size="h1" class="whitespace-nowrap">
             {text.l1}
           </Headline>
@@ -29,7 +29,7 @@ export default scene({
         </Stack>
 
         {/* Findings card: top-aligned with the headline, right edge on the safe edge. */}
-        <El class="absolute right-0 top-[162px]">
+        <El class="absolute right-0 top-[258px]">
           <Card ct="card" class="w-[840px]">
             <El class="relative">
               <List

@@ -36,6 +36,6 @@ export default scene({
   motion: (m) => {
     m.enter("l1", "rise", { at: "b1", split: "words", stagger: "word", distance: 32, duration: "slow", ease: "snappy" });
     m.enter("l2", "rise", { at: "b1+0.12", split: "words", stagger: "word", distance: 32, duration: "slow", ease: "snappy" });
-    m.type("file", { at: "b2", cps: 36 });
+    m.type("file", { at: "b2", cps: 16 });
   },
 });

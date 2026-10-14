@@ -55,8 +55,8 @@ export default scene({
     // until the final 0.3s so the film ends on a solid caret. Everything has landed by 1.93s,
     // which leaves a 1.57s hold with only the caret alive: ambient life from content.
     m.enter("cmd", "fade", { at: "b4", duration: "base", ease: "standard" });
-    m.type("cmd-text", { at: 1.5, cps: 26 });
-    m.enter("cmd-caret", "fade", { at: 1.81, duration: "instant", ease: "standard" });
-    m.blink("cmd-caret", { at: 1.95, until: "end-0.3" });
+    m.type("cmd-text", { at: 1.3, cps: 26 });
+    m.enter("cmd-caret", "fade", { at: 1.61, duration: "instant", ease: "standard" });
+    m.blink("cmd-caret", { at: 1.75, until: "end-0.3" });
   },
 });
