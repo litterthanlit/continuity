@@ -25,7 +25,7 @@
 - **Must-say ideas (copy is the director's call, keep it short, ≤ 12 words on screen):**
   1. Motion design, written as code.
   2. Every frame, checked (a findings list resolving to "0 errors").
-  3. Proof in numbers (stable facts only, e.g. 0 gate errors, 5 critique axes, 30 fps).
+  3. Proof in numbers (stable facts only, e.g. 0 gate errors, 5 critique axes, the 26px type floor).
   4. Continuity — Motion design, as code.
 - **Must show:** at least one product artifact as quiet UI (a findings list in a `Card` with a
   `Pill`, mono time stamps), built from `Card`, `List`, `Pill`, `Kbd`, `Button`.
@@ -33,7 +33,7 @@
 ## Assumptions (director)
 
 - **Case.** Sentence case throughout. The CTA copy is fixed in sentence case ("Motion design, as code."), and one lowercase scene would split the voice.
-- **Copy.** Scene copy is the director's: *Motion design, written as code.* / *Every frame, checked.* (findings: Overflow, Contrast, Easing) / *Measured, not guessed.* (5 critique axes, 30 fps, 0 gate errors) / *Continuity, Motion design, as code., Get started, npx ct init.*
-- **Facts.** The figures are stable properties of the product (five critique axes, 30fps default, the gate must report 0 errors to ship). Findings and their time stamps are illustrative, not a real run.
+- **Copy.** Scene copy is the director's: *Motion design, written as code.* / *Every frame, checked.* (findings: Overflow, Contrast, Easing) / *Measured, not guessed.* (5 critique axes, 26 px minimum type, 0 gate errors) / *Continuity, Motion design, as code., Get started, npx ct init.*
+- **Facts.** The figures are stable properties of the product (five critique axes, the 26px legibility floor the gate enforces, the gate must report 0 errors to ship). Findings and their time stamps are illustrative, not a real run.
 - **Audio.** None. The film works muted; no bpm grid, cuts land on UI beats.
 - **Scene ids.** `hook`, `gate`, `proof`, `end` (`hook` keeps the file name `ct new` created).

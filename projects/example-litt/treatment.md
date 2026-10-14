@@ -8,7 +8,7 @@
 |---|---|---|---|
 | Hook | `hook` | 0–3.0 | *Motion design, written as code.* Two display lines low-left under an empty lit top; the file behind the frame (`hook.tsx`) types on. |
 | Turn | `gate` | 2.6–6.9 | *Every frame, checked.* A findings card (Overflow, Contrast, Easing, with mono time stamps) flips from red to green and resolves to a **0 errors** pill. The pill is the proof. |
-| Payoff 1 | `proof` | 6.9–10.4 | *Measured, not guessed.* Three mono figures: **5** critique axes, **30** fps, **0** gate errors. The 0 is the point. |
+| Payoff 1 | `proof` | 6.9–10.4 | *Measured, not guessed.* Three mono figures: **5** critique axes, **26** px minimum type (the gate's legibility floor), **0** gate errors. The 0 is the point. |
 | Payoff 2 | `end` | 10.0–13.5 | **Continuity** · *Motion design, as code.* · **Get started** beside `npx ct init`. |
 
 The hook and the end card bookend one sentence ("written as code" → "as code"). The turn and the numbers are the same argument at two scales: one run of the gate, then the rule it enforces. Words on screen at once, counting figures and time stamps: hook 6 · gate 11 · proof 11 · end 10 (≤ 12).

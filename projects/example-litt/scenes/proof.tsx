@@ -18,7 +18,7 @@ export default scene({
               <Stat ct="axes" value={Number(text.axes)} label={text["axes-label"]} class="items-start [&>span:first-child]:text-muted [&>span:last-child]:text-subtle" />
             </div>
             <div class="border-t-2 border-border pt-[48px]">
-              <Stat ct="fps" value={Number(text.fps)} label={text["fps-label"]} class="items-start [&>span:first-child]:text-muted [&>span:last-child]:text-subtle" />
+              <Stat ct="floor" value={Number(text.floor)} label={text["floor-label"]} class="items-start [&>span:first-child]:text-muted [&>span:last-child]:text-subtle" />
             </div>
             <div class="border-t-2 border-border pt-[48px]">
               <Stat ct="errors" value={Number(text.errors)} label={text["errors-label"]} class="items-start" />
@@ -33,12 +33,12 @@ export default scene({
     m.enter("lead", "rise", { at: "b1", distance: 32, duration: "base", ease: "standard" });
 
     // b2: 5 and 30 rise one grid step apart and count up in mono.
-    m.enter(["axes", "fps"], "rise", { at: "b2", stagger: "grid", distance: 32, duration: "base", ease: "standard" });
+    m.enter(["axes", "floor"], "rise", { at: "b2", stagger: "grid", distance: 32, duration: "base", ease: "standard" });
     // Counters ease with `standard` (not the default expo-out `hero`): the count has to tick while the
     // figure is still fading in, otherwise 5 would be settled before it is visible.
     m.counter("axes", { from: 0, to: Number(text.axes), at: "b2", duration: "slow", ease: "standard" });
-    m.counter("fps", { from: 0, to: Number(text.fps), at: "b2+0.05", duration: "slow", ease: "standard" });
-    m.enter(["axes-label", "fps-label"], "fade", { at: "b2+0.15", stagger: "grid", duration: "base", ease: "standard" });
+    m.counter("floor", { from: 0, to: Number(text.floor), at: "b2+0.05", duration: "slow", ease: "standard" });
+    m.enter(["axes-label", "floor-label"], "fade", { at: "b2+0.15", stagger: "grid", duration: "base", ease: "standard" });
 
     // b3: the 0 has nothing to count from, so it pops. The scene's one expressive moment.
     m.enter("errors", "scalePop", { at: "b3" });
