@@ -39,7 +39,7 @@ describe("type kits", () => {
     expect(resolveKit({ ...monoDark, type: "atelier" }).name).toBe("atelier");
     expect(resolveKit({ ...monoDark, type: "atelier" }, "terminal").name).toBe("terminal");
     expect(() => resolveKit(monoDark, "nope")).toThrow(/Unknown type kit/);
-    expect(KIT_NAMES).toHaveLength(6);
+    expect(KIT_NAMES).toHaveLength(7);
   });
 
   it("defineKit merges per role", () => {

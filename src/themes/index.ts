@@ -136,10 +136,79 @@ export const vividGradient: Theme = {
   suggestedType: "broadside",
 };
 
+/**
+ * litt.md (tokens v0.5) at video scale: px values doubled (ring 1px to 2px, glow
+ * 24px to 48px, radius 4/8 to 8/16). Depth is a zero-offset glow plus a ring, never
+ * a drop shadow; the accent is used as light from above (background "lit").
+ */
+const littGlow = (strength: number) =>
+  `0 0 0 2px color-mix(in oklab, var(--color-accent) 55%, transparent), 0 0 48px color-mix(in oklab, var(--color-accent) ${strength}%, transparent)`;
+
+export const litt: Theme = {
+  name: "litt",
+  description: "litt.md: cool near-black, one signal-blue accent used as light from above, glow-and-ring depth, slight radius.",
+  mode: "dark",
+  colors: {
+    bg: "#08090a",
+    surface: "#0f1011",
+    "surface-2": "#161719",
+    border: "#232529",
+    fg: "#f7f8f9",
+    muted: "#d0d6e0",
+    subtle: "#8a8f98",
+    accent: "#4c9fff",
+    "accent-2": "#6bb3ff",
+    "accent-fg": "#08090a",
+    positive: "#4bc680",
+    warning: "#e19b1b",
+    danger: "#ff756f",
+  },
+  // Classic-path fallback only: the litt kit sets these roles itself.
+  fonts: { display: fonts.hostGrotesk, sans: fonts.hostGrotesk, mono: fonts.geistMono, serif: fonts.hostGrotesk },
+  background: "lit",
+  grain: 0.04,
+  radius: { sm: 4, md: 8, lg: 16, xl: 16, control: 8 },
+  shadows: {
+    glow: littGlow(40),
+    float: "0 0 16px rgba(0,0,0,0.4), 0 0 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.5)",
+  },
+  type: "litt",
+  suggestedType: "litt",
+};
+
+export const littLight: Theme = {
+  ...litt,
+  name: "litt-light",
+  description: "litt.md, light: cool off-white, one cobalt accent used as light from above, glow-and-ring depth, slight radius.",
+  mode: "light",
+  colors: {
+    bg: "#fafbfc",
+    surface: "#ffffff",
+    "surface-2": "#f4f5f7",
+    border: "#e3e5e9",
+    fg: "#0e0f11",
+    muted: "#3c3f45",
+    subtle: "#64686f",
+    accent: "#1a73d5",
+    "accent-2": "#0961bb",
+    "accent-fg": "#ffffff",
+    positive: "#007c3b",
+    warning: "#9c5a00",
+    danger: "#be2e31",
+  },
+  grain: 0.02,
+  shadows: {
+    glow: littGlow(28),
+    float: "0 0 16px rgba(14,15,17,0.08), 0 0 48px rgba(14,15,17,0.06), 0 0 0 1px rgba(14,15,17,0.06)",
+  },
+};
+
 export const themes: Record<string, Theme> = {
   [monoDark.name]: monoDark,
   [lightEditorial.name]: lightEditorial,
   [vividGradient.name]: vividGradient,
+  [litt.name]: litt,
+  [littLight.name]: littLight,
 };
 
 export function getTheme(name: string): Theme {

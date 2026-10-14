@@ -13,7 +13,7 @@ import type { Theme } from "./index.js";
 export type TypeSize = "mega" | "display" | "h1" | "h2" | "h3" | "lead" | "body" | "caption" | "micro";
 export type Role = "display" | "sans" | "mono" | "serif";
 
-export const KIT_NAMES = ["swiss", "atelier", "wonk", "terminal", "broadside", "flexion"] as const;
+export const KIT_NAMES = ["swiss", "atelier", "wonk", "terminal", "broadside", "flexion", "litt"] as const;
 export type KitName = (typeof KIT_NAMES)[number];
 
 export interface RoleStyle {
@@ -143,6 +143,20 @@ export const typeKits: Record<KitName, TypeKit> = {
     figures: "display",
     scale: { mega: [0.88, "-0.04em"], display: [0.92, "-0.04em"], h1: [0.96, "-0.04em"], h2: [1.02, "-0.035em"], h3: [1.08, "-0.025em"] },
     pairs: ["mono-dark", "vivid-gradient"],
+  },
+  litt: {
+    name: "litt",
+    description:
+      "One grotesk at one weight. Host Grotesk 400 for display and text with tight Helvetica Now Display-style tracking, Geist Mono for code, keys and figures, sentence-case labels, no bold anywhere.",
+    evokes: "litt.md, Linear, Vercel; Helvetica Now Display setting",
+    roles: { display: r(fonts.hostGrotesk, 400), sans: r(fonts.hostGrotesk, 400), mono: r(fonts.geistMono, 400), serif: r(fonts.hostGrotesk, 400) },
+    label: { tracking: "0em", case: "none" },
+    accent: { scale: 1, tracking: "0em", case: "none" },
+    // Host Grotesk has no tabular figures, so counters and Stat numbers go to the mono role.
+    figures: "mono",
+    scale: { mega: [0.92, "-0.045em"], display: [0.94, "-0.04em"], h1: [0.98, "-0.035em"], h2: [1.04, "-0.03em"], h3: [1.1, "-0.022em"] },
+    pairs: ["litt", "litt-light"],
+    oneWeight: true,
   },
 };
 
