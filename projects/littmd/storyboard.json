@@ -10,23 +10,23 @@
   "scenes": [
     {
       "id": "hook",
-      "duration": 3.4,
+      "duration": 3.8,
       "intent": "Name the problem in one breath: agents build in everyone's taste, not yours.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.15,
-          "note": "'Agents build in everyone's taste.' rises word by word, fg"
+          "at": 0.1,
+          "note": "l1 rises word by word; four identical generic page thumbnails cascade in below it (grid stagger)"
         },
         {
           "id": "b2",
-          "at": 1.25,
-          "note": "line 1 steps back to the grey; 'Not yours.' rises (the scene's moment)"
+          "at": 1.35,
+          "note": "l1 steps back to the grey and the thumbnails dim; 'Not yours.' rises (the scene's moment)"
         },
         {
           "id": "b3",
-          "at": 2.4,
-          "note": "'Not' steps back; only 'yours.' keeps fg"
+          "at": 2.6,
+          "note": "'Not' steps back; only 'yours.' keeps fg; the thumbnails sink out"
         }
       ],
       "text": {
@@ -38,7 +38,7 @@
           "id": "l1",
           "role": "headline",
           "anchor": "A3:E3",
-          "note": "First line of the scene's one statement: a single <Headline> (display, 112) holding l1 and l2 as block spans, left on the safe edge, vertically centred. fg, then the grey at b2."
+          "note": "First line of the one statement: a single <Headline> (display) holding l1 and l2 as block spans, left on the safe edge, in the upper half (top ≈ 200). fg, then the grey at b2."
         },
         {
           "id": "l2",
@@ -51,13 +51,19 @@
           "role": "headline",
           "anchor": "B4",
           "note": "Inline span inside l2, pinned to text-fg. Emphasis by ink."
+        },
+        {
+          "id": "thumbs",
+          "role": "ui",
+          "anchor": "A5:F6",
+          "note": "Four identical 'generic AI page' thumbnails (thumb0…thumb3) in a row across the title-safe width, 16:10, 32px gaps, below the headline: each a flat surface-1 card (rounded-surface, shadow-raised) with shapes only — a centred headline bar, a pill button bar, three equal cards. All neutral (fg at low opacity); no gradients, no text. The same page four times = 'everyone's taste'."
         }
       ],
-      "motion": "Solid canvas, no light. b1: l1 maskUp by words (responsive). b2: l1 `dim` as l2 maskUp by words on the expressive spring — the one moment. b3: l2 `dim`, 'yours.' keeps fg. Camera 1 → 1.03 with origin on the safe left edge (x 96). Nothing exits; hard cut into the light."
+      "motion": "Solid canvas. b1: l1 maskUp by words (responsive); thumbs rise in a grid cascade 0.1s later (40ms). b2: l1 `dim`, thumbs dim (opacity to ~0.35, instant), l2 maskUp by words on the expressive spring — the one moment. b3: l2 `dim` ('yours.' keeps fg) and the thumbs `dropOut` (0.75×, ease out) so the statement ends alone. Camera 1 → 1.03, origin left edge. Hard cut into the light."
     },
     {
       "id": "reveal",
-      "duration": 4.8,
+      "duration": 5.4,
       "intent": "The answer: litt.md — your taste, written as rules an agent can check.",
       "beats": [
         {
@@ -72,8 +78,18 @@
         },
         {
           "id": "b3",
-          "at": 2.6,
-          "note": "one rule takes the raised segment; its check line appears"
+          "at": 1.6,
+          "note": "the raised segment lands on P1; its check line shows"
+        },
+        {
+          "id": "b4",
+          "at": 2.5,
+          "note": "the segment glides to P4; check line swaps"
+        },
+        {
+          "id": "b5",
+          "at": 3.4,
+          "note": "the segment glides to P9; check line swaps; holds"
         }
       ],
       "text": {
@@ -110,20 +126,20 @@
           "id": "current",
           "role": "decor",
           "anchor": "D4:F4",
-          "note": "The raised segment (surface-2 + shadow-raised) behind the 'Weight by role' row at b3 (P12)."
+          "note": "The raised segment (surface-2 + shadow-raised): fades in on row 0 (P1) at b3, then glides on the responsive spring (y) to row 2 (P4) at b4 and row 3 (P9) at b5. The row it sits on inks to fg; the one it left dims back (P12, moving)."
         },
         {
           "id": "checkline",
           "role": "ui",
           "anchor": "D5:F5",
-          "note": "A footer strip in the window under the rows: mono 26 'Check: 400 text · 500 titles · 600 labels' in the grey, fades in at b3."
+          "note": "Footer strip, mono 26 in the grey, one line per stop, swapping at the instant tier (old fades out as the new fades in, a short 8px rise): b3 'Check: one accent fill per view' · b4 'Check: no shadow with an offset' · b5 'Check: 400 text · 500 titles · 600 labels'."
         }
       ],
-      "motion": "Stage bg lit. b1: label fade, headline maskUp lines (responsive). b2: the window `settle` — the expressive moment; rows rise in a list cascade after it. Sub rises after the headline. b3: current fades in under row 3, its title inks to fg, the check line fades in. Camera 1 → 1.03 origin left edge."
+      "motion": "Stage bg lit. b1: label fade, headline maskUp lines (responsive), sub rise after. b2: the window `settle` — the expressive moment; rows rise in a list cascade after it. b3–b5: the raised segment walks P1 → P4 → P9 on the responsive spring, the current title inks and the previous dims, the check line swaps each stop. Camera 1 → 1.016 origin left edge."
     },
     {
       "id": "tokens",
-      "duration": 5.0,
+      "duration": 5.4,
       "intent": "Every value lives in one file, and both themes are designed.",
       "beats": [
         {
@@ -138,8 +154,13 @@
         },
         {
           "id": "b3",
-          "at": 2.6,
-          "note": "the spring line takes the raised segment (it comes back in the motion scene)"
+          "at": 2.1,
+          "note": "the spring line takes the raised segment, the rest dim"
+        },
+        {
+          "id": "b4",
+          "at": 2.9,
+          "note": "the flow: a hairline rail draws along the window's footer and three destinations rise along it"
         }
       ],
       "text": {
@@ -177,9 +198,15 @@
           "role": "decor",
           "anchor": "D5:F5",
           "note": "Raised segment behind the spring line at b3; other lines dim to the grey."
+        },
+        {
+          "id": "flow",
+          "role": "ui",
+          "anchor": "D5:F5",
+          "note": "Footer strip inside the tokens.css window (hairline above it): mono 26 'flows to' in the grey on the left, then a 2px line-strong rail (flow-rail, draw) running right, with three Tags rising along it in reading order: 'gallery' · 'registry · --litt-*' · 'tailwind.css' (flow0…flow2). Real: gallery/scripts/sync-tokens.mjs and gen-registry.mjs copy tokens.css one way."
         }
       ],
-      "motion": "Solid canvas. b1: headline maskUp lines on the expressive spring (the moment); label fade; sub rise after. Window is present from t=0 (it came with the push). b2: code lines rise in a list cascade. b3: current fades in behind the spring line. Camera 1 → 1.03.",
+      "motion": "Solid canvas. Window present from t=0 (it came with the push). b1: headline maskUp lines on the expressive spring (the moment); label fade; sub rise after. b2: code lines rise (list). b3: current fades in behind the spring line, others dim. b4: flow-rail draws (slow, inOut), the three tags rise along it 40ms apart, starting as the rail passes. Camera 1 → 1.016.",
       "transition": {
         "type": "push",
         "dir": "left",
@@ -189,7 +216,7 @@
     },
     {
       "id": "registry",
-      "duration": 5.6,
+      "duration": 6.2,
       "intent": "Install the components, don't copy them: one command, namespaced, never restyles the host.",
       "beats": [
         {
@@ -199,18 +226,23 @@
         },
         {
           "id": "b2",
-          "at": 0.9,
-          "note": "the command types in the terminal"
+          "at": 0.8,
+          "note": "the command types"
         },
         {
           "id": "b3",
-          "at": 2.4,
-          "note": "the ✔ output lines land"
+          "at": 2.0,
+          "note": "the ✔ lines land"
         },
         {
           "id": "b4",
-          "at": 3.0,
-          "note": "the installed button is placed in the preview below"
+          "at": 2.5,
+          "note": "the installed button is placed in the preview (the moment)"
+        },
+        {
+          "id": "b5",
+          "at": 3.4,
+          "note": "the cursor glides in and presses 'Get started'"
         }
       ],
       "text": {
@@ -248,9 +280,15 @@
           "role": "ui",
           "anchor": "D5:F5",
           "note": "A flat Card under the terminal (same 1024 width, 32px gap): the installed component — <Button variant=\"primary\">Get started</Button> beside <Button>Read the docs</Button>, and a mono caption '@litt/button 2026.10.20' on the right in the grey."
+        },
+        {
+          "id": "cursor",
+          "role": "ui",
+          "anchor": "F6",
+          "note": "<Cursor>: enters from below-right of the preview at b5, one eased leg (slow) to 'Get started', a 200ms pause, m.click at ≈ b5+0.9: the button `press`es (0.98, instant) with the focus ripple — the installed component behaving like litt's own. Then the cursor rests."
         }
       ],
-      "motion": "Solid canvas. b1: headline maskUp lines (responsive); label fade; sub rise. b2: m.type the command (cps ~24) with the prompt waiting; b3: output lines rise, list stagger. b4: the preview card `settle` — the expressive moment — its buttons with it. Camera 1 → 1.03.",
+      "motion": "Solid canvas. b1: headline maskUp lines (responsive); label fade; sub rise. b2: m.type the command (24 cps). b3: output lines rise (list). b4: the preview `settle` — the expressive moment. b5: the cursor leg, pause, click; the primary button presses. Camera 1 → 1.016.",
       "transition": {
         "type": "push",
         "dir": "left",
@@ -270,13 +308,13 @@
         },
         {
           "id": "b2",
-          "at": 1.0,
-          "note": "the checks run: each row's tag lands 'pass' in reading order"
+          "at": 0.9,
+          "note": "the checks run: a raised segment walks down the rows; as it leaves each row that row's 'pass' lands and the tally counts"
         },
         {
           "id": "b3",
           "at": 3.4,
-          "note": "the footer verdict '6 of 6 passed' steps up to fg"
+          "note": "the segment fades off the last row; the verdict '6 of 6 passed' steps up to fg"
         }
       ],
       "text": {
@@ -307,10 +345,10 @@
           "id": "run",
           "role": "ui",
           "anchor": "D2:F5",
-          "note": "<Window title=\"test:agents · settings-dialog\"> 1024 wide. 6 rows (List look, 88px, hairlines): 'Skill loaded' · 'Registry components' · 'Host lint' · 'Typecheck' · 'Build' · 'Screenshots', each with a success Tag 'pass' (tag0…tag5) that appears at b2 in order. Footer strip: mono 'settings-dialog · vite' left, 'verdict' right: '6 of 6 passed' in the grey, inks to fg at b3."
+          "note": "<Window title=\"test:agents · settings-dialog\"> 1024 wide. 6 rows (List look, 88px, hairlines): 'Skill loaded' · 'Registry components' · 'Host lint' · 'Typecheck' · 'Build' · 'Screenshots', each with a success Tag 'pass' (tag0…tag5) that appears at b2 in order. Footer strip: mono 'settings-dialog · vite' left, 'verdict' right: '6 of 6 passed' in the grey, inks to fg at b3. A raised segment `scan` (surface-2 + shadow-raised) sits on the row being checked: it fades in on row 0 at b2 and glides down one row every ≈0.4s on the responsive spring; each row's 'pass' tag fades in as the segment moves on."
         }
       ],
-      "motion": "Solid canvas. The window is present from t=0 with its rows (came with the push). b1: headline maskUp lines on the expressive spring (the moment); sub rise after. b2: tags fade in one by one ~0.28s apart (each check finishing). b3: verdict `ink`. Camera 1 → 1.03.",
+      "motion": "Solid canvas. Window present from t=0. b1: headline maskUp lines on the expressive spring (the moment); sub rise after. b2: the scan segment walks the six rows (responsive y, ≈0.4s per row), each tag lands as it leaves, the tally counts with it. b3: scan fades, verdict `ink`. Camera 1 → 1.016.",
       "transition": {
         "type": "push",
         "dir": "left",
@@ -320,7 +358,7 @@
     },
     {
       "id": "motion",
-      "duration": 5.0,
+      "duration": 5.4,
       "intent": "Motion in three tiers, quick by default, with one expressive moment per view — shown, not told.",
       "beats": [
         {
@@ -330,8 +368,13 @@
         },
         {
           "id": "b2",
-          "at": 1.2,
-          "note": "the race: all three fills start together, each on its own tier — instant snaps, responsive lands, expressive arrives last at the shared end mark (the scene's moment)"
+          "at": 1.1,
+          "note": "the cursor glides to 'Run' in the card's header"
+        },
+        {
+          "id": "b3",
+          "at": 1.9,
+          "note": "click: the race starts — all three fills together, each on its tier; expressive arrives last (the moment)"
         }
       ],
       "text": {
@@ -362,10 +405,16 @@
           "id": "tiers",
           "role": "ui",
           "anchor": "D2:F5",
-          "note": "A flat Card 1024 wide, three rows split by hairlines. Each: a title (28, 500, fg) + mono spec (26, the grey) on top, and below a track (fg 8%, 8px tall, full width) with its fill (fg) — 'Instant' '100ms · ease-out' · 'Responsive' 'spring 200ms · bounce 0' · 'Expressive' 'spring 350ms · bounce 0.12'. Fills fill0…fill2 scaleX from the left."
+          "note": "A flat Card 1024 wide, three rows split by hairlines. Each: a title (28, 500, fg) + mono spec (26, the grey) on top, and below a track (fg 8%, 8px tall, full width) with its fill (fg) — 'Instant' '100ms · ease-out' · 'Responsive' 'spring 200ms · bounce 0' · 'Expressive' 'spring 350ms · bounce 0.12'. Fills fill0…fill2 scaleX from the left. Header row in the card: mono 26 'tiers.tsx' in the grey on the left, a secondary sm <Button> 'Run' on the right (run)."
+        },
+        {
+          "id": "cursor",
+          "role": "ui",
+          "anchor": "F3",
+          "note": "<Cursor>: in from the right edge at b2, one eased leg to 'Run', 200ms pause, click at b3-0.1 (the button presses), the race starts on b3."
         }
       ],
-      "motion": "Solid canvas. Card present from t=0. b1: headline maskUp lines (responsive); sub rise after. b2: the three fills race, scaleX 0 → 1, each on its own tier (instant tween, responsive spring, expressive spring). The expressive fill is the moment. Camera 1 → 1.03.",
+      "motion": "Solid canvas. Card present from t=0. b1: headline maskUp lines (responsive); sub rise. b2: cursor leg to Run. b3: click → the three fills race (scaleX 0 → 1, instant / responsive / expressive, one start). Camera 1 → 1.016.",
       "transition": {
         "type": "dip",
         "duration": 0.5
@@ -373,7 +422,7 @@
     },
     {
       "id": "end",
-      "duration": 4.2,
+      "duration": 4.6,
       "intent": "The name, the promise, the call to action.",
       "beats": [
         {
@@ -390,6 +439,11 @@
           "id": "b3",
           "at": 1.2,
           "note": "the button and the url"
+        },
+        {
+          "id": "b4",
+          "at": 2.0,
+          "note": "the cursor glides onto the button and presses it"
         }
       ],
       "text": {
@@ -422,9 +476,15 @@
           "role": "caption",
           "anchor": "C5",
           "note": "Mono caption 'littmd.vercel.app' in the grey, 24px under the button."
+        },
+        {
+          "id": "cursor",
+          "role": "ui",
+          "anchor": "D6",
+          "note": "<Cursor>: in from below-right at b4, one eased leg onto 'Open the gallery', pause, click (press + focus ripple), then rests on the button for the last frame."
         }
       ],
-      "motion": "Stage lit. b1 wordmark `settle` (the moment); b2 tagline rise; b3 cta rise, url fade after. Camera 1 → 1.03, cruising into the last frame."
+      "motion": "Stage lit. b1 wordmark `settle` (the moment); b2 tagline rise; b3 cta rise, url fade after. b4 cursor leg, pause, click; the button presses. Camera 1 → 1.03, cruising into the last frame."
     }
   ]
 }
