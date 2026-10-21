@@ -5,27 +5,28 @@
     "aspect": "16:9",
     "fps": 30
   },
-  "theme": "mono-dark",
+  "theme": "litt-dark",
+  "type": "litt",
   "scenes": [
     {
       "id": "hook",
-      "duration": 3.9,
+      "duration": 3.6,
       "intent": "Name the problem in one breath: agents can write motion, but they can't see it.",
       "beats": [
         {
           "id": "b1",
           "at": 0.15,
-          "note": "'Agents can write motion.' rises word by word"
+          "note": "'Agents can write motion.' rises word by word, in fg, a focus caret after it"
         },
         {
           "id": "b2",
           "at": 0.95,
-          "note": "'They just can't see it.' rises word by word"
+          "note": "line 1 steps back to the grey; 'They just can't see it.' rises (the scene's moment)"
         },
         {
           "id": "b3",
-          "at": 2.45,
-          "note": "'see' goes out of focus: the problem made visible"
+          "at": 2.3,
+          "note": "everything but 'see' steps back to the grey: the problem, picked out by ink"
         }
       ],
       "text": {
@@ -37,32 +38,28 @@
           "id": "l1",
           "role": "headline",
           "anchor": "A3:E3",
-          "note": "Headline size h1 (120px), left-aligned on the safe left edge, fg. The two lines sit as one block, vertically centered."
-        },
-        {
-          "id": "l2",
-          "role": "headline",
-          "anchor": "A4:E4",
-          "note": "Headline h1 directly under l1. Render from text.l2 split around the word 'see', which goes in <Serif ct=\"see\"> (italic serif swap)."
-        },
-        {
-          "id": "see",
-          "role": "headline",
-          "anchor": "C4",
-          "note": "Inline serif-italic span inside l2, animated on its own (blur). Same fg color, no accent."
+          "note": "First line of the scene's one statement: a single <Headline> (display, 112) holding l1 and l2 as block spans, left on the safe edge, vertically centred. fg, then the grey at b2."
         },
         {
           "id": "caret",
           "role": "decor",
           "anchor": "E3",
-          "note": "Thin accent text caret (≈6×96px bar) just after 'motion.'. The only accent in the frame."
+          "note": "A 6×96px caret in the focus colour after 'motion.': the agent typing. The only accent in the frame; blinks (m.blink) until b2."
+        },
+        {
+          "id": "l2",
+          "role": "headline",
+          "anchor": "A4:E4",
+          "note": "Second line, directly under l1 (same Headline). fg; at b3 it steps back to the grey except 'see'."
+        },
+        {
+          "id": "see",
+          "role": "headline",
+          "anchor": "C4",
+          "note": "Inline span inside l2, pinned to text-fg so it keeps its ink when the rest of l2 dims. Emphasis by ink, never a colour or italic."
         }
       ],
-      "motion": "Background `solid`: near-black, no glow (the world before eyes). b1: l1 `maskUp` split words (hero ease, `word` stagger). The caret `fade`s in as l1 lands and `m.blink`s until b2, then fades. b2: l2 `maskUp` split words. b3: `m.tween('see', { blur: [0, 8], opacity: [1, 0.45] }, slow, standard)`, so the word stays soft into the dip. Camera `m.camera({ scale: [1, 1.04] })` over the whole scene. Nothing exits; the dip is the exit.",
-      "transition": {
-        "type": "dip",
-        "duration": 0.5
-      }
+      "motion": "Solid canvas, no light (the world before eyes). b1: l1 maskUp by words (responsive, word stagger 40ms); the caret fades in with it and blinks until b2-0.08, then fades out. b2: l1 `dim` (instant) as l2 maskUp by words on the expressive spring — the scene's one moment. b3: l2 `dim` (instant); 'see' keeps fg. Camera 1 → 1.03 anchored on the safe left edge (origin x 96), so the type never drifts and the cut into the turn doesn't snap. Nothing exits; hard cut on the beat into the light."
     },
     {
       "id": "studio",
@@ -71,22 +68,27 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.3,
-          "note": "eyebrow + headline reveal"
+          "at": 0.15,
+          "note": "label + headline rise into the light, in the grey"
         },
         {
           "id": "b2",
-          "at": 1.6,
-          "note": "pipeline rail draws, step pills pop as it passes"
+          "at": 1.0,
+          "note": "'eyes.' steps up to fg: the answer to the hook's 'see'"
         },
         {
           "id": "b3",
-          "at": 3.1,
-          "note": "'Plan' lights up accent; the process starts"
+          "at": 1.5,
+          "note": "pipeline rail draws, the five stations rise along it"
+        },
+        {
+          "id": "b4",
+          "at": 2.9,
+          "note": "'Plan' takes focus: the process starts and the push carries us into it"
         }
       ],
       "text": {
-        "eyebrow": "Continuity",
+        "label": "Continuity",
         "headline": "Give agents a studio. And eyes.",
         "plan": "Plan",
         "check": "Check",
@@ -96,70 +98,71 @@
       },
       "elements": [
         {
-          "id": "eyebrow",
-          "role": "eyebrow",
+          "id": "label",
+          "role": "label",
           "anchor": "A2",
-          "note": "Mono uppercase tracked eyebrow, muted, left edge."
+          "note": "<Label> (28, 600, the grey, sentence case), 8px above the headline."
         },
         {
           "id": "headline",
           "role": "headline",
-          "anchor": "A3:E4",
-          "note": "h1 (120px), two lines broken by meaning: 'Give agents a studio.' / 'And eyes.'. 'eyes' in <Serif ct=\"eyes\"> (it answers the hook's 'see')."
+          "anchor": "A2:E3",
+          "note": "<Headline> display (112), the grey, broken by meaning: 'Give agents a studio.' / 'And eyes.'."
         },
         {
           "id": "eyes",
           "role": "headline",
-          "anchor": "B4",
-          "note": "Inline serif-italic span inside the headline. No separate motion."
+          "anchor": "B3",
+          "note": "'eyes.' span inside the headline: the one word that steps up to fg (ink)."
         },
         {
           "id": "rail",
           "role": "decor",
           "anchor": "A5:F5",
-          "note": "Hairline horizontal <Path> (2px, border color) across the safe width. The pills sit on it, evenly spaced (0/25/50/75/100%)."
+          "note": "2px line-strong <Path>, 1536px from the safe left edge (192px of air on the right, so the left-anchored push keeps 'Ship' action-safe), through the stations' centres."
         },
         {
           "id": "plan",
           "role": "ui",
           "anchor": "A5",
-          "note": "<Pill> 'Plan', no dot at first. Holds a stacked accent dot `plan-dot` (opacity 0) for b3."
+          "note": "<Tag> 'Plan' at the left end of the rail. A focus ring `plan-focus` (shadow-focus, opacity 0) sits around it for b4."
+        },
+        {
+          "id": "plan-focus",
+          "role": "decor",
+          "anchor": "A5",
+          "note": "litt's focus ring (4px canvas gap + 4px focus) around the Plan tag. The accent as focus."
         },
         {
           "id": "check",
           "role": "ui",
           "anchor": "B5",
-          "note": "<Pill> 'Check'."
+          "note": "<Tag> 'Check'."
         },
         {
           "id": "measure",
           "role": "ui",
           "anchor": "C5",
-          "note": "<Pill> 'Measure'."
+          "note": "<Tag> 'Measure'."
         },
         {
           "id": "critique",
           "role": "ui",
           "anchor": "D5",
-          "note": "<Pill> 'Critique'."
+          "note": "<Tag> 'Critique'."
         },
         {
           "id": "ship",
           "role": "ui",
-          "anchor": "E5",
-          "note": "<Pill> 'Ship'. The destination, at the right end of the rail."
-        },
-        {
-          "id": "glow",
-          "role": "decor",
-          "anchor": "E2",
-          "note": "<Glow color=\"accent\"> low opacity, top right, behind the headline's end."
+          "anchor": "F5",
+          "note": "<Tag> 'Ship', at the right end: the destination (the end card)."
         }
       ],
-      "motion": "Background `aurora` (light arrives). b1: eyebrow `fadeBlur`; headline `maskUp` split lines at b1+0.12. b2: rail `draw` left→right (hero, inOut). The five pills `scalePop` in reading order with a 0.14s stagger so each pops as the line reaches it (all landed by ≈2.9s). b3: `plan-dot` `scalePop` + `plan` `pulse`: chapter 01 starts and the push carries us into it. Ambient: `m.loop('glow', { scale: 0.04 }, { period: 6 })`. Camera `{ scale: [1, 1.02], x: [0, -24] }`, a drift toward the push. Nothing exits.",
+      "motion": "Stage bg `lit`: litt's one light arrives (the hero). b1: label `fade`; headline maskUp by lines on the expressive spring (the moment). b2: `eyes` `ink` (instant). b3: rail `draw` (slow, inOut); the five tags `rise` in reading order (list stagger 40ms) as it passes. b4: plan `ink` + plan-focus `fade` at the instant tier. Camera 1 → 1.03 anchored on the safe left edge, like the hook. Push into the first chapter.",
       "transition": {
         "type": "push",
-        "duration": 0.5
+        "duration": 0.5,
+        "blur": true
       }
     },
     {
@@ -169,67 +172,74 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.3,
-          "note": "eyebrow + headline, storyboard window rises"
+          "at": 0.2,
+          "note": "headline masks up; the storyboard window came with the push"
         },
         {
           "id": "b2",
           "at": 2.0,
-          "note": "beat lanes wipe on, beat ticks land"
+          "note": "rows, lanes and beat keyframes have landed"
         },
         {
           "id": "b3",
-          "at": 3.3,
-          "note": "the current scene row (plan) glows"
+          "at": 2.4,
+          "note": "this scene's row takes the raised segment and steps up to fg"
         }
       ],
       "text": {
-        "eyebrow": "01 · Plan",
+        "label": "01 · Plan",
         "headline": "Plan before pixels.",
         "sub": "Scenes and beats, timed before code."
       },
       "elements": [
         {
-          "id": "eyebrow",
-          "role": "eyebrow",
-          "anchor": "A1",
-          "note": "Mono uppercase eyebrow with a small accent dot before it (echoes the 'Plan' pill)."
+          "id": "label",
+          "role": "label",
+          "anchor": "A3",
+          "note": "<Label> '01 · Plan' (repeats the station's word), 8px above the headline."
         },
         {
           "id": "headline",
           "role": "headline",
-          "anchor": "A1:D2",
-          "note": "h2 (88px), one line, left edge."
+          "anchor": "A3:B4",
+          "note": "<Headline> display (112), fg, in the 608px lockup column on the safe edge: ≤ 2 lines, broken by meaning. The product sits 96px to its right (litt's split frame)."
         },
         {
           "id": "sub",
-          "role": "subhead",
-          "anchor": "A2:D2",
-          "note": "text-caption (30px), muted, one line, under the headline."
+          "role": "body",
+          "anchor": "A5:B5",
+          "note": "<Body> (36, the grey), 32px under the headline."
         },
         {
           "id": "board",
           "role": "ui",
-          "anchor": "A3:F6",
-          "note": "<Window title=\"storyboard.json\"> ≈1600×600, left edge aligned with the copy. Body: two columns, `rows` left (≈55%) and `lanes` right."
+          "anchor": "D2:F5",
+          "note": "<Window title=\"storyboard.json\"> 1024×640 on the right (columns 7–12), vertically centred with the lockup. Body: `rows` left (448px), `lanes` right, a status bar at the bottom."
         },
         {
           "id": "rows",
           "role": "ui",
-          "anchor": "A3:C6",
-          "note": "<List> of 5 rows (rows-r0…r4): 'hook · the problem' 3.9s | 'studio · the turn' 4.4s | 'plan · storyboard' 4.8s (status accent) | 'check · eyes on frames' 6.6s | 'measure · motion chart' 5.0s. Other rows have no status."
+          "anchor": "D2:D5",
+          "note": "5 rows (rows-r0…r4, the List's 88px rhythm, 2px hairlines): 'hook · the problem' 3.6s | 'studio · the turn' 4.4s | 'plan · storyboard' 4.8s | 'check · eyes on frames' 7.0s | 'measure · motion chart' 5.0s. Titles in the grey; this scene's title (title2) steps up to fg."
+        },
+        {
+          "id": "current",
+          "role": "decor",
+          "anchor": "D4:F4",
+          "note": "The raised segment (surface-2, hairline + top highlight) behind this scene's row: P12's 'current item'."
         },
         {
           "id": "lanes",
           "role": "ui",
-          "anchor": "D3:F6",
-          "note": "5 beat lanes (lane0…lane4) aligned to the 78px row rhythm. Each is a hairline bar whose width is proportional to the scene's duration (59/67/73/100/76%), with accent beat ticks (tick0…tick11, about 2–3 per lane) at this storyboard's real beat times."
+          "anchor": "E2:F5",
+          "note": "5 beat lanes (lane0…lane4) on a shared seconds axis: 8px rails at fg 12%, width ∝ duration; beat keyframes (tick0…) at the storyboard's real beat times, fg 55%, this scene's in fg (BarChart's rule)."
         }
       ],
-      "motion": "Background `grid`. The push brings the storyboard window in (no own entrance). Eyebrow present at 0; headline `maskUp` lines at 0.2; sub `rise` at after:headline-0.25. Rows cascade from 0.5, lanes `wipeRight` from 0.9, beat markers `scalePop` from 1.2, all landed by b2. At b2+0.5 the current (plan) row highlights; only its markers are accent. Camera `{ scale: [1, 1.03] }`.",
+      "motion": "Solid canvas. The push brings the board in with its scene rows (the bench is never empty). b1: headline maskUp lines on the expressive spring (the moment); sub `rise` as it lands. Lanes `wipeRight` from 0.6 (list 40ms), keyframes `fade` from 0.9 (40ms), all landed by b2. b3: `current` fades in and title2 `ink`s to fg. Camera 1 → 1.03.",
       "transition": {
         "type": "push",
-        "duration": 0.5
+        "duration": 0.5,
+        "blur": true
       }
     },
     {
@@ -240,7 +250,7 @@
         {
           "id": "b1",
           "at": 0.2,
-          "note": "headline (surfaces arrive with the push); frames bloom from center at b1+0.3"
+          "note": "headline; frames fade on from the centre at b1+0.3"
         },
         {
           "id": "b2",
@@ -250,84 +260,98 @@
         {
           "id": "b3",
           "at": 2.3,
-          "note": "RED: 2 red findings + red ring on f5, other frames recede, camera focus push; red holds settled ≥ 1.4s"
+          "note": "RED: two findings tagged 'error', a danger ring on f5, the other frames recede, camera focus push; holds ≥ 1.4s"
         },
         {
           "id": "b4",
           "at": 4.6,
-          "note": "GREEN: bars separate, ring clears, findings struck through, dots go green, ✔ line, sheet restores"
+          "note": "GREEN: f5's headline lifts off the CTA, the ring clears, 'error' → 'fixed', the ✔ line is placed, the sheet returns"
         }
       ],
       "text": {
-        "eyebrow": "02 · Check",
-        "headline": "Eyes on every frame."
+        "label": "02 · Check",
+        "headline": "Eyes on every frame.",
+        "sub": "A contact sheet and a gate, every cut."
       },
       "elements": [
         {
-          "id": "eyebrow",
-          "role": "eyebrow",
+          "id": "label",
+          "role": "label",
           "anchor": "A1",
-          "note": "Mono uppercase eyebrow with a small accent dot."
+          "note": "<Label> '02 · Check'."
         },
         {
           "id": "headline",
           "role": "headline",
           "anchor": "A1:D2",
-          "note": "h2 (88px), one line, left edge."
+          "note": "<Headline> display (112), one line. Check is the one stacked chapter (lockup above, product 96px below at full width): the sheet and the gate need the room."
+        },
+        {
+          "id": "sub",
+          "role": "body",
+          "anchor": "A2:D2",
+          "note": "<Body>, the grey."
         },
         {
           "id": "sheet",
           "role": "ui",
           "anchor": "A3:C6",
-          "note": "<Card> ≈820×600: a contact sheet, a 3×3 grid of 16:9 thumbnails (≈240×135, 16px gaps). No readable text in the thumbnails, only shapes."
+          "note": "<Card> (flat) 893×600: header 'sheet.png' / 'launch · 31.6s' (mono 26, the grey) over a 3×3 grid of 16:9 thumbnails, 267×150, 14px gaps."
         },
         {
           "id": "frames",
           "role": "ui",
           "anchor": "A3:C6",
-          "note": "Thumbnails f0…f8: miniature frames of this film (dark tiles, 1–2 light type bars, a hairline UI box, an accent dot here and there). Vary them."
+          "note": "Thumbnails f0…f8: miniatures of this film in litt (canvas or the top light, fg/grey type bars, raised UI boxes, a focus caret, an accent button on the end card). Shapes only, no readable text."
         },
         {
           "id": "f5",
           "role": "ui",
-          "anchor": "B5",
-          "note": "The defect frame (row 2, col 3). Its headline bar `f5b` overlaps the CTA bar `f5a`, a collision readable at thumbnail scale."
+          "anchor": "C4",
+          "note": "The defect frame: an end-card draft whose wordmark bar `f5b` overlaps the button `f5a`; its caption `f5c` is too faint."
         },
         {
           "id": "ring",
           "role": "decor",
-          "anchor": "B5",
-          "note": "3px danger-red rounded outline around f5."
+          "anchor": "C4",
+          "note": "4px danger outline (rounded-surface) 8px outside f5: the gate's mark."
         },
         {
           "id": "term",
           "role": "ui",
           "anchor": "D3:F6",
-          "note": "<Window title=\"zsh\"> ≈820×600. Body stacks: `cmd`, `findings`, `done`."
+          "note": "<Window title=\"zsh\"> 803×600. Body stacks `cmd`, `scan`, the `report` box, `done`."
         },
         {
           "id": "cmd",
           "role": "ui",
           "anchor": "D3",
-          "note": "<Terminal lines={['$ pnpm ct check launch']}>, line cmd-l0 is typed."
+          "note": "Grey `$` prompt waiting, then cmd-l0 'pnpm ct check launch' types (fg)."
+        },
+        {
+          "id": "scan",
+          "role": "ui",
+          "anchor": "D3",
+          "note": "<Terminal> '◆ 948 frames · 7 scenes' in the grey."
         },
         {
           "id": "findings",
           "role": "ui",
           "anchor": "D4:F5",
-          "note": "<List> 2 rows, status 'danger': r0 'overlap · headline × cta' meta 'f5'; r1 'contrast 3.1:1 · caption' meta 'f5'. Overlay positive dots `good0` / `good1` exactly on the red status dots (opacity 0)."
+          "note": "Report box (surface-2, hairline). 2 rows findings-r0/r1: titles title0 'overlap · headline × cta', title1 'contrast 3.1:1 · caption', meta 'f5', a status Tag err0/err1 'error' (danger word) that swaps to ok0/ok1 'fixed' (success word)."
         },
         {
           "id": "done",
           "role": "ui",
           "anchor": "D6",
-          "note": "<Terminal lines={['✔ 0 errors · 0 warnings']}>. Green via the kit's ✔ styling. Line done-l0."
+          "note": "<Terminal> '✔ 0 errors · 0 warnings' (success). Line done-l0."
         }
       ],
-      "motion": "Background `grid`. The push brings both surfaces in. Eyebrow at 0; headline `maskUp` at 0.2; frames bloom from centre at 0.5; b2: command types. b3: two red findings + red ring (4px, glow) on f5, other frames dim; red holds settled ≥ 1.4s. b4: the fix — f5 bars separate, ring fades, findings struck through + muted, dots go green, ✔ line rises; frames return. Camera 1→1.012 ambient, then a focus push to 1.033 at b3 (max that keeps the 1728px layout action-safe).",
+      "motion": "Solid canvas. The push brings both surfaces in. b1: headline maskUp lines (responsive), sub rise; frames `fade` from the centre (grid 40ms). b2: the command types (24 cps); the scan line fades in. b3: report + findings `rise` (list); ring fades in at the instant tier; the other frames recede to 40% (slow, inOut); the camera focus-pushes 1.01 → 1.03 (slow, inOut). b4: f5b lifts 22px (responsive), f5c to full opacity, ring `fadeOut`; err → ok swap at the instant tier, titles `dim`; done-l0 `settle` — the scene's one moment; frames return. Push on.",
       "transition": {
         "type": "push",
-        "duration": 0.5
+        "duration": 0.5,
+        "blur": true
       }
     },
     {
@@ -338,84 +362,85 @@
         {
           "id": "b1",
           "at": 0.0,
-          "note": "eyebrow; headline masks up at b1+0.2; the push carries the chart window in"
+          "note": "the push carries the chart window in; headline masks up at b1+0.2"
         },
         {
           "id": "b2",
           "at": 0.9,
-          "note": "energy curve wipes on under the playhead"
+          "note": "the energy curve wipes on under the playhead"
         },
         {
           "id": "b3",
           "at": 2.35,
-          "note": "three green verdict pills pop as the playhead lands"
+          "note": "three verdict tags are placed as the playhead lands"
         }
       ],
       "text": {
-        "eyebrow": "03 · Measure",
+        "label": "03 · Measure",
         "headline": "Motion, measured.",
         "sub": "Not vibes."
       },
       "elements": [
         {
-          "id": "eyebrow",
-          "role": "eyebrow",
-          "anchor": "A1",
-          "note": "Mono uppercase eyebrow with a small accent dot."
+          "id": "label",
+          "role": "label",
+          "anchor": "A3",
+          "note": "<Label> '03 · Measure'."
         },
         {
           "id": "headline",
           "role": "headline",
-          "anchor": "A1:D2",
-          "note": "h2 (88px), one line, left edge."
+          "anchor": "A3:B4",
+          "note": "<Headline> display (112), fg, in the 608px lockup column on the safe edge: ≤ 2 lines, broken by meaning. The product sits 96px to its right (litt's split frame)."
         },
         {
           "id": "sub",
-          "role": "subhead",
-          "anchor": "A2:D2",
-          "note": "text-caption (30px), muted."
+          "role": "body",
+          "anchor": "A5:B5",
+          "note": "<Body>, the grey."
         },
         {
           "id": "chart",
           "role": "ui",
-          "anchor": "A3:F6",
-          "note": "<Window title=\"ct motion · launch.mp4\"> ≈1600×600. Body: `energy` on top, the pill row underneath."
+          "anchor": "D2:F5",
+          "note": "<Window title=\"ct motion · launch.mp4\"> 1024×600 on the right, vertically centred with the lockup. Body: the energy plot on top, the verdict row underneath."
         },
         {
-          "id": "energy",
+          "id": "plot",
           "role": "ui",
-          "anchor": "A3:F5",
-          "note": "<LineChart> ≈1440×300, data [0.15, 0.7, 0.35, 0.85, 0.3, 0.65, 0.95, 0.4, 0.8, 0.3, 0.75, 0.9]: peaks on beats, valleys on holds, never flat (no dead zones). Parts energy-line, energy-area."
+          "anchor": "D2:F4",
+          "note": "This film's motion energy over its real time axis: a 4px fg line, no area, no gradient; scene cut markers with mono 26 labels in the grey ('measure' in fg). Revealed by a wipe that is the playhead's move."
         },
         {
           "id": "head",
           "role": "decor",
-          "anchor": "A3:A5",
-          "note": "Playhead: a 2px accent vertical line the height of the chart, starting at its left edge."
+          "anchor": "F2:F4",
+          "note": "Playhead: a 2px line in the focus colour with a 14px knob: the timeline's caret."
         },
         {
           "id": "eased",
           "role": "ui",
-          "anchor": "A6",
-          "note": "<Pill dot=\"positive\">100% eased</Pill>"
+          "anchor": "D5",
+          "note": "<Tag tone=\"success\">100% eased</Tag>: status as a coloured word."
         },
         {
           "id": "dead",
           "role": "ui",
-          "anchor": "B6",
-          "note": "<Pill dot=\"positive\">0 dead zones</Pill>"
+          "anchor": "E5",
+          "note": "<Tag tone=\"success\">0 dead zones</Tag>"
         },
         {
           "id": "jolts",
           "role": "ui",
-          "anchor": "C6",
-          "note": "<Pill dot=\"positive\">0 jolts</Pill>"
+          "anchor": "E5",
+          "note": "<Tag tone=\"success\">0 jolts</Tag>"
         }
       ],
-      "motion": "Background `grid`. The push brings the chart window in. Eyebrow at 0; headline `maskUp` at 0.2; sub after:headline-0.25. b2: the chart (this film's own motion energy, smoothed, 7 scene labels on the baseline) wipes on left→right under a locked playhead; b3: three green verdict pills pop as the playhead arrives. Camera `{ scale: [1, 1.03] }`.",
+      "motion": "Solid canvas. The push brings the window in. b1: headline maskUp lines (responsive), sub rise. b2: plot `wipeRight` and the playhead x tween share start, duration (linger) and ease (inOut). b3: the three tags `settle` in reading order (list 40ms) — the scene's one moment. Camera 1 → 1.03.",
       "transition": {
         "type": "push",
-        "duration": 0.5
+        "duration": 0.5,
+        "blur": true
       }
     },
     {
@@ -426,75 +451,75 @@
         {
           "id": "b1",
           "at": 0.2,
-          "note": "headline in; scorecard already on screen (came with the push)"
+          "note": "headline in; the scorecard came with the push (labels, empty meters, 0.0)"
         },
         {
           "id": "b2",
           "at": 0.6,
-          "note": "axis fills grow and scores count"
+          "note": "meters fill and scores count"
         },
         {
           "id": "b3",
-          "at": 3.0,
-          "note": "verdict: 'best of 3 · ships'"
+          "at": 2.6,
+          "note": "verdict: 'Ships', best of 3"
         }
       ],
       "text": {
-        "eyebrow": "04 · Critique",
+        "label": "04 · Critique",
         "headline": "Every cut, scored.",
         "sub": "Only the best version ships."
       },
       "elements": [
         {
-          "id": "eyebrow",
-          "role": "eyebrow",
-          "anchor": "A1",
-          "note": "Mono uppercase eyebrow with a small accent dot."
+          "id": "label",
+          "role": "label",
+          "anchor": "A3",
+          "note": "<Label> '04 · Critique'."
         },
         {
           "id": "headline",
           "role": "headline",
-          "anchor": "A1:D2",
-          "note": "h2 (88px), one line, left edge."
+          "anchor": "A3:B4",
+          "note": "<Headline> display (112), fg, in the 608px lockup column on the safe edge: ≤ 2 lines, broken by meaning. The product sits 96px to its right (litt's split frame)."
         },
         {
           "id": "sub",
-          "role": "subhead",
-          "anchor": "A2:D2",
-          "note": "text-caption (30px), muted."
+          "role": "body",
+          "anchor": "A5:B5",
+          "note": "<Body>, the grey."
         },
         {
           "id": "card",
           "role": "ui",
-          "anchor": "A3:F6",
-          "note": "<Card> ≈1600×600, two columns: `axes` left (≈65%), `mean` + `ships` right, separated by a hairline."
+          "anchor": "D2:F5",
+          "note": "<Card> (flat) 1024×600 on the right: the five axes, a 2px hairline, then the mean (left) and the verdict (right)."
         },
         {
           "id": "axes",
           "role": "ui",
-          "anchor": "A3:D6",
-          "note": "5 rows ax0…ax4: label (sans 28px) 'Intent' 'Composition' 'Typography' 'Temporal' 'Craft'; <Progress ct=bar0…bar4 width≈560> values 0.92/0.88/0.96/0.90/0.94; mono value counters v0…v4 → 4.6 / 4.4 / 4.8 / 4.5 / 4.7."
+          "anchor": "D2:F4",
+          "note": "5 rows ax0…ax4: label (small, the grey) 'Intent' 'Composition' 'Typography' 'Temporal' 'Craft'; <Meter ct=bar0…bar4 width=552> filled with fg, 0.92/0.88/0.96/0.90/0.94; mono counters v0…v4 → 4.6 / 4.4 / 4.8 / 4.5 / 4.7."
         },
         {
           "id": "mean",
           "role": "stat",
-          "anchor": "E3:F4",
-          "note": "<Stat value={4.6} decimals={1} label=\"v3 · mean score\">."
+          "anchor": "D5",
+          "note": "<Stat value={4.6} decimals={1} label=\"v3 · mean score\" unit=\"/ 5\">, title size: label above value, tabular."
         },
         {
           "id": "ships",
           "role": "ui",
-          "anchor": "E5:F5",
-          "note": "<Pill dot=\"positive\">best of 3 · ships</Pill> under the stat."
+          "anchor": "F5",
+          "note": "<Tag tone=\"success\">Ships</Tag>: the verdict as a word."
         },
         {
-          "id": "sheen",
-          "role": "decor",
-          "anchor": "A3:F6",
-          "note": "<Sheen> inside the card (card needs overflow-hidden)."
+          "id": "best",
+          "role": "caption",
+          "anchor": "E5",
+          "note": "<Caption> 'best of 3 versions', just before the tag."
         }
       ],
-      "motion": "Background `grid`. The push brings the scorecard in with labels, empty tracks and 0.0 counters. Eyebrow at 0; headline at 0.2; fills + counters 0.6–1.8 (stagger 0.08); mean counts 0.8–2.2 then pulses; b3: `ships` pops (CTA sizing); a soft sheen (0.06) sweeps 3.2–4.1, leaving ≥ 0.5s of stillness before the dip. Camera `{ scale: [1, 1.025] }`.",
+      "motion": "Solid canvas. The push brings the scorecard in. b1: headline maskUp lines (responsive), sub rise. b2: meter fills scaleX 0 → 1 and the five counters run together (slow, inOut, list 40ms); the mean counts over linger. b3: `ships` `settle` — the scene's one moment — and `best` fades in. ≥ 1s of settled hold before the dip. Camera 1 → 1.03.",
       "transition": {
         "type": "dip",
         "duration": 0.5
@@ -508,17 +533,17 @@
         {
           "id": "b1",
           "at": 0.35,
-          "note": "wordmark tracks in"
+          "note": "wordmark is placed"
         },
         {
           "id": "b2",
-          "at": 1.0,
+          "at": 0.95,
           "note": "tagline rises"
         },
         {
           "id": "b3",
           "at": 1.5,
-          "note": "'Open source' CTA pops; hold ≥ 2s"
+          "note": "'Open source' button rises; hold ≥ 2s"
         }
       ],
       "text": {
@@ -531,28 +556,22 @@
           "id": "wordmark",
           "role": "logo",
           "anchor": "B3:E3",
-          "note": "Display (168px) Inter Tight semibold, centered. The film's only centered frame."
+          "note": "<Headline> display (112), fg, centred: the film's only centred frame."
         },
         {
           "id": "tagline",
-          "role": "subhead",
+          "role": "body",
           "anchor": "B4:E4",
-          "note": "text-lead (48px), muted, centered under the wordmark."
+          "note": "<Body> (36, the grey), 32px under the wordmark."
         },
         {
           "id": "cta",
           "role": "cta",
           "anchor": "C5:D5",
-          "note": "<Pill dot=\"accent\">Open source</Pill>, centered."
-        },
-        {
-          "id": "glow",
-          "role": "decor",
-          "anchor": "C3:D4",
-          "note": "<Glow color=\"accent\"> soft, behind the wordmark."
+          "note": "<Button variant=\"primary\">Open source</Button> (md, 88): the film's one accent fill, with the zero-offset glow. 'Ship', the last station."
         }
       ],
-      "motion": "Background `aurora`. b1: wordmark `trackIn` (hero); glow `fade` (slow) with it, then `m.loop('glow', { scale: 0.04 }, { period: 6 })`. b2: tagline `rise` 24px (slow). b3: cta `scalePop` (snappy). Then hold, settled, for more than 2s. Camera `{ scale: [1, 1.03] }` (gentle). Last scene: no transition, the film ends on the held card."
+      "motion": "Stage bg `lit` (the light returns). b1: wordmark `settle` (expressive) — the moment. b2: tagline `rise`. b3: cta `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame. Last scene: the film ends on the held card."
     }
   ]
 }

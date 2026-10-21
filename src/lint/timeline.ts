@@ -1,7 +1,7 @@
 import type { BuildResult, ElementInfo } from "../build/build.js";
 import { isLinear, peakSlope } from "../motion/easing.js";
 import { resolveScene } from "../motion/evaluate.js";
-import { MAX_BOUNCE, MAX_DRIFT, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
+import { EXIT_FACTOR, MAX_BOUNCE, MAX_DRIFT, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
 import { WEIGHTS } from "../themes/kits.js";
 import { TRANSITION_DEFS } from "../motion/transitions.js";
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
@@ -87,7 +87,9 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
   });
 }
 
-const near = (d: number) => Object.values(durations).some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
+/** The token scale, plus the exits the presets derive from it (0.75 × each spring's visual time). */
+const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
+const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
 const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));

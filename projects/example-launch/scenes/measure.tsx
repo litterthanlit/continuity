@@ -1,43 +1,32 @@
-import { scene, El, Window, Pill } from "continuity";
-import { Chapter, SURFACE } from "../lib/chapter.js";
-import storyboard from "../storyboard.json" with { type: "json" };
+import { scene, El, Window, Tag } from "continuity";
+import { Chapter, SPLIT } from "../lib/chapter.js";
+import { FILM_S, STARTS } from "../lib/film.js";
 
-// 03 · Measure — the motion-energy curve of THIS film wipes on under a playhead, then
-// three green verdict pills. Peaks sit just after each cut (pushes, entrances),
-// shoulders on mid-scene beats, valleys on holds; never flat.
+// 03 · Measure — the motion-energy curve of THIS film wipes on under a playhead,
+// then three verdicts. Peaks sit just after each cut (pushes, entrances),
+// shoulders on mid-scene beats, valleys on holds; never flat. litt: the line is
+// fg (data in its own ink, no area, no gradient); the playhead is the timeline's
+// caret, in the focus colour; the verdicts are status words.
 
-/**
- * The film's time axis, derived from the storyboard so it never drifts from the cut:
- * each scene starts at the previous start + duration − its outgoing transition overlap.
- */
-const SCENES: [string, number][] = [];
-{
-  let t = 0;
-  for (const sc of storyboard.scenes as { id: string; duration: number; transition?: { duration: number } }[]) {
-    SCENES.push([sc.id, t]);
-    t += sc.duration - (sc.transition?.duration ?? 0);
-  }
-}
-const lastScene = storyboard.scenes[storyboard.scenes.length - 1];
-const FILM = SCENES[SCENES.length - 1][1] + lastScene.duration; // the cut's length (s)
+const FILM = FILM_S;
 
 /**
  * Energy shape per scene: [offset s, 0..1]. A positive offset is from the scene's start;
  * a negative one is seconds before the next cut (the hold before it).
  */
 const SHAPE: Record<string, [number, number][]> = {
-  hook: [[0, 0.1], [0.8, 0.64] /* words rise */, [2.5, 0.42] /* "see" blurs */, [-0.2, 0.17] /* hold → dip */],
-  studio: [[0.6, 0.8] /* headline */, [1.9, 0.55] /* rail + pills */, [-0.5, 0.2]],
-  plan: [[0.6, 0.84] /* window rises */, [2.2, 0.5] /* lanes + ticks */, [-0.6, 0.18]],
-  check: [[0.6, 0.84] /* sheet + frames */, [2.6, 0.42] /* findings, hold the red */, [4.6, 0.92] /* the fix: the punch */, [-0.4, 0.2]],
-  measure: [[0.6, 0.82] /* push + headline */, [2.3, 0.48] /* verdict pills */, [-0.7, 0.18]],
-  critic: [[0.6, 0.8] /* scorecard */, [2.0, 0.55] /* bars fill */, [3.2, 0.46] /* verdict */, [-0.4, 0.16] /* hold → dip */],
-  end: [[0.6, 0.76] /* wordmark */, [1.6, 0.44] /* CTA */, [3.0, 0.15] /* held end card */],
+  hook: [[0, 0.1], [0.7, 0.62] /* words rise */, [1.3, 0.55] /* line 2 */, [-0.4, 0.15] /* hold → cut */],
+  studio: [[0.5, 0.8] /* the statement */, [1.9, 0.55] /* rail + stations */, [-0.5, 0.2]],
+  plan: [[0.6, 0.84] /* push + headline */, [1.6, 0.5] /* lanes + keyframes */, [-0.6, 0.18]],
+  check: [[0.6, 0.84] /* sheet + frames */, [2.6, 0.42] /* findings, hold the red */, [4.9, 0.92] /* the fix: the punch */, [-0.4, 0.2]],
+  measure: [[0.6, 0.82] /* push + headline */, [2.5, 0.48] /* verdicts */, [-0.7, 0.18]],
+  critic: [[0.6, 0.8] /* scorecard */, [1.3, 0.55] /* meters fill */, [2.9, 0.46] /* verdict */, [-0.4, 0.16] /* hold → dip */],
+  end: [[0.6, 0.76] /* wordmark */, [1.7, 0.44] /* button */, [3.0, 0.15] /* held end card */],
 };
 
 /** Motion energy over the film: [seconds, 0..1], strictly increasing in time. */
-const ENERGY: [number, number][] = SCENES.flatMap(([id, start], i) => {
-  const next = i + 1 < SCENES.length ? SCENES[i + 1][1] : FILM;
+const ENERGY: [number, number][] = STARTS.flatMap(([id, start], i) => {
+  const next = i + 1 < STARTS.length ? STARTS[i + 1][1] : FILM;
   return (SHAPE[id] ?? []).map(([o, v]): [number, number] => [o < 0 ? next + o : start + o, v]);
 });
 ENERGY.push([FILM, 0.12]);
@@ -45,15 +34,15 @@ for (let i = 1; i < ENERGY.length; i++) {
   if (!(ENERGY[i][0] > ENERGY[i - 1][0])) throw new Error(`measure: energy keyframes out of order at ${ENERGY[i][0]}s`);
 }
 
-// The shared chapter surface: full title-safe width, same top edge in every chapter.
-const WIN_W = SURFACE.width; // 1728
-const WIN_H = SURFACE.height; // 600 → body 530 = chart region 434 + footer 96
-const PAD_X = 56; // chart + pill row inset inside the window body
-const CHART_W = WIN_W - 2 - PAD_X * 2; // 1px borders → 1614: the playhead travels exactly this
-const CHART_H = 300;
-const CHART_TOP = 54; // chart top inside the body (room for the playhead knob)
+// The product beside the lockup (litt's split frame).
+const WIN_W = SPLIT.width; // 1024
+const WIN_H = 600;
+const PAD_X = 40; // plot + verdict row inset inside the window body
+const CHART_W = WIN_W - PAD_X * 2; // the playhead travels exactly this
+const CHART_H = 290;
+const CHART_TOP = 56; // plot top inside the body (room for the playhead knob)
 const STROKE = 4;
-const BLEED = 3; // ≥ round-cap radius, so the caps aren't cut (≤ 3px off the head)
+const BLEED = 3; // ≥ round-cap radius, so the caps aren't cut
 
 const px = (t: number) => (t / FILM) * CHART_W;
 const py = (v: number) => CHART_H - 10 - v * (CHART_H - 20);
@@ -86,36 +75,35 @@ function smooth(pts: [number, number][]): string {
 }
 
 const LINE = smooth(ENERGY.map(([t, v]) => [px(t), py(v)]));
-const AREA = `${LINE} L${CHART_W} ${CHART_H} L0 ${CHART_H} Z`;
 
 export default scene({
   view: ({ text, id }) => (
-    <Chapter eyebrow={text.eyebrow} headline={text.headline} sub={text.sub}>
+    <Chapter label={text.label} headline={text.headline} sub={text.sub} height={WIN_H}>
       <Window ct="chart" title="ct motion · launch.mp4" width={WIN_W} height={WIN_H}>
         <div class="flex h-full flex-col">
-          {/* chart region */}
+          {/* plot region */}
           <div class="relative flex-1" style={{ paddingTop: `${CHART_TOP}px`, paddingLeft: `${PAD_X}px`, paddingRight: `${PAD_X}px` }}>
             <div class="relative" style={{ width: `${CHART_W}px`, height: `${CHART_H}px` }}>
-              {/* quiet instrument grid */}
+              {/* a quiet instrument grid and the baseline */}
               {[1 / 3, 2 / 3].map((f) => (
-                <div data-layout-ignore class="absolute inset-x-0 h-px bg-fg/[0.05]" style={{ top: `${f * CHART_H}px` }} />
+                <div data-layout-ignore class="absolute inset-x-0 h-[2px] bg-fg/[0.04]" style={{ top: `${f * CHART_H}px` }} />
               ))}
-              <div data-layout-ignore class="absolute inset-x-0 bottom-0 h-px bg-border" />
-              {/* time axis: a cut marker + label per scene (axis decoration, mono 22px) */}
+              <div data-layout-ignore class="absolute inset-x-0 bottom-0 h-[2px] bg-line-strong" />
+              {/* time axis: a cut marker + label per scene; this scene's label in fg */}
               <div data-layout-ignore class="absolute inset-0">
-                {SCENES.map(([name, t]) => (
+                {STARTS.map(([name, t]) => (
                   <>
-                    <div class="absolute top-0 w-px bg-fg/[0.07]" style={{ left: `${px(t)}px`, height: `${CHART_H + 40}px` }} />
+                    <div class="absolute top-0 w-[2px] bg-fg/[0.06]" style={{ left: `${px(t)}px`, height: `${CHART_H + 44}px` }} />
                     <span
-                      class={`absolute font-mono text-[22px] leading-none tracking-[0.04em] ${name === id ? "text-muted" : "text-subtle"}`}
-                      style={{ left: `${px(t) + 10}px`, top: `${CHART_H + 16}px` }}
+                      class={`absolute font-mono text-[26px] leading-none ${name === id ? "text-fg" : "text-fg-subtle"}`}
+                      style={{ left: `${px(t) + 8}px`, top: `${CHART_H + 18}px` }}
                     >
                       {name}
                     </span>
                   </>
                 ))}
               </div>
-              {/* plot = line + fill, revealed by a wipe that IS the playhead's move */}
+              {/* the line, revealed by a wipe that IS the playhead's move */}
               <El ct="plot" data-layout-ignore class="absolute" style={{ left: `${-BLEED}px`, right: `${-BLEED}px`, top: "-12px", bottom: "-12px" }}>
                 <svg
                   data-ct={`${id}.energy`}
@@ -126,28 +114,27 @@ export default scene({
                   viewBox={`0 0 ${CHART_W} ${CHART_H}`}
                   fill="none"
                 >
-                  <defs>
-                    <linearGradient id="g-measure-energy" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0" stop-color="var(--color-accent)" stop-opacity="0.32" />
-                      <stop offset="1" stop-color="var(--color-accent)" stop-opacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path data-ct={`${id}.energy-area`} d={AREA} fill="url(#g-measure-energy)" />
-                  <path data-ct={`${id}.energy-line`} d={LINE} stroke="var(--color-accent)" stroke-width={STROKE} stroke-linecap="round" stroke-linejoin="round" />
+                  <path d={LINE} stroke="var(--color-fg)" stroke-width={STROKE} stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
               </El>
-              {/* playhead: 2px accent line with a knob, starts on the chart's left edge */}
-              <El ct="head" data-layout-ignore class="absolute bottom-[-10px] top-[-16px] w-[2px]" style={{ left: "-1px" }}>
-                <div class="absolute inset-0 bg-accent" style={{ boxShadow: "0 0 18px color-mix(in oklab, var(--color-accent) 70%, transparent)" }} />
-                <div class="absolute left-1/2 top-0 h-[14px] w-[14px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" />
+              {/* playhead: a 2px line in the focus colour with a knob, starting on the plot's left edge */}
+              <El ct="head" data-layout-ignore class="absolute bottom-[-8px] top-[-16px] w-[2px]" style={{ left: "-1px" }}>
+                <div class="absolute inset-0 bg-focus" />
+                <div class="absolute left-1/2 top-0 h-[14px] w-[14px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-focus" />
               </El>
             </div>
           </div>
-          {/* verdict row */}
-          <div class="flex h-[96px] shrink-0 items-center gap-[16px] border-t border-border" style={{ paddingLeft: `${PAD_X}px`, paddingRight: `${PAD_X}px` }}>
-            <Pill ct="eased" dot="positive">100% eased</Pill>
-            <Pill ct="dead" dot="positive">0 dead zones</Pill>
-            <Pill ct="jolts" dot="positive">0 jolts</Pill>
+          {/* verdict row: status as words */}
+          <div class="flex h-[96px] shrink-0 items-center gap-[16px] border-t-2 border-line" style={{ paddingLeft: `${PAD_X}px`, paddingRight: `${PAD_X}px` }}>
+            <Tag ct="eased" tone="success">
+              100% eased
+            </Tag>
+            <Tag ct="dead" tone="success">
+              0 dead zones
+            </Tag>
+            <Tag ct="jolts" tone="success">
+              0 jolts
+            </Tag>
           </div>
         </div>
       </Window>
@@ -155,19 +142,17 @@ export default scene({
   ),
   motion: (m) => {
     // b1 (0.0) — the push carries the chart window in (no entrance of its own); copy leads.
-    m.enter("eyebrow", "fade", { at: "b1" });
     m.enter("headline", "maskUp", { at: "b1+0.2", split: "lines" });
-    m.enter("sub", "rise", { at: "after:headline-0.25", distance: 24 });
+    m.enter("sub", "rise", { at: "after:headline-0.2" });
 
-    // b2 — the playhead pulls the line: same start, duration and ease; it travels the chart width.
+    // b2 — the playhead pulls the line: same start, duration and ease; it travels the plot width.
     // A left→right wipe (not `draw`, which advances by arc length and lags the head) keeps the
-    // tip and the fill exactly under the playhead.
+    // tip exactly under the playhead.
     m.enter("plot", "wipeRight", { at: "b2", duration: "linger", ease: "inOut" });
     m.tween("head", { x: [0, CHART_W] }, { at: "b2", duration: "linger", ease: "inOut" });
-    m.enter("energy-area", "fade", { at: "b2+0.8", duration: "slow" });
 
-    // b3 — the verdict, in reading order, as the playhead lands.
-    m.enter(["eased", "dead", "jolts"], "scalePop", { at: "b3", stagger: "list" });
+    // b3 — the verdict, placed in reading order as the playhead lands: the scene's one moment.
+    m.enter(["eased", "dead", "jolts"], "settle", { at: "b3", stagger: "list" });
 
     m.camera({ scale: [1, 1.03] });
   },

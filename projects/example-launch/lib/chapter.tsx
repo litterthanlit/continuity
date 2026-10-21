@@ -1,69 +1,70 @@
 import type { ComponentChildren } from "preact";
-import { Stage, Safe, Eyebrow, Headline, Subhead } from "continuity";
+import { Stage, Safe, Label, Headline, Body } from "continuity";
 
 /**
- * Shared layout for the four chapter scenes (plan, check, measure, critic):
- * accent-dot eyebrow, h2 headline and a caption on ONE left edge, product UI
- * below. Same edges and rhythm on every chapter → the push transitions read as
- * one continuous surface.
+ * The four chapter scenes (plan, check, measure, critic) share one lockup on the
+ * safe left edge: Label 8px above the display line, the display line 32px above
+ * its summary (Body, in the grey). Solid canvas: the light (Stage bg="lit") is
+ * kept for the turn and the end card. Ids: `label`, `headline`, `sub`.
  *
- * Ids (animate them in motion()): `eyebrow` (dot + label), `headline`, `sub`.
- * `children` render in the stage area under the copy (relative, full width).
+ * - `split` (default) — litt's asymmetric frame: the lockup in a 608px column
+ *   (columns 1–5), a 96px region of air, the product at 1024px wide (~53% of
+ *   the frame) on the right, both vertically centred. The display line breaks
+ *   into ≤ 2 lines by meaning.
+ * - `stacked` — for the one surface that needs the full width (check: a contact
+ *   sheet beside a terminal): the lockup above, the product 96px below at the
+ *   full title-safe width.
  */
-/**
- * One surface geometry for every chapter so the push transitions read as one
- * continuous product surface: full title-safe width, fixed height, and (because
- * the caption line is always reserved) the same top edge in every chapter.
- */
-export const SURFACE = { width: 1728, height: 600 } as const;
+export const SPLIT = { copy: 608, width: 1024 } as const;
+export const STACKED = { width: 1728, height: 600 } as const;
 
 export function Chapter({
-  eyebrow,
+  label,
   headline,
   sub,
+  layout = "split",
+  height,
   children,
 }: {
-  eyebrow: string;
+  label: string;
   headline: string;
-  sub?: string;
+  sub: string;
+  layout?: "split" | "stacked";
+  /** Height of the product surface, px. */
+  height: number;
   children: ComponentChildren;
 }) {
+  const lockup = (
+    <div class="flex flex-col" style={layout === "split" ? { width: `${SPLIT.copy}px` } : undefined}>
+      <Label ct="label">{label}</Label>
+      <Headline ct="headline" as="h2" class="mt-[8px]">
+        {headline}
+      </Headline>
+      <Body ct="sub" class="mt-[32px]">
+        {sub}
+      </Body>
+    </div>
+  );
+  const surface = (
+    <div class="relative shrink-0" style={{ width: `${layout === "split" ? SPLIT.width : STACKED.width}px`, height: `${height}px` }}>
+      {children}
+    </div>
+  );
   return (
-    <Stage bg="grid">
+    <Stage>
       <Safe>
-        {/* Vertically centred as one block (copy + fixed-height surface): even
-            margins top and bottom instead of a dead band under the surface. */}
-        <div class="absolute inset-0 flex flex-col justify-center gap-[40px]">
-          <div class="flex flex-col gap-[12px]">
-            <div data-ct-row class="flex items-center gap-[14px]">
-              <EyebrowWithDot label={eyebrow} />
-            </div>
-            <Headline ct="headline" size="h2" as="h2">
-              {headline}
-            </Headline>
-            {sub ? (
-              <Subhead ct="sub" size="caption">
-                {sub}
-              </Subhead>
-            ) : (
-              // reserve the caption line so the UI area starts at the same y in every chapter
-              <div aria-hidden="true" class="text-caption">&nbsp;</div>
-            )}
+        {layout === "split" ? (
+          <div class="absolute inset-0 flex items-center justify-between">
+            {lockup}
+            {surface}
           </div>
-          <div class="relative shrink-0" style={{ height: `${SURFACE.height}px` }}>
-            {children}
+        ) : (
+          <div class="absolute inset-0 flex flex-col justify-center gap-[96px]">
+            {lockup}
+            {surface}
           </div>
-        </div>
+        )}
       </Safe>
     </Stage>
-  );
-}
-
-function EyebrowWithDot({ label }: { label: string }) {
-  return (
-    <Eyebrow ct="eyebrow" as="div" class="flex items-center gap-[14px]">
-      <span class="h-[12px] w-[12px] rounded-full bg-accent" />
-      {label}
-    </Eyebrow>
   );
 }

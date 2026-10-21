@@ -6,6 +6,7 @@ describe("cx class merge", () => {
     expect(cx("font-sans text-label text-fg-subtle", "text-fg")).toBe("font-sans text-label text-fg");
     expect(cx("text-display text-fg", "text-[140px]")).toBe("text-fg text-[140px]");
     expect(cx("font-sans font-title", "font-normal")).toBe("font-sans font-normal");
+    expect(cx("rounded-surface p-[48px]", "p-0")).toBe("rounded-surface p-0");
   });
   it("keeps unrelated and variant-scoped classes", () => {
     expect(cx("text-center text-fg", "text-balance")).toBe("text-center text-fg text-balance");

@@ -31,6 +31,13 @@ const GROUPS: Array<[string, RegExp]> = [
   ["font-stretch", /^font-stretch-/],
   ["case", /^(uppercase|lowercase|capitalize|normal-case)$/],
   ["italic", /^(italic|not-italic)$/],
+  ["p", /^p-/],
+  ["px", /^px-/],
+  ["py", /^py-/],
+  ["pt", /^pt-/],
+  ["pr", /^pr-/],
+  ["pb", /^pb-/],
+  ["pl", /^pl-/],
 ];
 const groupOf = (c: string) => GROUPS.find(([, re]) => re.test(c.replace(/^[a-z-]+:/, "")))?.[0];
 
