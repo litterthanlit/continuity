@@ -355,7 +355,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
     // Unstaggered groups.
     const groups = new Map<string, Span[]>();
     for (const s of ss) {
-      if (s.tween.kind !== "enter" || s.tween.split) continue;
+      if (s.tween.kind !== "enter" || s.tween.split || allowed(s.tween, "unstaggered-group")) continue;
       const k = `${s.tween.preset ?? "custom"}@${s.start}`;
       (groups.get(k) ?? groups.set(k, []).get(k)!).push(s);
     }

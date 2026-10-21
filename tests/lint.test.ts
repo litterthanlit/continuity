@@ -52,6 +52,15 @@ describe("seeded static defects (projects/_defects)", () => {
   });
 });
 
+describe("allow", () => {
+  it("a tween's allow silences unstaggered-group for that tween", async () => {
+    const { b, ids } = await rules("_defects");
+    expect(ids).toContain("lint:unstaggered-group");
+    for (const sc of b.timeline!.scenes) for (const t of sc.tweens) t.allow = [...(t.allow ?? []), "unstaggered-group"];
+    expect(lintTimeline(b).map((f) => f.rule)).not.toContain("unstaggered-group");
+  });
+});
+
 describe("good projects stay clean (no false positives)", () => {
   for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions"]) {
     it(slug, async () => {
