@@ -5,7 +5,8 @@ import { Chapter, SPLIT } from "../lib/chapter.js";
 // weights by role, the two radii and the expressive spring, as written in the file
 // (web values; no hex: those live only in tokens.css). At b3 the spring line takes
 // the raised segment (P12) and the rest of the file steps back to the grey — it is
-// the line the motion scene comes back to.
+// the line the motion scene comes back to. At b4 the footer shows where the file goes:
+// a rail draws along it and the three places that read tokens.css rise onto it.
 
 // UI data: real lines from tokens.css (imagery, not copy).
 const LINES = [
