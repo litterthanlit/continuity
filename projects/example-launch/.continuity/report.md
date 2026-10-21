@@ -17,5 +17,6 @@
 ## Iteration #10
 
 - Gate: ✅ pass — 0 errors, 0 warnings
+- Render: `out/example-launch/example-launch-23f2caad7fc1.mp4`
 
 ![contact sheet](sheet.png)

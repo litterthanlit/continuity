@@ -4,6 +4,7 @@ import { cubicBezier, easeFn, isLinear, springPosition, springSettleTime } from 
 import { compileScene, formatCounter, mergeVariationSettings, resolveScene, sampleScene, styleOf } from "../src/motion/evaluate.js";
 import { bounceOf, eases, readTime, spring, visualOf } from "../src/motion/tokens.js";
 import { transitionTweens } from "../src/motion/transitions.js";
+import { parseEnergy } from "../src/cli/lib/energy.js";
 import type { SceneTimeline } from "../src/motion/types.js";
 
 const scene = (mb: MotionBuilder): SceneTimeline => ({
@@ -231,5 +232,12 @@ describe("tokens", () => {
   it("read time grows with copy length and has a floor", () => {
     expect(readTime(5)).toBeCloseTo(0.83);
     expect(readTime(34)).toBeCloseTo(2.4);
+  });
+});
+
+describe("motion energy", () => {
+  it("keeps the exponent of near-zero energies (a still hold is not a jolt)", () => {
+    const text = "frame:1 pts:1 pts_time:15.3\nlavfi.signalstats.YAVG=0\nframe:2 pts:2 pts_time:15.3333\nlavfi.signalstats.YAVG=6.94444e-05\nframe:3 pts:3 pts_time:15.3667\nlavfi.signalstats.YAVG=12.5\n";
+    expect(parseEnergy(text)).toEqual([[15.3, 0], [15.3333, 6.94444e-5], [15.3667, 12.5]]);
   });
 });

@@ -52,7 +52,10 @@ export async function probe(file: string): Promise<ProbeInfo> {
 /**
  * Render QC on the encoded file: black segments, frozen segments, duration and
  * resolution drift. Dark themes legitimately open on near-black frames, so a
- * short black lead-in is info, not an error.
+ * short black lead-in is info, not an error. litt-dark's canvas is itself
+ * near-black and its frames are airy (one statement can cover ~1% of the
+ * pixels), so a frame counts as black only when 99.8% of it is: an empty
+ * canvas fails, a word on it passes.
  */
 export async function qc(file: string, expect: { duration: number; width: number; height: number; fps: number }): Promise<Finding[]> {
   const findings: Finding[] = [];
@@ -65,7 +68,7 @@ export async function qc(file: string, expect: { duration: number; width: number
   }
   const r = await ffmpeg([
     "-hide_banner", "-nostats", "-i", file,
-    "-vf", "blackdetect=d=0.25:pic_th=0.985,freezedetect=n=-60dB:d=1.5",
+    "-vf", "blackdetect=d=0.25:pic_th=0.998,freezedetect=n=-60dB:d=1.5",
     "-an", "-f", "null", "-",
   ]);
   for (const m of r.stderr.matchAll(/black_start:([\d.]+) black_end:([\d.]+) black_duration:([\d.]+)/g)) {
@@ -90,7 +93,7 @@ export async function qc(file: string, expect: { duration: number; width: number
       severity: dur >= 3 ? "warning" : "info",
       time: start,
       message: `${dur.toFixed(2)}s with no visible change from ${start.toFixed(2)}s`,
-      suggestion: dur >= 3 ? "add ambient life (camera drift, loop on bg/glow) or tighten the hold" : undefined,
+      suggestion: dur >= 3 ? "let the camera carry the hold (a push of 3% or less) or tighten it" : undefined,
     });
   });
   return findings;
