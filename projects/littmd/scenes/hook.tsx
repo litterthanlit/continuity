@@ -94,6 +94,8 @@ export default scene({
     m.exit(THUMBS, "dropOut", { at: "b3", stagger: "grid" });
 
     // The push holds the statement's left edge still, so the hard cut doesn't snap it.
-    m.camera({ scale: [1, 1.03] }, { origin: { x: 96, y: 540 } });
+    // 1.02, not 1.03: anchored on x 96 the pages (right edge 1824) grow rightward, and
+    // at 1.02 they stay inside action-safe (1853) until they have sunk out (2.87s).
+    m.camera({ scale: [1, 1.02] }, { origin: { x: 96, y: 540 } });
   },
 });
