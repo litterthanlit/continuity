@@ -17,9 +17,7 @@ unless noted):
 - linkedom — ISC
 - sharp — Apache-2.0 (libvips: LGPL-3.0-or-later, dynamically linked)
 - puppeteer-core — Apache-2.0
-- Fonts via @fontsource: Geist, Geist Mono, Inter, Inter Tight,
-  Instrument Serif, Instrument Sans, Newsreader, Fraunces, Hanken Grotesk,
-  DM Mono, Archivo, Martian Mono, Mona Sans, Noto Sans Symbols, Noto Sans
+- Fonts via @fontsource: Geist, Geist Mono, Noto Sans Symbols, Noto Sans
   Symbols 2 — SIL Open Font License 1.1 (font files are copied into each
   build output).
 - fontkit — MIT (glyph coverage checks)

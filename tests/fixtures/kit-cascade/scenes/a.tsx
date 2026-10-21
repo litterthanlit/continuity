@@ -1,15 +1,16 @@
-import { scene, Stage, Safe, Stack, Headline, Eyebrow, Serif } from "continuity";
+import { scene, Stage, Safe, Stack, Headline, Title, Label, Body, El } from "continuity";
 
 export default scene({
   view: ({ text }) => (
     <Stage bg="solid">
       <Safe>
         <Stack gap={16}>
-          <Headline ct="role" size="h2">{text.role}</Headline>
-          <Headline ct="bold" size="h2" class="font-bold">{text.bold}</Headline>
-          <Eyebrow ct="label">{text.label}</Eyebrow>
-          <Eyebrow ct="wide" class="tracking-[0.3em]">{text.wide}</Eyebrow>
-          <Headline ct="line" size="h2">x <Serif ct="accent">{text.accent}</Serif></Headline>
+          <Label ct="label">{text.label}</Label>
+          <Headline ct="role">{text.role}</Headline>
+          <Title ct="title">{text.title}</Title>
+          <Body ct="body">{text.body}</Body>
+          <Headline ct="override" size="title" class="font-normal">{text.override}</Headline>
+          <El ct="mono" as="p" class="font-mono text-small">{text.mono}</El>
         </Stack>
       </Safe>
     </Stage>

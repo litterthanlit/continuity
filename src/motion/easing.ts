@@ -146,7 +146,7 @@ export function peakSlope(ease: EaseSpec, samples = 200): number {
  * Directional blur (Gaussian σ, px) matching a move of `distance` px over
  * `duration` s at its peak speed: a 180° shutter smears 0.5·v px per frame,
  * and a box of length L is ≈ a Gaussian of σ 0.29·L — so σ ≈ 0.144·v.
- * Capped (default 6% of the travel) so whips streak without dissolving.
+ * Capped (default 6% of the travel) so a fast push streaks without dissolving.
  */
 export function sigmaFor(ease: EaseSpec, distance: number, duration: number, fps: number, cap = 0.06 * distance): number {
   const v = (peakSlope(ease) * distance) / Math.max(1e-3, duration * fps);

@@ -2,134 +2,90 @@
 # Catalog
 
 ## Durations
-- `instant` 0.12s
-- `fast` 0.24s
-- `base` 0.4s
-- `slow` 0.64s
-- `hero` 0.9s
+- `instant` 0.1s
+- `responsive` 0.2s
+- `expressive` 0.35s
+- `exit` 0.26s
+- `slow` 0.6s
 - `linger` 1.4s
 
 ## Eases
 - `linear` — linear
-- `standard` — cubic-bezier(0.2, 0, 0, 1)
-- `enter` — cubic-bezier(0.05, 0.7, 0.1, 1)
-- `exit` — cubic-bezier(0.3, 0, 0.8, 0.15)
-- `hero` — cubic-bezier(0.16, 1, 0.3, 1)
+- `out` — cubic-bezier(0.25, 0.46, 0.45, 0.94)
 - `inOut` — cubic-bezier(0.65, 0, 0.35, 1)
-- `sharp` — cubic-bezier(0.83, 0, 0.17, 1)
-- `snappy` — spring(stiffness 380, damping 34, mass 1)
-- `gentle` — spring(stiffness 140, damping 22, mass 1)
-- `bouncy` — spring(stiffness 300, damping 15, mass 1)
+- `responsive` — spring, visual 0.2s, bounce 0
+- `expressive` — spring, visual 0.35s, bounce 0.12
 
 ## Staggers
-- `char` 18ms
-- `word` 60ms
-- `line` 90ms
-- `list` 80ms
-- `grid` 50ms
+- `char` 20ms
+- `word` 40ms
+- `line` 80ms
+- `list` 40ms
+- `grid` 40ms
 
 ## Enter presets
 | Preset | Animates | Duration | Ease | Mask | Use |
 |---|---|---|---|---|---|
-| `fade` | opacity | base (0.4s) | standard |  | Opacity only. Quiet, for secondary copy and backgrounds. |
-| `rise` | y, opacity | slow (0.64s) | enter |  | Fade up from below. The workhorse entrance for copy and cards. |
-| `drop` | y, opacity | slow (0.64s) | enter |  | Fade down from above. |
-| `slideLeft` | x, opacity | slow (0.64s) | enter |  | Slide in from the right, moving left. |
-| `slideRight` | x, opacity | slow (0.64s) | enter |  | Slide in from the left, moving right. |
-| `fadeBlur` | opacity, blur, scale | slow (0.64s) | enter |  | Defocus → focus with a slight settle in scale. Premium, cinematic. |
-| `scalePop` | scale, opacity | slow (0.64s) | snappy |  | Scale up with a snappy spring. Buttons, badges, icons, UI chips. |
-| `maskUp` | yPct | hero (0.9s) | hero | yes | Lines/words rise from behind an invisible baseline mask. Signature kinetic-type reveal. |
-| `maskDown` | yPct | hero (0.9s) | hero | yes | Drop in from behind a top mask. |
-| `wipeRight` | clipRight | slow (0.64s) | inOut |  | Clip-path reveal left → right. Underlines, bars, images, panels. |
-| `wipeUp` | clipTop | slow (0.64s) | inOut |  | Clip-path reveal bottom → top. |
-| `trackIn` | tracking, opacity | hero (0.9s) | hero |  | Letter-spacing collapses from wide to the final tracking while fading in. |
-| `typeOn` | opacity | 0.001s | linear |  | Characters appear one by one (use with split: 'chars'). Terminal / code / UI typing. |
-| `zoomIn` | scale, opacity, blur | hero (0.9s) | hero |  | Arrive from slightly larger and defocused. Big statements, logos. |
-| `flipUp` | rotateX, yPct, opacity | slow (0.64s) | enter |  | 3D hinge up from the baseline (parent needs perspective; Stage provides it). |
-| `draw` | draw | hero (0.9s) | inOut |  | Stroke draws on (SVG paths rendered with the Path kit component). |
-| `weightIn` | wght, opacity | hero (0.9s) | hero |  | Weight swells from light to the kit's settled weight while fading in. Variable families (flexion, swiss, wonk); pair with split chars/words or nowrap. |
-| `widthIn` | wdth, opacity | slow (0.64s) | enter |  | Letters settle from wide to their width (wdth axis — flexion, broadside). Pair with split chars or nowrap. |
-| `softIn` | soft, opacity | slow (0.64s) | enter |  | Fraunces serifs soften from sharp (SOFT 0) to the kit's softness while fading in (wonk). |
+| `fade` | opacity | settles ≈ 0.35s | responsive |  | Opacity only. Quiet: secondary copy, a surface appearing in place. |
+| `rise` | y, opacity | settles ≈ 0.35s | responsive |  | Fade up by litt's travel (32px). The workhorse for copy, rows and cards. |
+| `slideLeft` | x, opacity | settles ≈ 0.35s | responsive |  | Slide in from the right by travel, moving left (reading direction). |
+| `slideRight` | x, opacity | settles ≈ 0.35s | responsive |  | Slide in from the left by travel, moving right. |
+| `settle` | y, scale, opacity | settles ≈ 0.58s | expressive |  | Placed, not thrown: rises by travel and settles from 0.98 on the expressive spring. The scene's one moment (a statement, the product). |
+| `maskUp` | yPct | settles ≈ 0.35s | responsive | yes | Lines or words rise from behind their baseline. Use with split; pass ease "expressive" when it is the scene's moment. |
+| `grow` | scaleY | settles ≈ 0.35s | responsive |  | Grow from the baseline (scaleY; bars, rails). Set transform-origin at the base — BarChart does. |
+| `wipeRight` | clipRight | slow (0.6s) | inOut |  | Clip reveal left → right, for data: a chart behind its playhead, a timeline strip. |
+| `draw` | draw | slow (0.6s) | inOut |  | A stroke draws on (Path, LineChart's line). Data only. |
+| `typeOn` | opacity | 0.001s | linear |  | Characters appear one by one (split: 'chars', or m.type). UI and terminal typing. |
 
 ## Exit presets
 | Preset | Animates | Duration | Ease | Mask | Use |
 |---|---|---|---|---|---|
-| `fadeOut` | opacity | fast (0.24s) | exit |  | Opacity to zero. Exits should be faster than entrances. |
-| `sinkOut` | y, opacity | base (0.4s) | exit |  | Lift up and fade — clears the stage for what comes next. |
-| `dropOut` | y, opacity | base (0.4s) | exit |  | Fall away downward and fade. |
-| `blurOut` | opacity, blur, scale | base (0.4s) | exit |  | Defocus and fade. |
-| `maskOut` | yPct | slow (0.64s) | exit | yes | Lines/words leave upward behind the mask. |
-| `wipeOut` | clipLeft | base (0.4s) | inOut |  | Clip-path hides left → right. |
-| `scaleOut` | scale, opacity | base (0.4s) | exit |  | Shrink slightly and fade. |
+| `fadeOut` | opacity | 0.75× the entrance (≤ 0.26s) | out |  | Opacity to zero, at 0.75× the entrance. |
+| `liftOut` | y, opacity | 0.75× the entrance (≤ 0.26s) | out |  | Lift by half the travel and fade: clears the stage for what comes next. |
+| `dropOut` | y, opacity | 0.75× the entrance (≤ 0.26s) | out |  | Sink back by half the travel and fade (the reverse of rise). |
+| `maskOut` | yPct | 0.75× the entrance (≤ 0.26s) | out | yes | Lines or words leave upward behind the mask. |
+| `scaleOut` | scale, opacity | 0.75× the entrance (≤ 0.26s) | out |  | Back to 0.98 and fade (the reverse of settle). |
 
 ## Emphasis presets
 | Preset | Animates | Duration | Ease | Mask | Use |
 |---|---|---|---|---|---|
-| `pulse` | scale | fast (0.24s) | standard |  | Scale up and settle back. Draw the eye to something already on screen. |
-| `glow` | brightness | fast (0.24s) | standard |  | Brighten and return. |
-| `nudge` | y | fast (0.24s) | standard |  | Small upward hop. |
-| `underline` | scaleX | slow (0.64s) | hero |  | Grow a bar/underline element from the left (scaleX; set transform-origin: left). |
-| `weightPulse` | wght | fast (0.24s) | standard |  | Weight punches up and settles back — emphasis without moving anything (variable families). |
-| `widthPulse` | wdth | fast (0.24s) | standard |  | Letters stretch wide and settle back (wdth axis — flexion, broadside). |
+| `ink` | ink | instant (0.1s) | out |  | Step up to fg from the grey, at the instant tier. litt ranks by ink: the word that matters brightens. |
+| `dim` | ink | instant (0.1s) | out |  | Step back to the grey from fg, at the instant tier, so something else leads. |
+| `press` | scale | instant (0.1s) | out |  | A button press: scale to 0.98 at the instant tier, back on the responsive spring. |
 
 ## Scene transitions (storyboard `transition`)
 | type | default | range | params | what it is |
 |---|---|---|---|---|
-| `cut` | — | — | — | Hard cut. The default between punchy kinetic-type beats; cut on the beat. |
-| `crossfade` | 0.5s | 0.3–1s | ease | Incoming scene fades over the outgoing one. Calm, continuous — for the same surface in a new state. |
-| `dip` | 0.5s | 0.3–1s | ease | Out fades to the background colour, then in fades up. A breath between chapters. |
-| `push` | 0.5s | 0.3–0.8s | ease, dir, blur | Incoming pushes the outgoing scene off in the direction of travel (dir, default left). blur: true adds speed-matched motion blur. Sequential steps, carousels. |
-| `pushUp` | 0.5s | 0.3–0.8s | ease, blur | push with dir up: incoming pushes up from below. Vertical feeds, lists, 9:16. |
-| `blur` | 0.5s | 0.4–1s | ease | Defocus out, focus in; the outgoing scene stays opaque (no double-exposure dip). Premium, dreamy. |
-| `zoom` | 0.5s | 0.35–0.9s | ease | Zoom-through: out scales up and fades, in settles from slightly larger (1.12 → 1). Energy, momentum — into a detail. |
-| `wipe` | 0.5s | 0.35–0.8s | ease, dir, angle, feather | Incoming wipes on with a moving edge (dir, default right). feather (8–20) softens the edge; angle (e.g. 120) runs it diagonally. |
-| `whip` | 0.33s | 0.2–0.45s | ease, dir, blur | Whip pan: a fast push with heavy motion blur; the swap hides at peak speed. Camera-first product cuts. Keep it short. |
-| `punchCut` | 0.37s | 0.25–0.5s | ease, flash | Editorial punch: the outgoing scene pushes in, a hard swap at 45%, the incoming settles from 1.06 with a two-frame flash. |
-| `iris` | 0.6s | 0.4–0.9s | ease, origin, feather | Circular reveal from origin (default centre), to the farthest corner. Focus on a point — a button, a logo. |
-| `strips` | 0.5s | 0.3–0.8s | ease, dir, n, stagger | n staggered strips (default 6) reveal the next scene toward dir (default up). High-energy accent for social and kinetic cuts. |
-| `lightSweep` | 0.6s | 0.45–0.9s | ease, dir, color (dir: left/right) | A luminous accent band sweeps across the cut (dir left/right) while the next scene is revealed beneath it. Logo and hero moments — once per video. |
+| `cut` | — | — | — | Hard cut, on the beat. The primary: most of a litt edit is cuts. |
+| `crossfade` | 0.4s | 0.25–0.8s | ease | The incoming scene fades over the outgoing one. The same surface in a new state. |
+| `dip` | 0.5s | 0.3–1s | ease | Out fades to the canvas, then in fades up. A breath between chapters, before the end card. |
+| `push` | 0.5s | 0.3–0.8s | ease, dir, blur | The incoming scene pushes the outgoing one off in the direction of travel (dir, default left = reading order). Sequential steps. blur: true when it moves fast. |
+| `pushUp` | 0.5s | 0.3–0.8s | ease, blur | push with dir up: the incoming scene pushes up from below. Lists, feeds, 9:16. |
+| `wipe` | 0.5s | 0.35–0.8s | ease, dir, angle, feather | The incoming scene wipes on with a moving edge (dir, default right). feather (8–20) softens it; angle (e.g. 120) runs it diagonally. A state revealed. |
 
-One transition language per video (≤ 2 types besides cuts) — see motion-craft §7.
+One transition language per video: cuts on the beat, and at most two accent types — see motion-craft §8.
 
-## Type scale (px at 1080 short side · line-height · tracking)
-- `text-mega` 240px · 0.88 · -0.05em
-- `text-display` 168px · 0.92 · -0.045em
-- `text-h1` 120px · 0.98 · -0.04em
-- `text-h2` 88px · 1.04 · -0.03em
-- `text-h3` 64px · 1.1 · -0.02em
-- `text-lead` 48px · 1.22 · -0.01em
-- `text-body` 38px · 1.38 · 0em
-- `text-caption` 30px · 1.35 · 0.005em
-- `text-micro` 26px · 1.3 · 0.02em
+## Type scale (`text-<step>`: px · line height px · tracking, at 1080 short side; 9:16 in brackets)
+- `text-display` 112 · 112 · -0.04em
+- `text-title` 48 · 56 · -0.025em (9:16: 56 · 64)
+- `text-body` 36 · 48 · -0.01em (9:16: 40 · 52)
+- `text-small` 30 · 40 · -0.005em (9:16: 36 · 48)
+- `text-label` 28 · 36 · 0em (9:16: 34 · 44)
 
-## Themes (colour)
-- `mono-dark` (dark) — Linear/Vercel-like: near-black canvas, white type, one violet accent, hairline borders, soft aurora glow. Precise and premium. Suggested kit: `swiss`. Classic fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
-- `light-editorial` (light) — Stripe/editorial: warm off-white paper, ink-black type, serif accents, a single saturated accent. Calm, confident, magazine-like. Suggested kit: `atelier`. Classic fonts: display Inter Tight, sans Inter, mono Geist Mono, serif Instrument Serif.
-- `vivid-gradient` (dark) — Bold launch energy: deep indigo canvas, electric gradient mesh, high-contrast white type. For hype cuts and social. Suggested kit: `broadside`. Classic fonts: display Inter Tight, sans Geist, mono Geist Mono, serif Instrument Serif.
+Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-label` 600 labels (the label step only).
 
-## Type kits (storyboard `type`)
-| kit | evokes | display | text | labels | accent | figures |
-|---|---|---|---|---|---|---|
-| `swiss` | Vercel, Linear, Stripe | Geist 600 | Geist 400 | Geist Mono 400 caps 0.14em | Instrument Serif ×1.04 | display |
-| `atelier` | Anthropic (Tiempos + Styrene), editorial product films | Newsreader 340 | Instrument Sans 400 | Geist Mono 400 caps 0.16em | Newsreader ×1 | sans |
-| `wonk` | Reckless/Recoleta, Arc/Dia's Exposure | Fraunces 400 SOFT 100 WONK 1 | Hanken Grotesk 400 | DM Mono 400 caps 0.12em | Fraunces ×1 | mono |
-| `terminal` | Vercel, Resend, Cursor, dev-tool launches | Geist Mono 500 | Geist 400 | Geist Mono 400 caps 0.1em | Instrument Serif ×1.04 | mono |
-| `broadside` | Figma Config condensed display, brutalist social | Archivo 850 w66 caps | Inter Tight 500 | Martian Mono 400 caps 0.08em | Instrument Serif ×1.03 | display |
-| `flexion` | GitHub Universe, Söhne Breit launches, kinetic type | Mona Sans 600 | Mona Sans 400 | Martian Mono 400 caps 0.1em | Instrument Serif ×1.02 | display |
+## Themes
+- `litt-dark` (dark) — litt, dark: a warm near-black canvas, stepped stone surfaces, one cobalt accent that behaves like light.
+- `litt-light` (light) — litt, light: a warm off-white canvas, white raised surfaces, the same cobalt accent as a cool light.
 
-Omit `type` for `classic` (the theme's own fonts, v1 settings). Per-kit tracking/leading overrides of the scale:
-- `swiss`: mega 0.86/-0.06em · display 0.9/-0.055em · h1 0.95/-0.05em · h2 1/-0.045em · h3 1.06/-0.035em
-- `atelier`: mega 0.98/-0.02em · display 1/-0.02em · h1 1.02/-0.02em · h2 1.06/-0.015em · h3 1.1/-0.01em
-- `wonk`: mega 0.94/-0.03em · display 0.98/-0.03em · h1 1/-0.03em · h2 1.04/-0.025em · h3 1.08/-0.02em
-- `terminal`: mega 0.9/-0.04em · display 0.94/-0.035em · h1 1/-0.03em · h2 1.04/-0.03em · h3 1.1/-0.02em
-- `broadside`: mega 0.86/0em · display 0.88/0.005em · h1 0.9/0.005em · h2 0.94/0.01em · h3 1/0.01em
-- `flexion`: mega 0.88/-0.04em · display 0.92/-0.04em · h1 0.96/-0.04em · h2 1.02/-0.035em · h3 1.08/-0.025em
+## Type kit
+- `litt` — Geist in three weights by role, Geist Mono for code and data. One display step per scene; rank from weight, two inks and space. Display Geist 500 · text Geist 400 · mono Geist Mono 400 · figures: sans.
 
 ## Timeline lint rules
-- `ease-linear` — Spatial motion with a linear ease looks mechanical. Use a token ease (enter/exit/standard/hero/inOut or a spring).
+- `ease-linear` — Spatial motion with a linear ease looks mechanical. Use a token ease (the responsive or expressive spring, out, inOut).
 - `duration-too-fast` — Spatial entrances/exits under 150ms read as glitches.
 - `duration-too-slow` — Entrances/exits/emphasis over 1.6s drag. Split it, or make it a camera move.
-- `duration-off-token` — Durations should come from the token scale (instant/fast/base/slow/hero/linger) for a consistent rhythm.
+- `duration-off-token` — Durations should come from the token scale (instant/responsive/expressive/exit/slow/linger) for a consistent rhythm.
 - `exit-slower-than-enter` — Exits should be quicker than entrances (attention has moved on).
 - `settle-interrupted` — A new tween on the same property starts before the previous one settled — motion never lands.
 - `read-time` — Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.
@@ -137,25 +93,40 @@ Omit `type` for `classic` (the theme's own fonts, v1 settings). Per-kit tracking
 - `ui-glance` — UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).
 - `scene-overrun` — Motion is still running after the scene has ended (it will be cut off).
 - `late-entrance` — Element enters in the last moments of the scene — it pops in and is gone.
-- `dead-air` — Nothing moves for too long. Add ambient life (camera drift, a loop on bg/glow) or tighten the scene.
+- `dead-air` — Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.
 - `crowded` — Too many independent elements animating at once — the eye can't follow.
 - `unstaggered-group` — Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.
 - `slow-open` — The video's first motion starts late — the opening frame is dead.
 - `split-too-busy` — Character split on long copy is slow and noisy. Split by words or lines instead.
 - `stagger-too-long` — The stagger cascade takes too long to complete.
 - `camera-too-fast` — Camera moves faster than ~15% zoom/s or 160px/s feel jarring.
-- `transition-too-long` — A transition longer than its type's craft range stalls the edit (a 0.8s whip is no longer a whip).
+- `transition-too-long` — A transition longer than its type's craft range stalls the edit (a 1s push is no longer a step).
 - `transition-too-short` — A transition shorter than its type's range reads as a glitch, not a move.
 - `transition-language` — More than two transition types in one video reads as a template. Pick one primary (most cuts) and at most one accent; hard cuts are free.
-- `transition-bounce` — Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, sharp, standard).
-- `transition-strobe` — A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or use whip.
+- `transition-bounce` — Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, out).
+- `transition-strobe` — A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or lengthen it.
 - `mask-needs-split` — Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.
 - `cut-off-beat` — Scene cut is not on the music grid (bpm).
 - `axis-reflow` — Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.
-- `axis-unsupported` — The element's family has no such axis, so the channel animates nothing (e.g. wdth on Geist, soft outside Fraunces).
+- `axis-unsupported` — The element's family has no such axis, so the channel animates nothing (e.g. wdth or soft on Geist, which has a weight axis only).
 - `axis-range` — Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.
-- `hairline-weight` — Serif type below weight 300 shimmers after video compression.
+- `spring-bounce` — litt: a spring bounces at 0.12 or less (the expressive tier). More reads as a toy.
+- `exit-bounce` — litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).
+- `expressive-budget` — litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive.
+- `material-motion` — litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.
+- `property-motion` — litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter). Tracking, weight, blur and filters perform.
+- `travel-too-far` — litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed.
+- `camera-drift` — The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed.
+- `ambient-loop` — litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink).
+- `weight-role` — litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.
 
 ## Source lint rules
 - `nondeterministic-api` — Wall-clock / random APIs (Math.random, Date.now, new Date(), performance.now, setTimeout/setInterval, requestAnimationFrame) in project code — frames are seeked, so results must be a pure function of time. Use the motion DSL; for variety use fixed data or a seeded sequence.
 - `css-animation` — CSS animation/transition (style `animation:`/`transition:` or Tailwind `animate-*`/`transition*` classes) — real-time CSS motion is invisible to seeking and drifts between workers. Animate with `motion: (m) => …` instead.
+- `litt-weight` — A weight outside litt's three roles (P9) — text is 400 (font-normal, the default), titles 500 (font-title, Headline and Title), labels 600 (font-label, Label). No medium, semibold, bold or light.
+- `litt-case` — Uppercase text — litt sets every label in sentence case. Use Label (600, the grey), never an uppercase eyebrow.
+- `litt-gradient` — A decorative gradient (gradient text, a gradient fill or border) — litt's only gradient is the top light (Stage bg="lit"). Use a flat token colour.
+- `litt-radius` — A radius off litt's scale — rounded-control (8) for controls and tags, rounded-surface (16) for cards and panels, rounded-full for avatars, icon buttons and switches. Nothing else.
+- `litt-shadow` — An ad-hoc or offset shadow (P4) — use the depth tokens: shadow-raised (cards), shadow-float / shadow-modal / shadow-tooltip (floating), shadow-glow (the one primary action), shadow-hairline / shadow-control / shadow-field / shadow-lift / shadow-focus.
+- `litt-accent-text` — Accent-coloured text — litt never picks out a headline word in the accent. Rank by ink: the key word in text-fg, the rest in text-fg-muted (or m.emphasize(id, "ink")).
+- `litt-hex` — A hard-coded colour — every colour is a litt token (bg-canvas, text-fg-muted, border-line, data hues…), so both themes stay designed.

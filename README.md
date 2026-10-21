@@ -8,8 +8,10 @@ mid-move, dead holds, frames nobody composed. And they can't see any of it.
 
 Continuity gives coding agents (Claude Code first) three things:
 
-1. **A motion vocabulary with taste built in** — tokens (durations, eases,
-   springs, staggers, read time), presets, transitions and a video-scale UI kit.
+1. **A motion vocabulary with taste built in** — one house language,
+   [litt](docs/decisions/0006-litt-house-language.md) (technical precision, lit
+   from above): tokens (litt's motion tiers, springs, staggers, read time),
+   presets, transitions and a video-scale UI kit, gated by lint.
    Every animation is declared as **data**, so it can be rendered, linted and
    critiqued from the same source.
 2. **Eyes** — stills, timecoded contact sheets, onion-skin motion strips, a
@@ -113,7 +115,7 @@ Build locally with `docker build -t continuity .` (`--target toolchain` for the 
 ## By hand
 
 ```bash
-npx ct new my-video --aspect 9:16 --theme mono-dark
+npx ct new my-video --aspect 9:16 --theme litt-dark
 # write projects/my-video/brief.md + storyboard.json + scenes/*.tsx — or let an agent:
 #   claude  →  /continuity:make-video "A 15s reel announcing …"
 npx ct check my-video   # the gate
@@ -127,21 +129,23 @@ Layout lives in `continuity.json` (`projectsDir`, `buildDir`, `outDir`; defaults
 A scene:
 
 ```tsx
-import { scene, Stage, Safe, Center, Headline, Serif, Emph } from "continuity";
+import { scene, Stage, Safe, Stack, Label, Headline } from "continuity";
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="aurora">
-      <Safe><Center>
-        <Headline ct="title" size="display">
-          <Emph text={text.title} word="craft.">{(w) => <Serif class="text-accent">{w}</Serif>}</Emph>
-        </Headline>
-      </Center></Safe>
+    <Stage bg="lit">
+      <Safe>
+        <Stack gap={8} class="absolute bottom-[96px] left-[96px]">
+          <Label ct="label">{text.label}</Label>
+          <Headline ct="title">{text.title}</Headline>
+        </Stack>
+      </Safe>
     </Stage>
   ),
   motion: (m) => {
-    m.enter("title", "maskUp", { at: "b1", split: "lines" });
-    m.camera({ scale: [1, 1.04] });
+    m.enter("label", "fade", { at: "b1" });
+    m.enter("title", "maskUp", { at: "b1+0.08", split: "lines", ease: "expressive" });
+    m.camera({ scale: [1, 1.03] });
   },
 });
 ```
@@ -207,22 +211,34 @@ Claude Code users don't need this: the plugin drives `npx ct` directly.
 strip · render · motion · status · score · compare · verdict · restore · report ·
 docs · licenses · gate-status · doctor · mcp`. `npx ct <command> --help` for options.
 
-## Design system
+## Design system: litt
 
-Three colour themes (`mono-dark`, `light-editorial`, `vivid-gradient`) and six
-**type kits** chosen per video (`type` in the storyboard): `swiss` (Geist,
-Vercel/Linear grade), `atelier` (Newsreader + Instrument Sans), `wonk` (Fraunces
-soft serif + Hanken Grotesk), `terminal` (Geist Mono led), `broadside` (Archivo
-condensed caps for social) and `flexion` (Mona Sans, width and weight animate).
-All fonts are vendored OFL faces; variable axes (weight, width, softness) are
-motion channels. Thirteen scene transitions — from hard cuts to whips with
-speed-matched motion blur, punch cuts, feathered wipes, iris, strips and light
-sweeps — each with a craft range the lint enforces. A 1080-based type scale, a
-UI kit at video scale (windows, browsers, phones, code, terminals, charts,
-cursor, toasts…). Galleries: `projects/_kit`, `projects/_type`,
-`projects/_transitions`; the generated catalog is in
-`plugin/skills/continuity/reference/`. Research behind the look:
-`docs/research/`.
+Continuity has one look, **litt** — Nick's design language
+([litt.md](https://github.com/litterthanlit/litt.md)): technical precision, lit from
+above. The translation from web UI to video is
+[`docs/decisions/0006-litt-house-language.md`](docs/decisions/0006-litt-house-language.md).
+
+- **Colour:** two first-class themes, `litt-dark` and `litt-light` — warm stone neutrals,
+  one cobalt accent that behaves like light (at most one accent fill per frame, on the
+  primary action), and five data hues that only ever carry data.
+- **Type:** Geist and Geist Mono, three weights by role (400 text, 500 titles, 600 labels),
+  two inks, one display step per scene (112px) over title / body / small / label. Rank comes
+  from weight, ink and space before size; emphasis is an ink step, not an accent word.
+- **Material:** one light from the top (`bg="lit"`), flat surfaces with 2px hairlines and a
+  top highlight, zero-offset glows on floating UI, static grain. Material never moves.
+- **Motion:** litt's tiers — a 100ms instant tween, a responsive spring (the default) and one
+  expressive spring per scene (bounce 0.12) — exits at 0.75× that never bounce, 32px travel,
+  40ms staggers, the camera's ≤ 3% push as the only ambient life. Transitions are cuts on the
+  beat plus crossfade, dip, push and a feathered wipe.
+- **UI kit:** litt's components at 2× (windows, browsers, phones, cards, buttons, tags,
+  segmented controls, toasts, sidebars, lists, code, terminals, charts, stats, cursor).
+- **Gates:** the `litt-*` source rules (weights, case, gradients, radii, shadows, accent text,
+  hex) and the motion rules (bounce, the expressive budget, material, properties, travel,
+  camera drift, loops) fail anything off-language, with a `litt-allow` escape for a reasoned
+  exception.
+
+Galleries: `projects/_kit`, `projects/_type`, `projects/_transitions`; the generated catalog is
+in `plugin/skills/continuity/reference/`.
 
 ## Developing Continuity
 

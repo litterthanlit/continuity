@@ -133,11 +133,8 @@ export function registerTools(server: McpServer, ws: Workspace) {
       inputSchema: z.object({
         slug: z.string().regex(NEW_SLUG, "lowercase kebab-case, starting with a letter").describe("New project slug"),
         aspect: z.enum(["16:9", "9:16", "1:1", "4:5"]).default("16:9"),
-        theme: z.enum(Object.keys(themes) as [string, ...string[]]).default("mono-dark"),
-        type: z
-          .enum([...KIT_NAMES, "classic"])
-          .optional()
-          .describe("Type kit (font pairing). Default: the theme's suggested kit. classic = the theme's v1 fonts"),
+        theme: z.enum(Object.keys(themes) as [string, ...string[]]).default("litt-dark").describe("litt-dark or litt-light; both are first-class"),
+        type: z.enum(KIT_NAMES).optional().describe("Type kit. litt is the only one."),
         title: z.string().max(120).optional(),
       }),
     },

@@ -4,7 +4,7 @@ export default scene({
   view: ({ text }) => (
     <Stage bg="solid">
       <Center>
-        <Headline ct="word" size="h1">{text.word}</Headline>
+        <Headline ct="word" size="display">{text.word}</Headline>
       </Center>
     </Stage>
   ),

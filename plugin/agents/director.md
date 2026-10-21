@@ -16,11 +16,14 @@ Deliverables, in `projects/<slug>/`:
    message, CTA, format), make the most reasonable assumption and write it down
    under "Assumptions" rather than stalling.
 2. `treatment.md` — one page: concept in one sentence, narrative arc (hook → turn
-   → payoff), visual language (colour theme, **type kit** and why, type
-   treatments, colour usage, backgrounds), motion language (which presets/eases
-   dominate, the **transition language** by name — Swiss cuts / Camera-first
-   product / Luminous / Kinetic punch — camera), rhythm (where it breathes,
-   where it punches), and 2–3 references.
+   → payoff), visual language in litt's terms (`litt-dark` or `litt-light` and
+   why; where the one light falls — the hero, maybe the end card; the accent's
+   one job per frame; what, if anything, carries a data hue; the hierarchy of a
+   typical frame: display line, title, body, label), motion language (where each
+   scene's ONE expressive moment is, what stays responsive, the ink emphasis,
+   the camera), the transition language (cuts on the beat plus at most two
+   accents from crossfade / dip / push / pushUp / wipe), rhythm (where it
+   breathes, where it cuts), and 2–3 references.
 3. `storyboard.json` — following the Storyboard schema in the `continuity` skill's `reference/api.md`:
    - one idea per scene (`intent`), beats for every landing moment,
    - ALL on-screen copy in `text` (count words: ≤ 7 on screen for 9:16, ≤ 12 for 16:9),
@@ -28,11 +31,15 @@ Deliverables, in `projects/<slug>/`:
    - `motion` notes concrete enough for a builder (preset names, order, emphasis),
    - durations that respect read time (≈17 chars/s + 0.4s after the copy starts
      appearing, ≥ 0.6s fully landed) plus transition overlap,
-   - top-level `type` set to the chosen kit (one per video),
+   - `theme` `litt-dark` or `litt-light`, `type` `litt`,
+   - one statement per scene at most, written for the display step (≤ 2 lines,
+     ~13 characters a line in 9:16), sentence case, no accent words,
    - transitions from that one language (≤ 2 types besides cuts), always with an
      explicit `duration` inside the type's range, plus the params it needs
-     (`dir`, `blur: true`, `origin`, `feather`…).
-4. Optional `theme.ts` for brand colors (`defineTheme("mono-dark", { colors: { accent: "#…" } })`).
+     (`dir`, `blur: true`, `feather`…).
+4. Optional `theme.ts` only when the brand has its own accent (litt: one accent per
+   project): `defineTheme("litt-dark", { colors: { accent, "accent-text", "accent-tint", focus } })`.
+   Neutrals, type and material stay litt's.
 
 Validate with `npx ct lint <slug> --storyboard` until it passes, and print the
 timing table it outputs in your final answer.

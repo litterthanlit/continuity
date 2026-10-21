@@ -1,74 +1,67 @@
 ---
 name: kinetic-type
-description: Kinetic typography and social cuts (9:16 reels/shorts/TikTok, 1:1, 16:9 type-driven promos) — structure, pacing, layout, type treatments and motion patterns for type-led videos. Load with motion-craft when the video is primarily words in motion.
+description: Kinetic typography and social cuts in litt (9:16 reels/shorts/TikTok, 1:1, 16:9 type-led promos) — structure, pacing, layout, emphasis by ink and motion patterns for type-led videos, with litt's restraint: one display statement per beat, Geist in three weights, hard cuts on the beat. Load with motion-craft and typography when the video is primarily words in motion.
 ---
 
-# Kinetic typography
+# Kinetic typography, in litt
 
-Type *is* the image. The craft is rhythm (when words land), contrast (which word
-matters) and restraint (one idea per beat).
+Type *is* the image. The craft is rhythm (when words land), contrast (which word matters) and
+restraint (one idea per beat). litt's version is calm power: words land precisely, rank comes
+from ink and space, and nothing performs. No scale punches, no weight pulses, no serif swaps,
+no glow — a word matters because everything around it steps back.
 
 ## Structure (8–20s social)
-1. **Hook (0–2s):** a provocation or promise in ≤ 5 words. First motion ≤ 0.2s.
-   No logo first — earn attention, then brand.
-2. **Turn / tension (2–8s):** 2–4 beats that build the argument. One line each.
-3. **Payoff (last 3–5s):** the answer + brand + CTA. Hold the final card ≥ 1.5s.
-Each beat = one scene (or one line within a scene). Cuts land on beats.
+1. **Hook (0–2s):** a provocation or promise in ≤ 5 words. First motion ≤ 0.2s. No logo first —
+   earn attention, then brand.
+2. **Turn (2–8s):** 2–4 beats that build the argument. One line each.
+3. **Payoff (last 3–5s):** the answer + the name + the CTA. Hold the final card ≥ 1.5s.
+Each beat is one scene (or one line within a scene). Cuts land on beats.
 
 ## Layout for 9:16
-- `<Safe zone="social">` always (platform UI covers top ~10%, bottom ~18%, right
-  ~12%). Keep key words in the upper-middle band (rows 2–4 of the 6×6 grid).
-- Big type: `text-display` (168) or `text-h1` (120) for 1–3 word lines; at most
-  ~9 characters per line at 168px within the social safe width (~860px).
-- Stack lines left-aligned (editorial) or centered (statement). Break by meaning:
-  `Motion<br/>is a<br/>craft.` beats a paragraph.
-- Body/supporting copy ≥ 38px (`text-body`); captions ≥ 34px in portrait.
+- `<Safe zone="social">` always (platform UI covers the top ~10%, the bottom ~18%, the right
+  ~12%). Keep the statement in the upper-middle band (rows 2–4 of the 6×6 grid).
+- One display statement per scene (`Headline`, 112px — litt's ceiling), ≤ ~13 characters per
+  line within the social safe width, lines broken by meaning: `Motion is<br/>a craft.`
+- **Left-aligned on one edge**, every scene on the same edge — that edge is the video's spine.
+  Centered only for the one short statement (usually the end card).
+- Supporting copy is `Body` (40px in 9:16) in the grey; labels are `Label` (34px, 600,
+  sentence case). The build applies the portrait scale itself.
 
-## Type kit (load the `typography` skill)
-- **broadside** — condensed 850-weight caps (Archivo): the default for 9:16 social and hype.
-- **wonk** — soft, characterful Fraunces serif: warm brands, editorial social.
-- **flexion** — Mona Sans whose width and weight move: the kinetic showpiece.
-- **swiss** / **atelier** for calm, premium type-led promos (16:9).
-One kit per video; the components (`Headline`, `Serif`, `Eyebrow`, `Stat`) follow it.
+## Type (load the `typography` skill)
+Geist 500 for the statement, 400 in the grey for support, 600 for a label. One family; there
+is nothing to switch to. Tracking and leading come from the kit — don't loosen display.
 
-## Type treatments (pick one emphasis per line)
-- **Scale contrast:** the key word 1.5–2× its neighbours.
-- **Serif swap:** `<Serif>` for one word in an otherwise grotesk line — instant
-  editorial polish.
-- **Accent color** on the single most important word.
-- **Marker:** `<Highlight ct="x">` + `m.emphasize("x-bar", "underline")`.
-- **Weight shift:** `weightPulse` on the payoff word, or `weightIn` on a statement
-  (variable kits); static: `font-light` setup → `font-semibold` payoff.
-- **Width breath:** `widthIn` / `widthPulse` with `split: "chars"` (flexion, broadside).
-- Tracking and leading come from the kit (swiss is tight, broadside open caps);
-  don't loosen display tracking unless it's an eyebrow.
+## Emphasis: pick one per line
+- **Ink step (the litt way):** the line lands, then the rest steps back to the grey and the key
+  word keeps fg — `m.emphasize(["pre", "post"], "dim", { at: "b2", stagger: 0 })`. Or set the
+  line in the grey and `ink` the key word up.
+- **Space:** the key word alone on its line, or alone in the next scene.
+- **Order:** the key word lands last, after a beat.
+Never: a scale punch, a weight pulse, an accent-coloured word, an italic serif, a marker bar.
 
 ## Motion patterns
 | Pattern | Code | Feel |
 |---|---|---|
-| Line mask reveal | `enter(id, "maskUp", { split: "lines" })` | premium, editorial |
-| Word punch | `enter(id, "rise", { split: "words", ease: "hero", distance: 40 })` | energetic |
-| Char cascade | `enter(id, "fadeBlur", { split: "chars", stagger: "char" })` | elegant; ≤ 20 chars |
-| Type-on | `enter(id, "typeOn", { split: "chars", stagger: 0.035 })` | terminal, code, UI |
-| Track-in | `enter(id, "trackIn")` | wordmarks, single words |
+| Line rise | `enter(id, "maskUp", { split: "lines", ease: "expressive" })` | the statement: the scene's one moment |
+| Word cascade | `enter(id, "maskUp", { split: "words" })` | crisp, 40ms apart, responsive |
+| Quiet arrival | `enter(id, "fade")` / `"rise"` | support lines, labels |
+| Ink step | `emphasize(ids, "dim")` / `"ink"` at the instant tier | the word that matters |
+| Type-on | `type(id, { cps: 22 })` + `blink(caret)` | terminals, prompts, UI |
 | Swap | `exit(a, "maskOut", { split: "words" })` then `enter(b, "maskUp", …)` at `after:a` | replace a word in place |
-| Zoom punch | `enter(id, "zoomIn")` | single huge word on a beat |
-| Width wave | `enter(id, "widthIn", { split: "chars" })` → `emphasize(id, "widthPulse", { split: "chars" })` | flexion: type that breathes |
-| Soften | `tween(id, { soft: [0, 100] }, { ease: "hero" })` | wonk: serifs melt as it lands |
 
 Rules of thumb:
-- Reveal **lines**, not paragraphs. A new line lands every 0.4–0.9s in hype
-  edits, every 1–2s in calm ones.
-- After the last word lands, hold for read time before cutting (lint enforces).
-- Cut between scenes rather than exiting text — kinetic type lives on hard cuts.
-  The kinetic language: cuts on the beat + at most two accents from `punchCut`,
-  vertical `whip` (`dir: "up"`, 0.25–0.33s), `strips` (n 5–7) — never on every cut.
-- Add ambient motion during holds: `m.camera({ scale: [1, 1.04] })` and/or a
-  slow `m.loop("bg", …)`.
-- With music (`bpm` in the storyboard): put beats on the grid (`60/bpm` s) and
-  land key words on downbeats.
+- Reveal **lines**, not paragraphs. A new line lands every 0.4–0.9s in a fast edit, every
+  1–2s in a calm one. One expressive moment per scene; the rest responsive.
+- After the last word lands, hold for read time before cutting (lint enforces it).
+- **Kinetic type lives on hard cuts.** Cut on the beat; at most one accent transition type —
+  `pushUp` (with `blur: true`) for a turn in a 9:16 feed, or a `dip` into the end card.
+- Ambient motion during holds: `m.camera({ scale: [1, 1.03] }, { origin: { x, y } })` with the
+  origin on the statement's left edge, so the edge holds still from cut to cut — never a loop.
+- The light (`bg="lit"`) on the hook and maybe the end card; solid canvas between.
+- With music (`bpm` in the storyboard): put beats on the grid (`60/bpm` s) and land key words
+  on downbeats.
 
 ## Copy
-Write it like a headline writer: concrete verbs, no filler, parallel structure
-across beats ("Write it. See it. Ship it."). If a line needs 2 sizes smaller to
-fit, it's too long.
+Write it like a headline writer: concrete verbs, no filler, parallel structure across beats
+("Write it. See it. Ship it."). Sentence case. If a line needs a smaller size to fit, it's too
+long — cut words.

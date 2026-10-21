@@ -1,19 +1,19 @@
-import { scene, Stage, Center, Headline, Eyebrow, Stack } from "continuity";
+import { scene, Stage, Safe, Headline, Label, Stack } from "continuity";
 
 export default scene({
   view: ({ text }) => (
-    <Stage>
-      <Center>
-        <Stack gap={28} class="items-center">
-          <Eyebrow ct="eyebrow">{text.eyebrow}</Eyebrow>
-          <Headline ct="title" size="h1" class="max-w-[1300px]">{text.title}</Headline>
+    <Stage bg="lit">
+      <Safe>
+        <Stack gap={8} class="absolute bottom-[96px] left-[96px] max-w-[1100px]">
+          <Label ct="label">{text.label}</Label>
+          <Headline ct="title">{text.title}</Headline>
         </Stack>
-      </Center>
+      </Safe>
     </Stage>
   ),
   motion: (m) => {
-    m.enter("eyebrow", "fadeBlur", { at: "b1" });
-    m.enter("title", "maskUp", { at: "b1+0.15", split: "words" });
-    m.camera({ scale: [1, 1.04] });
+    m.enter("label", "fade", { at: "b1" });
+    m.enter("title", "maskUp", { at: "b1+0.08", split: "words", ease: "expressive" });
+    m.camera({ scale: [1, 1.03] });
   },
 });

@@ -178,6 +178,8 @@ export interface StyleOut {
   filter?: string;
   clipPath?: string;
   letterSpacing?: string;
+  /** The ink channel: a mix of the grey and fg. */
+  color?: string;
   strokeDashoffset?: string;
   text?: string;
   fontWeight?: string;
@@ -258,6 +260,10 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleO
   }
   if (has("blurX") || has("blurY")) s.motionBlur = [Math.max(0, g("blurX")), Math.max(0, g("blurY"))];
   if (has("tracking")) s.letterSpacing = f4(g("tracking")) + "em";
+  if (has("ink")) {
+    const p = Math.round(Math.min(1, Math.max(0, g("ink"))) * 1000) / 10;
+    s.color = "color-mix(in oklab, var(--color-fg) " + p + "%, var(--color-fg-muted))";
+  }
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });
   if (has("wght")) s.fontWeight = f4(Math.min(1000, Math.max(1, g("wght"))));

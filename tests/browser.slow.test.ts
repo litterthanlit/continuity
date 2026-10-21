@@ -33,7 +33,7 @@ d("seeded layout defects (projects/_defects-layout)", () => {
       "probe:safe-area",
       "probe:collide-in-motion",
       "probe:font-face-missing",
-      "probe:counter-proportional",
+      // counter-proportional stays in the probe, but every registry family has tabular figures now
       "check:contrast_aa_failure",
     ]) {
       expect(ids, r).toContain(r);
@@ -43,15 +43,15 @@ d("seeded layout defects (projects/_defects-layout)", () => {
 
 /**
  * Golden frames per project: coarse 48×27 greyscale signatures at fixed times.
- * _smoke guards the classic engine path (never refreshed by v2 work); _type and
- * _transitions guard the kits and the transition presentations.
+ * _smoke guards the engine path; _type and _transitions guard litt's type and
+ * the transition presentations (regenerated for litt, docs/decisions/0006).
  */
 const GOLDENS: Array<{ slug: string; times: number[] }> = [
   { slug: "_smoke", times: [0.5, 1.5, 3.4, 4.6] },
-  // settled specimen per kit, wonk's soft-in and flexion's width wave mid-motion
-  { slug: "_type", times: [2.5, 6.3, 8.55, 10.1, 13.9, 17.7, 20.85, 21.5] },
-  // mid-transition: push+blur, whip, punch-cut flash frame, feathered wipe, iris, strips, light sweep
-  { slug: "_transitions", times: [7.35, 12.035, 14.5, 16.85, 19.1, 21.3, 23.6] },
+  // settled scale, weights, lockup; the ink line before and after it dims; the stat landed
+  { slug: "_type", times: [1.3, 4.9, 9.0, 13.2, 14.4, 18.6] },
+  // the intro settled, then each accent at its mid-point: crossfade, dip, push + blur, pushUp + blur, feathered wipe
+  { slug: "_transitions", times: [1.2, 3.2, 6.15, 9.05, 11.95, 14.85] },
 ];
 
 async function signature(file: string): Promise<number[]> {
@@ -83,7 +83,7 @@ for (const { slug, times } of GOLDENS) {
 }
 
 d("type kit cascade contract (tests/fixtures/kit-cascade)", () => {
-  it("kit roles set weight/width/case; explicit utilities still win; scene kits are scoped", async () => {
+  it("litt's roles set family and weight by role; explicit utilities still win; synthesis is off", async () => {
     const out = mkdtempSync(join(tmpdir(), "ct-cascade-"));
     const b = await buildProject("kit-cascade", { srcDir: join(ROOT, "tests/fixtures/kit-cascade"), outDir: out });
     expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
@@ -96,23 +96,21 @@ d("type kit cascade contract (tests/fixtures/kit-cascade)", () => {
         await page.evaluate("window.__ct.ready");
         return (await page.evaluate(`(function () {
           var o = {};
-          ["a.role", "a.bold", "a.label", "a.wide", "a.accent", "b.role", "b.accent"].forEach(function (id) {
+          ["a.role", "a.title", "a.label", "a.body", "a.override", "a.mono"].forEach(function (id) {
             var cs = getComputedStyle(document.querySelector('[data-ct="' + id + '"]'));
-            o[id] = { family: cs.fontFamily.split(",")[0].replace(/"/g, ""), weight: cs.fontWeight, stretch: cs.fontStretch,
-              transform: cs.textTransform, spacing: parseFloat(cs.letterSpacing) / parseFloat(cs.fontSize), size: parseFloat(cs.fontSize), synth: cs.fontSynthesisWeight };
+            o[id] = { family: cs.fontFamily.split(",")[0].replace(/"/g, ""), weight: cs.fontWeight, transform: cs.textTransform,
+              spacing: parseFloat(cs.letterSpacing) / parseFloat(cs.fontSize), size: parseFloat(cs.fontSize), synth: cs.fontSynthesisWeight };
           });
           return o;
-        })()`)) as Record<string, { family: string; weight: string; stretch: string; transform: string; spacing: number; size: number; synth: string }>;
+        })()`)) as Record<string, { family: string; weight: string; transform: string; spacing: number; size: number; synth: string }>;
       });
-      expect(got["a.role"]).toMatchObject({ family: "Newsreader", weight: "340", synth: "none" });
-      expect(got["a.bold"].weight).toBe("700"); // utilities beat kit role rules
-      expect(got["a.label"]).toMatchObject({ family: "Geist Mono", transform: "uppercase" });
-      expect(got["a.label"].spacing).toBeCloseTo(0.16, 2);
-      expect(got["a.wide"].spacing).toBeCloseTo(0.3, 2);
-      expect(got["a.accent"]).toMatchObject({ family: "Newsreader", weight: "340" });
-      expect(got["b.role"]).toMatchObject({ family: "Archivo", weight: "850", stretch: "66%", transform: "uppercase" });
-      expect(got["b.accent"]).toMatchObject({ family: "Instrument Serif", weight: "400", transform: "none" });
-      expect(got["b.accent"].size / got["b.role"].size).toBeCloseTo(1.03, 2);
+      expect(got["a.role"]).toMatchObject({ family: "Geist", weight: "500", size: 112, synth: "none" });
+      expect(got["a.role"].spacing).toBeCloseTo(-0.04, 3);
+      expect(got["a.title"]).toMatchObject({ family: "Geist", weight: "500", size: 48 });
+      expect(got["a.label"]).toMatchObject({ family: "Geist", weight: "600", size: 28, transform: "none" });
+      expect(got["a.body"]).toMatchObject({ family: "Geist", weight: "400", size: 36 });
+      expect(got["a.override"].weight).toBe("400"); // utilities beat kit role rules
+      expect(got["a.mono"]).toMatchObject({ family: "Geist Mono", weight: "400" });
     } finally {
       await srv.close();
     }

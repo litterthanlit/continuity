@@ -1,31 +1,76 @@
 {
   "title": "Kit gallery",
-  "logline": "Every UI kit component in motion — reference + visual regression fixture.",
-  "format": { "aspect": "16:9", "fps": 30 },
-  "theme": "mono-dark",
+  "logline": "Every UI kit component in motion, in litt at video scale \u2014 reference + visual regression fixture.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
   "scenes": [
     {
       "id": "app",
       "duration": 4.6,
-      "intent": "Window, sidebar, list rows, cursor path + click, toast.",
-      "beats": [{ "id": "b1", "at": 0.1 }, { "id": "b2", "at": 0.9 }, { "id": "click", "at": 2.2 }],
+      "intent": "Window, sidebar (the raised segment), list rows with status words, cursor path + click, a glass toast.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        },
+        {
+          "id": "b2",
+          "at": 0.9
+        },
+        {
+          "id": "click",
+          "at": 2.2
+        }
+      ],
       "text": {},
-      "transition": { "type": "push", "duration": 0.5 }
+      "transition": {
+        "type": "push",
+        "dir": "left",
+        "blur": true
+      }
     },
     {
       "id": "data",
       "duration": 4.0,
-      "intent": "Browser, bar chart, line chart, stat counter, sheen.",
-      "beats": [{ "id": "b1", "at": 0.15 }, { "id": "b2", "at": 0.8 }],
+      "intent": "Browser, stats with deltas, a quiet bar chart, a line chart, a segmented control whose selection glides.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        },
+        {
+          "id": "b2",
+          "at": 0.8
+        }
+      ],
       "text": {},
-      "transition": { "type": "crossfade", "duration": 0.5 }
+      "transition": {
+        "type": "crossfade"
+      }
     },
     {
       "id": "dev",
       "duration": 4.4,
-      "intent": "Code block cascade, terminal, input typing with caret, toggle, progress, phone.",
-      "beats": [{ "id": "b1", "at": 0.1 }, { "id": "b2", "at": 0.9 }, { "id": "b3", "at": 1.8 }],
+      "intent": "Code block cascade, terminal, focused input typing with caret, switch, meter, keys, avatars, the one primary button.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.1
+        },
+        {
+          "id": "b2",
+          "at": 0.9
+        },
+        {
+          "id": "b3",
+          "at": 1.8
+        }
+      ],
       "text": {}
     }
-  ]
+  ],
+  "type": "litt"
 }

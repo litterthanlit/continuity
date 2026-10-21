@@ -125,20 +125,20 @@ export function energyHtml(curve: EnergyCurve, an: EnergyAnalysis, build: BuildR
       const x0 = x(s.start);
       const x1 = x(Math.min(dur, s.start + s.duration));
       return `<rect x="${x0}" y="20" width="${x1 - x0}" height="${plotH}" fill="${i % 2 ? "#ffffff08" : "#ffffff03"}"/>` +
-        `<text x="${x0 + 6}" y="${20 + plotH + 22}" fill="#a8a8b0" font-size="13">${esc(s.scene)}</text>`;
+        `<text x="${x0 + 6}" y="${20 + plotH + 22}" fill="#968d86" font-size="13">${esc(s.scene)}</text>`;
     })
     .join("");
   const beats = tl.scenes
     .flatMap((s) => Object.entries(s.beats).map(([k, v]) => ({ k, t: s.start + v })))
-    .map((b) => `<line x1="${x(b.t)}" x2="${x(b.t)}" y1="20" y2="${20 + plotH}" stroke="#8b7bff55" stroke-dasharray="3 4"/><text x="${x(b.t) + 3}" y="34" fill="#8b7bffaa" font-size="11">${esc(b.k)}</text>`)
+    .map((b) => `<line x1="${x(b.t)}" x2="${x(b.t)}" y1="20" y2="${20 + plotH}" stroke="#507afd55" stroke-dasharray="3 4"/><text x="${x(b.t) + 3}" y="34" fill="#507afdaa" font-size="11">${esc(b.k)}</text>`)
     .join("");
-  const dead = an.deadZones.map(([a, b]) => `<rect x="${x(a)}" y="20" width="${x(b) - x(a)}" height="${plotH}" fill="#ff5d5d22" stroke="#ff5d5d66"/>`).join("");
-  const spikes = an.spikes.map((t) => `<circle cx="${x(t)}" cy="26" r="5" fill="#f6c343"/>`).join("");
-  const ticks = Array.from({ length: Math.floor(dur) + 1 }, (_, i) => `<text x="${x(i)}" y="${H - 8}" fill="#6b6b76" font-size="11" text-anchor="middle">${i}s</text>`).join("");
-  return `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0c0c0e;color:#e8e8ea;font-family:ui-monospace,monospace;padding:16px;width:${W}px}h1{font-size:15px;margin:0 0 4px}p{font-size:12px;color:#8b8b93;margin:0 0 10px}</style></head><body>
+  const dead = an.deadZones.map(([a, b]) => `<rect x="${x(a)}" y="20" width="${x(b) - x(a)}" height="${plotH}" fill="#ff756f22" stroke="#ff756f66"/>`).join("");
+  const spikes = an.spikes.map((t) => `<circle cx="${x(t)}" cy="26" r="5" fill="#e19b1b"/>`).join("");
+  const ticks = Array.from({ length: Math.floor(dur) + 1 }, (_, i) => `<text x="${x(i)}" y="${H - 8}" fill="#6b645f" font-size="11" text-anchor="middle">${i}s</text>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0a0908;color:#f9f8f7;font-family:ui-monospace,monospace;padding:16px;width:${W}px}h1{font-size:15px;margin:0 0 4px}p{font-size:12px;color:#968d86;margin:0 0 10px}</style></head><body>
 <h1>${esc(title)}</h1>
 <p>motion energy (frame-to-frame change) · mean ${an.stats.mean.toFixed(2)} · active ${(an.stats.activeShare * 100).toFixed(0)}% of frames · red = dead zones · yellow = unexplained single-frame jolts · dashed = beats</p>
 <svg width="${W}" height="${H}" font-family="ui-monospace,monospace">${bands}${dead}${beats}
-<path d="${area}" fill="#8b7bff22"/><path d="${path}" fill="none" stroke="#b9afff" stroke-width="1.5"/>${spikes}${ticks}</svg>
+<path d="${area}" fill="#507afd22"/><path d="${path}" fill="none" stroke="#f9f8f7" stroke-width="1.5"/>${spikes}${ticks}</svg>
 </body></html>`;
 }

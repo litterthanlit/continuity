@@ -68,65 +68,12 @@ function fontsourceVariable(o: {
   };
 }
 
-function fontsourceStatic(o: {
-  pkg: string;
-  base?: string;
-  family: string;
-  fallback: string;
-  category: FontFamily["category"];
-  weights: number[];
-  italic: boolean;
-  tnum: boolean;
-}): FontFamily {
-  const base = o.base ?? o.pkg;
-  const styles: Array<"normal" | "italic"> = o.italic ? ["normal", "italic"] : ["normal"];
-  return {
-    family: o.family,
-    fallback: o.fallback,
-    license: "OFL-1.1",
-    category: o.category,
-    axes: {},
-    tnum: o.tnum,
-    faces: o.weights.flatMap((w) =>
-      styles.map((style) => ({ file: `@fontsource/${o.pkg}/files/${base}-latin-${w}-${style}.woff2`, weight: String(w), style })),
-    ),
-  };
-}
-
 const sans = "sans-serif";
 
+/** litt: Geist and Geist Mono, nothing else (docs/decisions/0006). */
 export const fonts = {
-  // v1 families (paths and descriptors unchanged).
   geist: fontsourceVariable({ pkg: "geist", family: "Geist", fallback: sans, category: "sans", file: "wght", weight: [100, 900], italic: true, tnum: true }),
   geistMono: fontsourceVariable({ pkg: "geist-mono", family: "Geist Mono", fallback: "monospace", category: "mono", file: "wght", weight: [100, 900], italic: true, tnum: false }),
-  inter: fontsourceVariable({ pkg: "inter", family: "Inter", fallback: sans, category: "sans", file: "wght", weight: [100, 900], italic: true, tnum: true }),
-  interTight: fontsourceVariable({ pkg: "inter-tight", family: "Inter Tight", fallback: sans, category: "sans", file: "wght", weight: [100, 900], italic: true, tnum: true }),
-  instrumentSerif: fontsourceStatic({ pkg: "instrument-serif", family: "Instrument Serif", fallback: "serif", category: "serif", weights: [400], italic: true, tnum: false }),
-
-  // v2 kit families.
-  newsreader: fontsourceVariable({
-    pkg: "newsreader", family: "Newsreader", fallback: "serif", category: "serif",
-    file: "standard", weight: [200, 800], axes: { opsz: [6, 72] }, italic: true, tnum: true,
-  }),
-  instrumentSans: fontsourceVariable({ pkg: "instrument-sans", family: "Instrument Sans", fallback: sans, category: "sans", file: "wght", weight: [400, 700], italic: true, tnum: true }),
-  fraunces: fontsourceVariable({
-    pkg: "fraunces", family: "Fraunces", fallback: "serif", category: "serif",
-    file: "full", weight: [100, 900], axes: { opsz: [9, 144], SOFT: [0, 100], WONK: [0, 1] }, italic: true, tnum: false,
-  }),
-  hankenGrotesk: fontsourceVariable({ pkg: "hanken-grotesk", family: "Hanken Grotesk", fallback: sans, category: "sans", file: "wght", weight: [100, 900], italic: true, tnum: false }),
-  dmMono: fontsourceStatic({ pkg: "dm-mono", family: "DM Mono", fallback: "monospace", category: "mono", weights: [300, 400, 500], italic: true, tnum: false }),
-  archivo: fontsourceVariable({
-    pkg: "archivo", family: "Archivo", fallback: sans, category: "sans",
-    file: "standard", weight: [100, 900], stretch: [62, 125], italic: true, tnum: true,
-  }),
-  martianMono: fontsourceVariable({
-    pkg: "martian-mono", family: "Martian Mono", fallback: "monospace", category: "mono",
-    file: "standard", weight: [100, 800], stretch: [75, 112.5], italic: false, tnum: false,
-  }),
-  monaSans: fontsourceVariable({
-    pkg: "mona-sans", family: "Mona Sans", fallback: sans, category: "sans",
-    file: "standard", weight: [200, 900], stretch: [75, 125], italic: true, tnum: true,
-  }),
 } satisfies Record<string, FontFamily>;
 
 export type FontKey = keyof typeof fonts;

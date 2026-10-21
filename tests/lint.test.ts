@@ -31,12 +31,21 @@ describe("seeded static defects (projects/_defects)", () => {
       "lint:axis-reflow",
       "lint:axis-unsupported",
       "lint:axis-range",
-      "lint:hairline-weight",
+      "lint:weight-role",
       "lint:transition-too-long",
       "lint:transition-too-short",
       "lint:transition-language",
       "lint:transition-bounce",
       "lint:transition-strobe",
+      // litt (docs/decisions/0006)
+      "lint:spring-bounce",
+      "lint:exit-bounce",
+      "lint:expressive-budget",
+      "lint:material-motion",
+      "lint:property-motion",
+      "lint:travel-too-far",
+      "lint:camera-drift",
+      "lint:ambient-loop",
     ]) {
       expect(ids, r).toContain(r);
     }

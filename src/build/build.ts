@@ -187,9 +187,9 @@ export async function buildProject(
     const beats = beatsOf(sc);
     const tl: SceneTimeline = { scene: sc.id, start: timing.start, duration: sc.duration, beats, tweens: [], loops: [] };
     scenes.set(sc.id, tl);
-    let inner = `<div class="absolute inset-0 grid place-items-center text-h3 text-danger">missing scene ${sc.id}</div>`;
+    let inner = `<div class="absolute inset-0 grid place-items-center text-title text-danger">missing scene ${sc.id}</div>`;
     if (opts.only && opts.only !== sc.id) {
-      inner = `<div class="absolute inset-0 bg-bg"></div>`;
+      inner = `<div class="absolute inset-0 bg-canvas"></div>`;
     } else if (!existsSync(file)) {
       findings.push({ source: "build", rule: "scene-missing", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx not found in ${rel(src)}` });
     } else {
@@ -244,7 +244,7 @@ export async function buildProject(
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
             return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
           };
-          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf);
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height });
           try {
             def.motion(mb, ctx);
           } catch (e) {
@@ -429,7 +429,7 @@ export async function buildProject(
   const assets = join(src, "assets");
   if (existsSync(assets)) cpSync(assets, join(dir, "assets"), { recursive: true });
 
-  const css = fontFaceCss(families) + "\n" + (await compileCss(theme, kit, sceneKits, classCandidates(body), PKG_ROOT));
+  const css = fontFaceCss(families) + "\n" + (await compileCss(theme, kit, sceneKits, classCandidates(body), PKG_ROOT, height > width));
   const html = `<!doctype html>
 <html lang="en">
 <head>

@@ -2,20 +2,20 @@
   "title": "Untitled",
   "logline": "Who this is for, what it shows, and what it should make them do.",
   "format": { "aspect": "16:9", "fps": 30 },
-  "theme": "mono-dark",
-  "type": "swiss",
+  "theme": "litt-dark",
+  "type": "litt",
   "scenes": [
     {
       "id": "hook",
       "duration": 3,
-      "intent": "Stop the scroll: one bold promise.",
-      "beats": [{ "id": "b1", "at": 0.2, "note": "headline lands" }],
-      "text": { "eyebrow": "Introducing", "headline": "Your big promise." },
+      "intent": "Stop the scroll: one promise, said quietly.",
+      "beats": [{ "id": "b1", "at": 0.2, "note": "the statement lands" }],
+      "text": { "label": "Introducing", "headline": "Your one promise." },
       "elements": [
-        { "id": "eyebrow", "role": "eyebrow", "anchor": "C2" },
-        { "id": "headline", "role": "headline", "anchor": "C3:D4" }
+        { "id": "label", "role": "label", "anchor": "A4" },
+        { "id": "headline", "role": "headline", "anchor": "A5:D5" }
       ],
-      "motion": "Eyebrow fades in, headline masks up by line. Slow camera push."
+      "motion": "The label fades in; the statement rises by line on the expressive spring — the scene's one moment. A 3% camera push carries the hold."
     }
   ]
 }

@@ -27,6 +27,9 @@ const WEIGHTS: Record<string, number> = {
   bold: 700,
   extrabold: 800,
   black: 900,
+  text: 400,
+  title: 500,
+  label: 600,
 };
 
 interface Node {
@@ -38,7 +41,7 @@ interface Node {
 /**
  * The font an element is drawn in, from its classes and its kit — resolved on
  * the static view DOM, the way the cascade will: the nearest weight / stretch
- * utility, role class (font-display/sans/mono/serif) and text size win.
+ * utility, role class (font-display/sans/mono) and text size win.
  */
 export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
   let role: Role | undefined;
@@ -51,11 +54,11 @@ export function typeBaseOf(el: Node, kit: TypeKit): TypeBase {
     for (const c of (n.getAttribute("class") ?? "").split(/\s+/)) {
       const bare = c.replace(/^[a-z-]+:/, "");
       let m: RegExpExecArray | null;
-      if (!role && (m = /^font-(display|sans|mono|serif)$/.exec(bare))) role = m[1] as Role;
-      else if (weight === undefined && (m = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.exec(bare))) weight = WEIGHTS[m[1]];
+      if (!role && (m = /^font-(display|sans|mono)$/.exec(bare))) role = m[1] as Role;
+      else if (weight === undefined && (m = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|text|title|label)$/.exec(bare))) weight = WEIGHTS[m[1]];
       else if (weight === undefined && (m = /^font-\[(\d+)\]$/.exec(bare))) weight = Number(m[1]);
       else if (width === undefined && (m = /^font-stretch-(\d+(?:\.\d+)?)%$/.exec(bare))) width = Number(m[1]);
-      else if (size === undefined && (m = /^text-(mega|display|h1|h2|h3|lead|body|caption|micro)$/.exec(bare))) size = TYPE_SCALE[m[1]][0];
+      else if (size === undefined && (m = /^text-(display|title|body|small|label)$/.exec(bare))) size = TYPE_SCALE[m[1] as keyof typeof TYPE_SCALE][0];
       else if (size === undefined && (m = /^text-\[(\d+(?:\.\d+)?)px\]$/.exec(bare))) size = Number(m[1]);
       else if (/^(whitespace-nowrap|text-nowrap)$/.test(bare)) nowrap = true;
     }

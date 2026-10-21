@@ -1,6 +1,6 @@
 ---
 description: Make a motion design video end-to-end from a brief — director → parallel scene-builders → gate → critic → iterate → render.
-argument-hint: <brief text or path> [--slug name] [--aspect 16:9|9:16|1:1|4:5] [--theme name]
+argument-hint: <brief text or path> [--slug name] [--aspect 16:9|9:16|1:1|4:5] [--theme litt-dark|litt-light]
 ---
 
 Make a state-of-the-art motion design video for this brief:
@@ -17,7 +17,8 @@ a plugin they are namespaced (`continuity:director`, `continuity:scene-builder`,
 0. **Toolchain.** If `npx ct doctor` fails because `ct` isn't installed, run the
    `/continuity:setup` steps first (install `@litterthanlit/continuity`, `npx ct init`).
 1. **Setup.** Pick a kebab-case slug (or use `--slug`), aspect (social → 9:16,
-   launch/product → 16:9) and theme. `npx ct new <slug> --aspect … --theme …`.
+   launch/product → 16:9) and theme (`litt-dark`, the default, or `litt-light`;
+   the look is litt either way). `npx ct new <slug> --aspect … --theme …`.
    Put the brief in `projects/<slug>/brief.md`. Ask the user only if the core
    message or audience is genuinely unknowable; otherwise assume and record.
 2. **Direct.** Spawn the `director` subagent with the slug and brief. Review its
@@ -30,11 +31,13 @@ a plugin they are namespaced (`continuity:director`, `continuity:scene-builder`,
    import"). If the scenes share a layout, write `lib/` yourself first.
 4. **Gate.** `npx ct check <slug>` on the whole video. Fix cross-scene issues
    (transitions, continuity, overlaps) yourself or re-dispatch a builder.
-5. **Critique.** Spawn the `critic` subagent. It scores 5 axes and returns ≤ 5 fixes.
+5. **Critique.** Spawn the `critic` subagent. It scores 5 axes plus litt's signature
+   checklist and returns ≤ 5 fixes.
 6. **Iterate (max 3 rounds).** Apply the fixes (dispatch builders for scene-local
    fixes), gate, re-critique. If a round scores lower, `npx ct compare` the two
    iterations, record a `verdict`, and `npx ct restore <slug> best` if needed.
-   Ship when the gate has 0 errors and every axis ≥ 4.
+   Ship when the gate has 0 errors, the litt warnings are fixed or justified, and
+   every axis ≥ 4.
 7. **Deliver.** `npx ct render <slug>`, `npx ct motion <slug>`,
    `npx ct report <slug>`. Send the user the MP4, the contact sheet and the
    report summary (scores, known issues, what you'd do with another round).

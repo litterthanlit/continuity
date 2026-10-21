@@ -1,10 +1,10 @@
 {
-  "title": "Seeded static defects (test fixture — every lint/build rule must fire)",
+  "title": "Seeded static defects (test fixture \u2014 every lint/build rule must fire)",
   "format": {
     "aspect": "16:9",
     "fps": 30
   },
-  "theme": "mono-dark",
+  "theme": "litt-dark",
   "scenes": [
     {
       "id": "motion",
@@ -23,36 +23,36 @@
         "c": "Gamma"
       },
       "transition": {
-        "type": "whip",
-        "duration": 0.8
+        "type": "push",
+        "duration": 1.0,
+        "blur": true
       }
     },
     {
       "id": "axes",
-      "type": "atelier",
       "duration": 3,
-      "intent": "Variable-axis defects (atelier: Newsreader display, wght 200–800, no wdth).",
+      "intent": "Variable-axis defects (Geist: wght 100\u2013900, no wdth).",
       "beats": [],
       "text": {
-        "thin": "Hairline serif display",
+        "thin": "Hairline display weight",
         "wide": "Too wide to stretch",
         "heavy": "Heavy"
       },
       "transition": {
-        "type": "iris",
-        "ease": "bouncy"
+        "type": "wipe",
+        "ease": "expressive"
       }
     },
     {
       "id": "t3",
       "duration": 2,
-      "intent": "Transition defects.",
+      "intent": "Transition defects, and litt motion defects (loops, drift).",
       "beats": [],
       "text": {
         "word": "T3"
       },
       "transition": {
-        "type": "strips",
+        "type": "crossfade",
         "duration": 0.1
       }
     },
