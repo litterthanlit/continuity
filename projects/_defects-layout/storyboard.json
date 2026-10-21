@@ -1,10 +1,10 @@
 {
-  "title": "Seeded layout defects (test fixture — every browser rule must fire)",
+  "title": "Seeded layout defects (test fixture \u2014 every browser rule must fire)",
   "format": {
     "aspect": "16:9",
     "fps": 30
   },
-  "theme": "mono-dark",
+  "theme": "litt-dark",
   "scenes": [
     {
       "id": "layout",
@@ -22,12 +22,11 @@
     },
     {
       "id": "fonts",
-      "type": "wonk",
       "duration": 3,
-      "intent": "Font capability defects (v2 kit, synthesis off).",
+      "intent": "Font capability defects (synthesis off).",
       "beats": [],
       "text": {
-        "bold": "Mono in bold",
+        "bold": "Geist at a width it lacks",
         "label": "frames"
       }
     }

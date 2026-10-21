@@ -39,15 +39,17 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 - **Ids.** Anything you animate, or any text, gets a `ct="id"` prop. Ids match the
   storyboard's `elements`. `scene` and `camera` are reserved.
 - **Copy lives in the storyboard** (`scenes[].text`); views read `text.<id>`.
-- **Tokens first.** Durations: `instant fast base slow hero linger`. Eases:
-  `enter exit standard hero inOut snappy gentle bouncy`. Staggers:
-  `char word line list grid`. Raw numbers need a reason.
+- **Tokens first.** Durations: `instant responsive expressive exit slow linger`. Eases:
+  `responsive` (the default spring) `expressive` (one per scene) `out` `inOut` `linear`.
+  Staggers: `char word line list grid`. Raw numbers need a reason.
 - **Layout** inside `<Safe>` (16:9 title-safe) or `<Safe zone="social">` (9:16).
   Text never below the legibility floor (26px landscape, 34px portrait).
 - **Never edit `build/`** — it is generated. Edit `projects/<slug>/…`.
-- **Type kits, not ad-hoc fonts.** Pick one kit per video (storyboard `type`:
-  `swiss atelier wonk terminal broadside flexion` — the `typography` skill) and
-  one transition language (motion-craft §7).
+- **One look: litt** (`docs/decisions/0006`). Themes `litt-dark` / `litt-light`, type kit
+  `litt` (Geist in three weights by role, two inks — the `typography` skill), litt's motion
+  tiers with one expressive moment per scene, material static, and one transition language
+  (cuts + ≤ 2 accents, motion-craft §8). The `litt-*` and motion lint rules gate it; a
+  deliberate exception is `allow: [...]` / `litt-allow: <rule> (reason)`.
 - **Open source only.** No GSAP, no fonts outside the theme registry, no network
   assets at render time.
 
@@ -69,7 +71,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `projects/<slug>/.continuity/` | iterations (findings, stills, sheets, renders) — gitignored |
 | `src/motion/` | tokens, presets, DSL, evaluator, transitions (`TRANSITION_DEFS`), `fx.ts` (mask/clip presentations) |
 | `src/kit/` | scene components (Stage, Safe, Headline, …) |
-| `src/themes/` | colour themes (`mono-dark`, `light-editorial`, `vivid-gradient`), `kits.ts` (type kits), `fonts.ts` (vendored font registry) |
+| `src/themes/` | litt's themes (`litt-dark`, `litt-light`), `kits.ts` (the `litt` type kit and scale), `fonts.ts` (vendored registry: Geist, Geist Mono, symbols) |
 | `src/lint/timeline.ts` | motion lint rules (`RULES` explains each) |
 | `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `typography`, `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
 | `.claude/` | this repo's session config: `skills`/`agents`/`commands` are symlinks into `plugin/`; `settings.json` wires `plugin/hooks/*`; `hooks/session-start.sh` installs deps in cloud sessions |
@@ -77,14 +79,14 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
 | `Dockerfile`, `.github/workflows/docker.yml` | images: `toolchain` (pinned Chrome + ffmpeg) and `ct` (default, entrypoint `ct`); CI runs the browser suite inside `toolchain`; release pushes both to GHCR |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
-| `projects/_kit`, `_defects*` | component gallery (reference) and seeded-defect fixtures (tests) |
+| `projects/_kit`, `_type`, `_transitions`, `_defects*` | galleries of the litt kit, type and transitions (reference + goldens) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands
 
 ```
 npx ct init                    # (user repos) config, projects dir, CLAUDE.md block, permissions
-npx ct new <slug> --aspect 9:16 --theme mono-dark [--type broadside]
+npx ct new <slug> --aspect 9:16 --theme litt-dark
 npx ct lint <slug> [--storyboard | --scene id]   # fast static gate (also runs on every edit via hook)
 npx ct check <slug> [--scene id]  # THE gate (browser audits) — the full run records the iteration
 npx ct timeline <slug>        # every tween with numbers

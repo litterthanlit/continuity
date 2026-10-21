@@ -1,12 +1,20 @@
 ---
 name: continuity
-description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, critique).
+description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, the house language (litt), roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, critique).
 ---
 
 # Continuity production loop
 
 You are a motion designer whose medium is code. The loop below is non-negotiable;
 the craft lives in the `motion-craft` skill, the API in `reference/api.md`.
+
+**The look is litt** — Nick's design language: technical precision, lit from above. Geist in
+three weights by role, two inks, warm stone neutrals (`litt-dark` or `litt-light`), one accent
+that behaves like light, colour only for data, a soft light from the top, flat surfaces with
+hairlines. Motion explains and never performs: responsive springs, one expressive moment per
+scene, exits at 0.75×, material static, cuts on the beat. `docs/decisions/0006` is the
+translation table; the `litt-*` and motion lint rules gate it. There are no other themes or
+type kits to choose.
 
 ## 0 · Orient
 - `npx ct status <slug>` — iterations, gate results, best version.
@@ -24,18 +32,18 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
 - **text** holds all copy by element id. Budget words: ≤ 7 words on screen at once
   for social, ≤ 12 for 16:9. Every text needs read time (≈17 chars/s + 0.4s).
 - **elements** list ids, roles and coarse anchors (6×6 grid A1–F6).
-- **type** — the type kit (load `typography`): `swiss`, `atelier`, `wonk`,
-  `terminal`, `broadside`, `flexion`. One per video.
-- **transition** into the next scene, from ONE transition language (motion-craft
-  §7): `cut` (default for punchy type), `crossfade`, `dip`, `push`, `pushUp`,
-  `whip`, `punchCut`, `wipe`, `iris`, `strips`, `lightSweep`, `blur`, `zoom` —
-  with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
+- **theme** — `litt-dark` (default) or `litt-light`; **type** — `litt` (the only kit).
+- **transition** into the next scene, from litt's ONE language (motion-craft §8):
+  `cut` on the beat is the primary; accents `crossfade`, `dip`, `push`, `pushUp`,
+  `wipe` — at most two types, with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
 - `npx ct lint <slug>` validates the storyboard immediately.
 
 ## 2 · Style frames (builder)
 Build every scene's *settled* layout with minimal motion. `npx ct stills <slug>`
-→ read each PNG at full size. Fix type scale, hierarchy, alignment, spacing,
-negative space and color **now** — motion cannot rescue a weak frame.
+→ read each PNG at full size. Fix hierarchy (weight and ink first, then space,
+then the one display step), alignment (asymmetric, left edge), spacing (16px
+grid, lockups 8, blocks 32), negative space, light and colour **now** — motion
+cannot rescue a weak frame.
 
 ## 3 · Motion (builder)
 Load `motion-craft` and `typography` (always) and `kinetic-type` / `product-launch` as relevant.
@@ -46,7 +54,10 @@ Write `motion: (m) => …` with presets + tokens. Check numbers with
 `npx ct check <slug>` → fix every error. Findings are keyed by `scene.element`
 and time; the `→` line is the suggested fix. Re-run until clean. Rule meanings:
 `reference/catalog.md` (lint rules section) and HyperFrames layout codes (overflow, overlap,
-occlusion, contrast with a suggested compliant color).
+occlusion, contrast with a suggested compliant color). The litt rules (`litt-*`,
+`spring-bounce`, `expressive-budget`, `material-motion`, `property-motion`, `travel-too-far`,
+`camera-drift`, `ambient-loop`) are the taste gate: fix them, or justify a deliberate
+exception with `allow: ["rule"]` / `litt-allow: <rule> (reason)` and a comment.
 
 ## 5 · Look (critic)
 `npx ct sheet <slug>` + `npx ct stills <slug>` → read the images.
@@ -81,5 +92,6 @@ limited number of slots automatically. Always finish with a full `ct check`.
 ## Fast reference
 - API & component catalog: `reference/api.md`
 - Presets & tokens with numbers: `motion-craft/SKILL.md`
-- Type kits, roles, axis motion: `typography/SKILL.md`
+- litt's type (scale, weights, inks, spacing): `typography/SKILL.md`
+- The translation table (litt → video): `docs/decisions/0006-litt-house-language.md` in the repo
 - Rubric: `critique/SKILL.md`

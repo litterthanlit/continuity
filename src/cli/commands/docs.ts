@@ -3,12 +3,13 @@ import { join } from "node:path";
 import { SOURCE_RULES } from "../../lint/source.js";
 import { RULES } from "../../lint/timeline.js";
 import { emphasisPresets, enterPresets, exitPresets, type PresetDef } from "../../motion/presets.js";
+import { naturalDuration } from "../../motion/easing.js";
 import { durations, eases, staggers } from "../../motion/tokens.js";
+import type { EaseSpec } from "../../motion/types.js";
 import { TRANSITION_DEFS } from "../../motion/transitions.js";
 import { PKG_ROOT, rel } from "../../paths.js";
-import { TYPE_SCALE } from "../../build/css.js";
 import { themes } from "../../themes/index.js";
-import { typeKits, type RoleStyle } from "../../themes/kits.js";
+import { littKit, typeKits, type RoleStyle, type TypeSize } from "../../themes/kits.js";
 import type { Command } from "../lib/command.js";
 import { flagBool } from "../lib/args.js";
 import { log, ok } from "../lib/log.js";
@@ -19,14 +20,23 @@ function presetRows(defs: Record<string, PresetDef>): string {
       const segs = d.segments({});
       const props = [...new Set(segs.flatMap((s) => Object.keys(s.props)))].join(", ");
       const s0 = segs[0];
-      const dur = typeof s0.duration === "number" ? `${s0.duration}s` : `${s0.duration} (${durations[s0.duration]}s)`;
+      const spec = eases[s0.ease] as EaseSpec;
+      const settle = naturalDuration(spec);
+      const dur =
+        settle !== null
+          ? `settles ≈ ${Math.round(settle * 100) / 100}s`
+          : d.kind === "exit" && s0.duration === "exit"
+            ? `0.75× the entrance (≤ ${durations.exit}s)`
+            : typeof s0.duration === "number"
+              ? `${s0.duration}s`
+              : `${s0.duration} (${durations[s0.duration]}s)`;
       return `| \`${name}\` | ${props} | ${dur} | ${s0.ease} | ${d.mask ? "yes" : ""} | ${d.description} |`;
     })
     .join("\n");
 }
 
 const roleLine = (r: RoleStyle) =>
-  `${r.family.family} ${r.weight}${r.width !== undefined && r.width !== 100 ? ` w${r.width}` : ""}${r.axes ? ` ${Object.entries(r.axes).map(([a, v]) => `${a} ${v}`).join(" ")}` : ""}${r.case ? " caps" : ""}`;
+  `${r.family.family} ${r.weight}${r.width !== undefined && r.width !== 100 ? ` w${r.width}` : ""}${r.axes ? ` ${Object.entries(r.axes).map(([a, v]) => `${a} ${v}`).join(" ")}` : ""}`;
 
 export function catalog(): string {
   const head = "| Preset | Animates | Duration | Ease | Mask | Use |\n|---|---|---|---|---|---|";
@@ -38,7 +48,7 @@ ${Object.entries(durations).map(([k, v]) => `- \`${k}\` ${v}s`).join("\n")}
 
 ## Eases
 ${Object.entries(eases)
-  .map(([k, v]) => `- \`${k}\` — ${v.type === "bezier" ? `cubic-bezier(${v.p.join(", ")})` : v.type === "spring" ? `spring(stiffness ${v.stiffness}, damping ${v.damping}, mass ${v.mass})` : v.type}`)
+  .map(([k, v]) => `- \`${k}\` — ${v.type === "bezier" ? `cubic-bezier(${v.p.join(", ")})` : v.type === "spring" ? `spring, visual ${v.visual}s, bounce ${v.bounce}` : v.type}`)
   .join("\n")}
 
 ## Staggers
@@ -61,21 +71,18 @@ ${presetRows(emphasisPresets)}
 |---|---|---|---|---|
 ${Object.entries(TRANSITION_DEFS).map(([k, d]) => `| \`${k}\` | ${k === "cut" ? "—" : `${d.duration}s`} | ${k === "cut" ? "—" : `${d.range[0]}–${d.range[1]}s`} | ${d.params.join(", ") || "—"}${d.dirs && d.dirs.length < 4 ? ` (dir: ${d.dirs.join("/")})` : ""} | ${d.description} |`).join("\n")}
 
-One transition language per video (≤ 2 types besides cuts) — see motion-craft §7.
+One transition language per video: cuts on the beat, and at most two accent types — see motion-craft §8.
 
-## Type scale (px at 1080 short side · line-height · tracking)
-${Object.entries(TYPE_SCALE).map(([k, [s, lh, ls]]) => `- \`text-${k}\` ${s}px · ${lh} · ${ls}`).join("\n")}
+## Type scale (\`text-<step>\`: px · line height px · tracking, at 1080 short side; 9:16 in brackets)
+${Object.entries(littKit.scale).map(([k, [sz, lh, ls]]) => { const p = littKit.portrait[k as TypeSize]; return `- \`text-${k}\` ${sz} · ${lh} · ${ls}${p ? ` (9:16: ${p[0]} · ${p[1]})` : ""}`; }).join("\n")}
 
-## Themes (colour)
-${Object.values(themes).map((t) => `- \`${t.name}\` (${t.mode}) — ${t.description} Suggested kit: \`${t.suggestedType ?? "classic"}\`. Classic fonts: display ${t.fonts.display.family}, sans ${t.fonts.sans.family}, mono ${t.fonts.mono.family}, serif ${t.fonts.serif.family}.`).join("\n")}
+Weights by role: \`font-normal\` 400 text · \`font-title\` 500 titles · \`font-label\` 600 labels (the label step only).
 
-## Type kits (storyboard \`type\`)
-| kit | evokes | display | text | labels | accent | figures |
-|---|---|---|---|---|---|---|
-${Object.values(typeKits).map((k) => `| \`${k.name}\` | ${k.evokes} | ${roleLine(k.roles.display)} | ${roleLine(k.roles.sans)} | ${roleLine(k.roles.mono)} ${k.label.case === "uppercase" ? "caps " : ""}${k.label.tracking} | ${k.roles.serif.family.family} ×${k.accent.scale} | ${k.figures} |`).join("\n")}
+## Themes
+${Object.values(themes).map((t) => `- \`${t.name}\` (${t.mode}) — ${t.description}`).join("\n")}
 
-Omit \`type\` for \`classic\` (the theme's own fonts, v1 settings). Per-kit tracking/leading overrides of the scale:
-${Object.values(typeKits).map((k) => `- \`${k.name}\`: ${Object.entries(k.scale).map(([s, [lh, ls]]) => `${s} ${lh}/${ls}`).join(" · ")}`).join("\n")}
+## Type kit
+${Object.values(typeKits).map((k) => `- \`${k.name}\` — ${k.description} Display ${roleLine(k.roles.display)} · text ${roleLine(k.roles.sans)} · mono ${roleLine(k.roles.mono)} · figures: ${k.figures}.`).join("\n")}
 
 ## Timeline lint rules
 ${Object.entries(RULES).map(([k, v]) => `- \`${k}\` — ${v}`).join("\n")}

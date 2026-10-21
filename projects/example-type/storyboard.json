@@ -2,85 +2,115 @@
   "title": "Continuity — motion design, as code",
   "logline": "For skeptical designers: AI agents can now make motion you'd ship, because they can finally see their own work.",
   "format": { "aspect": "9:16", "fps": 30 },
-  "theme": "mono-dark",
+  "theme": "litt-dark",
+  "type": "litt",
   "scenes": [
     {
       "id": "hook",
-      "duration": 2.6,
+      "duration": 2.4,
       "intent": "Stake the claim: motion design is a craft (earn trust with designers).",
-      "beats": [{ "id": "b1", "at": 0.1, "note": "line 1 rises" }, { "id": "b2", "at": 0.55, "note": "'a craft.' lands, serif swap" }],
+      "beats": [
+        { "id": "b1", "at": 0.1, "note": "'Motion is' rises from its baseline" },
+        { "id": "b2", "at": 0.55, "note": "'a craft.' is placed — the scene's one expressive moment" },
+        { "id": "b3", "at": 1.2, "note": "'Motion is' steps to the grey; 'a craft.' leads" }
+      ],
       "text": { "l1": "Motion is", "l2": "a craft." },
       "elements": [
-        { "id": "l1", "role": "headline", "anchor": "A2:F2" },
-        { "id": "l2", "role": "headline", "anchor": "A3:F3" }
+        { "id": "l1", "role": "headline", "anchor": "A2:E2", "note": "the setup line; recedes to the grey at b3" },
+        { "id": "l2", "role": "headline", "anchor": "A3:E3", "note": "the payload; stays in fg" }
       ],
-      "motion": "Line-mask reveal, left-aligned editorial stack. 'craft.' in serif italic. Slow push-in."
+      "motion": "Lit from above (the hero). Two display lines, left-aligned on the piece's one top edge. l1 masks up by line on the responsive spring; l2 masks up on the expressive spring. Once both have landed l1 dims to the grey at the instant tier, so rank comes from ink. A 3% camera push carries the hold. Hard cut out."
     },
     {
       "id": "write",
-      "duration": 2.3,
+      "duration": 2.0,
       "intent": "The turn: agents can already write motion code.",
-      "beats": [{ "id": "b1", "at": 0.05 }, { "id": "b2", "at": 0.5, "note": "'write it.' punches in" }],
+      "beats": [
+        { "id": "b1", "at": 0.05, "note": "'Agents can' rises" },
+        { "id": "b2", "at": 0.45, "note": "'write it.' types on; 'Agents can' steps back" }
+      ],
       "text": { "l1": "Agents can", "l2": "write it." },
       "elements": [
-        { "id": "l1", "role": "headline", "anchor": "A2:F2" },
-        { "id": "l2", "role": "headline", "anchor": "A3:F3" }
+        { "id": "l1", "role": "headline", "anchor": "A2:E2" },
+        { "id": "l2", "role": "headline", "anchor": "A3:E3", "note": "typed, character by character" },
+        { "id": "caret", "role": "decor", "note": "a focus-coloured caret after 'it.'" }
       ],
-      "motion": "Word punch (rise by words, hero ease). 'write' in accent. A thin caret blinks after 'it.' (type-on feel)."
+      "motion": "Solid canvas. l1 masks up by line (responsive). At b2 l1 dims and l2 types on at a human rate — writing, literally; that is the scene's moment, so no expressive spring. When the last character lands, the caret appears at the instant tier and blinks (the one loop litt allows). Hard cut out."
     },
     {
       "id": "blind",
-      "duration": 2.5,
+      "duration": 2.4,
       "intent": "Tension: they can't see what they make.",
-      "beats": [{ "id": "b1", "at": 0.05 }, { "id": "b2", "at": 1.2, "note": "'see' defocuses" }],
+      "beats": [
+        { "id": "b1", "at": 0.05, "note": "three lines rise, 80ms apart" },
+        { "id": "b2", "at": 1.15, "note": "'see' steps to the grey — the word they can't do" }
+      ],
       "text": { "l1": "But they", "l2": "can't", "l3": "see it." },
       "elements": [
         { "id": "l1", "role": "headline" },
         { "id": "l2", "role": "headline" },
-        { "id": "l3", "role": "headline" }
+        { "id": "l3", "role": "headline" },
+        { "id": "see", "role": "headline", "note": "the word inside l3 that dims" }
       ],
-      "motion": "Lines mask up. After landing, the word 'see' blurs out of focus — the problem made visible.",
-      "transition": { "type": "zoom", "duration": 0.45 }
+      "motion": "Solid canvas. Three lines mask up 80ms apart, l1 and l2 responsive, l3 expressive (the scene's moment). At b2 the word 'see' — and only it — dims to the grey: the inverse of the piece's ink rule, the problem made visible. Hard cut out (the turn lives on the cut)."
     },
     {
       "id": "eyes",
-      "duration": 2.9,
+      "duration": 3.0,
       "intent": "Resolution: we gave them eyes — the contact sheet as proof.",
-      "beats": [{ "id": "b1", "at": 0.2 }, { "id": "b2", "at": 0.75, "note": "frame grid cascades in" }],
+      "beats": [
+        { "id": "b1", "at": 0.1, "note": "headline rises" },
+        { "id": "b2", "at": 0.7, "note": "the contact sheet cascades in; 'So we gave' steps back" },
+        { "id": "b3", "at": 1.4, "note": "the agent's focus ring lands on the first frame, then reads along the row" }
+      ],
       "text": { "l1": "So we gave", "l2": "them eyes." },
       "elements": [
-        { "id": "l1", "role": "headline", "anchor": "A2:F2" },
-        { "id": "l2", "role": "headline", "anchor": "A3:F3" },
-        { "id": "grid", "role": "ui", "anchor": "A4:F5" }
+        { "id": "l1", "role": "headline", "anchor": "A2:E2" },
+        { "id": "l2", "role": "headline", "anchor": "A3:E3" },
+        { "id": "t1", "role": "decor", "anchor": "A4:F5", "note": "t1–t8: frames of this very video, a 4×2 contact sheet (imagery, read from the storyboard copy)" },
+        { "id": "t2", "role": "decor" },
+        { "id": "t3", "role": "decor" },
+        { "id": "t4", "role": "decor" },
+        { "id": "t5", "role": "decor" },
+        { "id": "t6", "role": "decor" },
+        { "id": "t7", "role": "decor" },
+        { "id": "t8", "role": "decor" },
+        { "id": "focus", "role": "decor", "note": "litt's focus ring: what the agent is looking at" }
       ],
-      "motion": "Headline masks up; a 3×3 grid of 'frames' (contact sheet) cascades in from the center with a snappy spring. Camera drifts."
+      "motion": "Solid canvas. l1 responsive, l2 expressive (the moment). At b2 the eight frames rise 32px on the responsive spring, 40ms apart, and l1 dims. At b3 the focus ring appears at the instant tier and glides frame to frame on the responsive spring — the gliding highlight, the agent reading its own sheet. 3% camera push. Hard cut out."
     },
     {
       "id": "check",
-      "duration": 2.4,
+      "duration": 2.2,
       "intent": "Proof: every frame is checked.",
-      "beats": [{ "id": "b1", "at": 0.1 }, { "id": "b2", "at": 0.7, "note": "check draws" }],
+      "beats": [
+        { "id": "b1", "at": 0.1, "note": "lines rise" },
+        { "id": "b2", "at": 0.65, "note": "the check draws; 'Every frame,' steps back" }
+      ],
       "text": { "l1": "Every frame,", "l2": "checked." },
       "elements": [
         { "id": "l1", "role": "headline" },
         { "id": "l2", "role": "headline" },
-        { "id": "tick", "role": "decor" }
+        { "id": "tick", "role": "decor", "note": "a check mark in fg at the display stem weight" }
       ],
-      "motion": "Lines mask up; an accent check-mark strokes on beside 'checked.'",
+      "motion": "Solid canvas. l1 responsive, l2 expressive. At b2 the check draws on beside 'checked.' (slow, inOut) while l1 dims. Dip to the canvas into the end card: the video's one accent transition.",
       "transition": { "type": "dip", "duration": 0.5 }
     },
     {
       "id": "end",
-      "duration": 2.9,
+      "duration": 2.8,
       "intent": "Brand + promise + CTA.",
-      "beats": [{ "id": "b1", "at": 0.15 }, { "id": "b2", "at": 0.6 }, { "id": "b3", "at": 1.0 }],
-      "text": { "eyebrow": "Open source", "wordmark": "Continuity", "tagline": "Motion design, as code." },
-      "elements": [
-        { "id": "eyebrow", "role": "eyebrow", "anchor": "C2:D2" },
-        { "id": "wordmark", "role": "logo", "anchor": "B3:E3" },
-        { "id": "tagline", "role": "subhead", "anchor": "B4:E4" }
+      "beats": [
+        { "id": "b1", "at": 0.35, "note": "label, then the wordmark is placed" },
+        { "id": "b2", "at": 0.8, "note": "tagline rises" }
       ],
-      "motion": "Wordmark tracks in from wide; tagline rises; eyebrow fades; glow breathes."
+      "text": { "label": "Open source", "wordmark": "Continuity", "tagline": "Motion design, as code." },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "C2:D2" },
+        { "id": "wordmark", "role": "logo", "anchor": "B3:E3" },
+        { "id": "tagline", "role": "body", "anchor": "B4:E4" }
+      ],
+      "motion": "Lit from above again; the piece's one centered statement. The label fades in, the wordmark settles (rises 32px from 0.98 on the expressive spring), the tagline rises in the grey. A 3% camera push holds it."
     }
   ]
 }

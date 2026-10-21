@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eases } from "../motion/tokens.js";
-import { DIRS, TRANSITION_COLORS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
+import { DIRS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
 import { KIT_NAMES } from "../themes/kits.js";
 
 export const ASPECTS = {
@@ -21,7 +21,7 @@ export const BeatSchema = z.object({
   note: z.string().optional(),
 });
 
-const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "origin", "n", "stagger", "blur", "color", "flash"];
+const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur"];
 
 /** Transition into the next scene. Parameters are validated per type (TRANSITION_DEFS); duration defaults per type. */
 export const TransitionSchema = z
@@ -34,12 +34,7 @@ export const TransitionSchema = z
     dir: z.enum(DIRS).optional(),
     angle: z.number().min(-360).max(360).optional(),
     feather: z.number().min(0).max(50).optional(),
-    origin: z.object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) }).optional(),
-    n: z.number().int().min(2).max(12).optional(),
-    stagger: z.number().min(0).max(0.1).optional(),
     blur: z.union([z.boolean(), z.number().min(0).max(200)]).optional(),
-    color: z.enum(TRANSITION_COLORS).optional(),
-    flash: z.number().min(0).max(0.5).optional(),
   })
   .superRefine((t, ctx) => {
     const def = TRANSITION_DEFS[t.type];
@@ -57,7 +52,7 @@ export const TransitionSchema = z
 export const ElementSchema = z.object({
   id: z.string().regex(/^[a-z][\w-]*$/i),
   role: z
-    .enum(["headline", "subhead", "eyebrow", "body", "label", "caption", "cta", "stat", "logo", "ui", "decor", "media"])
+    .enum(["headline", "title", "body", "label", "caption", "cta", "stat", "logo", "ui", "decor", "media"])
     .optional(),
   /** Coarse placement on a 6×6 grid, columns A–F, rows 1–6 (e.g. "B2", "C3:D4"). */
   anchor: z.string().regex(/^[A-F][1-6](:[A-F][1-6])?$/).optional(),
@@ -91,8 +86,8 @@ export const StoryboardSchema = z.object({
     aspect: z.enum(Object.keys(ASPECTS) as [Aspect, ...Aspect[]]),
     fps: z.union([z.literal(24), z.literal(25), z.literal(30), z.literal(60)]).default(30),
   }),
-  theme: z.string().default("mono-dark"),
-  /** Type kit (font pairing): swiss, atelier, wonk, terminal, broadside, flexion. Omit for the theme's classic fonts. */
+  theme: z.string().default("litt-dark"),
+  /** Type kit. litt is the only one; a brand theme.ts can pin a defineKit() variant. */
   type: z.enum(KIT_NAMES).optional(),
   /** Optional musical grid for cutting on the beat (seam for audio). */
   bpm: z.number().positive().optional(),

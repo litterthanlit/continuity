@@ -8,6 +8,7 @@ import {
   type PresetOptions,
 } from "./presets.js";
 import {
+  EXIT_FACTOR,
   durations,
   eases,
   resolveDuration,
@@ -17,6 +18,7 @@ import {
   type DurationToken,
   type EaseToken,
   type StaggerToken,
+  visualOf,
 } from "./tokens.js";
 import type {
   CounterFormat,
@@ -98,6 +100,8 @@ export class MotionBuilder {
     private readonly partsOf?: (target: string, mode: SplitMode) => number | undefined,
     /** Settled font channel values and ranges of a target, from its type kit (axis presets start from them). */
     private readonly basesOf?: (target: string) => { values: Partial<Record<PropName, number>>; ranges: Partial<Record<PropName, [number, number]>> } | undefined,
+    /** Frame size in px (camera origins). */
+    private readonly frame: { width: number; height: number } = { width: 1920, height: 1080 },
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -152,8 +156,8 @@ export class MotionBuilder {
   /** Free-form tween. Prefer presets; use this for bespoke moves (with token eases/durations). */
   tween(targets: string | string[], props: Partial<Record<PropName, PropRange | number>>, opts: TweenCallOptions = {}): this {
     const list = toList(targets);
-    const { spec, name } = resolveEase(opts.ease ?? "standard");
-    const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(spec) ?? 0.4);
+    const { spec, name } = resolveEase(opts.ease ?? "responsive");
+    const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(spec) ?? durations.responsive);
     const start = this.time(opts.at);
     const normalized = normalizeProps(props);
     const offsets = this.targetOffsets(list.length, opts);
@@ -175,11 +179,26 @@ export class MotionBuilder {
     return this;
   }
 
-  /** Move the scene camera (a wrapper around the whole scene). Defaults to a slow push over the rest of the scene. */
-  camera(props: Partial<Record<PropName, PropRange | number>>, opts: TimingOptions = {}): this {
+  /**
+   * Move the scene camera (a wrapper around the whole scene). Defaults to a slow push over the
+   * rest of the scene. The camera scales about the frame centre; `origin` (px in the frame, e.g.
+   * the left edge of a left-aligned statement) holds that point still instead, by adding the
+   * translation (centre − origin) × (scale − 1) — so litt's push never drifts left-aligned type.
+   */
+  camera(props: Partial<Record<PropName, PropRange | number>>, opts: TimingOptions & { origin?: { x: number; y: number } } = {}): this {
     const start = this.time(opts.at);
     const { spec, name } = resolveEase(opts.ease ?? "inOut");
     const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : round(this.duration - start);
+    if (opts.origin && props.scale !== undefined) {
+      const [s0, s1] = typeof props.scale === "number" ? [1, props.scale] : [props.scale[0] ?? 1, props.scale[1]];
+      const shift = (axis: "x" | "y", centre: number, anchor: number) => {
+        const user = props[axis];
+        const [u0, u1] = user === undefined ? [0, 0] : typeof user === "number" ? [0, user] : [user[0] ?? 0, user[1]];
+        props = { ...props, [axis]: [round(u0 + (centre - anchor) * (s0 - 1)), round(u1 + (centre - anchor) * (s1 - 1))] };
+      };
+      shift("x", this.frame.width / 2, opts.origin.x);
+      shift("y", this.frame.height / 2, opts.origin.y);
+    }
     this.push({
       target: `${this.scene}.camera`,
       kind: "camera",
@@ -193,12 +212,16 @@ export class MotionBuilder {
     return this;
   }
 
-  /** Ambient sine motion added on top of other motion (floating cards, breathing glows). */
-  loop(target: string, amplitudes: Partial<Record<PropName, number>>, opts: LoopOptions): this {
+  /**
+   * Continuous sine motion added on top of other motion. litt: motion that is
+   * not a response never performs, so the lint warns on loops (`ambient-loop`)
+   * — the camera's slow push is the ambient life. A caret blink is the exception.
+   */
+  loop(target: string, amplitudes: Partial<Record<PropName, number>>, opts: LoopOptions & { blink?: boolean }): this {
     const start = this.time(opts.at);
     const end = opts.until !== undefined ? this.time(opts.until) : null;
     for (const [prop, amplitude] of Object.entries(amplitudes) as [PropName, number][]) {
-      this.loops.push({ target: this.id(target), prop, amplitude, period: opts.period, phase: opts.phase ?? 0, start, end });
+      this.loops.push({ target: this.id(target), prop, amplitude, period: opts.period, phase: opts.phase ?? 0, start, end, ...(opts.blink ? { blink: true } : {}) });
     }
     return this;
   }
@@ -232,21 +255,25 @@ export class MotionBuilder {
     return this;
   }
 
-  /** A click: the pointer presses (scale) and an accent ripple expands from its tip (`<target>-ripple`). */
+  /**
+   * A click: the pointer presses at the instant tier and springs back on the
+   * responsive one, and a focus-coloured ring opens from its tip (`<target>-ripple`).
+   */
   click(target: string, opts: { at?: At; ripple?: boolean } = {}): this {
     const at = this.time(opts.at);
     const id = this.id(target);
-    this.push({ target: id, kind: "emphasis", start: at, duration: durations.instant, ease: eases.standard, easeName: "standard", props: { scale: [null, 0.84] }, preset: "click" });
-    this.push({ target: id, kind: "emphasis", start: round(at + durations.instant), duration: durations.fast, ease: eases.snappy, easeName: "snappy", props: { scale: [null, 1] }, preset: "click" });
+    const back = naturalDuration(eases.responsive) ?? durations.responsive;
+    this.push({ target: id, kind: "emphasis", start: at, duration: durations.instant, ease: eases.out, easeName: "out", props: { scale: [null, 0.9] }, preset: "click" });
+    this.push({ target: id, kind: "emphasis", start: round(at + durations.instant), duration: back, ease: eases.responsive, easeName: "responsive", props: { scale: [null, 1] }, preset: "click" });
     if (opts.ripple !== false) {
       this.push({
         target: `${id}-ripple`,
         kind: "emphasis",
         start: at,
         duration: durations.slow,
-        ease: eases.hero,
-        easeName: "hero",
-        props: { scale: [0.3, 1.7], opacity: [0.9, 0] },
+        ease: eases.out,
+        easeName: "out",
+        props: { scale: [0.4, 1.4], opacity: [0.8, 0] },
         preset: "click",
       });
     }
@@ -258,14 +285,14 @@ export class MotionBuilder {
     return this.enter(target, "typeOn", { at: opts.at, split: "chars", stagger: round(1 / (opts.cps ?? 22)) });
   }
 
-  /** Cursor-style blink (soft, deterministic) between `at` and `until`. */
+  /** Caret blink (soft, deterministic) between `at` and `until` — the one loop litt allows. */
   blink(target: string, opts: { at?: At; until?: At; period?: number } = {}): this {
-    return this.loop(target, { opacity: 1.6 }, { period: opts.period ?? 1.0, phase: 0.25, at: opts.at, until: opts.until });
+    return this.loop(target, { opacity: 1.6 }, { period: opts.period ?? 1.0, phase: 0.25, at: opts.at, until: opts.until, blink: true });
   }
 
   /** Count a number up/down inside a text element. */
   counter(target: string, opts: CounterOptions): this {
-    const { spec, name } = resolveEase(opts.ease ?? "hero");
+    const { spec, name } = resolveEase(opts.ease ?? "out");
     this.push({
       target: this.id(target),
       kind: "emphasis",
@@ -301,9 +328,11 @@ export class MotionBuilder {
         const segDuration =
           opts.duration !== undefined
             ? resolveDuration(opts.duration)
-            : spec.type === "spring" && opts.ease === undefined
+            : spec.type === "spring"
               ? (naturalDuration(spec) ?? resolveDuration(seg.duration))
-              : resolveDuration(seg.duration);
+              : def.kind === "exit" && seg.duration === "exit"
+                ? this.exitDuration(this.id(el))
+                : resolveDuration(seg.duration);
         this.push({
           target: this.id(el),
           group,
@@ -320,6 +349,18 @@ export class MotionBuilder {
       }
     });
     return this;
+  }
+
+  /**
+   * litt: an exit runs at 0.75× its entrance's visual time (the spring's, or
+   * the tween's), within instant … the expressive exit. No entrance declared
+   * yet: the expressive exit.
+   */
+  private exitDuration(target: string): number {
+    const enter = [...this.tweens].reverse().find((t) => t.target === target && t.kind === "enter" && t.duration > 0.01);
+    if (!enter) return durations.exit;
+    const visual = visualOf(enter.ease) ?? enter.duration;
+    return round(Math.min(durations.exit, Math.max(durations.instant, EXIT_FACTOR * visual)));
   }
 
   /** Offsets when several targets share one call: staggered unless the stagger is used for split parts. */

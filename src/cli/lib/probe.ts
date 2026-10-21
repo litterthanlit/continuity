@@ -237,7 +237,7 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
         return [...fams].filter((f) => !document.fonts.check(`16px "${f}"`));
       });
       for (const f of fontIssues) {
-        findings.push({ source: "probe", rule: "font-not-loaded", severity: "error", message: `font "${f}" is used but not loaded — text will render in a fallback face`, suggestion: "use a theme font family (font-display/font-sans/font-mono/font-serif)" });
+        findings.push({ source: "probe", rule: "font-not-loaded", severity: "error", message: `font "${f}" is used but not loaded — text will render in a fallback face`, suggestion: "use a theme font family (font-display/font-sans/font-mono)" });
       }
 
       await page.evaluate(FACE_SCRIPT);

@@ -17,7 +17,8 @@ Procedure:
 4. `npx ct sheet <slug> --anchors` and `npx ct stills <slug>` — then Read every
    produced PNG. Look at each still at full size.
 5. Read `projects/<slug>/brief.md` and `storyboard.json` to judge intent.
-6. Score the 5 axes with evidence; list ≤ 5 fixes in priority order, each with
+6. Score the 5 axes with evidence and fill in the litt signature checklist (the
+   critique skill); list ≤ 5 fixes in priority order, each with
    element id, time, observed problem, and a concrete code/token change; list
    what must be kept.
 7. Record scores: `npx ct score <slug> --intent N --composition N --typography N --temporal N --craft N --note "<one-line summary>"`.

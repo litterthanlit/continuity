@@ -17,20 +17,27 @@ export interface BaseProps {
 /**
  * Join classes; later classes override earlier ones in the same group (a tiny,
  * dependency-free tailwind-merge for the utilities kit components set by
- * default), so `<Eyebrow class="text-accent">` really is accent.
+ * default), so `<Label class="text-fg">` really is fg.
  */
 const GROUPS: Array<[string, RegExp]> = [
-  ["text-size", /^text-(mega|display|h1|h2|h3|lead|body|caption|micro|xs|sm|base|lg|xl|[2-9]xl|\[[\d.]+(px|rem|em)\])$/],
+  ["text-size", /^text-(display|title|body|small|label|xs|sm|base|lg|xl|[2-9]xl|\[[\d.]+(px|rem|em)\])$/],
   ["text-align", /^text-(left|center|right|justify|start|end)$/],
   ["text-wrap", /^text-(balance|pretty|wrap|nowrap)$/],
   ["text-color", /^text-/],
-  ["font-family", /^font-(display|sans|mono|serif)$/],
-  ["font-weight", /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])$/],
+  ["font-family", /^font-(display|sans|mono)$/],
+  ["font-weight", /^font-(normal|title|label|thin|extralight|light|medium|semibold|bold|extrabold|black|\[\d+\])$/],
   ["tracking", /^tracking-/],
   ["leading", /^leading-/],
   ["font-stretch", /^font-stretch-/],
   ["case", /^(uppercase|lowercase|capitalize|normal-case)$/],
   ["italic", /^(italic|not-italic)$/],
+  ["p", /^p-/],
+  ["px", /^px-/],
+  ["py", /^py-/],
+  ["pt", /^pt-/],
+  ["pr", /^pr-/],
+  ["pb", /^pb-/],
+  ["pl", /^pl-/],
 ];
 const groupOf = (c: string) => GROUPS.find(([, re]) => re.test(c.replace(/^[a-z-]+:/, "")))?.[0];
 
@@ -70,23 +77,23 @@ export function El({
 }
 
 export interface StageProps extends BaseProps {
-  /** Background treatment; defaults to the theme's. */
+  /** `solid` canvas (the default) or `lit`: litt's one light source, from the top. Use it on the hero, maybe the end card. */
   bg?: StageBackground | "none";
-  /** Film grain strength 0..1 (false to disable). Defaults to the theme's. */
+  /** Grain opacity 0..1 (false to disable). Defaults to the theme's (litt: 0.02 light, 0.04 dark). */
   grain?: number | false;
 }
 
 /**
  * The scene canvas: background + content layer + grain. Every scene view
  * starts with a Stage. Content is positioned absolutely inside it.
- * The background element is animatable as `bg` (e.g. `m.loop("bg", { scale: 0.03 }, { period: 8 })`).
+ * Material is static in litt (P5): the backdrop never animates.
  */
 export function Stage({ bg, grain, class: cls, style, children }: StageProps) {
   const { theme } = useScene();
   const kind = bg ?? theme.background;
-  const grainAmount = grain === false ? 0 : (grain ?? theme.grain);
+  const grainAmount = grain === false ? 0 : (grain ?? theme.material.grain);
   return (
-    <div class="ct-stage absolute inset-0 overflow-hidden bg-bg text-fg font-sans" style={{ perspective: "1600px" }}>
+    <div class="ct-stage absolute inset-0 overflow-hidden bg-canvas text-fg font-sans" style={{ perspective: "1600px" }}>
       {kind !== "none" && <Backdrop kind={kind} />}
       <div class={cx("ct-content absolute inset-0", cls)} style={style}>
         {children}
@@ -97,47 +104,14 @@ export function Stage({ bg, grain, class: cls, style, children }: StageProps) {
 }
 
 export function Backdrop({ kind, ct = "bg" }: { kind: StageBackground; ct?: string }) {
-  const layers: Record<StageBackground, string> = {
-    solid: "background: var(--color-bg);",
-    aurora: [
-      "background:",
-      "radial-gradient(60% 45% at 18% 0%, color-mix(in oklab, var(--color-accent) 34%, transparent) 0%, transparent 70%),",
-      "radial-gradient(50% 40% at 85% 8%, color-mix(in oklab, var(--color-accent-2) 22%, transparent) 0%, transparent 70%),",
-      "radial-gradient(80% 60% at 50% 110%, color-mix(in oklab, var(--color-accent) 12%, transparent) 0%, transparent 70%),",
-      "var(--color-bg);",
-    ].join(""),
-    spotlight:
-      "background: radial-gradient(55% 50% at 50% 0%, color-mix(in oklab, var(--color-fg) 12%, transparent) 0%, transparent 75%), var(--color-bg);",
-    grid: [
-      "background:",
-      "linear-gradient(color-mix(in oklab, var(--color-fg) 7%, transparent) 1px, transparent 1px) 0 0 / 80px 80px,",
-      "linear-gradient(90deg, color-mix(in oklab, var(--color-fg) 7%, transparent) 1px, transparent 1px) 0 0 / 80px 80px,",
-      "var(--color-bg);",
-      "mask-image: radial-gradient(75% 70% at 50% 45%, #000 40%, transparent 100%);",
-    ].join(""),
-    dots: [
-      "background:",
-      "radial-gradient(color-mix(in oklab, var(--color-fg) 16%, transparent) 1.5px, transparent 1.6px) 0 0 / 36px 36px,",
-      "var(--color-bg);",
-      "mask-image: radial-gradient(70% 65% at 50% 45%, #000 35%, transparent 100%);",
-    ].join(""),
-    mesh: [
-      "background:",
-      "radial-gradient(45% 40% at 15% 20%, color-mix(in oklab, var(--color-accent) 70%, transparent) 0%, transparent 70%),",
-      "radial-gradient(40% 40% at 85% 30%, color-mix(in oklab, var(--color-accent-2) 60%, transparent) 0%, transparent 70%),",
-      "radial-gradient(50% 45% at 60% 95%, color-mix(in oklab, var(--color-accent) 45%, transparent) 0%, transparent 70%),",
-      "var(--color-bg);",
-    ].join(""),
-  };
-  // The grid/dots masks fade to transparent, so a solid underlay keeps the canvas opaque.
   return (
-    <div class="ct-backdrop absolute inset-0 bg-bg" data-layout-ignore>
-      <div data-ct={ctId(ct)} class="absolute -inset-[4%]" style={layers[kind]} />
+    <div class="ct-backdrop absolute inset-0 bg-canvas" data-layout-ignore>
+      <div data-ct={ctId(ct)} class={cx("absolute inset-0", kind === "lit" && "ct-lit")} />
     </div>
   );
 }
 
-/** Deterministic SVG fractal-noise grain overlay (no randomness at render time). */
+/** litt's grain: a static SVG fractal-noise tile at plain opacity. It also dithers the light's banding. */
 export function Grain({ amount }: { amount: number }) {
   const svg =
     "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'>" +
@@ -151,7 +125,6 @@ export function Grain({ amount }: { amount: number }) {
       style={{
         backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`,
         opacity: String(Math.min(1, Math.max(0, amount))),
-        mixBlendMode: "overlay",
       }}
     />
   );
@@ -180,6 +153,7 @@ export function Safe({ zone = "title", class: cls, style, children, ct }: BasePr
   );
 }
 
+/** Centered content. litt: only for one short statement (an end card, a quote), at most once per video. */
 export function Center({ class: cls, style, children, ct }: BaseProps) {
   return (
     <div data-ct={ct ? ctId(ct) : undefined} class={cx("absolute inset-0 flex flex-col items-center justify-center text-center", cls)} style={style}>
@@ -188,7 +162,12 @@ export function Center({ class: cls, style, children, ct }: BaseProps) {
   );
 }
 
-export function Stack({ class: cls, style, children, ct, gap = 24 }: BaseProps & { gap?: number }) {
+/**
+ * A column. litt's text spacing at video scale: a label 8px above its title and a
+ * title 8px above its text (a lockup reads as one unit), the display line 32px
+ * above its summary, blocks 32px apart (the default), regions 96px apart.
+ */
+export function Stack({ class: cls, style, children, ct, gap = 32 }: BaseProps & { gap?: number }) {
   return (
     <div data-ct={ct ? ctId(ct) : undefined} class={cx("flex flex-col", cls)} style={[`gap:${gap}px`, typeof style === "string" ? style : ""].join(";")}>
       {children}
@@ -196,7 +175,8 @@ export function Stack({ class: cls, style, children, ct, gap = 24 }: BaseProps &
   );
 }
 
-export function Row({ class: cls, style, children, ct, gap = 24 }: BaseProps & { gap?: number }) {
+/** A row; blocks 32px apart by default. */
+export function Row({ class: cls, style, children, ct, gap = 32 }: BaseProps & { gap?: number }) {
   return (
     <div data-ct={ct ? ctId(ct) : undefined} class={cx("flex flex-row items-center", cls)} style={[`gap:${gap}px`, typeof style === "string" ? style : ""].join(";")}>
       {children}
@@ -204,41 +184,14 @@ export function Row({ class: cls, style, children, ct, gap = 24 }: BaseProps & {
   );
 }
 
-/** Soft colored light — a big blurred radial blob. Animate with loops for ambient life. */
-export function Glow({
-  ct,
-  color = "accent",
-  size = 900,
-  x = "50%",
-  y = "50%",
-  opacity = 0.35,
-}: { ct?: string; color?: "accent" | "accent-2" | "fg"; size?: number; x?: string; y?: string; opacity?: number }) {
-  return (
-    <div
-      data-ct={ct ? ctId(ct) : undefined}
-      data-layout-ignore
-      class="pointer-events-none absolute rounded-full"
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        left: x,
-        top: y,
-        marginLeft: `${-size / 2}px`,
-        marginTop: `${-size / 2}px`,
-        background: `radial-gradient(closest-side, color-mix(in oklab, var(--color-${color}) ${Math.round(opacity * 100)}%, transparent), transparent)`,
-      }}
-    />
-  );
-}
-
-/** SVG path that can be drawn on with the `draw` preset. */
+/** SVG path that can be drawn on with the `draw` preset (data: a trend, a connector). Strokes in fg by default. */
 export function Path({
   ct,
   d,
   viewBox,
   width,
   height,
-  stroke = "var(--color-accent)",
+  stroke = "var(--color-fg)",
   strokeWidth = 4,
   class: cls,
 }: { ct: string; d: string; viewBox: string; width: number; height: number; stroke?: string; strokeWidth?: number; class?: string }) {
@@ -255,26 +208,5 @@ export function Path({
         style={{ strokeDasharray: "1", strokeDashoffset: "0" }}
       />
     </svg>
-  );
-}
-
-/**
- * Light sweep across a surface (place inside a relative, overflow-hidden
- * parent). Animate: `m.tween("sheen", { xPct: [-160, 360] }, { duration: "linger", ease: "inOut" })`.
- */
-export function Sheen({ ct, opacity = 0.14 }: { ct: string; opacity?: number }) {
-  return (
-    <div class="pointer-events-none absolute inset-0 overflow-hidden" data-layout-ignore>
-      <div
-        data-ct={ctId(ct)}
-        class="absolute inset-y-[-20%] left-0 w-[38%]"
-        style={{
-          transform: "translate3d(0,0,0) translate(-160%,0)",
-          // Stops at 18%/82%: an angled gradient isn't transparent along its own box
-          // edges, which shows as hard vertical lines on tall surfaces.
-          background: `linear-gradient(100deg, transparent 18%, rgba(255,255,255,${opacity}) 50%, transparent 82%)`,
-        }}
-      />
-    </div>
   );
 }

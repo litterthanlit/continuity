@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { MotionBuilder, staggerOffsets } from "../src/motion/dsl.js";
 import { cubicBezier, easeFn, isLinear, springPosition, springSettleTime } from "../src/motion/easing.js";
 import { compileScene, formatCounter, mergeVariationSettings, resolveScene, sampleScene, styleOf } from "../src/motion/evaluate.js";
-import { eases, readTime } from "../src/motion/tokens.js";
+import { bounceOf, eases, readTime, spring, visualOf } from "../src/motion/tokens.js";
 import { transitionTweens } from "../src/motion/transitions.js";
+import { parseEnergy } from "../src/cli/lib/energy.js";
 import type { SceneTimeline } from "../src/motion/types.js";
 
 const scene = (mb: MotionBuilder): SceneTimeline => ({
@@ -35,9 +36,9 @@ describe("easing", () => {
     expect(cubicBezier(0.42, 0, 0.58, 1)(0.5)).toBeCloseTo(0.5, 4);
   });
 
-  it("decelerating entrance covers most distance early", () => {
-    const f = easeFn(eases.enter);
-    expect(f(0.3)).toBeGreaterThan(0.6);
+  it("litt's ease-out covers most distance early", () => {
+    const f = easeFn(eases.out);
+    expect(f(0.3)).toBeGreaterThan(0.4);
   });
 
   it("springs start at 0, settle at 1, and bouncy overshoots", () => {
@@ -51,16 +52,26 @@ describe("easing", () => {
     for (let t = 0; t < 3; t += 0.01) expect(springPosition(over, t)).toBeLessThanOrEqual(1 + 1e-9);
   });
 
-  it("spring settle times are sane", () => {
-    const snappy = springSettleTime(eases.snappy);
-    expect(snappy).toBeGreaterThan(0.2);
-    expect(snappy).toBeLessThan(1);
+  it("litt's springs: visual time + bounce, converted the way Motion does", () => {
+    // responsive: visual 0.2s, bounce 0 — critically damped, settles in ≈ 0.35s, never overshoots
+    expect(springSettleTime(eases.responsive)).toBeCloseTo(0.353, 2);
+    expect(bounceOf(eases.responsive)).toBe(0);
+    // expressive: visual 0.35s, bounce 0.12 — settles in ≈ 0.58s, peaks well under a pixel per 100
+    expect(springSettleTime(eases.expressive)).toBeCloseTo(0.582, 2);
+    let peak = 0;
+    for (let t = 0; t < 1.5; t += 0.001) peak = Math.max(peak, springPosition(eases.expressive, t));
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThan(1.005);
+    // any spring's bounce and visual time can be read back
+    expect(bounceOf({ type: "spring", stiffness: 300, damping: 15, mass: 1 })).toBeGreaterThan(0.5);
+    expect(visualOf({ type: "spring", stiffness: eases.expressive.stiffness, damping: eases.expressive.damping, mass: 1 })).toBeCloseTo(0.35, 3);
+    expect(spring(0.35, 0.12)).toEqual(eases.expressive);
   });
 
   it("detects linear curves", () => {
     expect(isLinear({ type: "linear" })).toBe(true);
     expect(isLinear({ type: "bezier", p: [0.3, 0.3, 0.7, 0.7] })).toBe(true);
-    expect(isLinear(eases.enter)).toBe(false);
+    expect(isLinear(eases.out)).toBe(false);
   });
 });
 
@@ -71,21 +82,21 @@ describe("dsl", () => {
     expect(m.time("b1+0.25")).toBe(0.75);
     expect(m.time("end-1")).toBe(3);
     m.enter("title", "rise", { at: "b1" });
-    expect(m.time("after:title")).toBeCloseTo(0.5 + 0.64);
+    expect(m.time("after:title")).toBeCloseTo(0.5 + 0.353);
     expect(() => m.time("nope")).toThrow(/Unknown beat/);
   });
 
   it("staggers multiple targets with list spacing", () => {
     const m = new MotionBuilder("s", 4, {});
     m.enter(["a", "b", "c"], "rise", { at: 1 });
-    expect(m.tweens.map((t) => t.start)).toEqual([1, 1.08, 1.16]);
+    expect(m.tweens.map((t) => t.start)).toEqual([1, 1.04, 1.08]);
     expect(m.tweens[0].target).toBe("s.a");
   });
 
   it("split tweens carry stagger metadata and masks for mask presets", () => {
     const m = new MotionBuilder("s", 4, {});
     m.enter("h", "maskUp", { split: "lines" });
-    expect(m.tweens[0]).toMatchObject({ split: "lines", mask: true, stagger: { each: 0.09, name: "line" } });
+    expect(m.tweens[0]).toMatchObject({ split: "lines", mask: true, stagger: { each: 0.08, name: "line" } });
   });
 
   it("stagger offsets by origin", () => {
@@ -108,11 +119,45 @@ describe("evaluate", () => {
   it("inherits from-values across enter → exit", () => {
     const m = new MotionBuilder("s", 4, {});
     m.enter("a", "rise", { at: 0 });
-    m.exit("a", "sinkOut", { at: 2 });
+    m.exit("a", "liftOut", { at: 2 });
     const resolved = resolveScene(scene(m), {});
     const exit = resolved.find((r) => r.kind === "exit")!;
-    expect(exit.props.y).toEqual([0, -24]);
+    expect(exit.props.y).toEqual([0, -16]);
     expect(exit.props.opacity).toEqual([1, 0]);
+  });
+
+  it("entrances travel litt's 32px on springs; exits run 0.75× the entrance, ease out, no bounce", () => {
+    const m = new MotionBuilder("s", 4, {});
+    m.enter("a", "rise", { at: 0 });
+    m.exit("a", "fadeOut", { at: 2 });
+    m.enter("b", "settle", { at: 0 });
+    m.exit("b", "scaleOut", { at: 2 });
+    m.exit("c", "fadeOut", { at: 2 });
+    const [ra, xa, rb, xb, xc] = m.tweens;
+    expect(ra).toMatchObject({ props: { y: [32, 0] }, easeName: "responsive", duration: 0.353 });
+    expect(xa).toMatchObject({ easeName: "out", duration: 0.15 });
+    expect(rb).toMatchObject({ easeName: "expressive", props: { scale: [0.98, 1] } });
+    expect(xb.duration).toBe(0.26);
+    expect(xc.duration).toBe(0.26); // no entrance declared: the expressive exit
+  });
+
+  it("a camera origin holds that point still while the camera scales about the centre", () => {
+    const m = new MotionBuilder("s", 3, {}, undefined, undefined, { width: 1080, height: 1920 });
+    m.camera({ scale: [1, 1.03] }, { origin: { x: 86.4, y: 520 } });
+    const { x, y } = m.tweens[0].props;
+    expect(x![0]).toBe(0);
+    expect(x![1]).toBeCloseTo((540 - 86.4) * 0.03, 4);
+    expect(y![1]).toBeCloseTo((960 - 520) * 0.03, 4);
+    // the anchor's screen position: centre + (anchor − centre) × scale + translation = anchor
+    expect(540 + (86.4 - 540) * 1.03 + x![1]).toBeCloseTo(86.4, 4);
+  });
+
+  it("ink steps between the grey and fg at the instant tier", () => {
+    const m = new MotionBuilder("s", 2, {});
+    m.emphasize("w", "ink", { at: 0.5 });
+    expect(m.tweens[0]).toMatchObject({ props: { ink: [0, 1] }, duration: 0.1, easeName: "out" });
+    expect(styleOf({ ink: 0.5 }).color).toBe("color-mix(in oklab, var(--color-fg) 50%, var(--color-fg-muted))");
+    expect(styleOf({ ink: 1 }).color).toBe("color-mix(in oklab, var(--color-fg) 100%, var(--color-fg-muted))");
   });
 
   it("expands split parts with staggered starts", () => {
@@ -121,14 +166,14 @@ describe("evaluate", () => {
     const r = resolveScene(scene(m), { "s.h": { words: 3 } });
     expect(r.map((x) => [x.key, x.start])).toEqual([
       ["s.h::0", 0.5],
-      ["s.h::1", 0.56],
-      ["s.h::2", 0.62],
+      ["s.h::1", 0.54],
+      ["s.h::2", 0.58],
     ]);
   });
 
   it("is deterministic", () => {
     const m = new MotionBuilder("s", 3, {});
-    m.enter("a", "scalePop", { at: 0.2 });
+    m.enter("a", "settle", { at: 0.2 });
     m.loop("a", { y: 6 }, { period: 3 });
     const c1 = compileScene(scene(m), {});
     const c2 = compileScene(scene(m), {});
@@ -173,19 +218,6 @@ describe("variable font axes", () => {
     expect(sampleScene(c, 0.5).get("s.u")!.wdth).toBeCloseTo(100 + 10 * Math.sin(Math.PI / 2), 6);
   });
 
-  it("axis presets start from the target's base and stay inside its family's range", () => {
-    const mb = new MotionBuilder("s", 3, {}, undefined, () => ({ values: { wght: 340, wdth: 100, soft: 100 }, ranges: { wght: [200, 800], wdth: [75, 112.5] } }));
-    mb.enter("a", "weightIn");
-    mb.enter("b", "widthIn");
-    mb.enter("c", "softIn");
-    mb.emphasize("d", "weightPulse");
-    const [a, b, c, d1, d2] = mb.tweens;
-    expect(a.props.wght).toEqual([200, 340]);
-    expect(b.props.wdth).toEqual([112.5, 100]);
-    expect(c.props.soft).toEqual([0, 100]);
-    expect(d1.props.wght).toEqual([null, 540]);
-    expect(d2.props.wght).toEqual([null, 340]);
-  });
 });
 
 describe("transitions", () => {
@@ -200,5 +232,12 @@ describe("tokens", () => {
   it("read time grows with copy length and has a floor", () => {
     expect(readTime(5)).toBeCloseTo(0.83);
     expect(readTime(34)).toBeCloseTo(2.4);
+  });
+});
+
+describe("motion energy", () => {
+  it("keeps the exponent of near-zero energies (a still hold is not a jolt)", () => {
+    const text = "frame:1 pts:1 pts_time:15.3\nlavfi.signalstats.YAVG=0\nframe:2 pts:2 pts_time:15.3333\nlavfi.signalstats.YAVG=6.94444e-05\nframe:3 pts:3 pts_time:15.3667\nlavfi.signalstats.YAVG=12.5\n";
+    expect(parseEnergy(text)).toEqual([[15.3, 0], [15.3333, 6.94444e-5], [15.3667, 12.5]]);
   });
 });

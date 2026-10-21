@@ -1,97 +1,123 @@
-# Motion recipes
+# Motion recipes (litt)
 
-Copy, then adapt timings to your beats. All assume ids exist in the view.
+Copy, then adapt timings to your beats. All assume the ids exist in the view. Every recipe
+keeps litt's rules: responsive by default, one expressive moment per scene, exits at 0.75×,
+travel 32px, the camera as the only ambient life.
 
-## Statement headline (the workhorse)
+## Statement (the workhorse)
+```tsx
+<Stage bg="lit">
+  <Safe>
+    <Headline ct="headline" class="absolute bottom-[96px] left-[96px] max-w-[1200px]">{text.headline}</Headline>
+  </Safe>
+</Stage>
+```
 ```ts
-m.enter("headline", "maskUp", { at: "b1", split: "lines" });   // lines rise behind a mask, 90ms apart
-m.camera({ scale: [1, 1.035] });                                 // ambient push over the scene
+m.enter("headline", "maskUp", { at: "b1", split: "lines", ease: "expressive" }); // the scene's moment
+m.camera({ scale: [1, 1.03] });                                                    // ambient: ≤ 3%
 ```
 
-## Eyebrow → headline → subhead
-```ts
-m.enter("eyebrow", "fadeBlur", { at: "b1" });
-m.enter("headline", "maskUp", { at: "b1+0.12", split: "lines" });
-m.enter("subhead", "rise", { at: "after:headline-0.25", distance: 24 });
+## Label → statement → summary (the lockup)
+```tsx
+<Stack gap={32} class="absolute bottom-[96px] left-[96px] max-w-[1120px]">
+  <Stack gap={8}>
+    <Label ct="label">{text.label}</Label>
+    <Headline ct="headline">{text.headline}</Headline>
+  </Stack>
+  <Body ct="body" class="max-w-[800px]">{text.body}</Body>
+</Stack>
 ```
-
-## Word-by-word punch (kinetic type)
 ```ts
-m.enter("line", "rise", { at: "b1", split: "words", stagger: "word", distance: 40, ease: "hero" });
-m.emphasize("key", "pulse", { at: "after:line+0.1" });
+m.enter("label", "fade", { at: "b1" });
+m.enter("headline", "maskUp", { at: "b1+0.08", split: "lines", ease: "expressive" });
+m.enter("body", "rise", { at: "after:headline-0.2" });
 ```
 
 ## Feature list (3–5 items)
 ```ts
-m.enter(["f1", "f2", "f3"], "rise", { at: "b2", stagger: "list", distance: 32 });
-// later, focus one:
-m.emphasize("f2", "glow", { at: "b3" });
+m.enter(["f1", "f2", "f3"], "rise", { at: "b2" });          // 40ms list stagger, responsive
+// later, focus one by ink: the others step back to the grey
+m.emphasize(["f1", "f3"], "dim", { at: "b3", stagger: 0 });
 ```
 
-## Stat reveal
-```ts
-m.enter("stat", "scalePop", { at: "b1" });
-m.counter("stat", { from: 0, to: 98.6, decimals: 1, suffix: "%", at: "b1", duration: "linger" });
-m.enter("statLabel", "rise", { at: "b1+0.3", distance: 20 });
-```
-
-## Logo resolve / end card
-```ts
-m.enter("logo", "zoomIn", { at: "b1" });                       // big → settle, defocus → focus
-m.enter("wordmark", "trackIn", { at: "b1+0.25", tracking: -0.02 });
-m.enter("cta", "rise", { at: "after:wordmark", distance: 16 });
-m.loop("glow", { scale: 0.04 }, { period: 6 });
-```
-
-## UI card / window entrance
-```ts
-m.enter("window", "rise", { at: "b1", distance: 96, ease: "enter", duration: "hero" });
-m.tween("window", { rotateX: [12, 0] }, { at: "b1", duration: "hero", ease: "enter" }); // subtle tilt settle
-m.enter(["row1", "row2", "row3"], "fade", { at: "after:window-0.3", stagger: "list" });
-```
-
-## Marker highlight
+## Stat
 ```tsx
-// view
-<Headline ct="headline">Ship <Highlight ct="hl">faster</Highlight>.</Headline>
+<Stat ct="stat" value={1280} label={text.statLabel} size="display" delta={text.delta} deltaTone="success" />
 ```
 ```ts
-m.enter("headline", "maskUp", { at: "b1", split: "lines" });
-m.emphasize("hl-bar", "underline", { at: "after:headline" });
+m.enter("stat-label", "fade", { at: "b1" });
+m.counter("stat", { from: 0, to: 1280, at: "b1", duration: "linger" });
+m.enter("stat-delta", "rise", { at: "b1+0.6" });
 ```
 
-## Quote
+## The product, placed
 ```ts
-m.enter("quote", "fadeBlur", { at: "b1", split: "lines", stagger: "line" });
-m.enter("author", "fade", { at: "after:quote+0.1" });
+m.enter("window", "settle", { at: "b1" });                                   // the expressive moment
+m.enter(["rows-r0", "rows-r1", "rows-r2"], "rise", { at: "after:window-0.3" }); // content follows
+m.camera({ scale: [1, 1.02] });
 ```
 
-## Exit choreography (when you must clear the stage within a scene)
+## UI action with a cursor
 ```ts
-m.exit(["subhead", "headline"], "sinkOut", { at: "b3", stagger: 0.06 }); // reverse order of entry
+m.enter("cursor", "fade", { at: "b2" });
+m.path("cursor", [{ x: -272, y: -336 }], { at: "b2+0.1", duration: "slow" }); // an eased leg
+m.click("cursor", { at: "after:cursor+0.2" });                               // pause, then click
+m.enter("toast", "rise", { at: "after:cursor+0.35" });                       // the UI answers
 ```
 
-## Variable-axis type (flexion / wonk / swiss)
+## A selection that glides (P12)
+```tsx
+<Segmented ct="range" items={["Day", "Week", "Month"]} active={0} />
+```
 ```ts
-// letters settle from wide, then a width wave breathes through the line (flexion)
-m.enter("title", "widthIn", { at: "b1", split: "chars", stagger: "char" });
-m.emphasize("title", "widthPulse", { at: "b1+1.6", split: "chars", stagger: "char" });
-// weight swells in on a one-line statement (keep it nowrap or split it)
-m.enter("statement", "weightIn", { at: "b1", split: "words", stagger: "word" });
-// serifs soften as the line lands (wonk)
-m.enter("title", "maskUp", { at: "b1", split: "lines" });
-m.tween("title", { soft: [0, 100] }, { at: "b1", duration: "linger", ease: "hero", kind: "emphasis" });
+m.tween("range-thumb", { x: [0, 200] }, { at: "b3" });  // responsive spring by default
+m.emphasize("range-s1", "ink", { at: "b3" });
+m.emphasize("range-s0", "dim", { at: "b3" });
 ```
 
-## Transition languages (storyboard)
+## Ink emphasis on a line
+```ts
+m.enter("line", "maskUp", { at: "b1", split: "lines", ease: "expressive" });
+m.emphasize(["pre", "post"], "dim", { at: "b2", stagger: 0 }); // the key word keeps fg
+```
+
+## Chart
+```ts
+m.enter(["bars-b0", "bars-b1", "bars-b2", "bars-b3"], "grow", { at: "b2" }); // from the baseline
+m.enter("trend-line", "draw", { at: "b2+0.2", duration: "linger" });
+m.enter("trend-dot", "fade", { at: "after:trend-line" });
+```
+
+## End card (the one centered statement)
+```tsx
+<Stage bg="lit">
+  <Center>
+    <Stack gap={8} class="items-center">
+      <Headline ct="name">{text.name}</Headline>
+      <Body ct="line">{text.line}</Body>
+    </Stack>
+  </Center>
+</Stage>
+```
+```ts
+m.enter("name", "settle", { at: "b1" });
+m.enter("line", "fade", { at: "after:name-0.2" });
+m.camera({ scale: [1, 1.03] });
+```
+
+## Exit choreography (only when something must leave before the cut)
+```ts
+m.exit(["body", "headline"], "liftOut", { at: "b3", stagger: "list" }); // 0.75× the entrance, ease out
+```
+
+## Transition language (storyboard)
 ```jsonc
-// Camera-first product: every feature arrives the way you read
-{ "type": "push", "dir": "left", "blur": true }      // between features (primary)
-{ "type": "whip", "dir": "left" }                     // the one fast beat
-// Swiss cuts: cut on the beat; chapters breathe
-{ "type": "cut" } · { "type": "dip", "duration": 0.5 } · { "type": "wipe", "feather": 12 }
-// Luminous: soft continuity, one light moment
-{ "type": "blur" } · { "type": "crossfade" } · { "type": "lightSweep", "color": "accent" }  // into the logo, once
-// Kinetic / social punch (9:16): cuts on the beat + two accents
-{ "type": "punchCut" } · { "type": "whip", "dir": "up", "duration": 0.28 } · { "type": "strips", "n": 6 }
+// Most litt edits: cuts on the beat, one dip before the end card
+{ "type": "cut" } · { "type": "dip" }
+// Sequential product steps: push in reading order, blurred when fast
+{ "type": "push", "dir": "left", "blur": true }
+// The same surface in a new state
+{ "type": "crossfade" }
+// A state revealed
+{ "type": "wipe", "angle": 120, "feather": 14 }
 ```

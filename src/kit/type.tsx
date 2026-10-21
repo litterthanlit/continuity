@@ -3,30 +3,19 @@
 import type { ComponentChildren, JSX } from "preact";
 import { formatCounter } from "../motion/evaluate.js";
 import type { TypeSize } from "../themes/kits.js";
-import { ctId, useScene } from "./context.js";
+import { ctId } from "./context.js";
 import { cx, type BaseProps } from "./core.js";
 
 export type { TypeSize };
 
-/**
- * Classic (v1) kits keep their literal classes; v2 kits leave weight, width,
- * case and label tracking to the kit's role rules (src/build/css.ts kitCss),
- * so one component reads right in every kit — and an explicit utility class
- * (`font-bold`, `tracking-[…]`) still wins.
- */
-const v1 = () => {
-  const kit = useScene().typeKit;
-  return !kit || kit.v1 === true;
-};
-
 interface TextProps extends BaseProps {
   as?: string;
   size?: TypeSize;
-  /** Balance line lengths (default true for headlines). */
+  /** Balance line lengths (default true for display and titles). */
   balance?: boolean;
 }
 
-function Text({ ct, as = "p", size = "body", class: cls, style, children, balance }: TextProps & { base: string }) {
+function Text({ ct, as = "p", size = "body", class: cls, style, children, balance }: TextProps) {
   const Tag = as as unknown as (p: Record<string, unknown>) => JSX.Element;
   return (
     <Tag data-ct={ct ? ctId(ct) : undefined} class={cx(`text-${size}`, balance && "text-balance", cls)} style={style}>
@@ -35,56 +24,41 @@ function Text({ ct, as = "p", size = "body", class: cls, style, children, balanc
   );
 }
 
-/** Big display type in the theme's display face. Sizes: mega, display, h1, h2, h3. */
-export function Headline({ size = "display", as = "h1", class: cls, balance = true, ...rest }: TextProps) {
-  return <Text {...rest} base="" as={as} size={size} balance={balance} class={cx(v1() ? "font-display font-semibold text-fg" : "font-display text-fg", cls)} />;
-}
-
-/** Secondary line under a headline. */
-export function Subhead({ size = "lead", as = "p", class: cls, balance = true, ...rest }: TextProps) {
-  return <Text {...rest} base="" as={as} size={size} balance={balance} class={cx("font-sans text-muted", cls)} />;
-}
-
-export function Body({ size = "body", as = "p", class: cls, ...rest }: TextProps) {
-  return <Text {...rest} base="" as={as} size={size} class={cx("font-sans text-muted", cls)} />;
-}
-
-/** Small uppercase mono label above a headline ("INTRODUCING", "01 — SPEED"). */
-export function Eyebrow({ size, as = "p", class: cls, ...rest }: TextProps) {
-  const s = size ?? (useScene().portrait ? "body" : "micro");
-  return <Text {...rest} base="" as={as} size={s} class={cx(v1() ? "font-mono uppercase tracking-[0.18em] text-subtle" : "font-mono ct-label text-subtle", cls)} />;
-}
-
-/** Small supporting text. Portrait (9:16) defaults one step larger for phone legibility. */
-export function Caption({ size, as = "p", class: cls, ...rest }: TextProps) {
-  const s = size ?? (useScene().portrait ? "body" : "caption");
-  return <Text {...rest} base="" as={as} size={s} class={cx("font-sans text-subtle", cls)} />;
-}
-
-/** Inline accent-colored words inside a headline. */
-export function Accent({ children, class: cls, ct }: { children: ComponentChildren; class?: string; ct?: string }) {
-  return (
-    <span data-ct={ct ? ctId(ct) : undefined} class={cx("text-accent", cls)}>
-      {children}
-    </span>
-  );
-}
-
-/**
- * Inline editorial italic serif accent ("Ship *beautiful* motion"). In v2 kits
- * it is x-height matched to the surrounding type (the kit's accent scale).
+/*
+ * litt's type at video scale (docs/decisions/0006). Rank comes from weight and
+ * the two inks first, then space, and only then from the one size step: a 500
+ * title in fg over 400 text in the grey. Labels are 600, sentence case.
  */
-export function Serif({ children, class: cls, ct }: { children: ComponentChildren; class?: string; ct?: string }) {
-  return (
-    <span data-ct={ct ? ctId(ct) : undefined} class={cx(v1() ? "font-serif italic font-normal tracking-normal" : "font-serif italic ct-accent", cls)}>
-      {children}
-    </span>
-  );
+
+/** The scene's one statement: the display step, 500, fg. One per scene. */
+export function Headline({ size = "display", as = "h1", class: cls, balance = true, ...rest }: TextProps) {
+  return <Text {...rest} as={as} size={size} balance={balance} class={cx("font-display text-fg", cls)} />;
+}
+
+/** A title: the title step at the title weight (500), fg. Feature names, a lockup's title. */
+export function Title({ size = "title", as = "h2", class: cls, balance = true, ...rest }: TextProps) {
+  return <Text {...rest} as={as} size={size} balance={balance} class={cx("font-sans font-title text-fg", cls)} />;
+}
+
+/** Supporting text: 400 in the grey. */
+export function Body({ size = "body", as = "p", class: cls, ...rest }: TextProps) {
+  return <Text {...rest} as={as} size={size} class={cx("font-sans text-fg-muted", cls)} />;
+}
+
+/** Small supporting text and meta: the small step, 400, in the grey. */
+export function Caption({ size = "small", as = "p", class: cls, ...rest }: TextProps) {
+  return <Text {...rest} as={as} size={size} class={cx("font-sans text-fg-subtle", cls)} />;
+}
+
+/** A label 8px above its title: the label step at 600, in the grey, sentence case. Not an uppercase mono eyebrow. */
+export function Label({ size = "label", as = "p", class: cls, ...rest }: TextProps) {
+  return <Text {...rest} as={as} size={size} class={cx("font-sans font-label text-fg-subtle", cls)} />;
 }
 
 /**
- * Keep copy in the storyboard while styling one word/phrase of it:
- * `<Emph text={text.l2} word="craft.">{(w) => <Serif>{w}</Serif>}</Emph>`
+ * Keep copy in the storyboard while treating one word/phrase of it on its own:
+ * `<Emph text={text.l2} word="see">{(w) => <El as="span" ct="see" class="text-fg">{w}</El>}</Emph>`
+ * (litt: by ink — the key word in fg, the rest in the grey — never an accent colour or italic).
  */
 export function Emph({ text, word, children }: { text: string; word: string; children: (w: string) => ComponentChildren }) {
   const i = text.indexOf(word);
@@ -98,22 +72,9 @@ export function Emph({ text, word, children }: { text: string; word: string; chi
   );
 }
 
-/** Gradient-filled text (accent → accent-2). */
-export function GradientText({ children, class: cls, ct }: { children: ComponentChildren; class?: string; ct?: string }) {
-  return (
-    <span
-      data-ct={ct ? ctId(ct) : undefined}
-      class={cls}
-      style="background:linear-gradient(100deg,var(--color-accent),var(--color-accent-2));-webkit-background-clip:text;background-clip:text;color:transparent"
-    >
-      {children}
-    </span>
-  );
-}
-
 /**
  * Text that shrinks to fit its container width at load (deterministic, after
- * fonts load). Use for long/variable copy in fixed layouts.
+ * fonts load). For variable data in fixed layouts — never to fit more copy.
  */
 export function Fit({ ct, as = "p", class: cls, max = 220, min = 24, children }: BaseProps & { as?: string; max?: number; min?: number }) {
   const Tag = as as unknown as (p: Record<string, unknown>) => JSX.Element;
@@ -145,24 +106,6 @@ export function Counter({
   return (
     <span data-ct={ctId(ct)} class={cx("tabular-nums", cls)}>
       {formatCounter(from, { decimals, prefix, suffix, separator })}
-    </span>
-  );
-}
-
-/**
- * Words with a marker bar behind them. Animate the bar as `<ct>-bar` with
- * `m.emphasize("<ct>-bar", "underline", …)`.
- */
-export function Highlight({ ct, children, class: cls, color = "accent" }: { ct: string; children: ComponentChildren; class?: string; color?: "accent" | "accent-2" }) {
-  return (
-    <span data-ct={ctId(ct)} class={cx("relative inline-block isolate", cls)}>
-      <span
-        data-ct={ctId(`${ct}-bar`)}
-        data-layout-ignore
-        class="absolute left-[-0.06em] right-[-0.06em] bottom-[0.06em] h-[0.38em] -z-10 rounded-[0.08em]"
-        style={`background:color-mix(in oklab,var(--color-${color}) 55%,transparent);transform-origin:left center`}
-      />
-      <span class="relative">{children}</span>
     </span>
   );
 }

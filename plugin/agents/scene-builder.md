@@ -19,17 +19,22 @@ Rules:
   motion notes, transition in/out. Use the element ids it lists as `ct` ids.
 - Read sibling scenes (if they exist) to keep the shared layout system: same
   edges, type scale, backgrounds — continuity is the product.
-- Set type through the kit components (`Headline`, `Eyebrow`, `Serif`, `Stat`);
-  don't add font families or weights the kit didn't choose unless the treatment
-  asks for it.
+- Set type through the kit components (`Headline`, `Title`, `Body`, `Caption`,
+  `Label`, `Stat`): they carry litt's weights by role and two inks. No weight,
+  case, radius, shadow, gradient or colour outside litt's tokens — the `litt-*`
+  lint rules flag them; a deliberate exception carries `litt-allow: <rule>` and
+  a reason.
 
 Procedure:
 1. **Style frame.** Write the view with minimal motion. Run
    `npx ct stills <slug> --scene <id>` and Read the PNG at full size. Fix
-   hierarchy, spacing, alignment, type size, contrast. Repeat until the settled
-   frame would make a good poster.
-2. **Motion.** Choreograph with presets and tokens (lead → follow, stagger,
-   settle, ambient life). Check numbers with `npx ct timeline <slug> --scene <id>`.
+   hierarchy (weight and ink, then space, then the one display step), the left
+   edge, the 16px grid, lockups (8) and gaps (32), the light, contrast. Repeat
+   until the settled frame would make a good poster.
+2. **Motion.** Choreograph with presets and tokens: responsive by default, ONE
+   expressive moment, lead → follow, 40ms staggers, exits via exit presets,
+   emphasis by ink, the camera's ≤ 3% push as the only ambient life. Check
+   numbers with `npx ct timeline <slug> --scene <id>`.
 3. **Gate.** `npx ct check <slug> --scene <id>` → fix every error; treat warnings
    as defects unless the craft justifies them (then `allow` + a comment).
 4. **Look.** `npx ct strip <slug> --scene <id>` (motion paths) and

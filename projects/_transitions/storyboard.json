@@ -1,27 +1,27 @@
 {
   "title": "Transitions gallery",
-  "logline": "Every v2 scene transition in one chain, each scene naming the transition that brought it in, over contrasting backgrounds so edges, masks and blur read.",
+  "logline": "litt's transition language chained once, so each accent can be judged at its mid-point. Reference + golden fixture.",
   "format": {
     "aspect": "16:9",
     "fps": 30
   },
-  "theme": "mono-dark",
-  "type": "swiss",
+  "theme": "litt-dark",
+  "type": "litt",
   "scenes": [
     {
       "id": "intro",
-      "duration": 3.0,
-      "intent": "Show the transition into this scene: Transitions.",
+      "duration": 3.4,
+      "intent": "Transitions: litt's language: cuts, and four accents.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.1
+          "at": 0.15
         }
       ],
       "text": {
-        "num": "00 / 12",
+        "num": "Gallery",
         "title": "Transitions",
-        "sub": "v2 library · 12 cuts"
+        "sub": "Cuts, and four accents"
       },
       "transition": {
         "type": "crossfade"
@@ -29,18 +29,18 @@
     },
     {
       "id": "crossfade",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Crossfade.",
+      "duration": 3.4,
+      "intent": "Crossfade: The same surface in a new state.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.1
+          "at": 0.15
         }
       ],
       "text": {
-        "num": "01 / 12",
+        "num": "1 of 5",
         "title": "Crossfade",
-        "sub": "same surface, new state"
+        "sub": "The same surface in a new state"
       },
       "transition": {
         "type": "dip"
@@ -48,96 +48,59 @@
     },
     {
       "id": "dip",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Dip.",
+      "duration": 3.4,
+      "intent": "Dip: A breath between chapters.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.1
+          "at": 0.15
         }
       ],
       "text": {
-        "num": "02 / 12",
+        "num": "2 of 5",
         "title": "Dip",
-        "sub": "a breath between chapters"
+        "sub": "A breath between chapters"
       },
       "transition": {
         "type": "push",
-        "dir": "right",
+        "dir": "left",
         "blur": true
       }
     },
     {
       "id": "push",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Push + blur.",
+      "duration": 3.4,
+      "intent": "Push: Sequential steps, in reading order.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.1
+          "at": 0.15
         }
       ],
       "text": {
-        "num": "03 / 12",
-        "title": "Push + blur",
-        "sub": "speed-matched motion blur"
+        "num": "3 of 5",
+        "title": "Push",
+        "sub": "Sequential steps, in reading order"
       },
       "transition": {
-        "type": "pushUp"
+        "type": "pushUp",
+        "blur": true
       }
     },
     {
       "id": "pushup",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Push up.",
+      "duration": 3.4,
+      "intent": "Push up: Lists, feeds, 9:16.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.1
+          "at": 0.15
         }
       ],
       "text": {
-        "num": "04 / 12",
+        "num": "4 of 5",
         "title": "Push up",
-        "sub": "vertical feeds, 9:16"
-      },
-      "transition": {
-        "type": "whip"
-      }
-    },
-    {
-      "id": "whip",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Whip.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "05 / 12",
-        "title": "Whip",
-        "sub": "the swap hides at peak speed"
-      },
-      "transition": {
-        "type": "punchCut"
-      }
-    },
-    {
-      "id": "punch",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Punch cut.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "06 / 12",
-        "title": "Punch cut",
-        "sub": "push in, swap, two-frame flash"
+        "sub": "Lists, feeds, 9:16"
       },
       "transition": {
         "type": "wipe",
@@ -147,117 +110,18 @@
     },
     {
       "id": "wipe",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Wipe.",
+      "duration": 3.4,
+      "intent": "Wipe: A state revealed, feathered.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.1
+          "at": 0.15
         }
       ],
       "text": {
-        "num": "07 / 12",
+        "num": "5 of 5",
         "title": "Wipe",
-        "sub": "feathered, on a diagonal"
-      },
-      "transition": {
-        "type": "iris",
-        "origin": {
-          "x": 70,
-          "y": 40
-        }
-      }
-    },
-    {
-      "id": "iris",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Iris.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "08 / 12",
-        "title": "Iris",
-        "sub": "focus on a point"
-      },
-      "transition": {
-        "type": "strips"
-      }
-    },
-    {
-      "id": "strips",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Strips.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "09 / 12",
-        "title": "Strips",
-        "sub": "staggered, eased per strip"
-      },
-      "transition": {
-        "type": "lightSweep"
-      }
-    },
-    {
-      "id": "sweep",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Light sweep.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "10 / 12",
-        "title": "Light sweep",
-        "sub": "light across the cut"
-      },
-      "transition": {
-        "type": "blur"
-      }
-    },
-    {
-      "id": "blur",
-      "duration": 2.8,
-      "intent": "Show the transition into this scene: Blur.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "11 / 12",
-        "title": "Blur",
-        "sub": "defocus out, focus in"
-      },
-      "transition": {
-        "type": "zoom"
-      }
-    },
-    {
-      "id": "zoom",
-      "duration": 3.0,
-      "intent": "Show the transition into this scene: Zoom.",
-      "beats": [
-        {
-          "id": "b1",
-          "at": 0.1
-        }
-      ],
-      "text": {
-        "num": "12 / 12",
-        "title": "Zoom",
-        "sub": "through, into a detail"
+        "sub": "A state revealed, feathered"
       }
     }
   ]

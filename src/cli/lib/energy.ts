@@ -10,6 +10,20 @@ export interface EnergyCurve {
   baseline: number;
 }
 
+/** [time, YAVG] pairs from ffmpeg's `metadata=print` output. */
+export function parseEnergy(text: string): Array<[number, number]> {
+  const points: Array<[number, number]> = [];
+  let t = 0;
+  for (const line of text.split("\n")) {
+    const m = /pts_time:([\d.]+)/.exec(line);
+    if (m) t = Number(m[1]);
+    // ffmpeg prints near-zero energy in scientific notation (6.94444e-05): keep the exponent.
+    const y = /YAVG=([\d.]+(?:e[-+]?\d+)?)/i.exec(line);
+    if (y) points.push([t, Number(y[1])]);
+  }
+  return points;
+}
+
 /** Frame-to-frame change across the encoded video — the edit's motion "cardiogram". */
 export async function energyCurve(file: string): Promise<EnergyCurve> {
   const r = await ffmpeg([
@@ -17,15 +31,7 @@ export async function energyCurve(file: string): Promise<EnergyCurve> {
     "-vf", "scale=320:-2,tblend=all_mode=difference,signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-",
     "-f", "null", "-",
   ]);
-  const text = r.stdout + r.stderr;
-  const points: Array<[number, number]> = [];
-  let t = 0;
-  for (const line of text.split("\n")) {
-    const m = /pts_time:([\d.]+)/.exec(line);
-    if (m) t = Number(m[1]);
-    const y = /YAVG=([\d.]+)/.exec(line);
-    if (y) points.push([t, Number(y[1])]);
-  }
+  const points = parseEnergy(r.stdout + r.stderr);
   const sorted = points.map((p) => p[1]).sort((a, b) => a - b);
   const baseline = sorted[Math.floor(sorted.length * 0.1)] ?? 0;
   const fps = points.length > 1 ? Math.round(1 / (points[1][0] - points[0][0])) : 30;
@@ -125,20 +131,20 @@ export function energyHtml(curve: EnergyCurve, an: EnergyAnalysis, build: BuildR
       const x0 = x(s.start);
       const x1 = x(Math.min(dur, s.start + s.duration));
       return `<rect x="${x0}" y="20" width="${x1 - x0}" height="${plotH}" fill="${i % 2 ? "#ffffff08" : "#ffffff03"}"/>` +
-        `<text x="${x0 + 6}" y="${20 + plotH + 22}" fill="#a8a8b0" font-size="13">${esc(s.scene)}</text>`;
+        `<text x="${x0 + 6}" y="${20 + plotH + 22}" fill="#968d86" font-size="13">${esc(s.scene)}</text>`;
     })
     .join("");
   const beats = tl.scenes
     .flatMap((s) => Object.entries(s.beats).map(([k, v]) => ({ k, t: s.start + v })))
-    .map((b) => `<line x1="${x(b.t)}" x2="${x(b.t)}" y1="20" y2="${20 + plotH}" stroke="#8b7bff55" stroke-dasharray="3 4"/><text x="${x(b.t) + 3}" y="34" fill="#8b7bffaa" font-size="11">${esc(b.k)}</text>`)
+    .map((b) => `<line x1="${x(b.t)}" x2="${x(b.t)}" y1="20" y2="${20 + plotH}" stroke="#507afd55" stroke-dasharray="3 4"/><text x="${x(b.t) + 3}" y="34" fill="#507afdaa" font-size="11">${esc(b.k)}</text>`)
     .join("");
-  const dead = an.deadZones.map(([a, b]) => `<rect x="${x(a)}" y="20" width="${x(b) - x(a)}" height="${plotH}" fill="#ff5d5d22" stroke="#ff5d5d66"/>`).join("");
-  const spikes = an.spikes.map((t) => `<circle cx="${x(t)}" cy="26" r="5" fill="#f6c343"/>`).join("");
-  const ticks = Array.from({ length: Math.floor(dur) + 1 }, (_, i) => `<text x="${x(i)}" y="${H - 8}" fill="#6b6b76" font-size="11" text-anchor="middle">${i}s</text>`).join("");
-  return `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0c0c0e;color:#e8e8ea;font-family:ui-monospace,monospace;padding:16px;width:${W}px}h1{font-size:15px;margin:0 0 4px}p{font-size:12px;color:#8b8b93;margin:0 0 10px}</style></head><body>
+  const dead = an.deadZones.map(([a, b]) => `<rect x="${x(a)}" y="20" width="${x(b) - x(a)}" height="${plotH}" fill="#ff756f22" stroke="#ff756f66"/>`).join("");
+  const spikes = an.spikes.map((t) => `<circle cx="${x(t)}" cy="26" r="5" fill="#e19b1b"/>`).join("");
+  const ticks = Array.from({ length: Math.floor(dur) + 1 }, (_, i) => `<text x="${x(i)}" y="${H - 8}" fill="#6b645f" font-size="11" text-anchor="middle">${i}s</text>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0a0908;color:#f9f8f7;font-family:ui-monospace,monospace;padding:16px;width:${W}px}h1{font-size:15px;margin:0 0 4px}p{font-size:12px;color:#968d86;margin:0 0 10px}</style></head><body>
 <h1>${esc(title)}</h1>
 <p>motion energy (frame-to-frame change) · mean ${an.stats.mean.toFixed(2)} · active ${(an.stats.activeShare * 100).toFixed(0)}% of frames · red = dead zones · yellow = unexplained single-frame jolts · dashed = beats</p>
 <svg width="${W}" height="${H}" font-family="ui-monospace,monospace">${bands}${dead}${beats}
-<path d="${area}" fill="#8b7bff22"/><path d="${path}" fill="none" stroke="#b9afff" stroke-width="1.5"/>${spikes}${ticks}</svg>
+<path d="${area}" fill="#507afd22"/><path d="${path}" fill="none" stroke="#f9f8f7" stroke-width="1.5"/>${spikes}${ticks}</svg>
 </body></html>`;
 }

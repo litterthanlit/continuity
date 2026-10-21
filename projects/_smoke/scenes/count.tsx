@@ -1,18 +1,19 @@
-import { scene, Stage, Center, Counter, Caption, Stack } from "continuity";
+import { scene, Stage, Safe, Counter, Label, Stack } from "continuity";
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="grid">
-      <Center>
-        <Stack gap={12} class="items-center">
-          <Counter ct="num" class="font-display text-mega font-semibold" />
-          <Caption ct="label">{text.label}</Caption>
+    <Stage>
+      <Safe>
+        <Stack gap={8} class="absolute bottom-[96px] left-[96px]">
+          <Label ct="label">{text.label}</Label>
+          <Counter ct="num" class="font-display text-display font-title text-fg" />
         </Stack>
-      </Center>
+      </Safe>
     </Stage>
   ),
   motion: (m) => {
+    m.enter("label", "fade", { at: "b1" });
     m.counter("num", { to: 1280, at: "b1", duration: "linger" });
-    m.enter("label", "rise", { at: "b1+0.2" });
+    m.camera({ scale: [1, 1.03] });
   },
 });

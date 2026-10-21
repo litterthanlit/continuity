@@ -1,7 +1,8 @@
 import type { BuildResult, ElementInfo } from "../build/build.js";
 import { isLinear, peakSlope } from "../motion/easing.js";
 import { resolveScene } from "../motion/evaluate.js";
-import { TOKEN_TOLERANCE, durations, eases, readTime } from "../motion/tokens.js";
+import { EXIT_FACTOR, MAX_BOUNCE, MAX_DRIFT, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
+import { WEIGHTS } from "../themes/kits.js";
 import { TRANSITION_DEFS } from "../motion/transitions.js";
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
 import type { Finding, Severity } from "../spec/findings.js";
@@ -13,14 +14,16 @@ import { ASPECTS, sceneTimings, type Storyboard } from "../spec/storyboard.js";
  * Vision models are poor judges of motion (timing, easing, settle), so these
  * rules encode the craft directly: everything eases, nothing is interrupted
  * before it settles, text stays long enough to be read, the frame never goes
- * dead, and the eye is never asked to follow too many things at once.
+ * dead, and the eye is never asked to follow too many things at once. The litt
+ * rules (docs/decisions/0006) gate the taste: springs within litt's bounce,
+ * one expressive moment per scene, material static, transform and opacity only.
  */
 
 export const RULES = {
-  "ease-linear": "Spatial motion with a linear ease looks mechanical. Use a token ease (enter/exit/standard/hero/inOut or a spring).",
+  "ease-linear": "Spatial motion with a linear ease looks mechanical. Use a token ease (the responsive or expressive spring, out, inOut).",
   "duration-too-fast": "Spatial entrances/exits under 150ms read as glitches.",
   "duration-too-slow": "Entrances/exits/emphasis over 1.6s drag. Split it, or make it a camera move.",
-  "duration-off-token": "Durations should come from the token scale (instant/fast/base/slow/hero/linger) for a consistent rhythm.",
+  "duration-off-token": "Durations should come from the token scale (instant/responsive/expressive/exit/slow/linger) for a consistent rhythm.",
   "exit-slower-than-enter": "Exits should be quicker than entrances (attention has moved on).",
   "settle-interrupted": "A new tween on the same property starts before the previous one settled — motion never lands.",
   "read-time": "Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.",
@@ -28,24 +31,32 @@ export const RULES = {
   "ui-glance": "UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).",
   "scene-overrun": "Motion is still running after the scene has ended (it will be cut off).",
   "late-entrance": "Element enters in the last moments of the scene — it pops in and is gone.",
-  "dead-air": "Nothing moves for too long. Add ambient life (camera drift, a loop on bg/glow) or tighten the scene.",
+  "dead-air": "Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.",
   "crowded": "Too many independent elements animating at once — the eye can't follow.",
   "unstaggered-group": "Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.",
   "slow-open": "The video's first motion starts late — the opening frame is dead.",
   "split-too-busy": "Character split on long copy is slow and noisy. Split by words or lines instead.",
   "stagger-too-long": "The stagger cascade takes too long to complete.",
   "camera-too-fast": "Camera moves faster than ~15% zoom/s or 160px/s feel jarring.",
-  "transition-too-long": "A transition longer than its type's craft range stalls the edit (a 0.8s whip is no longer a whip).",
+  "transition-too-long": "A transition longer than its type's craft range stalls the edit (a 1s push is no longer a step).",
   "transition-too-short": "A transition shorter than its type's range reads as a glitch, not a move.",
   "transition-language": "More than two transition types in one video reads as a template. Pick one primary (most cuts) and at most one accent; hard cuts are free.",
-  "transition-bounce": "Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, sharp, standard).",
-  "transition-strobe": "A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or use whip.",
+  "transition-bounce": "Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, out).",
+  "transition-strobe": "A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or lengthen it.",
   "mask-needs-split": "Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.",
   "cut-off-beat": "Scene cut is not on the music grid (bpm).",
   "axis-reflow": "Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.",
-  "axis-unsupported": "The element's family has no such axis, so the channel animates nothing (e.g. wdth on Geist, soft outside Fraunces).",
+  "axis-unsupported": "The element's family has no such axis, so the channel animates nothing (e.g. wdth or soft on Geist, which has a weight axis only).",
   "axis-range": "Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.",
-  "hairline-weight": "Serif type below weight 300 shimmers after video compression.",
+  "spring-bounce": "litt: a spring bounces at 0.12 or less (the expressive tier). More reads as a toy.",
+  "exit-bounce": "litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).",
+  "expressive-budget": "litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive.",
+  "material-motion": "litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.",
+  "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter). Tracking, weight, blur and filters perform.",
+  "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed.",
+  "camera-drift": "The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed.",
+  "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink).",
+  "weight-role": "litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.",
 } as const;
 export type RuleId = keyof typeof RULES;
 
@@ -76,7 +87,11 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
   });
 }
 
-const near = (d: number) => Object.values(durations).some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
+/** The token scale, plus the exits the presets derive from it (0.75 × each spring's visual time). */
+const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
+const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
+/** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 const localOf = (id: string) => id.slice(id.indexOf(".") + 1);
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -107,14 +122,14 @@ export function lintTimeline(build: BuildResult): Finding[] {
       if (isSpatial(t) && isLinear(t.ease) && t.kind !== "transition" && !allowed(t, "ease-linear")) {
         add("ease-linear", "warning", sc, `${localOf(t.target)}: ${Object.keys(t.props).join("+")} moves at constant speed`, {
           ...where,
-          suggestion: t.kind === "camera" ? 'use ease "inOut" or "standard"' : 'use a token ease, e.g. ease: "enter" / "standard" / "snappy"',
+          suggestion: t.kind === "camera" ? 'use ease "inOut"' : 'use a token ease: "responsive" (the default spring), "expressive" or "out"',
         });
       }
       if ((t.kind === "enter" || t.kind === "exit") && isSpatial(t) && t.duration < 0.15 && !allowed(t, "duration-too-fast")) {
-        add("duration-too-fast", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: 'use duration "fast" (0.24s) or longer' });
+        add("duration-too-fast", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "use the responsive spring (the preset default) or the exit presets' derived timing" });
       }
       if ((t.kind === "enter" || t.kind === "exit" || t.kind === "emphasis") && !t.counter && t.duration > 1.6 && !allowed(t, "duration-too-slow")) {
-        add("duration-too-slow", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "keep entrances ≤ hero (0.9s); use camera/loops for slow drift" });
+        add("duration-too-slow", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "entrances are springs (≈0.35s responsive, ≈0.58s expressive); slow drift belongs to the camera" });
       }
       if (
         (t.kind === "enter" || t.kind === "exit" || t.kind === "move") &&
@@ -124,7 +139,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
         !near(t.duration) &&
         !allowed(t, "duration-off-token")
       ) {
-        add("duration-off-token", "info", sc, `${localOf(t.target)} uses ${t.duration}s (not on the token scale)`, { ...where, suggestion: "prefer instant/fast/base/slow/hero" });
+        add("duration-off-token", "info", sc, `${localOf(t.target)} uses ${t.duration}s (not on the token scale)`, { ...where, suggestion: "prefer instant/responsive/expressive/exit/slow, or a spring ease" });
       }
       if (s.lastEnd > sc.duration + 0.01 && t.kind !== "transition" && !allowed(t, "scene-overrun")) {
         add("scene-overrun", "error", sc, `${localOf(t.target)} ${t.kind} ends at ${r2(s.lastEnd)}s but the scene is ${sc.duration}s`, {
@@ -149,7 +164,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
           const range = font.ranges[p];
           const [from, to] = t.props[p]!;
           if (!range) {
-            if (!allowed(t, "axis-unsupported")) add("axis-unsupported", "warning", sc, `${localOf(t.target)}: ${font.family} has no ${p} axis — this tween animates nothing`, { ...where, suggestion: "use a kit whose family has the axis (flexion/broadside for wdth, wonk for soft)" });
+            if (!allowed(t, "axis-unsupported")) add("axis-unsupported", "warning", sc, `${localOf(t.target)}: ${font.family} has no ${p} axis — this tween animates nothing`, { ...where, suggestion: "Geist has a weight axis only; litt ranks by ink (m.emphasize(id, \"ink\")), not by axes" });
           } else if ([from, to].some((v) => v !== null && (v < range[0] - 0.01 || v > range[1] + 0.01)) && !allowed(t, "axis-range")) {
             add("axis-range", "info", sc, `${localOf(t.target)}: ${p} ${from ?? "…"}→${to} leaves ${font.family}'s ${range[0]}–${range[1]}`, { ...where, suggestion: `keep ${p} within ${range[0]}–${range[1]}` });
           }
@@ -159,14 +174,43 @@ export function lintTimeline(build: BuildResult): Finding[] {
           add("axis-reflow", "warning", sc, `${localOf(t.target)}: ${axes.filter((p) => p === "wght" || p === "wdth").join("+")} on wrapping text re-breaks lines mid-motion`, { ...where, suggestion: 'split: "chars" or "words", or add whitespace-nowrap' });
         }
         const settle = t.props.wght?.[1];
-        if (settle !== undefined && settle < 300 && font.category === "serif" && !allowed(t, "hairline-weight")) {
-          add("hairline-weight", "warning", sc, `${localOf(t.target)}: ${font.family} settles at weight ${settle}`, { ...where, suggestion: "keep serif type at 300+ (400+ for small sizes)" });
+        if (settle !== undefined && !(Object.values(WEIGHTS) as number[]).includes(settle) && !allowed(t, "weight-role")) {
+          add("weight-role", "warning", sc, `${localOf(t.target)}: weight settles at ${settle}`, { ...where, suggestion: "settle on 400 (text), 500 (title) or 600 (label)" });
         }
       }
       if (t.preset && (t.preset === "maskUp" || t.preset === "maskDown" || t.preset === "maskOut") && !t.split && !allowed(t, "mask-needs-split")) {
         add("mask-needs-split", "info", sc, `${localOf(t.target)} uses ${t.preset} without split`, { ...where, suggestion: 'add split: "lines" (or wrap it in an overflow-hidden parent)' });
       }
+      if (t.kind !== "transition") {
+        const bounce = bounceOf(t.ease);
+        if (bounce > MAX_BOUNCE + 1e-3 && !allowed(t, "spring-bounce")) {
+          add("spring-bounce", "warning", sc, `${localOf(t.target)}: ${t.easeName ?? "spring"} bounces at ${r2(bounce)}`, { ...where, suggestion: 'use ease "responsive" (bounce 0) or "expressive" (0.12)' });
+        }
+        if (t.kind === "exit" && bounce > 1e-3 && !allowed(t, "exit-bounce")) {
+          add("exit-bounce", "warning", sc, `${localOf(t.target)} exits on a spring that bounces`, { ...where, suggestion: 'use an exit preset (ease "out" at 0.75× the entrance)' });
+        }
+        if (localOf(t.target) === "bg" && !allowed(t, "material-motion")) {
+          add("material-motion", "error", sc, `the backdrop animates (${Object.keys(t.props).join("+")})`, { ...where, suggestion: "keep the backdrop still; move the camera instead" });
+        }
+        const off = (Object.keys(t.props) as PropName[]).filter((p) => !LITT_PROPS.has(p));
+        if (off.length && !allowed(t, "property-motion")) {
+          add("property-motion", "warning", sc, `${localOf(t.target)} animates ${off.join(", ")}`, { ...where, suggestion: "animate transform and opacity; emphasise with ink (m.emphasize(id, \"ink\"))" });
+        }
+        if (t.props.ink && t.duration > 0.24 && !allowed(t, "property-motion")) {
+          add("property-motion", "info", sc, `${localOf(t.target)}: ink fades over ${t.duration}s`, { ...where, suggestion: 'ink steps at the instant tier (duration "instant")' });
+        }
+      }
+      if (t.kind === "enter") {
+        const far = Math.max(...(["x", "y"] as const).map((p) => Math.abs(t.props[p]?.[0] ?? 0)));
+        if (far > TRAVEL * 2 && !allowed(t, "travel-too-far")) {
+          add("travel-too-far", "warning", sc, `${localOf(t.target)} enters from ${far}px away`, { ...where, suggestion: `travel ${TRAVEL}px (the preset default)` });
+        }
+      }
       if (t.kind === "camera") {
+        const zoom = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1));
+        if (t.duration >= sc.duration * 0.6 && zoom > MAX_DRIFT + 1e-6 && !allowed(t, "camera-drift")) {
+          add("camera-drift", "warning", sc, `the ambient camera zooms ${r2(zoom * 100)}% over the scene`, { ...where, suggestion: "push 1 → 1.03 or less; a deliberate focus move is a short inOut tween" });
+        }
         const ds = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1)) / Math.max(0.01, t.duration);
         const dx = Math.max(Math.abs((t.props.x?.[1] ?? 0) - (t.props.x?.[0] ?? 0)), Math.abs((t.props.y?.[1] ?? 0) - (t.props.y?.[0] ?? 0))) / Math.max(0.01, t.duration);
         if ((ds > 0.15 || dx > 160) && !allowed(t, "camera-too-fast")) {
@@ -269,6 +313,18 @@ export function lintTimeline(build: BuildResult): Finding[] {
       }
     }
 
+    for (const l of sc.loops) {
+      if (l.blink) continue;
+      if (localOf(l.target) === "bg") add("material-motion", "error", sc, `the backdrop loops (${l.prop})`, { element: l.target, time: at(l.start), suggestion: "remove the loop; the camera's slow push is the ambient life" });
+      else add("ambient-loop", "warning", sc, `${localOf(l.target)} loops ${l.prop} every ${l.period}s`, { element: l.target, time: at(l.start), suggestion: "remove it; m.camera({ scale: [1, 1.03] }) carries the hold" });
+    }
+
+    // Expressive budget: one expressive moment (a bouncing spring) per scene.
+    const moments = new Set(ss.filter((s) => s.tween.kind !== "transition" && s.tween.kind !== "exit" && bounceOf(s.tween.ease) > 1e-3 && !allowed(s.tween, "expressive-budget")).map((s) => s.tween.group ?? s.tween.target));
+    if (moments.size > 1) {
+      add("expressive-budget", "warning", sc, `${moments.size} expressive moments (${[...moments].map(localOf).join(", ")})`, { suggestion: 'keep one; give the rest ease "responsive"' });
+    }
+
     // Dead air: windows with no tween in flight and no loop/camera covering them.
     const active: Array<[number, number]> = ss.map((s) => [s.start, s.lastEnd]);
     for (const l of sc.loops) active.push([l.start, l.end ?? sc.duration]);
@@ -282,7 +338,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
     if (cursor < sc.duration) gaps.push([cursor, sc.duration]);
     for (const [a, b] of gaps) {
       const len = b - a;
-      if (len > 2.5) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a), suggestion: 'm.camera({ scale: [1, 1.03] }) or m.loop("bg", { scale: 0.02 }, { period: 8 })' });
+      if (len > 2.5) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a), suggestion: "m.camera({ scale: [1, 1.03] }), or tighten the scene" });
       else if (len > 1.6) add("dead-air", "info", sc, `static for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a) });
     }
 
@@ -363,12 +419,12 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
       out.push({ ...where, rule: "transition-too-short", severity: "warning", message: `${t.type} lasts ${t.duration}s (craft range ${def.range[0]}–${def.range[1]}s)`, suggestion: `use ≥ ${def.range[0]}s, or a hard cut` });
     }
     const ease = typeof t.ease === "string" ? eases[t.ease] : undefined;
-    if (ease && ease.type === "spring" && ease.damping / (2 * Math.sqrt(ease.stiffness * ease.mass)) < 0.7) {
-      out.push({ ...where, rule: "transition-bounce", severity: "warning", message: `${t.type} uses the springy "${t.ease}" ease — the whole frame overshoots`, suggestion: 'use "inOut", "sharp" or "standard"' });
+    if (ease && ease.type === "spring" && bounceOf(ease) > 0) {
+      out.push({ ...where, rule: "transition-bounce", severity: "warning", message: `${t.type} uses the springy "${t.ease}" ease — the whole frame overshoots`, suggestion: 'use "inOut" or "out"' });
     }
-    if ((t.type === "push" || t.type === "pushUp" || t.type === "whip") && !t.blur && (t.type !== "whip" || t.blur === false)) {
+    if ((t.type === "push" || t.type === "pushUp") && !t.blur) {
       const vertical = t.type === "pushUp" || t.dir === "up" || t.dir === "down";
-      const curve = typeof t.ease === "string" ? eases[t.ease] : t.ease ? { type: "bezier" as const, p: t.ease } : t.type === "whip" ? eases.sharp : eases.inOut;
+      const curve = typeof t.ease === "string" ? eases[t.ease] : t.ease ? { type: "bezier" as const, p: t.ease } : eases.inOut;
       const v = (peakSlope(curve) * (vertical ? height : width)) / Math.max(1e-3, t.duration * fps);
       if (v > 200) strobing.push(`${sc.id} (${Math.round(v)}px/frame)`);
     }
@@ -380,7 +436,7 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
       severity: "info",
       scene: sb.scenes[0].id,
       message: `${strobing.length} push${strobing.length > 1 ? "es" : ""} without motion blur peak above 200px a frame: ${strobing.join(", ")}`,
-      suggestion: "add blur: true to the push (or use whip)",
+      suggestion: "add blur: true to the push, or lengthen it",
     });
   }
   return out;

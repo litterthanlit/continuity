@@ -9,7 +9,8 @@
 export type EaseSpec =
   | { type: "linear" }
   | { type: "bezier"; p: [number, number, number, number] }
-  | { type: "spring"; stiffness: number; damping: number; mass: number }
+  /** `visual` / `bounce` record how a spring was defined (tokens.spring); the motion uses stiffness, damping and mass. */
+  | { type: "spring"; stiffness: number; damping: number; mass: number; visual?: number; bounce?: number }
   | { type: "steps"; n: number };
 
 /** Animatable channels. Units: px, %, deg, em or unitless as noted. */
@@ -40,7 +41,8 @@ export const PROPS = [
   "wght", // font-weight (variable families)
   "wdth", // font-stretch, % (width-variable families)
   "opsz", // optical size axis
-  "soft", // Fraunces SOFT axis 0..100
+  "soft", // SOFT axis 0..100 (a brand family that has it)
+  "ink", // 0..1: 0 is the grey (fg-muted), 1 is fg — litt ranks by ink, not size
   "fx", // 0..1 progress of the tween's shape presentation (Tween.fx): 0 hidden, 1 revealed
   "blurX", // px, directional (motion) blur along x
   "blurY", // px, directional (motion) blur along y
@@ -90,6 +92,7 @@ export const BASE_VALUES: Record<PropName, number> = {
   wdth: 100,
   opsz: 16,
   soft: 0,
+  ink: 1,
   fx: 1,
   blurX: 0,
   blurY: 0,
@@ -111,11 +114,7 @@ export type SplitMode = "chars" | "words" | "lines";
 /** A shape presentation driven by the `fx` channel (src/motion/fx.ts). */
 export type FxSpec =
   /** Feathered linear mask; `angle` is a CSS gradient angle (90 = the edge travels right). `feather` in % of the gradient line. */
-  | { kind: "wipe"; angle: number; feather: number }
-  /** Feathered circular mask from (x%, y%), radius to the farthest corner. */
-  | { kind: "iris"; x: number; y: number; feather: number }
-  /** `n` strips revealed toward `dir`, each eased, `stagger` as a fraction of the tween. */
-  | { kind: "strips"; n: number; dir: "up" | "down" | "left" | "right"; stagger: number; ease: EaseSpec };
+  { kind: "wipe"; angle: number; feather: number };
 
 export type StaggerFrom = "start" | "end" | "center" | "edges";
 
@@ -175,6 +174,8 @@ export interface Loop {
   phase: number;
   start: number;
   end: number | null;
+  /** A caret blink: the one loop litt allows (lint skips it). */
+  blink?: boolean;
 }
 
 export interface SceneTimeline {

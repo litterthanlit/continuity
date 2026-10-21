@@ -51,3 +51,48 @@ describe("source lint (determinism outside this repo's ESLint)", () => {
     expect(lintSources(dir)).toEqual([]);
   });
 });
+
+describe("source lint: litt's rules a class list can break (docs/decisions/0006)", () => {
+  it("flags weights, case, gradients, radii, shadows, accent text and hex outside litt", () => {
+    const dir = project({
+      "scenes/x.tsx": [
+        `<p class="font-semibold">a</p>`,
+        `<p class="md:font-bold">b</p>`,
+        `<p class="uppercase tracking-wide">c</p>`,
+        `<p class="bg-gradient-to-r from-accent to-fg">d</p>`,
+        `<div class="rounded-lg" />`,
+        `<div class="rounded-[12px]" />`,
+        `<div class="shadow-lg" />`,
+        `<div class="drop-shadow-md" />`,
+        `<span class="text-accent">e</span>`,
+        `<div class="bg-[#ff0000]" />`,
+        `<div style={{ color: "#fff" }} />`,
+        `<div style="background: linear-gradient(90deg, red, blue)" />`,
+      ].join("\n"),
+    });
+    const by = (r: string) => lintSources(dir).filter((x) => x.rule === r).length;
+    expect(by("litt-weight")).toBe(2);
+    expect(by("litt-case")).toBe(1);
+    expect(by("litt-gradient")).toBe(2);
+    expect(by("litt-radius")).toBe(2);
+    expect(by("litt-shadow")).toBe(2);
+    expect(by("litt-accent-text")).toBe(1);
+    expect(by("litt-hex")).toBe(2);
+    expect(lintSources(dir).every((x) => x.severity === "warning")).toBe(true);
+  });
+
+  it("passes litt's own vocabulary, and a deliberate litt-allow with its reason", () => {
+    const dir = project({
+      "scenes/ok.tsx": [
+        `<Headline class="font-display font-title text-fg text-display" />`,
+        `<Label class="font-label text-fg-subtle" />`,
+        `<div class="rounded-control rounded-surface rounded-full rounded-t-surface shadow-raised shadow-float shadow-glow bg-data-blue-tint text-accent-fg" />`,
+        `// litt-allow: litt-radius (the device bezel is the phone's own shape)`,
+        `<div class="rounded-[68px]" />`,
+        `<div class="rounded-[54px]" /> {/* litt-allow: litt-radius */}`,
+        `<p>Issue #142 is fixed</p>`,
+      ].join("\n"),
+    });
+    expect(lintSources(dir)).toEqual([]);
+  });
+});

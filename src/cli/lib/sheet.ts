@@ -60,7 +60,7 @@ export function sheetHtml(o: SheetOptions): string {
   const cellH = Math.round(cellW / o.aspect);
   const cells = o.cells
     .map((c) => {
-      const ring = c.flag === "error" ? "box-shadow:0 0 0 3px #ff5d5d" : c.flag === "warning" ? "box-shadow:0 0 0 3px #f6c343" : "";
+      const ring = c.flag === "error" ? "box-shadow:0 0 0 3px #ff756f" : c.flag === "warning" ? "box-shadow:0 0 0 3px #e19b1b" : "";
       const cap = [c.time !== undefined ? fmtTime(c.time) : "", c.scene ?? "", c.label ?? ""].filter(Boolean).join(" · ");
       return `<figure><div class="img" style="height:${cellH}px;${ring}"><img src="${esc(c.src)}">${o.anchors ? anchorOverlay() : ""}</div><figcaption>${esc(cap)}</figcaption></figure>`;
     })
@@ -68,19 +68,19 @@ export function sheetHtml(o: SheetOptions): string {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 ${monoFace()}
 *{box-sizing:border-box;margin:0;padding:0}
-body{width:${width}px;background:#0c0c0e;color:#e8e8ea;font-family:"CT Mono",ui-monospace,monospace;padding:${pad}px}
+body{width:${width}px;background:#0a0908;color:#f9f8f7;font-family:"CT Mono",ui-monospace,monospace;padding:${pad}px}
 header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;gap:16px}
 h1{font-size:15px;font-weight:600;letter-spacing:.02em}
-.meta{font-size:11px;color:#8b8b93}
+.meta{font-size:11px;color:#968d86}
 .grid{display:grid;grid-template-columns:repeat(${o.cols},${cellW}px);gap:${gap + 6}px ${gap}px}
 figure{width:${cellW}px}
 .img{position:relative;width:${cellW}px;border-radius:4px;overflow:hidden;background:#000}
 .img img{display:block;width:100%;height:100%;object-fit:cover}
-figcaption{font-size:11px;color:#a8a8b0;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+figcaption{font-size:11px;color:#968d86;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .anc{position:absolute;inset:0}
 .anc i{position:absolute;background:rgba(255,64,160,.55)}
-.anc b{position:absolute;font-size:9px;font-weight:600;color:#ff40a0;text-shadow:0 0 2px #000}
-footer{margin-top:12px;font-size:11px;color:#8b8b93;white-space:pre-wrap}
+.anc b{position:absolute;font-size:9px;font-weight:600;color:#507afd;text-shadow:0 0 2px #000}
+footer{margin-top:12px;font-size:11px;color:#968d86;white-space:pre-wrap}
 </style></head><body>
 <header><h1>${esc(o.title)}</h1><span class="meta">${esc(o.meta ?? "")}</span></header>
 <div class="grid">${cells}</div>

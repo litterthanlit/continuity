@@ -1,92 +1,108 @@
 import { describe, expect, it } from "vitest";
 import { buildFamilies, compileCss, fontFaceCss, kitCss } from "../src/build/css.js";
 import { PKG_ROOT } from "../src/paths.js";
-import { hasTabularFigures } from "../src/themes/fonts.js";
-import { monoDark } from "../src/themes/index.js";
-import { classicKit, defineKit, KIT_NAMES, resolveKit, typeKits } from "../src/themes/kits.js";
+import { fonts, hasTabularFigures } from "../src/themes/fonts.js";
+import { DATA_HUES, littDark, littLight, themes } from "../src/themes/index.js";
+import { defineKit, KIT_NAMES, kitScale, littKit, resolveKit, typeKits, WEIGHTS } from "../src/themes/kits.js";
 
-describe("type kits", () => {
-  it("every kit's figures role has tabular figures (Stat, counters)", () => {
-    for (const k of Object.values(typeKits)) expect(hasTabularFigures(k.roles[k.figures].family), k.name).toBe(true);
+describe("the litt kit", () => {
+  it("is Geist and Geist Mono, in three weights by role (P9)", () => {
+    expect(KIT_NAMES).toEqual(["litt"]);
+    expect(Object.keys(fonts).sort()).toEqual(["geist", "geistMono"]);
+    expect(littKit.roles.display).toMatchObject({ family: fonts.geist, weight: 500 });
+    expect(littKit.roles.sans).toMatchObject({ family: fonts.geist, weight: 400 });
+    expect(littKit.roles.mono).toMatchObject({ family: fonts.geistMono, weight: 400 });
+    expect(Object.values(WEIGHTS)).toEqual([400, 500, 600]);
+    expect(hasTabularFigures(littKit.roles[littKit.figures].family)).toBe(true);
   });
 
-  it("role weights and widths sit inside what the vendored files can draw", () => {
-    for (const k of Object.values(typeKits)) {
-      for (const [role, r] of Object.entries(k.roles)) {
-        const [lo, hi] = r.family.axes.wght ?? [Number(r.family.faces[0].weight), Number(r.family.faces[0].weight)];
-        const statics = r.family.faces.map((f) => f.weight);
-        if (r.family.axes.wght) expect(r.weight, `${k.name}.${role}`).toBeGreaterThanOrEqual(lo);
-        if (r.family.axes.wght) expect(r.weight, `${k.name}.${role}`).toBeLessThanOrEqual(hi);
-        else expect(statics, `${k.name}.${role}`).toContain(String(r.weight));
-        if (r.width !== undefined && r.width !== 100) {
-          const w = r.family.axes.wdth;
-          expect(w, `${k.name}.${role} width`).toBeDefined();
-          expect(r.width).toBeGreaterThanOrEqual(w![0]);
-          expect(r.width).toBeLessThanOrEqual(w![1]);
-        }
-        for (const axis of Object.keys(r.axes ?? {})) expect(Object.keys(r.family.axes), `${k.name}.${role} ${axis}`).toContain(axis);
-      }
+  it("one display step; everything else stays near litt's 1.3 ratio, on whole pixels, above the legibility floors", () => {
+    const land = kitScale(littKit);
+    const port = kitScale(littKit, true);
+    expect(land.title[0] / land.body[0]).toBeCloseTo(1.33, 2);
+    for (const [, [size, lh]] of Object.entries(land)) {
+      expect(size).toBeGreaterThanOrEqual(26);
+      expect(Number.isInteger(lh)).toBe(true);
     }
+    for (const [, [size]] of Object.entries(port)) expect(size).toBeGreaterThanOrEqual(34);
+    // tracking tightens as size grows
+    const track = (["label", "small", "body", "title", "display"] as const).map((k) => parseFloat(land[k][2]));
+    expect([...track].sort((a, b) => b - a)).toEqual(track);
   });
 
-  it("serif display faces stay above hairline weights (video compression)", () => {
-    for (const k of Object.values(typeKits)) if (k.roles.display.family.category === "serif") expect(k.roles.display.weight).toBeGreaterThanOrEqual(320);
-  });
-
-  it("resolves storyboard type > theme type > classic", () => {
-    expect(resolveKit(monoDark).name).toBe("classic");
-    expect(resolveKit(monoDark, "wonk").name).toBe("wonk");
-    expect(resolveKit({ ...monoDark, type: "atelier" }).name).toBe("atelier");
-    expect(resolveKit({ ...monoDark, type: "atelier" }, "terminal").name).toBe("terminal");
-    expect(() => resolveKit(monoDark, "nope")).toThrow(/Unknown type kit/);
-    expect(KIT_NAMES).toHaveLength(6);
+  it("resolves storyboard type > theme type > litt", () => {
+    expect(resolveKit(littDark).name).toBe("litt");
+    const brand = defineKit("litt", { name: "brand", roles: { display: { weight: 600 } } });
+    expect(resolveKit({ ...littDark, type: brand }).name).toBe("brand");
+    expect(() => resolveKit(littDark, "swiss")).toThrow(/Unknown type kit/);
   });
 
   it("defineKit merges per role", () => {
-    const k = defineKit("swiss", { name: "brand", roles: { display: { weight: 700 } } });
-    expect(k.roles.display.weight).toBe(700);
+    const k = defineKit("litt", { name: "brand", roles: { display: { weight: 600 } } });
+    expect(k.roles.display.weight).toBe(600);
     expect(k.roles.display.family.family).toBe("Geist");
-    expect(k.roles.sans).toBe(typeKits.swiss.roles.sans);
+    expect(k.roles.sans).toBe(typeKits.litt.roles.sans);
+  });
+});
+
+describe("the litt themes", () => {
+  it("are both first-class (P8): every token in both, material tuned per theme, never inverted", () => {
+    expect(Object.keys(themes).sort()).toEqual(["litt-dark", "litt-light"]);
+    expect(Object.keys(littDark.colors).sort()).toEqual(Object.keys(littLight.colors).sort());
+    expect(littDark.material.light).toBe(22);
+    expect(littLight.material.light).toBe(12);
+    expect(littDark.material.grain).toBe(0.04);
+    expect(littLight.material.grain).toBe(0.02);
+    for (const h of DATA_HUES) expect(littDark.colors[`data-${h}-text`]).toMatch(/^#/);
+  });
+
+  it("two inks: body and metadata share one grey", () => {
+    for (const t of [littDark, littLight]) expect(t.colors["fg-muted"]).toBe(t.colors["fg-subtle"]);
+  });
+
+  it("radii are litt's at 2×; no shadow has an offset (P4)", () => {
+    expect(littDark.radius).toEqual({ control: 8, surface: 16 });
+    for (const t of [littDark, littLight])
+      for (const k of ["shadowTooltip", "shadowFloat", "shadowModal"] as const)
+        for (const layer of t.material[k].split(/,(?![^(]*\))/)) expect(layer.trim(), `${t.name}.${k}`).toMatch(/^0 0 /);
   });
 });
 
 describe("kit CSS", () => {
-  it("classic emits no role rules", () => {
-    expect(kitCss(classicKit(monoDark))).toBe("");
-  });
-
-  it("v2 roles carry weight, width, axes and case", () => {
-    const css = kitCss(typeKits.broadside);
-    expect(css).toContain(".font-display{font-weight:850;font-stretch:66%;text-transform:uppercase}");
-    expect(css).toContain("#root{font-synthesis:none;font-weight:500}");
-    expect(css).toContain(".ct-label{text-transform:uppercase;--tw-tracking:0.08em;letter-spacing:0.08em}");
-    expect(css).toContain(".ct-accent{font-size:1.03em;--tw-tracking:0em;letter-spacing:0em;text-transform:none}");
-    expect(kitCss(typeKits.wonk)).toContain('.font-display{font-weight:400;font-variation-settings:"SOFT" 100, "WONK" 1}');
+  it("roles carry weight; the root turns synthesis off", () => {
+    const css = kitCss(littKit);
+    expect(css).toContain("#root{font-synthesis:none;font-weight:400}");
+    expect(css).toContain(".font-display{font-weight:500}");
+    expect(css).toContain(".font-mono{font-weight:400}");
   });
 
   it("scoped kits re-declare fonts and reset every role property", () => {
-    const css = kitCss(typeKits.swiss, '[data-ct-type="swiss"]');
-    expect(css).toMatch(/^\[data-ct-type="swiss"\]\{--font-display:"Geist"/);
+    const css = kitCss(littKit, '[data-ct-type="litt"]');
+    expect(css).toMatch(/^\[data-ct-type="litt"\]\{--font-display:"Geist"/);
     expect(css).toContain("font-family:var(--font-sans)");
-    expect(css).toContain('[data-ct-type="swiss"] .font-display{font-weight:600;font-stretch:normal;font-variation-settings:normal;text-transform:none;font-feature-settings:normal}');
-    expect(css).toContain("--text-h1--letter-spacing:-0.05em");
+    expect(css).toContain('[data-ct-type="litt"] .font-display{font-weight:500;font-stretch:normal;font-variation-settings:normal;font-feature-settings:normal}');
+    expect(css).toContain("--text-display--letter-spacing:-0.04em");
   });
 
-  it("width-variable faces declare their stretch range", () => {
-    expect(fontFaceCss(buildFamilies([typeKits.broadside]))).toContain("font-stretch:62% 125%;");
+  it("only Geist faces ship", () => {
+    const css = fontFaceCss(buildFamilies([littKit]));
+    expect(css).toContain('font-family:"Geist"');
+    expect(css).toContain('font-family:"Geist Mono"');
+    expect(css).not.toMatch(/Inter|Newsreader|Fraunces|Archivo|Instrument/);
   });
 
-  it("classic compiles without a components layer; v2 puts roles between base and utilities", async () => {
-    const classic = await compileCss(monoDark, classicKit(monoDark), [], ["font-display", "text-h1"], PKG_ROOT);
-    expect(classic).toContain('"ss01" on');
-    expect(classic).not.toContain("font-synthesis");
-    const v2 = await compileCss(monoDark, typeKits.swiss, [typeKits.wonk], ["font-display", "font-bold", "text-h1", "tracking-wide"], PKG_ROOT);
-    expect(v2).not.toContain('"ss01" on');
-    // The layer order statement (not source order) puts components after base and before utilities.
-    expect(v2).toContain("@layer theme, base, components, utilities;");
-    const comp = v2.slice(v2.indexOf("@layer components"));
-    expect(comp).toContain('[data-ct-type="wonk"] .font-display');
-    expect(v2).toContain('--font-display: "Geist"');
-    expect(v2).toContain("--text-h1--letter-spacing: -0.05em");
+  it("compiles litt's tokens, the portrait scale and the material, with roles between base and utilities", async () => {
+    const css = await compileCss(littDark, littKit, [], ["font-display", "font-title", "font-label", "text-display", "text-label", "rounded-control", "rounded-surface", "shadow-raised", "shadow-glow", "bg-canvas", "text-fg-muted", "bg-data-blue-tint"], PKG_ROOT);
+    expect(css).toContain("@layer theme, base, components, utilities;");
+    expect(css).toContain("--color-canvas: #0a0908");
+    expect(css).toContain("--text-display: 112px");
+    expect(css).toContain("--text-label: 28px");
+    expect(css).toContain("--radius-control: 8px");
+    expect(css).toContain("--font-weight-label: 600");
+    expect(css).toContain("color-mix(in oklab, var(--color-data-blue) 18%, var(--color-surface-1))");
+    expect(css).toContain(".ct-lit");
+    expect(css).not.toMatch(/"ss01"|aurora|accent-2/);
+    const portrait = await compileCss(littDark, littKit, [], ["text-label"], PKG_ROOT, true);
+    expect(portrait).toContain("--text-label: 34px");
   });
 });
