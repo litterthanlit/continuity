@@ -73,9 +73,7 @@ export default scene({
     // the statement masks up by lines, its summary follows once it has landed.
     m.enter("label", "fade", { at: "b1" });
     m.enter("headline", "maskUp", { at: "b1+0.04", split: "lines" });
-    // The display line breaks into three lines in the 608 column, so the summary waits
-    // for the last one to land instead of overlapping it.
-    m.enter("sub", "rise", { at: "after:headline" });
+    m.enter("sub", "rise", { at: "after:headline-0.2" });
 
     // b2 — the product is placed: the scene's one expressive moment. Its rules load
     // after it, a 40ms cascade in reading order.

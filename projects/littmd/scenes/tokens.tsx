@@ -68,6 +68,8 @@ export default scene({
     m.enter("current", "fade", { at: "b3" });
     m.emphasize(BACK, "dim", { at: "b3", stagger: 0 });
 
-    m.camera({ scale: [1, 1.03] }, { origin: { x: 96, y: 540 } });
+    // 1.016 is the most the 1024 product allows before its right edge leaves action-safe
+    // (96 + 1728 × s ≤ 1853); every split chapter pushes the same.
+    m.camera({ scale: [1, 1.016] }, { origin: { x: 96, y: 540 } });
   },
 });

@@ -78,8 +78,8 @@
       ],
       "text": {
         "label": "litt.md",
-        "headline": "Your taste, written as rules.",
-        "sub": "Every rule comes with a check."
+        "headline": "Your taste, as rules.",
+        "sub": "Written down, each with a check."
       },
       "elements": [
         {
@@ -92,7 +92,7 @@
           "id": "headline",
           "role": "headline",
           "anchor": "A3:B4",
-          "note": "<Headline> display (112), fg, 608px column, 2 lines broken by meaning: 'Your taste,' / 'written as rules.'"
+          "note": "<Headline> display (112), fg, 608px column, 2 lines: 'Your taste,' / 'as rules.'"
         },
         {
           "id": "sub",
@@ -215,7 +215,7 @@
       ],
       "text": {
         "label": "Registry",
-        "headline": "Install it. Don't copy it.",
+        "headline": "Installed, not copied.",
         "sub": "Every component, one command."
       },
       "elements": [
@@ -229,7 +229,7 @@
           "id": "headline",
           "role": "headline",
           "anchor": "A3:B4",
-          "note": "<Headline> display, fg, 2 lines: 'Install it.' / 'Don't copy it.'"
+          "note": "<Headline> display, fg, 2 lines: 'Installed,' / 'not copied.'"
         },
         {
           "id": "sub",
@@ -281,8 +281,8 @@
       ],
       "text": {
         "label": "Agent test",
-        "headline": "Claude builds. litt grades.",
-        "sub": "Graded by litt's own checks."
+        "headline": "Built, then graded.",
+        "sub": "Claude builds, litt checks."
       },
       "elements": [
         {
@@ -295,7 +295,7 @@
           "id": "headline",
           "role": "headline",
           "anchor": "A3:B4",
-          "note": "<Headline> display, fg, 2 lines: 'Claude builds.' / 'litt grades.'"
+          "note": "<Headline> display, fg, 2 lines: 'Built, then' / 'graded.'"
         },
         {
           "id": "sub",

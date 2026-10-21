@@ -84,6 +84,8 @@ export default scene({
     m.tween("fill2", { scaleX: [0, 1] }, { at: "b4", ease: "expressive", kind: "enter" });
 
     // The push holds the lockup's left edge still, so the dip doesn't snap it.
-    m.camera({ scale: [1, 1.03] }, { origin: { x: 96, y: 540 } });
+    // 1.016 is the most the 1024 product allows before its right edge leaves action-safe
+    // (96 + 1728 × s ≤ 1853); every split chapter pushes the same.
+    m.camera({ scale: [1, 1.016] }, { origin: { x: 96, y: 540 } });
   },
 });
