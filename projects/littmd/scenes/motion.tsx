@@ -96,9 +96,6 @@ export default scene({
     // b2 · The cursor comes in from the right edge: one eased leg (slow, inOut) to Run.
     // It leaves 0.1s ahead of b2 so it lands with a 200ms pause before the click at b3-0.1.
     m.tween("cursor", { x: [ENTRY.x, 0], y: [ENTRY.y, 0] }, { at: "b2-0.1", duration: "slow", ease: "inOut", kind: "move" });
-    // The click ring is the focus colour; it is hidden until the click (its first tween
-    // would otherwise hold its 0.8 start opacity from t=0).
-    m.tween("cursor-ripple", { opacity: [0, 0] }, { at: 0, duration: "instant", ease: "out", kind: "emphasis" });
     m.click("cursor", { at: "b3-0.1" });
     m.emphasize("run", "press", { at: "b3-0.1" });
 

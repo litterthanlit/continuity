@@ -72,10 +72,6 @@ export default scene({
     // stillness, the click; the button presses on the same frame. Then it rests: 1.4s
     // of the answered UI before the push out at 5.7.
     m.enter("cursor", "fade", { at: "b5" });
-    // The engine holds a channel at its first tween's `from` before that tween starts, so
-    // the click's ring (0.8 → 0) would already show at the tip during the leg. Pin it
-    // to 0 from the cursor's entrance until the click opens it.
-    m.tween("cursor-ripple", { opacity: [0, 0] }, { at: "b5", duration: "instant" });
     m.path("cursor", [{ x: -416, y: -192 }], { at: "b5+0.1", duration: "slow" });
     m.click("cursor", { at: "b5+0.9" });
     m.emphasize("primary", "press", { at: "b5+0.9" });
