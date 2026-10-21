@@ -116,6 +116,16 @@ describe("evaluate", () => {
     expect(sampleScene(c, 2.5).get("s.a")!.x).toBe(0);
   });
 
+  it("a click's ring stays hidden until the click, then opens and fades", () => {
+    const m = new MotionBuilder("s", 4, {});
+    m.click("cursor", { at: 2 });
+    const c = compileScene(scene(m), {});
+    expect(sampleScene(c, 0).get("s.cursor-ripple")!.opacity).toBe(0);
+    expect(sampleScene(c, 1.99).get("s.cursor-ripple")!.opacity).toBe(0);
+    expect(sampleScene(c, 2.1).get("s.cursor-ripple")!.opacity).toBeCloseTo(0.8);
+    expect(sampleScene(c, 3).get("s.cursor-ripple")!.opacity).toBe(0);
+  });
+
   it("inherits from-values across enter → exit", () => {
     const m = new MotionBuilder("s", 4, {});
     m.enter("a", "rise", { at: 0 });

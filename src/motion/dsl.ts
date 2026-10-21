@@ -266,16 +266,13 @@ export class MotionBuilder {
     this.push({ target: id, kind: "emphasis", start: at, duration: durations.instant, ease: eases.out, easeName: "out", props: { scale: [null, 0.9] }, preset: "click" });
     this.push({ target: id, kind: "emphasis", start: round(at + durations.instant), duration: back, ease: eases.responsive, easeName: "responsive", props: { scale: [null, 1] }, preset: "click" });
     if (opts.ripple !== false) {
-      this.push({
-        target: `${id}-ripple`,
-        kind: "emphasis",
-        start: at,
-        duration: durations.slow,
-        ease: eases.out,
-        easeName: "out",
-        props: { scale: [0.4, 1.4], opacity: [0.8, 0] },
-        preset: "click",
-      });
+      // The ring opens from 0 (a channel holds its first tween's start value before it
+      // runs, so starting at 0.8 would show the ring at the tip for the whole approach).
+      const ring = `${id}-ripple`;
+      const open = durations.instant;
+      this.push({ target: ring, kind: "emphasis", start: at, duration: durations.slow, ease: eases.out, easeName: "out", props: { scale: [0.4, 1.4] }, preset: "click" });
+      this.push({ target: ring, kind: "emphasis", start: at, duration: open, ease: eases.out, easeName: "out", props: { opacity: [0, 0.8] }, preset: "click" });
+      this.push({ target: ring, kind: "emphasis", start: round(at + open), duration: round(durations.slow - open), ease: eases.out, easeName: "out", props: { opacity: [null, 0] }, preset: "click" });
     }
     return this;
   }
