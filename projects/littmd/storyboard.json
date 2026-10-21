@@ -1,0 +1,175 @@
+{
+  "title": "litt.md — launch film",
+  "logline": "For people building with Claude Code: litt.md turns a person's taste into rules, tokens and components an agent builds with, and checks it against. Open the gallery.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": 3.4,
+      "intent": "Name the problem in one breath: agents build in everyone's taste, not yours.",
+      "beats": [
+        { "id": "b1", "at": 0.15, "note": "'Agents build in everyone's taste.' rises word by word, fg" },
+        { "id": "b2", "at": 1.25, "note": "line 1 steps back to the grey; 'Not yours.' rises (the scene's moment)" },
+        { "id": "b3", "at": 2.4, "note": "'Not' steps back; only 'yours.' keeps fg" }
+      ],
+      "text": {
+        "l1": "Agents build in everyone's taste.",
+        "l2": "Not yours."
+      },
+      "elements": [
+        { "id": "l1", "role": "headline", "anchor": "A3:E3", "note": "First line of the scene's one statement: a single <Headline> (display, 112) holding l1 and l2 as block spans, left on the safe edge, vertically centred. fg, then the grey at b2." },
+        { "id": "l2", "role": "headline", "anchor": "A4:C4", "note": "Second line, same Headline. fg; at b3 'Not' dims and 'yours.' keeps fg." },
+        { "id": "yours", "role": "headline", "anchor": "B4", "note": "Inline span inside l2, pinned to text-fg. Emphasis by ink." }
+      ],
+      "motion": "Solid canvas, no light. b1: l1 maskUp by words (responsive). b2: l1 `dim` as l2 maskUp by words on the expressive spring — the one moment. b3: l2 `dim`, 'yours.' keeps fg. Camera 1 → 1.03 with origin on the safe left edge (x 96). Nothing exits; hard cut into the light."
+    },
+    {
+      "id": "reveal",
+      "duration": 4.8,
+      "intent": "The answer: litt.md — your taste, written as rules an agent can check.",
+      "beats": [
+        { "id": "b1", "at": 0.15, "note": "label + headline rise into the light" },
+        { "id": "b2", "at": 0.7, "note": "the profile window is placed (the scene's moment), rows cascade" },
+        { "id": "b3", "at": 2.6, "note": "one rule takes the raised segment; its check line appears" }
+      ],
+      "text": {
+        "label": "litt.md",
+        "headline": "Your taste, written as rules.",
+        "sub": "Every rule comes with a check."
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A3", "note": "<Label> 'litt.md' (the name, 600, the grey), 8px above the headline." },
+        { "id": "headline", "role": "headline", "anchor": "A3:B4", "note": "<Headline> display (112), fg, 608px column, 2 lines broken by meaning: 'Your taste,' / 'written as rules.'" },
+        { "id": "sub", "role": "body", "anchor": "A5:B5", "note": "<Body>, the grey, 32px under the headline." },
+        { "id": "profile", "role": "ui", "anchor": "D2:F5", "note": "<Window title=\"taste/profile.md\"> 1024 wide on the right, the shared split frame (lib/chapter.tsx), bg lit. Body: a List of 5 rule rows (title + mono id meta): 'Light, not paint' P1 · 'Glass is earned' P3 · 'Depth without drop shadows' P4 · 'Weight by role' P9 · 'Selected is a raised segment' P12. Rows profile-r0…r4." },
+        { "id": "current", "role": "decor", "anchor": "D4:F4", "note": "The raised segment (surface-2 + shadow-raised) behind the 'Weight by role' row at b3 (P12)." },
+        { "id": "checkline", "role": "ui", "anchor": "D5:F5", "note": "A footer strip in the window under the rows: mono 26 'Check: 400 text · 500 titles · 600 labels' in the grey, fades in at b3." }
+      ],
+      "motion": "Stage bg lit. b1: label fade, headline maskUp lines (responsive). b2: the window `settle` — the expressive moment; rows rise in a list cascade after it. Sub rises after the headline. b3: current fades in under row 3, its title inks to fg, the check line fades in. Camera 1 → 1.03 origin left edge."
+    },
+    {
+      "id": "tokens",
+      "duration": 5.0,
+      "intent": "Every value lives in one file, and both themes are designed.",
+      "beats": [
+        { "id": "b1", "at": 0.2, "note": "headline masks up" },
+        { "id": "b2", "at": 0.6, "note": "token lines cascade in the tokens.css window" },
+        { "id": "b3", "at": 2.6, "note": "the spring line takes the raised segment (it comes back in the motion scene)" }
+      ],
+      "text": {
+        "label": "Tokens",
+        "headline": "Every value in one file.",
+        "sub": "Light and dark, both designed."
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A3", "note": "<Label> 'Tokens'." },
+        { "id": "headline", "role": "headline", "anchor": "A3:B4", "note": "<Headline> display, fg, 2 lines: 'Every value' / 'in one file.'" },
+        { "id": "sub", "role": "body", "anchor": "A5:B5", "note": "<Body>, the grey." },
+        { "id": "file", "role": "ui", "anchor": "D2:F5", "note": "<Window title=\"tokens.css\"> 1024 wide, CodeBlock (numbers on) of 8 real lines from tokens.css, no hex: '--weight: 400;' '--weight-title: 500;' '--weight-label: 600;' '' '--radius-control: 4px;' '--radius-surface: 8px;' '' '--spring-expressive: 350ms 0.12;'. Lines file-l0… cascade." },
+        { "id": "current", "role": "decor", "anchor": "D5:F5", "note": "Raised segment behind the spring line at b3; other lines dim to the grey." }
+      ],
+      "motion": "Solid canvas. b1: headline maskUp lines on the expressive spring (the moment); label fade; sub rise after. Window is present from t=0 (it came with the push). b2: code lines rise in a list cascade. b3: current fades in behind the spring line. Camera 1 → 1.03.",
+      "transition": { "type": "push", "dir": "left", "duration": 0.5, "blur": true }
+    },
+    {
+      "id": "registry",
+      "duration": 5.6,
+      "intent": "Install the components, don't copy them: one command, namespaced, never restyles the host.",
+      "beats": [
+        { "id": "b1", "at": 0.2, "note": "headline masks up" },
+        { "id": "b2", "at": 0.9, "note": "the command types in the terminal" },
+        { "id": "b3", "at": 2.4, "note": "the ✔ output lines land" },
+        { "id": "b4", "at": 3.0, "note": "the installed button is placed in the preview below" }
+      ],
+      "text": {
+        "label": "Registry",
+        "headline": "Install it. Don't copy it.",
+        "sub": "Every component, one command."
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A3", "note": "<Label> 'Registry'." },
+        { "id": "headline", "role": "headline", "anchor": "A3:B4", "note": "<Headline> display, fg, 2 lines: 'Install it.' / 'Don't copy it.'" },
+        { "id": "sub", "role": "body", "anchor": "A5:B5", "note": "<Body>, the grey." },
+        { "id": "term", "role": "ui", "anchor": "D2:F4", "note": "<Window title=\"~/app\"> 1024 wide, Terminal: '$ npx shadcn add @litt/button' (typed), then '✔ components/litt/button.tsx' and '✔ tokens as --litt-*, host untouched'." },
+        { "id": "preview", "role": "ui", "anchor": "D5:F5", "note": "A flat Card under the terminal (same 1024 width, 32px gap): the installed component — <Button variant=\"primary\">Get started</Button> beside <Button>Read the docs</Button>, and a mono caption '@litt/button 2026.10.20' on the right in the grey." }
+      ],
+      "motion": "Solid canvas. b1: headline maskUp lines (responsive); label fade; sub rise. b2: m.type the command (cps ~24) with the prompt waiting; b3: output lines rise, list stagger. b4: the preview card `settle` — the expressive moment — its buttons with it. Camera 1 → 1.03.",
+      "transition": { "type": "push", "dir": "left", "duration": 0.5, "blur": true }
+    },
+    {
+      "id": "agents",
+      "duration": 5.8,
+      "intent": "Claude builds with litt, and litt's own checks grade the result.",
+      "beats": [
+        { "id": "b1", "at": 0.2, "note": "headline masks up (the moment)" },
+        { "id": "b2", "at": 1.0, "note": "the checks run: each row's tag lands 'pass' in reading order" },
+        { "id": "b3", "at": 3.4, "note": "the footer verdict '6 of 6 passed' steps up to fg" }
+      ],
+      "text": {
+        "label": "Agent test",
+        "headline": "Claude builds. litt grades.",
+        "sub": "Graded by litt's own checks."
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A3", "note": "<Label> 'Agent test'." },
+        { "id": "headline", "role": "headline", "anchor": "A3:B4", "note": "<Headline> display, fg, 2 lines: 'Claude builds.' / 'litt grades.'" },
+        { "id": "sub", "role": "body", "anchor": "A5:B5", "note": "<Body>, the grey." },
+        { "id": "run", "role": "ui", "anchor": "D2:F5", "note": "<Window title=\"test:agents · settings-dialog\"> 1024 wide. 6 rows (List look, 88px, hairlines): 'Skill loaded' · 'Registry components' · 'Host lint' · 'Typecheck' · 'Build' · 'Screenshots', each with a success Tag 'pass' (tag0…tag5) that appears at b2 in order. Footer strip: mono 'settings-dialog · vite' left, 'verdict' right: '6 of 6 passed' in the grey, inks to fg at b3." }
+      ],
+      "motion": "Solid canvas. The window is present from t=0 with its rows (came with the push). b1: headline maskUp lines on the expressive spring (the moment); sub rise after. b2: tags fade in one by one ~0.28s apart (each check finishing). b3: verdict `ink`. Camera 1 → 1.03.",
+      "transition": { "type": "push", "dir": "left", "duration": 0.5, "blur": true }
+    },
+    {
+      "id": "motion",
+      "duration": 5.0,
+      "intent": "Motion in three tiers, quick by default, with one expressive moment per view — shown, not told.",
+      "beats": [
+        { "id": "b1", "at": 0.2, "note": "headline masks up" },
+        { "id": "b2", "at": 1.2, "note": "instant row fills" },
+        { "id": "b3", "at": 1.8, "note": "responsive row fills" },
+        { "id": "b4", "at": 2.4, "note": "expressive row fills with its small overshoot — the scene's moment" }
+      ],
+      "text": {
+        "label": "Motion",
+        "headline": "Quick, with one moment.",
+        "sub": "One expressive spring per view."
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A3", "note": "<Label> 'Motion'." },
+        { "id": "headline", "role": "headline", "anchor": "A3:B4", "note": "<Headline> display, fg, 2 lines: 'Quick, with' / 'one moment.'" },
+        { "id": "sub", "role": "body", "anchor": "A5:B5", "note": "<Body>, the grey." },
+        { "id": "tiers", "role": "ui", "anchor": "D2:F5", "note": "A flat Card 1024 wide, three rows split by hairlines. Each: a title (28, 500, fg) + mono spec (26, the grey) on top, and below a track (fg 8%, 8px tall, full width) with its fill (fg) — 'Instant' '100ms · ease-out' · 'Responsive' 'spring 200ms · bounce 0' · 'Expressive' 'spring 350ms · bounce 0.12'. Fills fill0…fill2 scaleX from the left." }
+      ],
+      "motion": "Solid canvas. Card present from t=0. b1: headline maskUp lines (responsive); sub rise after. b2/b3/b4: each fill scaleX 0 → 1 with its own tier (instant tween, responsive spring, expressive spring). The expressive fill is the moment. Camera 1 → 1.03.",
+      "transition": { "type": "dip", "duration": 0.5 }
+    },
+    {
+      "id": "end",
+      "duration": 4.2,
+      "intent": "The name, the promise, the call to action.",
+      "beats": [
+        { "id": "b1", "at": 0.35, "note": "wordmark settles" },
+        { "id": "b2", "at": 0.8, "note": "tagline rises" },
+        { "id": "b3", "at": 1.2, "note": "the button and the url" }
+      ],
+      "text": {
+        "wordmark": "litt.md",
+        "tagline": "Technical precision, lit from above.",
+        "cta": "Open the gallery",
+        "url": "littmd.vercel.app"
+      },
+      "elements": [
+        { "id": "wordmark", "role": "logo", "anchor": "C3:D3", "note": "<Headline> display, centred — the film's one centred frame, in the light." },
+        { "id": "tagline", "role": "body", "anchor": "C4:D4", "note": "<Body>, the grey, 32px under." },
+        { "id": "cta", "role": "cta", "anchor": "C5", "note": "<Button variant=\"primary\">, 64px under: the film's one primary call to action." },
+        { "id": "url", "role": "caption", "anchor": "C5", "note": "Mono caption 'littmd.vercel.app' in the grey, 24px under the button." }
+      ],
+      "motion": "Stage lit. b1 wordmark `settle` (the moment); b2 tagline rise; b3 cta rise, url fade after. Camera 1 → 1.03, cruising into the last frame."
+    }
+  ]
+}
