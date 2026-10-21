@@ -133,8 +133,8 @@
         },
         {
           "id": "b2",
-          "at": 0.6,
-          "note": "token lines cascade in the tokens.css window"
+          "at": 1.0,
+          "note": "token lines cascade once the headline has landed"
         },
         {
           "id": "b3",
@@ -331,23 +331,13 @@
         {
           "id": "b2",
           "at": 1.2,
-          "note": "instant row fills"
-        },
-        {
-          "id": "b3",
-          "at": 1.8,
-          "note": "responsive row fills"
-        },
-        {
-          "id": "b4",
-          "at": 2.4,
-          "note": "expressive row fills on the expressive spring, settling last — the scene's moment (bounce 0.12 is a ~0.3% overshoot: the tiers read by timing against the shared end mark)"
+          "note": "the race: all three fills start together, each on its own tier — instant snaps, responsive lands, expressive arrives last at the shared end mark (the scene's moment)"
         }
       ],
       "text": {
         "label": "Motion",
-        "headline": "Quick, with one spring.",
-        "sub": "Three tiers, one moment per view."
+        "headline": "Quick by default.",
+        "sub": "One expressive moment per view."
       },
       "elements": [
         {
@@ -360,7 +350,7 @@
           "id": "headline",
           "role": "headline",
           "anchor": "A3:B4",
-          "note": "<Headline> display, fg, 2 lines: 'Quick, with' / 'one spring.'"
+          "note": "<Headline> display, fg, 2 lines: 'Quick by' / 'default.'"
         },
         {
           "id": "sub",
@@ -375,7 +365,7 @@
           "note": "A flat Card 1024 wide, three rows split by hairlines. Each: a title (28, 500, fg) + mono spec (26, the grey) on top, and below a track (fg 8%, 8px tall, full width) with its fill (fg) — 'Instant' '100ms · ease-out' · 'Responsive' 'spring 200ms · bounce 0' · 'Expressive' 'spring 350ms · bounce 0.12'. Fills fill0…fill2 scaleX from the left."
         }
       ],
-      "motion": "Solid canvas. Card present from t=0. b1: headline maskUp lines (responsive); sub rise after. b2/b3/b4: each fill scaleX 0 → 1 with its own tier (instant tween, responsive spring, expressive spring). The expressive fill is the moment. Camera 1 → 1.03.",
+      "motion": "Solid canvas. Card present from t=0. b1: headline maskUp lines (responsive); sub rise after. b2: the three fills race, scaleX 0 → 1, each on its own tier (instant tween, responsive spring, expressive spring). The expressive fill is the moment. Camera 1 → 1.03.",
       "transition": {
         "type": "dip",
         "duration": 0.5

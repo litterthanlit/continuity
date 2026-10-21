@@ -61,7 +61,7 @@ export default scene({
     m.enter("sub", "rise", { at: "after:headline-0.2" });
 
     // b2 · the file fills in, line by line (responsive).
-    m.enter(FILLED, "rise", { at: "b2", stagger: "list" });
+    m.enter(FILLED, "rise", { at: "b2", stagger: "list" }); // b2 waits for the headline to land
 
     // b3 · the spring line leads: the raised segment comes up behind it and the rest of
     // the file steps back to the grey, at the instant tier.

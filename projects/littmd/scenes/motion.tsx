@@ -18,8 +18,8 @@ const TIERS = [
 
 const PAD = 64; // the Card's padding (inside, the rows on the 16 grid)
 const INNER = SPLIT.width - 2 * PAD; // 896
-const RUNOUT = 48; // track beyond the end mark: headroom for the overshoot
-const FILL_W = INNER - RUNOUT; // 848, where every fill lands
+const RUNOUT = 16; // track beyond the end mark: headroom for the overshoot
+const FILL_W = INNER - RUNOUT; // 880, where every fill lands
 const MARK_H = 24; // the end mark: 2px wide, 8px above and below the 8px track
 const LINE_H = 36; // title / spec line
 const GAP = 24; // spec line → track
@@ -74,14 +74,17 @@ export default scene({
     m.enter("headline", "maskUp", { at: "b1", split: "lines" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
 
-    // Each fill runs on the tier it names.
-    // b2 · Instant: a 100ms ease-out tween. Under the 150ms spatial floor on purpose —
+    // b2 · The race: all three start together and run on the tier they name, so the
+    // difference is the timing against one finish line — instant snaps, responsive lands,
+    // expressive arrives last. One start on purpose: a staggered start would hide the
+    // tiers' difference, so the three carry unstaggered-group.
+    // Instant: a 100ms ease-out tween. Under the 150ms spatial floor on purpose —
     // that speed IS the tier being shown.
-    m.tween("fill0", { scaleX: [0, 1] }, { at: "b2", duration: "instant", ease: "out", kind: "enter", allow: ["duration-too-fast"] });
-    // b3 · Responsive: the default spring (visual 0.2s, bounce 0).
-    m.tween("fill1", { scaleX: [0, 1] }, { at: "b3", ease: "responsive", kind: "enter" });
-    // b4 · Expressive: visual 0.35s, bounce 0.12 — the scene's one expressive moment.
-    m.tween("fill2", { scaleX: [0, 1] }, { at: "b4", ease: "expressive", kind: "enter" });
+    m.tween("fill0", { scaleX: [0, 1] }, { at: "b2", duration: "instant", ease: "out", kind: "enter", allow: ["duration-too-fast", "unstaggered-group"] });
+    // Responsive: the default spring (visual 0.2s, bounce 0).
+    m.tween("fill1", { scaleX: [0, 1] }, { at: "b2", ease: "responsive", kind: "enter", allow: ["unstaggered-group"] });
+    // Expressive: visual 0.35s, bounce 0.12 — the scene's one expressive moment.
+    m.tween("fill2", { scaleX: [0, 1] }, { at: "b2", ease: "expressive", kind: "enter", allow: ["unstaggered-group"] });
 
     // The push holds the lockup's left edge still, so the dip doesn't snap it.
     // 1.016 is the most the 1024 product allows before its right edge leaves action-safe
