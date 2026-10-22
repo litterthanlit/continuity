@@ -9,6 +9,7 @@
 - `slow` 0.6s
 - `linger` 1.4s
 - `snap` 0.3s
+- `glide` 0.45s
 
 ## Eases
 - `linear` — linear
@@ -18,6 +19,7 @@
 - `expressive` — spring, visual 0.35s, bounce 0.12
 - `steep` — cubic-bezier(0.87, 0, 0.13, 1)
 - `pop` — spring, visual 0.3s, bounce 0.3
+- `glide` — cubic-bezier(0.32, 0.72, 0, 1)
 
 ## Staggers
 - `char` 20ms
@@ -134,6 +136,9 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `travel-too-far` — litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.
 - `camera-drift` — The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).
 - `ambient-loop` — litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.
+- `loop-open` — Loop clips (storyboard loop): frame one is a real state — start mid-move or on the before state. Every element of the first scene enters, so the clip opens on an empty frame.
+- `loop-hold` — Loop clips: the final state holds 30–50% of the clip, so the loop reads as finished and the viewer can study it.
+- `loop-length` — Loop clips run 5–15s. Longer is a launch film or a tutorial; shorter rarely carries a reveal and a hold.
 - `text-fade` — Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).
 - `weight-role` — litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.
 

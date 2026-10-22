@@ -26,8 +26,9 @@ export const reportCmd: Command = {
     const sb = b.storyboard;
     lines.push(`# ${sb?.title ?? slug}`, "");
     if (sb?.logline) lines.push(`> ${sb.logline}`, "");
+    if (sb?.caption) lines.push(`**Caption (ships with the clip):** ${sb.caption}`, "");
     if (b.timeline && sb) {
-      lines.push(`**Format:** ${sb.format.aspect} · ${b.timeline.width}×${b.timeline.height} · ${b.timeline.fps}fps · ${b.timeline.duration}s · theme \`${sb.theme}\``, "");
+      lines.push(`**Format:** ${sb.format.aspect} · ${b.timeline.width}×${b.timeline.height} · ${b.timeline.fps}fps · ${b.timeline.duration}s · theme \`${sb.theme}\`${sb.register && sb.register !== "calm" ? ` · register \`${sb.register}\`` : ""}${sb.loop ? " · loop" : ""}`, "");
       lines.push("| # | Scene | In | Duration | Intent | Transition out |", "|---|---|---|---|---|---|");
       sb.scenes.forEach((sc, i) => {
         const t = b.timeline!.scenes[i];

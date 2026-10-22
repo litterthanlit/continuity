@@ -15,7 +15,8 @@ Deliverables, in `projects/<slug>/`:
 1. `brief.md` — complete it. If something essential is missing (audience, the one
    message, CTA, format), make the most reasonable assumption and write it down
    under "Assumptions" rather than stalling.
-2. `treatment.md` — one page: concept in one sentence, the **register** (`calm` for a
+2. `treatment.md` — one page: concept in one sentence (for a clip meant to be posted:
+   the **claim** a stranger would care about — `social-clip` skill), the **register** (`calm` for a
    launch, a feature, an explainer; `energetic` for a brand reel, a recap, a montage, a
    collage-led social cut; or calm with named energetic chapters) and why, narrative arc (hook → turn
    → payoff), visual language in litt's terms (`litt-dark` or `litt-light` and
@@ -46,6 +47,9 @@ Deliverables, in `projects/<slug>/`:
      available once a scene is energetic), always with an explicit `duration`
      inside the type's range, plus the params it needs (`dir`, `blur: true`,
      `feather`…),
+   - a clip meant to be posted on X or social (5–15s): `"loop": true` and a
+     `caption` (the claim plus a link to the demo or how-to); frame one a real
+     state, one reveal, a 30–50% hold — load the `social-clip` skill,
    - energetic: formulas named in `motion` notes ("collage formula, London
      content") so builders share one `lib/` function, and holds as scenes of
      their own (1–1.6s).

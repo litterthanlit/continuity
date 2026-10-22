@@ -73,7 +73,7 @@ export const render: Command = {
     copyFileSync(file, join(outDir, `latest${draft ? "-draft" : ""}.${format}`));
     copyFileSync(file, join(it.dir, `render${draft ? "-draft" : ""}.${format}`));
 
-    const qcFindings = format === "mp4" || format === "webm" || format === "mov" ? await qc(file, tl) : [];
+    const qcFindings = format === "mp4" || format === "webm" || format === "mov" ? await qc(file, { ...tl, loop: build.storyboard?.loop }) : [];
     writeFindings(it.dir, "render-findings.json", qcFindings);
     updateIteration(slug, it.n, { render: { file: rel(file), draft, at: new Date().toISOString() } });
     const q = countBySeverity(qcFindings);

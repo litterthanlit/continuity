@@ -1,6 +1,6 @@
 ---
 name: continuity
-description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, the house language (litt) and its two registers (calm, energetic), roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, critique).
+description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, the house language (litt) and its two registers (calm, energetic), roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, social-clip, critique).
 ---
 
 # Continuity production loop
@@ -44,6 +44,9 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
   for social, ≤ 12 for 16:9. Every text needs read time (≈17 chars/s + 0.4s).
 - **elements** list ids, roles and coarse anchors (6×6 grid A1–F6).
 - **theme** — `litt-dark` (default) or `litt-light`; **type** — `litt` (the only kit).
+- **loop** + **caption** — for a clip meant to be posted (X, social, 5–15s): `"loop": true`
+  turns on the loop gates (frame one a real state, a 30–50% final hold, 5–15s) and `caption` is
+  the claim that ships with it. Load the `social-clip` skill.
 - **register** — `calm` (default) or `energetic`; a scene's own `register` wins (one energetic
   chapter in a calm video, or a calm hold in a reel). Energetic scenes run 1–3s, holds 1–1.6s;
   plan the formulas (which scenes repeat which structure) and the mirrored ending here.
@@ -61,7 +64,8 @@ grid, lockups 8, blocks 32), negative space, light and colour **now** — motion
 cannot rescue a weak frame.
 
 ## 3 · Motion (builder)
-Load `motion-craft` and `typography` (always) and `kinetic-type` / `product-launch` as relevant.
+Load `motion-craft` and `typography` (always) and `kinetic-type` / `product-launch` /
+`social-clip` as relevant.
 Write `motion: (m) => …` with presets + tokens. Check numbers with
 `npx ct timeline <slug>`.
 
