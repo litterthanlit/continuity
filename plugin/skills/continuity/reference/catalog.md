@@ -8,6 +8,7 @@
 - `exit` 0.26s
 - `slow` 0.6s
 - `linger` 1.4s
+- `snap` 0.3s
 
 ## Eases
 - `linear` — linear
@@ -15,6 +16,8 @@
 - `inOut` — cubic-bezier(0.65, 0, 0.35, 1)
 - `responsive` — spring, visual 0.2s, bounce 0
 - `expressive` — spring, visual 0.35s, bounce 0.12
+- `steep` — cubic-bezier(0.87, 0, 0.13, 1)
+- `pop` — spring, visual 0.3s, bounce 0.3
 
 ## Staggers
 - `char` 20ms
@@ -62,8 +65,20 @@
 | `push` | 0.5s | 0.3–0.8s | ease, dir, blur | The incoming scene pushes the outgoing one off in the direction of travel (dir, default left = reading order). Sequential steps. blur: true when it moves fast. |
 | `pushUp` | 0.5s | 0.3–0.8s | ease, blur | push with dir up: the incoming scene pushes up from below. Lists, feeds, 9:16. |
 | `wipe` | 0.5s | 0.35–0.8s | ease, dir, angle, feather | The incoming scene wipes on with a moving edge (dir, default right). feather (8–20) softens it; angle (e.g. 120) runs it diagonally. A state revealed. |
+| `depth` | 0.6s | 0.4–1s | ease, dir (dir: in/out) | Energetic register. The camera flies through the stack: the outgoing scene grows past the viewer as the next one comes forward from behind (dir in, default). dir out is the reverse — close a reel by flying back out of where it opened. |
 
-One transition language per video: cuts on the beat, and at most two accent types — see motion-craft §8.
+One transition language per video: cuts on the beat, and at most two accent types (three once a scene is energetic) — see motion-craft §8.
+
+## Registers (storyboard / scene `register`, docs/decisions/0007)
+The look is litt in every register; the register sets the motion's energy and the lint bounds below.
+
+| register | bounce ≤ | moments/scene | travel ≤ | ambient zoom ≤ | camera ≤ | movers ≤ | accents ≤ | loops | copy types or wipes |
+|---|---|---|---|---|---|---|---|---|---|
+| `calm` | 0.12 | 1 | 64px | 3% | 15%/s · 160px/s | 5 | 2 | warning | — |
+| `energetic` | 0.35 | 3 | 160px | 8% | 50%/s · 480px/s | 7 | 3 | info | yes (text-fade) |
+
+- `calm` — litt as written: responsive springs, one expressive moment per scene, cuts on the beat, the camera's slow push.
+- `energetic` — A brand reel or montage: steep in-outs for UI and camera, pop springs for objects, linear for machines, depth moves, bursts then holds.
 
 ## Type scale (`text-<step>`: px · line height px · tracking, at 1080 short side; 9:16 in brackets)
 - `text-display` 112 · 112 · -0.04em
@@ -82,10 +97,10 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `litt` — Geist in three weights by role, Geist Mono for code and data. One display step per scene; rank from weight, two inks and space. Display Geist 500 · text Geist 400 · mono Geist Mono 400 · figures: sans.
 
 ## Timeline lint rules
-- `ease-linear` — Spatial motion with a linear ease looks mechanical. Use a token ease (the responsive or expressive spring, out, inOut).
+- `ease-linear` — Spatial motion with a linear ease looks mechanical. Use a token ease (the responsive or expressive spring, out, inOut, steep). Energetic register: linear rotation is fine for a machine (a spinning ring).
 - `duration-too-fast` — Spatial entrances/exits under 150ms read as glitches.
 - `duration-too-slow` — Entrances/exits/emphasis over 1.6s drag. Split it, or make it a camera move.
-- `duration-off-token` — Durations should come from the token scale (instant/responsive/expressive/exit/slow/linger) for a consistent rhythm.
+- `duration-off-token` — Durations should come from the token scale (instant/responsive/expressive/exit/slow/linger, snap in the energetic register) for a consistent rhythm.
 - `exit-slower-than-enter` — Exits should be quicker than entrances (attention has moved on).
 - `settle-interrupted` — A new tween on the same property starts before the previous one settled — motion never lands.
 - `read-time` — Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.
@@ -94,15 +109,16 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `scene-overrun` — Motion is still running after the scene has ended (it will be cut off).
 - `late-entrance` — Element enters in the last moments of the scene — it pops in and is gone.
 - `dead-air` — Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.
-- `crowded` — Too many independent elements animating at once — the eye can't follow.
+- `crowded` — Too many independent elements animating at once — the eye can't follow (calm: 5, energetic: 7).
 - `unstaggered-group` — Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.
 - `slow-open` — The video's first motion starts late — the opening frame is dead.
 - `split-too-busy` — Character split on long copy is slow and noisy. Split by words or lines instead.
 - `stagger-too-long` — The stagger cascade takes too long to complete.
-- `camera-too-fast` — Camera moves faster than ~15% zoom/s or 160px/s feel jarring.
+- `camera-too-fast` — Camera moves faster than ~15% zoom/s or 160px/s feel jarring (energetic register: 50% zoom/s, 480px/s).
 - `transition-too-long` — A transition longer than its type's craft range stalls the edit (a 1s push is no longer a step).
 - `transition-too-short` — A transition shorter than its type's range reads as a glitch, not a move.
-- `transition-language` — More than two transition types in one video reads as a template. Pick one primary (most cuts) and at most one accent; hard cuts are free.
+- `transition-language` — More than two accent transition types in one video reads as a template (three once any scene is energetic). Pick one primary (most cuts) and few accents; hard cuts are free.
+- `transition-register` — This transition belongs to another register (e.g. depth is energetic). Set the scene's register, or pick a transition from its own.
 - `transition-bounce` — Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, out).
 - `transition-strobe` — A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or lengthen it.
 - `mask-needs-split` — Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.
@@ -110,14 +126,15 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `axis-reflow` — Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.
 - `axis-unsupported` — The element's family has no such axis, so the channel animates nothing (e.g. wdth or soft on Geist, which has a weight axis only).
 - `axis-range` — Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.
-- `spring-bounce` — litt: a spring bounces at 0.12 or less (the expressive tier). More reads as a toy.
+- `spring-bounce` — litt: a spring bounces at 0.12 or less (the expressive tier). More reads as a toy. Energetic register: up to 0.35, for things that act like objects (the pop spring).
 - `exit-bounce` — litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).
-- `expressive-budget` — litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive.
+- `expressive-budget` — litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive. Energetic register: up to three (a group counts once).
 - `material-motion` — litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.
 - `property-motion` — litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter). Tracking, weight, blur and filters perform.
-- `travel-too-far` — litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed.
-- `camera-drift` — The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed.
-- `ambient-loop` — litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink).
+- `travel-too-far` — litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.
+- `camera-drift` — The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).
+- `ambient-loop` — litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.
+- `text-fade` — Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).
 - `weight-role` — litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.
 
 ## Source lint rules

@@ -46,6 +46,9 @@ describe("seeded static defects (projects/_defects)", () => {
       "lint:travel-too-far",
       "lint:camera-drift",
       "lint:ambient-loop",
+      // registers (docs/decisions/0007)
+      "lint:transition-register",
+      "lint:text-fade",
     ]) {
       expect(ids, r).toContain(r);
     }
@@ -53,7 +56,7 @@ describe("seeded static defects (projects/_defects)", () => {
 });
 
 describe("good projects stay clean (no false positives)", () => {
-  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions"]) {
+  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions", "_energetic"]) {
     it(slug, async () => {
       const { findings } = await rules(slug);
       const errors = findings.filter((f) => f.severity === "error");
@@ -75,5 +78,24 @@ describe("build output", () => {
     const l1 = b.elements.find((e) => e.id === "hook.l1");
     expect(l1?.split).toBe("lines");
     expect(b.timeline!.scenes.map((s) => s.scene)).toEqual(["hook", "write", "blind", "eyes", "check", "end"]);
+  });
+});
+
+describe("registers (docs/decisions/0007)", () => {
+  it("the energetic gallery is clean of warnings; the same motion judged calm trips litt's bounds", async () => {
+    const { b, findings } = await rules("_energetic");
+    expect(findings.filter((f) => f.severity !== "info").map((f) => `${f.rule}: ${f.message}`)).toEqual([]);
+    const calm = lintTimeline({ ...b, storyboard: { ...b.storyboard!, register: "calm" } });
+    const ids = new Set(calm.map((f) => f.rule));
+    for (const r of ["spring-bounce", "travel-too-far", "expressive-budget", "camera-drift", "transition-register"]) expect(ids, r).toContain(r);
+  });
+
+  it("a scene's own register wins over the storyboard's", async () => {
+    const { b } = await rules("_energetic");
+    const sb = b.storyboard!;
+    const scenes = sb.scenes.map((s) => (s.id === "collage" ? { ...s, register: "calm" as const } : s));
+    const found = lintTimeline({ ...b, storyboard: { ...sb, scenes } }).filter((f) => f.rule === "spring-bounce");
+    expect(found.length).toBeGreaterThan(0);
+    expect(new Set(found.map((f) => f.scene))).toEqual(new Set(["collage"]));
   });
 });

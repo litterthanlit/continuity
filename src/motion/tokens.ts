@@ -8,6 +8,8 @@ import type { EaseSpec, StaggerFrom } from "./types.js";
  * bounce. Exits run at 0.75× the entrance's visual time, ease out, and never
  * bounce. `slow` and `linger` are video-only: the eye and the hand (a camera
  * focus move, a cursor leg, a chart drawing, a counter) — never an entrance.
+ * `snap`, `steep` and `pop` belong to the energetic register (register.ts): the
+ * calm register's lint bounds still hold a pop spring to litt's bounce.
  */
 export const durations = {
   /** Ink steps, a press, a toggle, opacity on small UI. */
@@ -22,6 +24,8 @@ export const durations = {
   slow: 0.6,
   /** Video only: a counter, a long draw. */
   linger: 1.4,
+  /** Energetic register: a decisive UI or camera move on the steep ease (~9 frames at 30fps). */
+  snap: 0.3,
 } as const;
 export type DurationToken = keyof typeof durations;
 
@@ -67,6 +71,13 @@ export const eases = {
   responsive: spring(durations.responsive, 0),
   /** Spring, visual 0.35s, bounce 0.12: the scene's one expressive moment. */
   expressive: spring(durations.expressive, MAX_BOUNCE),
+  /**
+   * Energetic register: a steep, exponential-feeling in-out — short acceleration, a fast
+   * middle, a long landing. Interface and camera moves that read decisive and digital.
+   */
+  steep: { type: "bezier", p: [0.87, 0, 0.13, 1] },
+  /** Energetic register: spring, visual 0.3s, bounce 0.3 — things that act like objects (a sticker, a collage piece, a node). */
+  pop: spring(0.3, 0.3),
 } as const satisfies Record<string, EaseSpec>;
 export type EaseToken = keyof typeof eases;
 

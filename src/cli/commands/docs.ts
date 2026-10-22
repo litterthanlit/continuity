@@ -4,6 +4,7 @@ import { SOURCE_RULES } from "../../lint/source.js";
 import { RULES } from "../../lint/timeline.js";
 import { emphasisPresets, enterPresets, exitPresets, type PresetDef } from "../../motion/presets.js";
 import { naturalDuration } from "../../motion/easing.js";
+import { REGISTER_BOUNDS } from "../../motion/register.js";
 import { durations, eases, staggers } from "../../motion/tokens.js";
 import type { EaseSpec } from "../../motion/types.js";
 import { TRANSITION_DEFS } from "../../motion/transitions.js";
@@ -71,7 +72,16 @@ ${presetRows(emphasisPresets)}
 |---|---|---|---|---|
 ${Object.entries(TRANSITION_DEFS).map(([k, d]) => `| \`${k}\` | ${k === "cut" ? "—" : `${d.duration}s`} | ${k === "cut" ? "—" : `${d.range[0]}–${d.range[1]}s`} | ${d.params.join(", ") || "—"}${d.dirs && d.dirs.length < 4 ? ` (dir: ${d.dirs.join("/")})` : ""} | ${d.description} |`).join("\n")}
 
-One transition language per video: cuts on the beat, and at most two accent types — see motion-craft §8.
+One transition language per video: cuts on the beat, and at most two accent types (three once a scene is energetic) — see motion-craft §8.
+
+## Registers (storyboard / scene \`register\`, docs/decisions/0007)
+The look is litt in every register; the register sets the motion's energy and the lint bounds below.
+
+| register | bounce ≤ | moments/scene | travel ≤ | ambient zoom ≤ | camera ≤ | movers ≤ | accents ≤ | loops | copy types or wipes |
+|---|---|---|---|---|---|---|---|---|---|
+${Object.entries(REGISTER_BOUNDS).map(([k, b]) => `| \`${k}\` | ${b.maxBounce} | ${b.moments} | ${b.maxTravel}px | ${Math.round(b.maxDrift * 100)}% | ${Math.round(b.cameraZoomRate * 100)}%/s · ${b.cameraPan}px/s | ${b.crowded} | ${b.accents} | ${b.loops} | ${b.textTypesOrWipes ? "yes (text-fade)" : "—"} |`).join("\n")}
+
+${Object.entries(REGISTER_BOUNDS).map(([k, b]) => `- \`${k}\` — ${b.description}`).join("\n")}
 
 ## Type scale (\`text-<step>\`: px · line height px · tracking, at 1080 short side; 9:16 in brackets)
 ${Object.entries(littKit.scale).map(([k, [sz, lh, ls]]) => { const p = littKit.portrait[k as TypeSize]; return `- \`text-${k}\` ${sz} · ${lh} · ${ls}${p ? ` (9:16: ${p[0]} · ${p[1]})` : ""}`; }).join("\n")}

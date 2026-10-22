@@ -82,7 +82,9 @@ generic-AI tell). A label earns its place by saying something.
 ## Mono is for data
 
 Geist Mono (`font-mono`) only for code, keyboard keys (`⌘K`), ids (`ENG-142`), versions
-(`v0.2.0`), timecodes and numbers in tables. Never for tags, labels or paragraphs. A hero
+(`v0.2.0`), timecodes, numbers in tables, and the indices and coordinates of a technical overlay
+(`Marker` labels `01`, `40.7° N` — the energetic register's annotation layer). Never for tags,
+word labels or paragraphs. A hero
 number is Geist 500 with tabular figures (`Stat`, `Counter` with `font-title tabular-nums`) —
 not mono.
 

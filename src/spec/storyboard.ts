@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { REGISTERS } from "../motion/register.js";
 import { eases } from "../motion/tokens.js";
 import { DIRS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
 import { KIT_NAMES } from "../themes/kits.js";
@@ -75,6 +76,8 @@ export const SceneSchema = z.object({
   transition: TransitionSchema.optional(),
   /** Type kit for this scene only (galleries, a deliberate chapter break). Usually set once at the top. */
   type: z.enum(KIT_NAMES).optional(),
+  /** Register for this scene only: one energetic chapter (a montage) in a calm video, or a calm hold in a reel. */
+  register: z.enum(REGISTERS).optional(),
 });
 
 export const StoryboardSchema = z.object({
@@ -89,6 +92,11 @@ export const StoryboardSchema = z.object({
   theme: z.string().default("litt-dark"),
   /** Type kit. litt is the only one; a brand theme.ts can pin a defineKit() variant. */
   type: z.enum(KIT_NAMES).optional(),
+  /**
+   * How loud litt speaks (docs/decisions/0007): `calm` (default — launches, features, statements)
+   * or `energetic` (brand reels, montages, collage-led social cuts). The lint's motion bounds follow it.
+   */
+  register: z.enum(REGISTERS).optional(),
   /** Optional musical grid for cutting on the beat (seam for audio). */
   bpm: z.number().positive().optional(),
   scenes: z.array(SceneSchema).min(1),

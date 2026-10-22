@@ -4,7 +4,8 @@ import { fxStyle } from "../src/motion/fx.js";
 import { peakSlope, sigmaFor } from "../src/motion/easing.js";
 import { eases } from "../src/motion/tokens.js";
 import { TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
-import { parseStoryboard } from "../src/spec/storyboard.js";
+import { lintStoryboard } from "../src/lint/timeline.js";
+import { parseStoryboard, type Storyboard } from "../src/spec/storyboard.js";
 
 /** v1 transitions litt kept unchanged (crossfade and dip moved to litt's eases; the rest are gone). */
 const LEGACY = ["cut", "push", "pushUp", "wipe"] as const;
@@ -51,8 +52,19 @@ describe("every transition", () => {
 });
 
 describe("litt's transition language", () => {
-  it("is cuts plus four accents; nothing that performs", () => {
-    expect([...TRANSITIONS]).toEqual(["cut", "crossfade", "dip", "push", "pushUp", "wipe"]);
+  it("is cuts plus four accents, and depth for the energetic register; nothing that performs", () => {
+    expect([...TRANSITIONS]).toEqual(["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth"]);
+    expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["depth"]);
+  });
+
+  it("depth flies through the stack on the steep ease, and dir out reverses it", () => {
+    const fly = run({ type: "depth" });
+    expect(fly.out[0]).toMatchObject({ easeName: "steep", props: { scale: [1, 1.8] } });
+    expect(fly.in[0]).toMatchObject({ easeName: "steep", props: { scale: [0.6, 1] } });
+    expect(fly.in[1].props).toEqual({ opacity: [0, 1] });
+    const back = run({ type: "depth", dir: "out" });
+    expect(back.out[0].props).toEqual({ scale: [1, 0.6] });
+    expect(back.in[0].props).toEqual({ scale: [1.8, 1] });
   });
 
   it("crossfade and dip use litt's eases (inOut, out)", () => {
@@ -138,5 +150,41 @@ describe("storyboard transitions", () => {
       ],
     });
     expect(!r.ok && r.issues.join()).toMatch(/overlap inside its 1s/);
+  });
+});
+
+describe("registers and transitions (docs/decisions/0007)", () => {
+  const sb = (register: string | undefined, types: Array<Record<string, unknown>>, sceneRegister?: string): Storyboard => {
+    const r = parseStoryboard({
+      title: "t",
+      format: { aspect: "16:9" },
+      ...(register ? { register } : {}),
+      scenes: [
+        ...types.map((transition, i) => ({ id: `s${i}`, duration: 3, intent: "one", transition, ...(i === 0 && sceneRegister ? { register: sceneRegister } : {}) })),
+        { id: "end", duration: 3, intent: "end" },
+      ],
+    });
+    if (!r.ok) throw new Error(r.issues.join("; "));
+    return r.value;
+  };
+  const rules = (b: Storyboard) => lintStoryboard(b).map((f) => f.rule);
+
+  it("depth is energetic: it warns in a calm edit, and not in an energetic one or next to an energetic scene", () => {
+    expect(rules(sb(undefined, [{ type: "depth" }]))).toContain("transition-register");
+    expect(rules(sb("energetic", [{ type: "depth" }]))).not.toContain("transition-register");
+    expect(rules(sb("calm", [{ type: "depth" }], "energetic"))).not.toContain("transition-register");
+  });
+
+  it("depth runs in or out, never sideways; push never runs in depth", () => {
+    expect(() => sb("energetic", [{ type: "depth", dir: "out" }])).not.toThrow();
+    expect(() => sb("energetic", [{ type: "depth", dir: "left" }])).toThrow(/depth runs in or out/);
+    expect(() => sb("energetic", [{ type: "push", dir: "in" }])).toThrow(/push runs left or right or up or down/);
+  });
+
+  it("the energetic register allows three accent types, calm two", () => {
+    const three = [{ type: "dip" }, { type: "push", blur: true }, { type: "wipe" }];
+    expect(rules(sb(undefined, three))).toContain("transition-language");
+    expect(rules(sb("energetic", three))).not.toContain("transition-language");
+    expect(rules(sb("energetic", [...three, { type: "crossfade" }]))).toContain("transition-language");
   });
 });

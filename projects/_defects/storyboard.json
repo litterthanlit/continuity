@@ -72,10 +72,37 @@
     {
       "id": "t5",
       "duration": 2,
-      "intent": "Transition defects.",
+      "intent": "Transition defects; a depth move in a calm edit (transition-register).",
       "beats": [],
       "text": {
         "word": "T5"
+      },
+      "transition": {
+        "type": "depth"
+      }
+    },
+    {
+      "id": "t6",
+      "duration": 2,
+      "intent": "Lands the calm depth move.",
+      "beats": [],
+      "text": {
+        "word": "T6"
+      }
+    },
+    {
+      "id": "reel",
+      "duration": 2.4,
+      "intent": "Energetic register defects: copy that only fades (text-fade).",
+      "register": "energetic",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.2
+        }
+      ],
+      "text": {
+        "line": "Fades in"
       }
     }
   ]

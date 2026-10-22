@@ -93,13 +93,15 @@ ${type}
 }
 
 /**
- * litt's material, static (P5): the top light, and the glass (only for floating
+ * litt's material, static (P5): the top light, the technical grid, and the glass (only for floating
  * UI with content behind it) with the highlight on its top edge. In a video no
  * fixed child can be trapped, so the blur sits on the element, not a ::before.
  */
 function materialCss(theme: Theme): string {
   const m = theme.material;
   return `.ct-lit { background-image: radial-gradient(120% 70% at 50% -10%, color-mix(in oklab, var(--color-accent) ${m.light}%, transparent) 0%, transparent 65%); background-repeat: no-repeat; }
+.ct-grid { background-image: linear-gradient(to right, var(--color-line) 2px, transparent 2px), linear-gradient(to bottom, var(--color-line) 2px, transparent 2px);
+  background-size: 96px 96px; background-position: calc(50% - 1px) calc(50% - 1px); opacity: 0.6; }
 .ct-glass { background: ${m.glass}; -webkit-backdrop-filter: blur(40px) saturate(140%); backdrop-filter: blur(40px) saturate(140%);
   box-shadow: inset 0 0 0 2px ${m.glassBorder}, inset 0 2px 0 ${m.highlight}, ${m.shadowFloat}; }
 `;

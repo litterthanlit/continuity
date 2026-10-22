@@ -8,7 +8,8 @@ description: Kinetic typography and social cuts in litt (9:16 reels/shorts/TikTo
 Type *is* the image. The craft is rhythm (when words land), contrast (which word matters) and
 restraint (one idea per beat). litt's version is calm power: words land precisely, rank comes
 from ink and space, and nothing performs. No scale punches, no weight pulses, no serif swaps,
-no glow — a word matters because everything around it steps back.
+no glow — a word matters because everything around it steps back. That holds in both registers;
+the energetic one (end of this skill) only changes how fast and how physically words arrive.
 
 ## Structure (8–20s social)
 1. **Hook (0–2s):** a provocation or promise in ≤ 5 words. First motion ≤ 0.2s. No logo first —
@@ -60,6 +61,23 @@ Rules of thumb:
 - The light (`bg="lit"`) on the hook and maybe the end card; solid canvas between.
 - With music (`bpm` in the storyboard): put beats on the grid (`60/bpm` s) and land key words
   on downbeats.
+
+## In the energetic register (motion-craft §12)
+A social cut built from collage and UI, or a type-led reel with real energy. Set
+`"register": "energetic"`; everything above still holds (one statement per beat, Geist, ink as
+emphasis, the left edge), and:
+- **Type types or wipes, it never fades** (`text-fade`). Prompts, queries and handles type on
+  (`m.type`, linear, 30–48 cps); statements and labels wipe on — `maskUp` or `wipeRight` on
+  `steep` with `duration: "snap"`, or the selection-block recipe for the line that matters.
+- **Words cascade 1–3 frames apart:** `split: "words"`, `stagger: 0.033–0.067`, `ease: "steep"`.
+- **A word that acts like an object** (a sticker, a stamp, a tag slapped on) may land on `pop`
+  — one per scene, and never a whole line of copy.
+- **Bursts and holds:** 2–4s of fast lines, then one line held ~1s. A hold is where the key word
+  lands.
+- Cuts stay primary; add a blurred `push` (`ease: "steep"`, 0.3–0.4s) as a wipe and `depth` to
+  open and close — the last card flies back out onto the first.
+- A thin grid (`bg="grid"`) and mono labels (counts, coordinates) under the type give the frame
+  its technical layer.
 
 ## Copy
 Write it like a headline writer: concrete verbs, no filler, parallel structure across beats

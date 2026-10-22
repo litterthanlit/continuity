@@ -56,7 +56,7 @@ Tailwind layer):
   `shadow-tooltip` (floating: raised + zero-offset glow + ring) `shadow-lift` (the glow alone)
   `shadow-glow` (the one primary action) `shadow-hairline` `shadow-control` `shadow-field`
   `shadow-focus` — never an offset or ad-hoc shadow (`litt-shadow`).
-- material classes `ct-lit` (the top light; prefer `<Stage bg="lit">`) and `ct-glass` (floating UI only).
+- material classes `ct-lit` (the top light; prefer `<Stage bg="lit">`), `ct-grid` (the technical grid; prefer `<Stage bg="grid">`) and `ct-glass` (floating UI only).
 - CSS vars inline: `var(--color-fg)` etc. No hex values in scene code (`litt-hex`).
 
 **Rule:** motion owns `transform`, `opacity`, `color` (the ink channel), `filter`, `clip-path`,
@@ -68,7 +68,8 @@ Tailwind layer):
 
 Layout
 - `<Stage bg? grain?>` — every view's root. `bg`: `solid` (default) · `lit` (litt's one light,
-  from the top — the hero, maybe the end card) · `none`. Static: the backdrop never animates.
+  from the top — the hero, maybe the end card) · `grid` (a static 2px hairline grid, 96px cells,
+  centred — collage and UI scenes in the energetic register) · `none`. Static: the backdrop never animates.
 - `<Safe zone="title|action|social|none">` — inset content area.
 - `<Center>` (one short statement, once per video), `<Stack gap>`, `<Row gap>` — flex helpers
   (gap defaults to 32, litt's block gap; use 8 for a lockup).
@@ -93,6 +94,16 @@ Product UI (litt's components at 2×; UI text ≥ 26px; sub-parts expose `<ct>-�
 - `<CodeBlock ct code>` (lines `<ct>-l0…`, litt's quiet highlighting) · `<Terminal ct lines>` (`<ct>-l0…`)
 - `<BarChart ct data current? hue?>` (bars `<ct>-b0…`, `grow` from the baseline; fg 55%, the current bar fg) · `<LineChart ct data hue?>` (`<ct>-line` draw, `<ct>-dot`) · `<Stat ct value label unit? delta? deltaTone? size?>` (label above, `<ct>-label`, `<ct>-delta`; + `m.counter`)
 - `<Cursor ct class="left-… top-…">` (+ `<ct>-ripple`, the focus colour)
+
+Imagery and annotation
+- `<Media ct src width height treat? position?>` — an image in a strict container (radius 16, the
+  raised edge, clipped). `src` is `assets/…`. `treat`: `mono` (default) · `contrast` · `invert` ·
+  `none` — imported imagery is forced into the palette. The picture is `<ct>-img`: drift it inside
+  its frame (`m.tween("tile-img", { scale: [1.06, 1] }, { duration: "linger", ease: "out" })`). Children
+  render above the picture (markers, a Path).
+- `<Marker ct label? side?>` — an annotation node: a 24px ring (`<ct>-ring`) with a numbered mono
+  label on a canvas chip (`<ct>-label`). Absolutely placed by its centre (`class="left-[x] top-[y]"`);
+  join markers with `<Path strokeWidth={2}>` and `draw` it.
 - Kit UI roots carry `data-ct-ui`: their text is judged as UI imagery (`ui-glance`, ≥ 0.8s landed), not copy (`read-time`).
 - Characters must exist in the vendored fonts (Latin + "CT Symbols/Arrows/Math" fallbacks: ✓ ✔ ❯ ◆ ⌘ ★ ● ■ ▲ ✕ → ← ↗ × ÷). Emoji are rejected (`glyph-missing`) — draw icons as SVG.
 
@@ -105,13 +116,13 @@ m.enter(targets, preset, { at, duration?, ease?, split?, stagger?, distance?, ma
 m.exit(targets, preset, { … })                  // 0.75× the entrance, ease out, no bounce
 m.emphasize(targets, preset, { … })             // ink · dim · press
 m.tween(targets, { x: [from, to], opacity: 1 }, { at, duration?, ease?, kind?, split?, stagger? })  // responsive spring by default
-m.camera({ scale: [1, 1.03] }, { at?, duration?, ease?, origin?: { x, y } })   // whole-scene camera; ambient ≤ 3%; origin (px) holds a point still
+m.camera({ scale: [1, 1.03] }, { at?, duration?, ease?, origin?: { x, y } })   // whole-scene camera; ambient ≤ 3% (energetic 8%); origin (px) holds a point still
 m.counter(target, { from?, to, at, duration?, decimals?, prefix?, suffix? })
 m.path("cursor", [{ x: -272, y: -336 }, { x: 40, y: 16, hold: 0.3 }], { at })   // waypoints, px offsets
 m.click("cursor", { at })                                   // press + focus ring
 m.type("search-text", { at, cps: 22 })                      // typeOn by chars
 m.blink("search-caret", { at, until })                      // caret blink — the one loop litt allows
-m.loop(target, { y: 8 }, { period: 6 })                     // exists, but warns (ambient-loop)
+m.loop(target, { rotate: 8 }, { period: 2 })                // a sine swing; warns (ambient-loop) — energetic: an info, for an object that swings
 m.time(at) → seconds · m.endOf(id) → seconds
 ```
 
@@ -121,9 +132,12 @@ m.time(at) → seconds · m.endOf(id) → seconds
 - `stagger`: token, seconds, or `{ each, from: "start|end|center|edges" }`.
 - Eases: `responsive` (spring, visual 0.2s, bounce 0 — the default), `expressive` (visual 0.35s,
   bounce 0.12 — one per scene), `out` (instant tier, exits), `inOut` (camera, cursor, playhead),
-  `linear` (typing); or `spring(visual, bounce)` (bounce ≤ 0.12).
+  `linear` (typing, a machine turning); energetic register: `steep` (cubic-bezier(0.87, 0, 0.13, 1) —
+  interface and camera) and `pop` (spring, visual 0.3s, bounce 0.3 — things that act like objects);
+  or `spring(visual, bounce)` (bounce ≤ 0.12 calm, ≤ 0.35 energetic).
 - Durations: `instant` 0.1 · `responsive` 0.2 · `expressive` 0.35 · `exit` 0.26 · `slow` 0.6 ·
-  `linger` 1.4. Springs take their own settle time unless you pass a duration.
+  `linger` 1.4 · `snap` 0.3 (energetic: a decisive move on `steep`). Springs take their own settle
+  time unless you pass a duration.
 - Props litt animates: `x y (px) xPct yPct scale scaleX scaleY rotate opacity`, `ink` (0 the
   grey → 1 fg), `clipTop clipRight clipBottom clipLeft (% inset)`, `draw (0..1)`, `counter`.
   The engine also has `z rotateX rotateY skewX blur brightness saturate tracking wght wdth opsz
@@ -143,6 +157,7 @@ Using them in a view is a build error (`reserved-id`).
   "format": { "aspect": "16:9 | 9:16 | 1:1 | 4:5", "fps": 30 },
   "theme": "litt-dark | litt-light",
   "type": "litt",
+  "register": "calm | energetic",
   "bpm": 120,
   "scenes": [{
     "id": "hook", "duration": 2.8, "intent": "…",
@@ -150,17 +165,20 @@ Using them in a view is a build error (`reserved-id`).
     "text": { "headline": "…" },
     "elements": [{ "id": "headline", "role": "headline", "anchor": "A4:D5" }],
     "motion": "director notes for the builder",
-    "transition": { "type": "dip" }
+    "transition": { "type": "dip" },
+    "register": "energetic"
   }]
 }
 ```
 Element roles: `headline title body label caption cta stat logo ui decor media`.
+`register` (top level, default `calm`; a scene's own wins) sets the motion's energy and the lint
+bounds — `catalog.md` → Registers, motion-craft §12.
 Scene `duration` includes the outgoing transition overlap; the next scene starts
 `duration − transition.duration` later. A scene's incoming and outgoing transitions must fit
 inside it together.
 
 Transition params (validated per type; `duration` defaults per type): `ease` (token or
-`[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, wipe) · `angle` + `feather` (wipe) ·
+`[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, wipe; `in|out`: depth) · `angle` + `feather` (wipe) ·
 `blur` (push/pushUp: `true` = speed-matched, number = σ px, `false`). Types, defaults and
 ranges: `catalog.md` → Scene transitions.
 

@@ -121,3 +121,148 @@ m.exit(["body", "headline"], "liftOut", { at: "b3", stagger: "list" }); // 0.75�
 // A state revealed
 { "type": "wipe", "angle": 120, "feather": 14 }
 ```
+
+---
+
+# Energetic register recipes (motion-craft §12)
+
+All assume `"register": "energetic"` on the storyboard or the scene. Eases by role: `steep` for
+interface and camera, `pop` for objects, `linear` for machines. `projects/_energetic` is the
+working gallery of most of these — read it before building a reel.
+
+## A decisive UI move (steep, 9 frames)
+```ts
+m.tween("panel", { x: [96, 0], opacity: [0, 1] }, { at: "b1", duration: "snap", ease: "steep", kind: "enter" });
+m.tween("panel", { x: [0, -64] }, { at: "b2", duration: "snap", ease: "steep" });   // and on again
+```
+
+## The sticker slap (an object lands)
+```tsx
+<El ct="sticker" class="absolute left-[352px] top-[520px] flex h-[80px] items-center rounded-control bg-fg px-[32px] text-label font-label text-canvas shadow-float">
+  {text.sticker}
+</El>
+```
+```ts
+// Big → placed, a little rotation left in it, on the pop spring. Rotation lives in the motion,
+// not in a class: motion owns transform.
+m.tween("sticker", { scale: [1.5, 1], rotate: [-14, -4], opacity: [0, 1] }, { at: "slap", ease: "pop", kind: "enter" });
+```
+A brand-coloured sticker (`bg-accent`) is the frame's one accent fill — nothing else in the frame
+takes the accent.
+
+## The collage formula (build once, use twice)
+```tsx
+// lib/collage.tsx — the formula: slots, sizes and timing fixed; content passed in.
+export function Collage({ map, texture, print, sticker }: { map: string; texture: string; print: string; sticker: string }) {
+  return (
+    <Safe>
+      <Media ct="map" src={map} treat="invert" width={456} height={600} class="absolute left-0 top-0" />
+      <Media ct="texture" src={texture} treat="mono" width={484} height={288} class="absolute left-[488px] top-0" />
+      <Media ct="print" src={print} treat="contrast" width={484} height={280} class="absolute left-[488px] top-[320px]" />
+      <El ct="sticker" class="…">{sticker}</El>
+    </Safe>
+  );
+}
+export function collageMotion(m: MotionBuilder) {
+  m.enter(["map", "texture", "print"], "rise", { at: "b1", distance: 96, ease: "pop", stagger: 0.067 }); // 2f apart
+  m.tween("sticker", { scale: [1.5, 1], rotate: [-14, -4], opacity: [0, 1] }, { at: "slap", ease: "pop", kind: "enter" });
+  m.camera({ scale: [1.02, 1.06] });
+}
+```
+```tsx
+// scenes/new-york.tsx and scenes/london.tsx differ only in content.
+view: ({ text }) => <Stage bg="grid"><Collage map="assets/ny-map.jpg" texture="assets/ny-stone.jpg" print="assets/liberty.jpg" sticker={text.sticker} /></Stage>,
+motion: (m) => collageMotion(m),
+```
+
+## The annotation formula (organic subject, technical overlay)
+```tsx
+<Media ct="rings" src="assets/rings.jpg" treat="invert" width={972} height={800} class="absolute left-0 top-0">
+  <Path ct="link" d="M288 248 L600 392 L432 608" viewBox="0 0 972 800" width={972} height={800} strokeWidth={2} class="absolute inset-0" />
+  <Marker ct="n1" label="01" class="left-[288px] top-[248px]" />
+  <Marker ct="n2" label="02" class="left-[600px] top-[392px]" />
+  <Marker ct="n3" label="03" side="left" class="left-[432px] top-[608px]" />
+</Media>
+```
+```ts
+m.tween("rings-img", { scale: [1.08, 1] }, { at: 0, duration: "linger", ease: "out" });    // drifts inside its frame
+m.enter(["n1", "n2", "n3"], "rise", { at: "b1", distance: 48, ease: "pop", stagger: 0.067 });
+m.enter("link", "draw", { at: "after:n3-0.1", duration: "slow", ease: "steep" });
+```
+
+## The selection-block wipe (copy never fades)
+```tsx
+<div class="absolute left-0 top-[848px]">
+  <Caption ct="caption">{text.caption}</Caption>
+  <El ct="sel" class="absolute inset-0 bg-fg" />
+</div>
+```
+```ts
+// The block sweeps on, the words are revealed under it, the block leaves to the right.
+m.tween("sel", { clipRight: [100, 0] }, { at: "b2", duration: "snap", ease: "steep", kind: "enter" });
+m.enter("caption", "wipeRight", { at: "b2+0.2", duration: "snap", ease: "steep" });
+m.tween("sel", { clipLeft: [0, 100] }, { at: "after:sel", duration: "snap", ease: "steep" });
+```
+Lighter version for a label: `m.enter("label", "wipeRight", { duration: "snap", ease: "steep" })`.
+
+## The terminal (a machine speaks)
+```tsx
+<Window ct="term" title="zsh" width={864} height={288}>
+  <Terminal ct="sh" class="p-[48px]" size={32} lines={['$ ct search "archive"', "412 prints · 6 cities"]} />
+</Window>
+```
+```ts
+m.tween("term", { y: [96, 0], opacity: [0, 1] }, { at: "b1", duration: "snap", ease: "steep", kind: "enter" });
+m.type("sh-l0", { at: "b1+0.35", cps: 30 });                 // linear: typing is a process
+m.type("sh-l1", { at: "after:sh-l0+0.15", cps: 48 });        // the answer comes back faster
+```
+
+## A 2×2 grid that drifts (a hold)
+```tsx
+<Safe>
+  <div class="grid h-full grid-cols-2 grid-rows-2 gap-[32px]">
+    <Media ct="t1" src="assets/portrait.jpg" width={470} height={470} />
+    <Media ct="t2" src="assets/art.jpg" width={470} height={470} treat="contrast" />
+    <Card ct="t3" class="h-[470px] w-[470px]"><CodeBlock ct="src" code={CODE} numbers={false} size={26} /></Card>
+    <Media ct="t4" src="assets/print.jpg" width={470} height={470} treat="invert" />
+  </div>
+</Safe>
+```
+```ts
+m.enter(["t1", "t2", "t3", "t4"], "rise", { at: "b1", distance: 64, ease: "pop", stagger: 0.067 });
+m.tween(["t1-img", "t2-img", "t4-img"], { scale: [1.06, 1] }, { at: "b1", duration: "linger", ease: "out", stagger: 0.1 });
+```
+
+## A spinning ring (a machine)
+```ts
+// Linear rotation is fine in the energetic register (ease-linear skips rotation-only moves).
+m.tween("ring", { rotate: [0, 360] }, { at: 0, duration: 4, ease: "linear" });
+```
+
+## The match cut
+```ts
+// lib/shapes.ts — one constant, so both scenes put the shape on the same pixels.
+export const GLOBE = { left: 316, top: 316, size: 448 };
+```
+Scene A ends on the pixel globe at `GLOBE`; scene B opens on a grid of 1s and 0s occupying the
+same box, already settled, then the digits start to change. The storyboard transition is a plain
+cut — the rhyme is the geometry, not an effect.
+
+## The mirrored ending (close the loop)
+```jsonc
+// first scene:  "transition": { "type": "depth" }                  — fly in
+// next-to-last: "transition": { "type": "depth", "dir": "out" }   — fly back out
+// last scene reuses the first scene's layout from lib/ and lands the CTA (the handle types).
+```
+
+## Burst and hold (a storyboard skeleton, ~12s)
+```jsonc
+{ "register": "energetic", "scenes": [
+  { "id": "open",     "duration": 2.4, "transition": { "type": "depth" } },                     // terminal types
+  { "id": "collage",  "duration": 2.8, "transition": { "type": "push", "dir": "left", "blur": true, "ease": "steep", "duration": 0.4 } }, // burst
+  { "id": "hold",     "duration": 1.4 },                                                         // one image, a drift: rest
+  { "id": "ui-run",   "duration": 3.0, "transition": { "type": "wipe", "ease": "steep" } },      // burst: charts draw, rows stack
+  { "id": "annotate", "duration": 2.6, "transition": { "type": "depth", "dir": "out" } },      // hold with detail
+  { "id": "end",      "duration": 2.4 }                                                          // the opening frame, the CTA
+]}
+```

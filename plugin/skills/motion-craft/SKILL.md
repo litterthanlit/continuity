@@ -1,6 +1,6 @@
 ---
 name: motion-craft
-description: The motion design taste layer — litt (Nick's design language) translated for video: frame composition and hierarchy, material and light, colour, then motion: litt's three tiers (instant, responsive spring, one expressive moment per scene), exits, travel, stagger, choreography, holds, the transition language, the camera, emphasis by ink, and the anti-patterns the lint gates. Concrete numbers throughout. Load whenever writing or reviewing motion() code or scene layouts for a Continuity project.
+description: The motion design taste layer — litt (Nick's design language) translated for video, in two registers (calm, the default; energetic, for brand reels and montages): frame composition and hierarchy, material and light, colour, then motion: litt's three tiers (instant, responsive spring, one expressive moment per scene), exits, travel, stagger, choreography, holds, the transition language, the camera, emphasis by ink, the energetic register's easing by role, bursts and holds, depth, formulas and mirrored endings, and the anti-patterns the lint gates. Concrete numbers throughout. Load whenever writing or reviewing motion() code or scene layouts for a Continuity project.
 ---
 
 # Motion craft: litt for video
@@ -10,6 +10,14 @@ and quiet: a grid, hairlines, one typeface in three weights, warm stone neutrals
 move is light and material: a soft light from the top, surfaces that catch it. Color barely
 appears; where it does it behaves like light or carries data. **Motion explains and never
 performs.** Spec: `docs/decisions/0006-litt-house-language.md`.
+
+**Two registers.** litt can speak quietly or loudly; the look never changes, the motion's energy
+does. `calm` (the default, §1–11) is litt as written: a launch, a feature, a statement.
+`energetic` (§12) is for brand reels, recaps, montages and collage-led social cuts: steep
+in-outs, springs that overshoot for things that act like objects, a camera that travels through
+depth, bursts followed by holds. Pick it in the brief and set `"register"` on the storyboard (or
+on one scene, for an energetic chapter in a calm video); the lint's bounds follow it, so you never
+fight the gate with `allow`. Spec: `docs/decisions/0007-registers.md`.
 
 Numbers are at 1080p (short side 1080px) and 30fps. **Chrome is litt at 2×**: litt's 8px grid
 is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
@@ -73,6 +81,8 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
 | Responsive | ease `responsive` | spring, visual 0.2s, bounce 0 (settles ≈ 0.35s) | **the default**: copy, rows, chips, cascades, the gliding highlight, a selection moving |
 | Expressive | ease `expressive` | spring, visual 0.35s, bounce 0.12 (settles ≈ 0.58s) | **one moment per scene**: the statement landing, the product placed |
 
+(The energetic register picks eases by role instead — `steep`, `pop`, `linear`: §12.)
+
 - Presets already pick the tier: `rise`, `fade`, `slideLeft/Right`, `maskUp`, `grow` are
   responsive; `settle` is expressive. Make a line the scene's moment with
   `ease: "expressive"`. A second expressive spring in a scene warns (`expressive-budget`).
@@ -122,7 +132,8 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
 ## 8. Transitions: one language
 
 litt's edit is **cuts on the beat**. A cut is the most premium transition and the primary;
-accents are rare and quiet. Pick at most two accent types per video (`transition-language`):
+accents are rare and quiet. Pick at most two accent types per video (`transition-language`;
+three once a scene is energetic):
 
 | Type | Default | Params | Use for |
 |---|---|---|---|
@@ -132,6 +143,7 @@ accents are rare and quiet. Pick at most two accent types per video (`transition
 | `push` | 0.5 | dir, blur, ease | sequential steps, in reading direction; `blur: true` when fast |
 | `pushUp` | 0.5 | blur, ease | lists, feeds, 9:16 |
 | `wipe` | 0.5 | dir, angle, feather, ease | a state revealed; `feather: 8–20`, `angle: 120` for a soft diagonal |
+| `depth` | 0.6 | dir (`in`/`out`), ease | **energetic only** (`transition-register`): fly through stacked scenes; `out` reverses it to close the loop |
 
 ```json
 "transition": { "type": "dip" }
@@ -141,7 +153,8 @@ accents are rare and quiet. Pick at most two accent types per video (`transition
 Rules: keep one direction of travel; never a spring on a full-frame move
 (`transition-bounce`); fast pushes need motion blur (`transition-strobe`); a scene's incoming
 and outgoing transitions must not overlap. Whips, punch cuts, irises, strips, light sweeps,
-zooms and defocus blurs are gone — each one performs.
+and defocus blurs are gone — each one performs. The zoom came back once, as `depth`, in the
+energetic register: a camera move through space, not an effect.
 
 ## 9. Camera
 
@@ -151,7 +164,8 @@ the statement's left edge — `m.camera({ scale: [1, 1.03] }, { origin: { x: 96,
 or the text drifts and every hard cut snaps it back. A
 deliberate focus move — zoom to the part of the UI that matters, hold, then act — is a short
 `inOut` tween (`slow` or a little longer, ≤ 15% zoom/s, `camera-too-fast`). When the camera
-moves, the content holds still.
+moves, the content holds still. The energetic camera travels: pans across a collage on `steep`
+(≤ 480px/s, ≤ 50% zoom/s), an ambient push up to 8% — §12.
 
 ## 10. Emphasis: by ink
 
@@ -163,7 +177,7 @@ weight pulse, a glow, a marker bar, a serif swap or an accent colour.
 ## 11. Anti-patterns (each one fails the critique; most fail the lint)
 
 1. Linear easing on anything that moves through space; bounce past 0.12, a bouncing exit, a
-   second expressive moment in a scene.
+   second expressive moment in a scene (calm; the energetic register's own bounds are in §12).
 2. Everything appears at once, or everything staggers identically; long cascades.
 3. Elements move before the previous one settled; exits interrupt entrances.
 4. Text colliding with text during motion.
@@ -178,6 +192,111 @@ weight pulse, a glow, a marker bar, a serif swap or an accent colour.
     eyebrows over every scene, three equal icon cards, an arrow after every line, glow blobs,
     one radius on everything, coloured status dots.
 
+## 12. The energetic register (brand reels, montages, collage)
+
+Reference cut: a 44s square brand reel — the camera flies through stacked compositions, a pixel
+globe match-cuts into a grid of 1s and 0s, a terminal types, a collage of map, texture, archive
+photo and a slapped-on sticker plays twice (New York, then London), a tree ring gets numbered
+markers, and the ending flies back out through the stack onto the terminal, which types the
+handle. Dense, fast, physical — and still designed, because every move has a role.
+
+**Choose it** when the viewer should *feel a world* more than understand a product: a brand
+reel, a recap ("four months at…"), a culture or hiring film, a montage, a collage-led social cut.
+Stay `calm` when a viewer must follow a product or read an argument. A calm launch can carry one
+energetic chapter (a customer montage, a "what's inside" burst): set `"register": "energetic"`
+on those scenes only. Never mix registers inside one scene.
+
+**What never changes.** Geist in three weights, two inks, warm neutrals; material static (the
+grid and the light never move); colour as light or data — a brand sticker counts as the frame's
+one accent fill; settle before the next idea; read time; safe areas; transform and opacity.
+
+### Easing by role — the rule that makes it work
+| Role | Ease | Duration | For |
+|---|---|---|---|
+| Interface and camera | `steep` (cubic-bezier(0.87, 0, 0.13, 1)) | `snap` 0.3 for UI; `slow` 0.6–1s for a camera move | panels sliding, a selection block, a wipe, a highlight, a pan, a push |
+| Physical objects | `pop` (spring, visual 0.3, bounce 0.3; settles ≈ 0.59s) | its own | a sticker slapping on, collage pieces landing, markers popping in, a card set down |
+| Machines and processes | `linear` | a rate | typing (`m.type`, 22–48 cps), a spinning ring (`rotate: [0, 360]`), a playhead |
+| Copy in a hold | `responsive` / `expressive` | as calm | the one statement a hold scene lands |
+
+The steep curve is short acceleration, a fast middle and a long landing: decisive and digital,
+never floaty. **Never default to a gentle in-out (`inOut`) or the responsive spring on
+everything** — uniform easing is the first thing that makes a reel look generated. Pop is for
+things with mass, never for UI chrome or a line of copy; steep is for interfaces, never for an
+object that should land. Exits still ease `out` and never bounce.
+
+### Timing in frames
+Think in frames at 30fps (scale for 24/60): 2f = 0.067s · 3f = 0.1 · 5f = 0.17 · 9f = 0.3
+(`snap`) · 15f = 0.5.
+- **Small moves 5–15 frames** (0.17–0.5s). A panel, a block, a chip: `snap` on `steep`.
+- **Stagger every group 1–3 frames per item** — `stagger: "list"` (40ms ≈ 1f) for light items,
+  `0.067` (2f) for heavier pieces, `0.1` (3f) at most. "Pop, pop, pop", never everything at
+  once (`unstaggered-group` still warns). Pass a group as one array: it counts as one moment.
+- Budget: up to three expressive moments per scene (a group once), bounce ≤ 0.35, entrances
+  from ≤ 160px, ≤ 7 movers at once.
+
+### Rhythm: bursts and holds
+Alternate. After **2–4s of density, hold one composition for about a second** — a single image,
+a single object, a statement — so the eye can rest. A burst is several staggered entrances plus
+a moving camera; a hold is one subject with a tile drift or an ambient push (≤ 8%). Plan the
+holds in the storyboard as scenes of their own (1–1.6s), not as leftovers. A reel with no holds
+is noise; one with no bursts is a calm video in the wrong register.
+
+### Space: think in depth
+- **Fly through, don't crossfade.** Stack compositions and move the camera through them:
+  `"transition": { "type": "depth" }`. Every piece then lives in one connected space.
+- **Close the loop.** The ending reverses the opening move (`{ "type": "depth", "dir": "out" }`)
+  and lands on the opening frame, which delivers the call to action. Build both from one shared
+  layout in `lib/` so they match to the pixel.
+- **Fast pans as wipes:** `{ "type": "push", "dir": "left", "blur": true, "ease": "steep", "duration": 0.4 }`.
+- **Match cuts over plain cuts.** End a scene on a shape and open the next on a similar one in
+  the same place (pixels → 1s and 0s, a globe → a ring, a terminal → a terminal). It is a hard
+  cut whose geometry rhymes: share the position and size through a `lib/` constant.
+- **Camera pans across a collage:** `m.camera({ x: [0, -240], scale: [1.04, 1] }, { ease: "steep", duration: 0.9 })`.
+- Transition language: cuts and match cuts stay primary; up to three accent types (typically
+  `depth` + a blurred `push` + `wipe`).
+
+### Type: it types or it wipes, it never fades
+Copy never just fades in (`text-fade` warns). It **types** like a terminal (`m.type`, linear,
+for prompts, queries, handles) or **wipes** like a text selection — a block sweeps across and
+leaves the words behind (the selection-block recipe), or `wipeRight` on `snap`/`steep` for
+labels and captions. `maskUp` on `steep` (a wipe from the baseline) is fine too. The technical
+layer speaks in Geist Mono: numbered labels, coordinates, counts.
+
+### Structure: strict containers on a grid
+- `<Stage bg="grid">` under almost every energetic scene: a static 2px hairline grid (96px
+  cells). Holds on a single photo can go `solid`.
+- **Mixed material always sits in a container**: `Media`, `Card`, `Window`, or a 2×2 grid of
+  tiles on 32px gutters. Never loose imagery on the stage. Tiles can drift inside their frames
+  (`<id>-img` scale 1.06 → 1 over `linger`) while the frames hold still.
+- **Lock the palette**: canvas, fg, the grey, one accent (the brand: the sticker), data hues only
+  for data. Force imported imagery in with `Media treat` — `mono`, `contrast` or `invert` — one
+  treatment per formula, so photos from anywhere look like one archive.
+
+### Systems: invent a formula, then repeat it
+A reel feels designed when its chaos has structure. Invent a scene formula and use it **at least
+twice with new content** — same slots, same timing, same closing beat:
+- **Collage formula:** context (a map) + texture + archive photo + the brand sticker slapping on
+  last, on `pop`. City A, then city B.
+- **Annotation formula:** an organic subject (a tree ring, a flower, a hand) + `Marker`s popping in
+  + `Path` hairlines drawing between them + mono labels. **Pair organic with technical**: grids,
+  nodes and mono labels over natural imagery.
+Write each formula once in the storyboard (`motion`: "collage formula: map → texture → print,
+2f apart on pop; sticker slaps at +0.8s") and reference it by name in every scene that uses it.
+Build it as one function in `lib/` that takes the content.
+
+### Energetic anti-patterns
+1. Every layer fading in at the same time; copy that fades (type it or wipe it).
+2. Floaty, uniform easing on everything — the same `inOut` or spring on UI, objects and camera.
+3. Pop on chrome or copy; steep on objects; linear on anything that travels.
+4. Unboxed imagery with no grid; a different treatment on every photo.
+5. Scenes with no recurring structure — a formula used once is just a scene.
+6. A burst with no hold after it; a hold longer than ~1.6s.
+7. Loops on copy or chrome (an object may spin or swing; `ambient-loop` is an info here).
+8. An ending that doesn't answer the opening.
+
 ## Recipes
 `recipes.md`: statement, label + statement + summary, feature list, stat, product placed,
-UI action with a cursor, a selection that glides, ink emphasis, end card, chart, transitions.
+UI action with a cursor, a selection that glides, ink emphasis, end card, chart, transitions —
+and for the energetic register: the steep UI move, the sticker slap, the collage formula, the
+annotation formula, the selection-block wipe, the terminal, a 2×2 grid that drifts, a spinning
+ring, the match cut, the mirrored ending and a burst-and-hold storyboard.

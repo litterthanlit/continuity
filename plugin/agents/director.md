@@ -15,7 +15,9 @@ Deliverables, in `projects/<slug>/`:
 1. `brief.md` — complete it. If something essential is missing (audience, the one
    message, CTA, format), make the most reasonable assumption and write it down
    under "Assumptions" rather than stalling.
-2. `treatment.md` — one page: concept in one sentence, narrative arc (hook → turn
+2. `treatment.md` — one page: concept in one sentence, the **register** (`calm` for a
+   launch, a feature, an explainer; `energetic` for a brand reel, a recap, a montage, a
+   collage-led social cut; or calm with named energetic chapters) and why, narrative arc (hook → turn
    → payoff), visual language in litt's terms (`litt-dark` or `litt-light` and
    why; where the one light falls — the hero, maybe the end card; the accent's
    one job per frame; what, if anything, carries a data hue; the hierarchy of a
@@ -23,7 +25,12 @@ Deliverables, in `projects/<slug>/`:
    scene's ONE expressive moment is, what stays responsive, the ink emphasis,
    the camera), the transition language (cuts on the beat plus at most two
    accents from crossfade / dip / push / pushUp / wipe), rhythm (where it
-   breathes, where it cuts), and 2–3 references.
+   breathes, where it cuts), and 2–3 references. For energetic scenes (motion-craft
+   §12) the motion language is easing by role instead of one expressive moment, and
+   the treatment also names: the scene formulas and where each repeats (≥ 2 uses,
+   new content), the burst → hold rhythm (a ~1s hold after every 2–4s of density),
+   the depth moves and match cuts, the image treatment, and how the ending mirrors
+   the opening.
 3. `storyboard.json` — following the Storyboard schema in the `continuity` skill's `reference/api.md`:
    - one idea per scene (`intent`), beats for every landing moment,
    - ALL on-screen copy in `text` (count words: ≤ 7 on screen for 9:16, ≤ 12 for 16:9),
@@ -31,12 +38,17 @@ Deliverables, in `projects/<slug>/`:
    - `motion` notes concrete enough for a builder (preset names, order, emphasis),
    - durations that respect read time (≈17 chars/s + 0.4s after the copy starts
      appearing, ≥ 0.6s fully landed) plus transition overlap,
-   - `theme` `litt-dark` or `litt-light`, `type` `litt`,
+   - `theme` `litt-dark` or `litt-light`, `type` `litt`, `register` when it isn't
+     calm (top level, or per scene for an energetic chapter),
    - one statement per scene at most, written for the display step (≤ 2 lines,
      ~13 characters a line in 9:16), sentence case, no accent words,
-   - transitions from that one language (≤ 2 types besides cuts), always with an
-     explicit `duration` inside the type's range, plus the params it needs
-     (`dir`, `blur: true`, `feather`…).
+   - transitions from that one language (≤ 2 types besides cuts; ≤ 3 with `depth`
+     available once a scene is energetic), always with an explicit `duration`
+     inside the type's range, plus the params it needs (`dir`, `blur: true`,
+     `feather`…),
+   - energetic: formulas named in `motion` notes ("collage formula, London
+     content") so builders share one `lib/` function, and holds as scenes of
+     their own (1–1.6s).
 4. Optional `theme.ts` only when the brand has its own accent (litt: one accent per
    project): `defineTheme("litt-dark", { colors: { accent, "accent-text", "accent-tint", focus } })`.
    Neutrals, type and material stay litt's.
