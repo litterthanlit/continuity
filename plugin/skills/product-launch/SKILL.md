@@ -60,7 +60,15 @@ the first target; hide it when it has nothing to do.
 - The light (`bg="lit"`) falls on the reveal and maybe the end card; the feature scenes sit on
   the solid canvas so the UI reads.
 - No 3D tilts or perspective flourishes; depth is surfaces stepping and the zero-offset float.
+  (One exception: a before → after depth swap in a short clip, where the *before* tilts ≤ 16° as
+  it steps back — `social-clip` §5.)
 - Ambient life is the camera's ≤ 3% push; never floating cards or breathing glows.
+
+## Posting it: the clip cut
+A launch film is presented; its clip is posted. Cut a 5–15s loop from the strongest feature —
+claim in the caption, frame one mid-action, the feature working in the real UI, one reveal, a
+30–50% hold — with `"loop": true` (the `social-clip` skill). Show the machinery: the cursor, the
+code, the slider.
 
 ## The energetic UI run (motion-craft §12)
 A launch stays `calm`; a **brand reel or a recap** that shows product goes `energetic` — or a calm

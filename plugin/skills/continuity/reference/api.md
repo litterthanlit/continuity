@@ -94,6 +94,9 @@ Product UI (litt's components at 2×; UI text ≥ 26px; sub-parts expose `<ct>-�
 - `<CodeBlock ct code>` (lines `<ct>-l0…`, litt's quiet highlighting) · `<Terminal ct lines>` (`<ct>-l0…`)
 - `<BarChart ct data current? hue?>` (bars `<ct>-b0…`, `grow` from the baseline; fg 55%, the current bar fg) · `<LineChart ct data hue?>` (`<ct>-line` draw, `<ct>-dot`) · `<Stat ct value label unit? delta? deltaTone? size?>` (label above, `<ct>-label`, `<ct>-delta`; + `m.counter`)
 - `<Cursor ct class="left-… top-…">` (+ `<ct>-ripple`, the focus colour)
+- `<Slider ct label? value display? width?>` — the machinery on screen: a label and its mono value
+  (`<ct>-label`, `<ct>-value`) over a rail; drag it by moving `<ct>-fill` scaleX, `<ct>-thumb` x
+  (value × width) and `m.counter("<ct>-value", …)` together
 
 Imagery and annotation
 - `<Media ct src width height treat? position?>` — an image in a strict container (radius 16, the
@@ -134,9 +137,10 @@ m.time(at) → seconds · m.endOf(id) → seconds
   bounce 0.12 — one per scene), `out` (instant tier, exits), `inOut` (camera, cursor, playhead),
   `linear` (typing, a machine turning); energetic register: `steep` (cubic-bezier(0.87, 0, 0.13, 1) —
   interface and camera) and `pop` (spring, visual 0.3s, bounce 0.3 — things that act like objects);
-  or `spring(visual, bounce)` (bounce ≤ 0.12 calm, ≤ 0.35 energetic).
+  `glide` (cubic-bezier(0.32, 0.72, 0, 1) — a surface that arrives and rests: a sheet, a panel; every
+  register); or `spring(visual, bounce)` (bounce ≤ 0.12 calm, ≤ 0.35 energetic).
 - Durations: `instant` 0.1 · `responsive` 0.2 · `expressive` 0.35 · `exit` 0.26 · `slow` 0.6 ·
-  `linger` 1.4 · `snap` 0.3 (energetic: a decisive move on `steep`). Springs take their own settle
+  `linger` 1.4 · `snap` 0.3 (energetic: a decisive move on `steep`) · `glide` 0.45 (with the glide ease). Springs take their own settle
   time unless you pass a duration.
 - Props litt animates: `x y (px) xPct yPct scale scaleX scaleY rotate opacity`, `ink` (0 the
   grey → 1 fg), `clipTop clipRight clipBottom clipLeft (% inset)`, `draw (0..1)`, `counter`.
@@ -158,6 +162,8 @@ Using them in a view is a build error (`reserved-id`).
   "theme": "litt-dark | litt-light",
   "type": "litt",
   "register": "calm | energetic",
+  "loop": true,
+  "caption": "the claim that ships with a posted clip, + a link",
   "bpm": 120,
   "scenes": [{
     "id": "hook", "duration": 2.8, "intent": "…",
@@ -172,7 +178,9 @@ Using them in a view is a build error (`reserved-id`).
 ```
 Element roles: `headline title body label caption cta stat logo ui decor media`.
 `register` (top level, default `calm`; a scene's own wins) sets the motion's energy and the lint
-bounds — `catalog.md` → Registers, motion-craft §12.
+bounds — `catalog.md` → Registers, motion-craft §12. `loop: true` marks a clip meant to be posted
+(X, social): `loop-open`, `loop-hold` and `loop-length` run, and the closing hold may be still
+(the `social-clip` skill). `caption` is the post's text; `ct report` prints it.
 Scene `duration` includes the outgoing transition overlap; the next scene starts
 `duration − transition.duration` later. A scene's incoming and outgoing transitions must fit
 inside it together.

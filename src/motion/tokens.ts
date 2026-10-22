@@ -26,6 +26,8 @@ export const durations = {
   linger: 1.4,
   /** Energetic register: a decisive UI or camera move on the steep ease (~9 frames at 30fps). */
   snap: 0.3,
+  /** A sheet or panel arriving on the glide ease (the iOS sheet feel; 400–500ms). */
+  glide: 0.45,
 } as const;
 export type DurationToken = keyof typeof durations;
 
@@ -78,6 +80,12 @@ export const eases = {
   steep: { type: "bezier", p: [0.87, 0, 0.13, 1] },
   /** Energetic register: spring, visual 0.3s, bounce 0.3 — things that act like objects (a sticker, a collage piece, a node). */
   pop: spring(0.3, 0.3),
+  /**
+   * A fast start and a very long soft stop — the iOS sheet curve (cubic-bezier(0.32, 0.72, 0, 1)),
+   * for a surface that arrives and comes to rest: a sheet, a panel, a phone stepping forward.
+   * Pair it with `duration: "glide"`. Every register.
+   */
+  glide: { type: "bezier", p: [0.32, 0.72, 0, 1] },
 } as const satisfies Record<string, EaseSpec>;
 export type EaseToken = keyof typeof eases;
 
