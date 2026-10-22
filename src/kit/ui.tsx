@@ -234,47 +234,6 @@ export function Meter({ ct, value = 1, hue, class: cls, width = 640 }: Box & { v
 }
 
 /**
- * A slider — the machinery on screen (a parameter being tuned while the thing it drives
- * answers). A label and its mono value over a rail at fg 12%, filled with fg up to a fg
- * thumb that lifts off the rail. To drag it from a to b, move all three together:
- * `<ct>-fill` scaleX a→b, `<ct>-thumb` x a·width→b·width, and `m.counter("<ct>-value", …)`.
- */
-export function Slider({
-  ct,
-  label,
-  value = 0.5,
-  display,
-  width = 640,
-  class: cls,
-}: Box & { label?: string; value?: number; display?: string; width?: number }) {
-  const v = Math.min(1, Math.max(0, value));
-  return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("flex flex-col gap-[24px]", cls)} style={{ width: `${width}px` }}>
-      {label && (
-        <div class="flex items-baseline justify-between font-sans text-[28px] leading-[36px]">
-          <span data-ct={id(ct, "label")} class="text-fg-muted">
-            {label}
-          </span>
-          <span data-ct={id(ct, "value")} class="font-mono tabular-nums text-fg">
-            {display ?? v.toFixed(2)}
-          </span>
-        </div>
-      )}
-      <div class="relative h-[40px]">
-        <div class="absolute inset-x-0 top-[16px] h-[8px] overflow-hidden rounded-control bg-fg/12">
-          <div data-ct={id(ct, "fill")} class="absolute inset-0 bg-fg" style={{ transformOrigin: "left center", transform: `scaleX(${v})` }} />
-        </div>
-        <div
-          data-ct={id(ct, "thumb")}
-          class="absolute left-[-20px] top-0 h-[40px] w-[40px] rounded-full bg-fg shadow-lift"
-          style={{ transform: `translate3d(${Math.round(v * width)}px,0,0)` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/**
  * A segmented control: the track at fg 5% with a hairline, the selected segment
  * raised (P12). Segments are equal width, so moving the selection is `<ct>-thumb`
  * x → index × segment (responsive), with `ink`/`dim` on the labels `<ct>-s0…`.

@@ -236,10 +236,6 @@ above. The translation from web UI to video is
   depth (`depth`), bursts answered by holds, copy that types or wipes, imagery treated into the
   palette on a static grid. Set `"register"` on the storyboard or a scene; the lint follows
   ([`docs/decisions/0007`](docs/decisions/0007-registers.md), gallery `projects/_energetic`).
-- **Loop clips:** a 5–15s clip meant to be posted on X sets `"loop": true` and a `caption` —
-  the claim first, frame one already mid-action, one reveal, a 30–50% final hold, a clean loop,
-  the machinery on screen; the lint checks the open, the hold and the length
-  ([`docs/decisions/0008`](docs/decisions/0008-loop-clips.md), the `social-clip` skill, gallery `projects/_clip`).
 - **UI kit:** litt's components at 2× (windows, browsers, phones, cards, buttons, tags,
   segmented controls, toasts, sidebars, lists, code, terminals, charts, stats, cursor).
 - **Gates:** the `litt-*` source rules (weights, case, gradients, radii, shadows, accent text,
@@ -247,7 +243,7 @@ above. The translation from web UI to video is
   camera drift, loops) fail anything off-language, with a `litt-allow` escape for a reasoned
   exception.
 
-Galleries: `projects/_kit`, `projects/_type`, `projects/_transitions`, `projects/_energetic`, `projects/_clip`; the generated catalog is
+Galleries: `projects/_kit`, `projects/_type`, `projects/_transitions`, `projects/_energetic`; the generated catalog is
 in `plugin/skills/continuity/reference/`.
 
 ## Developing Continuity

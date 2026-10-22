@@ -83,10 +83,6 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
 
 (The energetic register picks eases by role instead — `steep`, `pop`, `linear`: §12.)
 
-**Glide** (`ease: "glide"`, `duration: "glide"` — cubic-bezier(0.32, 0.72, 0, 1) over 0.45s, the
-iOS sheet curve: fast start, very long soft stop) is for a surface that *arrives and rests* — a
-sheet sliding up, a panel, a phone stepping forward in a before → after. Every register.
-
 - Presets already pick the tier: `rise`, `fade`, `slideLeft/Right`, `maskUp`, `grow` are
   responsive; `settle` is expressive. Make a line the scene's moment with
   `ease: "expressive"`. A second expressive spring in a scene warns (`expressive-budget`).
@@ -298,17 +294,9 @@ Build it as one function in `lib/` that takes the content.
 7. Loops on copy or chrome (an object may spin or swing; `ambient-loop` is an info here).
 8. An ending that doesn't answer the opening.
 
-## 13. Loop clips for X and social
-A 5–15s clip that is posted, not presented, is a different form: the claim first (storyboard
-`caption`), frame one already mid-action, one reveal, a 30–50% hold, a clean loop, the machinery
-on screen. Set `"loop": true` (it turns on `loop-open`, `loop-hold`, `loop-length`, and lets the
-closing hold be still) and load the `social-clip` skill. Gallery: `projects/_clip`.
-
 ## Recipes
 `recipes.md`: statement, label + statement + summary, feature list, stat, product placed,
 UI action with a cursor, a selection that glides, ink emphasis, end card, chart, transitions —
 and for the energetic register: the steep UI move, the sticker slap, the collage formula, the
 annotation formula, the selection-block wipe, the terminal, a 2×2 grid that drifts, a spinning
-ring, the match cut, the mirrored ending and a burst-and-hold storyboard — and for loop clips:
-the slider (machinery), before → after as a depth swap, code beside the result, lift, and
-template-then-swap.
+ring, the match cut, the mirrored ending and a burst-and-hold storyboard.

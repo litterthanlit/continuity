@@ -97,14 +97,6 @@ export const StoryboardSchema = z.object({
    * or `energetic` (brand reels, montages, collage-led social cuts). The lint's motion bounds follow it.
    */
   register: z.enum(REGISTERS).optional(),
-  /**
-   * The clip is a loop for X / social (docs/decisions/0008): frame one is already a real state,
-   * the final state holds 30–50% of the clip, and the end cuts cleanly back to the start.
-   * Turns on the loop-open, loop-hold and loop-length rules.
-   */
-  loop: z.boolean().optional(),
-  /** The post that ships with the clip: the one-line claim, plus a link to the live demo or how-to. */
-  caption: z.string().optional(),
   /** Optional musical grid for cutting on the beat (seam for audio). */
   bpm: z.number().positive().optional(),
   scenes: z.array(SceneSchema).min(1),

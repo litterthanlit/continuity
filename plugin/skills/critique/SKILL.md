@@ -69,18 +69,11 @@ Mark each ✅ / ❌ / n/a; every ❌ names an element and goes into the fixes.
 - **E8 Organic + technical** — markers, hairlines, mono indices over natural imagery where the brief allows.
 - **E9 Loop** — the ending answers the opening (reversed move, the same frame, the CTA).
 
-## Loop clip checklist (`loop: true` only)
-The `social-clip` skill's C1–C9: the caption states a claim a stranger cares about; frame one is
-a real state with motion by 0.4s; one reveal; 5–15s; a 30–50% final hold; a clean seam; the
-machinery answers; groups staggered 1–3 frames; surfaces arrive on glide, grabbable things
-spring. For a loop clip, **Intent** is mostly the claim: a beautiful clip with no claim scores ≤ 3.
-
 ## Output format (write to the iteration as critique.md, and report)
 ```
 Scores: intent 4 · composition 3 · typography 4 · temporal 3 · craft 3   (mean 3.4)
 litt: ✅ P1 P2 P3 P4 P5 P6 P9 P11 P12 · ❌ P7 (hook.headline centered) · motion ❌ (proof: two expressive moments)
 energetic (if any): ✅ E1 E2 E4 E5 E6 · ❌ E3 (montage: 6s burst, no hold) E7 (collage used once)
-loop (if any): ✅ C1 C2 C3 C4 C6 C7 C8 C9 · ❌ C5 (swap: final state holds 18%)
 
 Top fixes (max 5, highest impact first):
 1. [composition] hook.headline @00:01.20 — centered with the label floating 40px above it.

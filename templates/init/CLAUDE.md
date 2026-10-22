@@ -18,8 +18,7 @@ Hard rules:
   and one accent that behaves like light (`typography` skill); litt's motion tiers,
   one expressive moment per scene, material static, cuts on the beat (`motion-craft`).
   Two registers: `calm` (default) and `energetic` for brand reels and montages
-  (storyboard `"register"`; `motion-craft` §12). A short clip to post on X/social sets
-  `"loop": true` and a `caption` (`social-clip` skill). The `litt-*` and motion lint rules gate it.
+  (storyboard `"register"`; `motion-craft` §12). The `litt-*` and motion lint rules gate it.
 - **Never edit `build/`** — it is generated.
 - **Done means:** `npx ct check <p>` 0 errors (`--deep` once before the final
   render), you have *read* the latest sheet.png and stills, critique ≥ 4/5 on every

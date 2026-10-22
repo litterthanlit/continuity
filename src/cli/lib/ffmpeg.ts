@@ -55,10 +55,9 @@ export async function probe(file: string): Promise<ProbeInfo> {
  * short black lead-in is info, not an error. litt-dark's canvas is itself
  * near-black and its frames are airy (one statement can cover ~1% of the
  * pixels), so a frame counts as black only when 99.8% of it is: an empty
- * canvas fails, a word on it passes. A loop clip (docs/decisions/0008) ends on a
- * deliberately still hold, so a freeze that runs to its last frame is info.
+ * canvas fails, a word on it passes.
  */
-export async function qc(file: string, expect: { duration: number; width: number; height: number; fps: number; loop?: boolean }): Promise<Finding[]> {
+export async function qc(file: string, expect: { duration: number; width: number; height: number; fps: number }): Promise<Finding[]> {
   const findings: Finding[] = [];
   const info = await probe(file);
   if (Math.abs(info.duration - expect.duration) > 1.5 / expect.fps) {
@@ -88,10 +87,6 @@ export async function qc(file: string, expect: { duration: number; width: number
   const durs = [...r.stderr.matchAll(/freeze_duration: ([\d.]+)/g)].map((m) => Number(m[1]));
   starts.forEach((start, i) => {
     const dur = durs[i] ?? expect.duration - start;
-    if (expect.loop && start + dur >= expect.duration - 2 / expect.fps) {
-      findings.push({ source: "render", rule: "frozen", severity: "info", time: start, message: `the loop's final hold: ${dur.toFixed(2)}s still from ${start.toFixed(2)}s (loop-hold judges it)` });
-      return;
-    }
     findings.push({
       source: "render",
       rule: "frozen",
