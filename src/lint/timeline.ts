@@ -61,6 +61,9 @@ export const RULES = {
   "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.",
   "camera-drift": "The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).",
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
+  "loop-open": "Loop clips (storyboard loop): frame one is a real state — start mid-move or on the before state. Every element of the first scene enters, so the clip opens on an empty frame.",
+  "loop-hold": "Loop clips: the final state holds 30–50% of the clip, so the loop reads as finished and the viewer can study it.",
+  "loop-length": "Loop clips run 5–15s. Longer is a launch film or a tutorial; shorter rarely carries a reveal and a hold.",
   "text-fade": "Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).",
   "weight-role": "litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.",
 } as const;
@@ -131,7 +134,8 @@ export function lintTimeline(build: BuildResult): Finding[] {
     for (const s of ss) {
       const t = s.tween;
       const where = { element: t.target, time: at(t.start) };
-      if (t.kind === "enter") firstMotion = Math.min(firstMotion, sc.start + t.start);
+      // The first move of any kind (a press, a drag, an entrance) — a clip that opens mid-action is not a slow open.
+      if (t.kind !== "camera" && t.kind !== "transition") firstMotion = Math.min(firstMotion, sc.start + t.start);
 
       if (isSpatial(t) && isLinear(t.ease) && t.kind !== "transition" && !(B.linearRotation && isRotation(t)) && !allowed(t, "ease-linear")) {
         add("ease-linear", "warning", sc, `${localOf(t.target)}: ${Object.keys(t.props).join("+")} moves at constant speed`, {
@@ -359,7 +363,10 @@ export function lintTimeline(build: BuildResult): Finding[] {
       cursor = Math.max(cursor, e);
     }
     if (cursor < sc.duration) gaps.push([cursor, sc.duration]);
+    // A loop clip's last scene ends on its held final state: loop-hold measures that gap instead.
+    const finalHold = build.storyboard?.loop && sc === tl.scenes[tl.scenes.length - 1];
     for (const [a, b] of gaps) {
+      if (finalHold && b >= sc.duration - 1e-6) continue;
       const len = b - a;
       if (len > 2.5) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a), suggestion: "m.camera({ scale: [1, 1.03] }), or tighten the scene" });
       else if (len > 1.6) add("dead-air", "info", sc, `static for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a) });
@@ -395,8 +402,10 @@ export function lintTimeline(build: BuildResult): Finding[] {
 
   if (Number.isFinite(firstMotion) && firstMotion > 0.6) {
     const sc = tl.scenes[0];
-    add("slow-open", "warning", sc, `first entrance starts at ${r2(firstMotion)}s`, { time: r2(firstMotion), suggestion: "start the first motion within 0.1–0.4s" });
+    add("slow-open", "warning", sc, `the first motion starts at ${r2(firstMotion)}s`, { time: r2(firstMotion), suggestion: "start the first motion within 0.1–0.4s" });
   }
+
+  if (build.storyboard?.loop) out.push(...lintLoop(build, tl.scenes));
 
   if (build.storyboard) out.push(...lintStoryboard(build.storyboard, tl));
 
@@ -407,6 +416,40 @@ export function lintTimeline(build: BuildResult): Finding[] {
       const off = sc.start / beat - Math.round(sc.start / beat);
       if (Math.abs(off * beat) > 1 / tl.fps) add("cut-off-beat", "info", sc, `scene starts ${r2(off * beat)}s off the ${bpm} bpm grid`, { time: sc.start });
     }
+  }
+  return out;
+}
+
+/**
+ * Loop clips (docs/decisions/0008): frame one is a real state, the final state
+ * holds 30–50% of the clip, 5–15s overall. Measured on the timeline: an element
+ * whose chain (it or an ancestor) has no entrance is on screen at t = 0; the
+ * hold is what remains of the last scene after its last tween (camera and
+ * loops aside — they carry a hold, they don't end it).
+ */
+function lintLoop(build: BuildResult, scenes: SceneTimeline[]): Finding[] {
+  const out: Finding[] = [];
+  const at = (sc: SceneTimeline, local: number) => r2(sc.start + local);
+  const total = build.timeline!.duration;
+  const first = scenes[0];
+  const last = scenes[scenes.length - 1];
+  const entered = new Set(first.tweens.filter((t) => t.kind === "enter").map((t) => t.target));
+  const content = build.elements.filter((e) => e.scene === first.scene && !e.decor && e.role !== "decor");
+  const visible = content.filter((e) => ![e.id, ...e.ancestors].some((id) => entered.has(id)));
+  if (content.length && !visible.length) {
+    out.push({ source: "lint", rule: "loop-open", severity: "warning", scene: first.scene, time: 0, message: "frame one is empty: every element of the first scene enters", suggestion: "put the before state (or the subject mid-move) on screen at t = 0; let the reveal be the motion" });
+  }
+  const ss = spans(last, build.partsEstimate).filter((s) => s.tween.kind !== "camera" && s.tween.kind !== "transition");
+  const settled = Math.max(0, ...ss.map((s) => s.lastEnd));
+  const hold = Math.max(0, last.duration - settled);
+  const share = hold / total;
+  if (share < 0.3 - 1e-6) {
+    out.push({ source: "lint", rule: "loop-hold", severity: "warning", scene: last.scene, time: at(last, settled), message: `the final state holds ${r2(hold)}s, ${Math.round(share * 100)}% of the ${r2(total)}s clip`, suggestion: `hold ≥ ${r2(total * 0.3)}s (30%): land the reveal earlier or lengthen the last scene` });
+  } else if (share > 0.6 + 1e-6) {
+    out.push({ source: "lint", rule: "loop-hold", severity: "info", scene: last.scene, time: at(last, settled), message: `the final state holds ${Math.round(share * 100)}% of the clip — the build-up may be too thin`, suggestion: "aim for 30–50%" });
+  }
+  if (total < 5 - 1e-6 || total > 15 + 1e-6) {
+    out.push({ source: "lint", rule: "loop-length", severity: "info", scene: first.scene, message: `the loop runs ${r2(total)}s`, suggestion: "5–15s; longer is a launch film or a tutorial (drop loop)" });
   }
   return out;
 }

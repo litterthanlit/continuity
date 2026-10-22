@@ -56,7 +56,7 @@ describe("seeded static defects (projects/_defects)", () => {
 });
 
 describe("good projects stay clean (no false positives)", () => {
-  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions", "_energetic"]) {
+  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions", "_energetic", "_clip"]) {
     it(slug, async () => {
       const { findings } = await rules(slug);
       const errors = findings.filter((f) => f.severity === "error");
@@ -97,5 +97,36 @@ describe("registers (docs/decisions/0007)", () => {
     const found = lintTimeline({ ...b, storyboard: { ...sb, scenes } }).filter((f) => f.rule === "spring-bounce");
     expect(found.length).toBeGreaterThan(0);
     expect(new Set(found.map((f) => f.scene))).toEqual(new Set(["collage"]));
+  });
+});
+
+describe("loop clips (docs/decisions/0008)", () => {
+  it("the loop gallery is clean: frame one populated, a 30–50% hold that dead-air leaves alone", async () => {
+    const { findings } = await rules("_clip");
+    expect(findings.filter((f) => f.severity !== "info").map((f) => `${f.rule}: ${f.message}`)).toEqual([]);
+  });
+
+  it("an empty frame one, a short hold and a long clip are each flagged", async () => {
+    const { b } = await rules("_clip");
+    const tl = structuredClone(b.timeline!);
+    const sc = tl.scenes[0];
+    // Every element of the first scene enters → frame one is empty.
+    const root = new Set([`${sc.scene}.camera`, `${sc.scene}.scene`]);
+    for (const e of b.elements.filter((e) => e.scene === sc.scene && e.ancestors.every((a) => root.has(a)))) {
+      sc.tweens.unshift({ target: e.id, kind: "enter", start: 0, duration: 0.2, ease: { type: "linear" }, props: { opacity: [0, 1] } });
+    }
+    // Cut the scene to just after its last move → the final state barely holds.
+    sc.duration = tl.duration = 2.2;
+    const ids = new Set(lintTimeline({ ...b, timeline: tl }).map((f) => `${f.rule}:${f.severity}`));
+    expect(ids).toContain("loop-open:warning");
+    expect(ids).toContain("loop-hold:warning");
+    expect(ids).toContain("loop-length:info");
+  });
+
+  it("the loop rules only run on loop clips", async () => {
+    const { b } = await rules("_clip");
+    const found = lintTimeline({ ...b, storyboard: { ...b.storyboard!, loop: false } }).map((f) => f.rule);
+    expect(found.some((r) => r.startsWith("loop-"))).toBe(false);
+    expect(found).toContain("dead-air");
   });
 });

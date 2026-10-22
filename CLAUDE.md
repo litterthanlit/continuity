@@ -54,6 +54,9 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
   brand reels and montages — easing by role (`steep`/`pop`/`linear`), depth moves, bursts and
   holds, copy that types or wipes (motion-craft §12). Set storyboard (or scene) `"register"`;
   the lint's motion bounds follow it (`src/motion/register.ts`). The look never changes.
+- **Loop clips** (`docs/decisions/0008`): a 5–15s clip meant to be posted sets `"loop": true` and
+  a `caption` (the claim) — frame one a real state, one reveal, a 30–50% final hold, a clean loop
+  (the `social-clip` skill; `loop-open`, `loop-hold`, `loop-length` gate it).
 - **Open source only.** No GSAP, no fonts outside the theme registry, no network
   assets at render time.
 
@@ -77,13 +80,13 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/kit/` | scene components (Stage, Safe, Headline, …) |
 | `src/themes/` | litt's themes (`litt-dark`, `litt-light`), `kits.ts` (the `litt` type kit and scale), `fonts.ts` (vendored registry: Geist, Geist Mono, symbols) |
 | `src/lint/timeline.ts` | motion lint rules (`RULES` explains each) |
-| `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `typography`, `motion-craft`, `kinetic-type`, `product-launch`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
+| `plugin/` | **the agent layer — source of truth** (shipped as the Claude Code plugin): `skills/` (`continuity` start here, `typography`, `motion-craft`, `kinetic-type`, `product-launch`, `social-clip`, `critique`, `hyperframes-ref`), `agents/` (`director`, `scene-builder`, `critic`), `commands/` (`/make-video`, `/iterate`, `/review`, `/render`, `/setup`), `hooks/` (edit → `ct lint`; Stop → blocks "done" until changed projects pass `ct check`) |
 | `.claude/` | this repo's session config: `skills`/`agents`/`commands` are symlinks into `plugin/`; `settings.json` wires `plugin/hooks/*`; `hooks/session-start.sh` installs deps in cloud sessions |
 | `bin/ct.mjs` | the `ct` launcher (tsx + scene tsconfig + `continuity`/preact alias hook) |
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
 | `Dockerfile`, `.github/workflows/docker.yml` | images: `toolchain` (pinned Chrome + ffmpeg) and `ct` (default, entrypoint `ct`); CI runs the browser suite inside `toolchain`; release pushes both to GHCR |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
-| `projects/_kit`, `_type`, `_transitions`, `_energetic`, `_defects*` | galleries of the litt kit, type, transitions and the energetic register (reference + goldens) and seeded-defect fixtures (tests) |
+| `projects/_kit`, `_type`, `_transitions`, `_energetic`, `_clip`, `_defects*` | galleries of the litt kit, type, transitions, the energetic register and a loop clip (reference + goldens) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands
