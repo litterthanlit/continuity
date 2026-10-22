@@ -1,6 +1,6 @@
 ---
 name: continuity
-description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, the house language (litt), roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, critique).
+description: Start here for any motion design video work (projects built with the `ct` CLI from @litterthanlit/continuity) — making a new video from a brief, editing or iterating on an existing project, fixing gate findings, or reviewing a render. Explains the production loop, the house language (litt) and its two registers (calm, energetic), roles, tools and which other skills to load (typography, motion-craft, kinetic-type, product-launch, critique).
 ---
 
 # Continuity production loop
@@ -15,6 +15,17 @@ hairlines. Motion explains and never performs: responsive springs, one expressiv
 scene, exits at 0.75×, material static, cuts on the beat. `docs/decisions/0006` is the
 translation table; the `litt-*` and motion lint rules gate it. There are no other themes or
 type kits to choose.
+
+**Two registers** (`docs/decisions/0007`) set how loud litt speaks, not how it looks. `calm` (the
+default) is everything above — launches, features, statements. `energetic` is for brand reels,
+recaps, montages and collage-led social cuts: easing by role (`steep` for UI and camera, `pop`
+for objects, `linear` for machines), every group staggered 1–3 frames, bursts answered by ~1s
+holds, a camera that flies through depth (`depth` transition), copy that types or wipes,
+imagery in strict containers on a `grid` backdrop, scene formulas used twice, and an ending that
+reverses the opening. Choose it in the brief; set `"register"` on the storyboard, or on single
+scenes for an energetic chapter in a calm video. The lint's motion bounds follow the register,
+so an energetic scene never needs `allow` for its pop springs or its travelling camera.
+Gallery: `projects/_energetic`; craft: `motion-craft` §12.
 
 ## 0 · Orient
 - `npx ct status <slug>` — iterations, gate results, best version.
@@ -33,9 +44,13 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
   for social, ≤ 12 for 16:9. Every text needs read time (≈17 chars/s + 0.4s).
 - **elements** list ids, roles and coarse anchors (6×6 grid A1–F6).
 - **theme** — `litt-dark` (default) or `litt-light`; **type** — `litt` (the only kit).
+- **register** — `calm` (default) or `energetic`; a scene's own `register` wins (one energetic
+  chapter in a calm video, or a calm hold in a reel). Energetic scenes run 1–3s, holds 1–1.6s;
+  plan the formulas (which scenes repeat which structure) and the mirrored ending here.
 - **transition** into the next scene, from litt's ONE language (motion-craft §8):
   `cut` on the beat is the primary; accents `crossfade`, `dip`, `push`, `pushUp`,
   `wipe` — at most two types, with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
+  Energetic: up to three, and `depth` (`dir: "in"` / `"out"`) joins the language.
 - `npx ct lint <slug>` validates the storyboard immediately.
 
 ## 2 · Style frames (builder)
@@ -56,8 +71,11 @@ and time; the `→` line is the suggested fix. Re-run until clean. Rule meanings
 `reference/catalog.md` (lint rules section) and HyperFrames layout codes (overflow, overlap,
 occlusion, contrast with a suggested compliant color). The litt rules (`litt-*`,
 `spring-bounce`, `expressive-budget`, `material-motion`, `property-motion`, `travel-too-far`,
-`camera-drift`, `ambient-loop`) are the taste gate: fix them, or justify a deliberate
-exception with `allow: ["rule"]` / `litt-allow: <rule> (reason)` and a comment.
+`camera-drift`, `ambient-loop`, `text-fade`, `transition-register`) are the taste gate — their
+bounds follow each scene's register: fix them, or justify a deliberate exception with
+`allow: ["rule"]` / `litt-allow: <rule> (reason)` and a comment. If a scene keeps needing
+`allow` for bounce, travel or camera, it is probably an energetic scene: say so and set its
+register instead.
 
 ## 5 · Look (critic)
 `npx ct sheet <slug>` + `npx ct stills <slug>` → read the images.

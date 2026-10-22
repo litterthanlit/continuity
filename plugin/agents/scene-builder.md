@@ -31,9 +31,15 @@ Procedure:
    hierarchy (weight and ink, then space, then the one display step), the left
    edge, the 16px grid, lockups (8) and gaps (32), the light, contrast. Repeat
    until the settled frame would make a good poster.
-2. **Motion.** Choreograph with presets and tokens: responsive by default, ONE
+2. **Motion.** Choreograph with presets and tokens in the scene's register
+   (storyboard `register`; the scene's own wins). Calm: responsive by default, ONE
    expressive moment, lead → follow, 40ms staggers, exits via exit presets,
-   emphasis by ink, the camera's ≤ 3% push as the only ambient life. Check
+   emphasis by ink, the camera's ≤ 3% push as the only ambient life. Energetic
+   (motion-craft §12 and its recipes): easing by role — `steep` + `snap` for UI
+   and camera, `pop` for objects, `linear` for typing and machines — groups
+   staggered 1–3 frames, copy that types or wipes (never fades), imagery in
+   `Media` on `bg="grid"`, and a formula built once in `lib/` when the storyboard
+   names one. Check
    numbers with `npx ct timeline <slug> --scene <id>`.
 3. **Gate.** `npx ct check <slug> --scene <id>` → fix every error; treat warnings
    as defects unless the craft justifies them (then `allow` + a comment).

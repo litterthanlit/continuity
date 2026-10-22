@@ -36,8 +36,12 @@ export type ColorToken =
 export const DATA_HUES = ["blue", "amber", "teal", "violet", "rose"] as const;
 export type DataHue = (typeof DATA_HUES)[number];
 
-/** Stage backgrounds: the solid canvas, or litt's one light source from the top. */
-export type StageBackground = "solid" | "lit";
+/**
+ * Stage backgrounds: the solid canvas, litt's one light source from the top, or
+ * a static technical grid of hairlines (96px cells, centred) for the energetic
+ * register's collage and UI scenes (docs/decisions/0007). All of them are still.
+ */
+export type StageBackground = "solid" | "lit" | "grid";
 
 export interface Material {
   /** Accent share of the top light (`lit`), %. */

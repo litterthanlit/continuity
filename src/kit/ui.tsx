@@ -533,3 +533,73 @@ export function Cursor({ ct, class: cls }: { ct: string; class?: string }) {
     </div>
   );
 }
+
+// ---------------------------------------------------------------- imagery and annotation
+
+/**
+ * How imported imagery is forced into the palette (docs/decisions/0007): photos never
+ * arrive in their own colours. `mono` greys them, `contrast` greys and pushes them,
+ * `invert` turns them into a negative (prints, drawings on the dark theme). Static.
+ */
+export type MediaTreat = "none" | "mono" | "contrast" | "invert";
+const TREAT: Record<MediaTreat, string> = {
+  none: "none",
+  mono: "grayscale(1) contrast(1.08)",
+  contrast: "grayscale(1) contrast(1.6) brightness(0.96)",
+  invert: "grayscale(1) invert(1) contrast(1.1)",
+};
+
+/**
+ * An image in a strict container: a flat surface (radius 16, the raised edge) that clips
+ * its picture. Imagery always sits in a box, never loose on the stage. The picture is
+ * `<ct>-img`, so it can drift inside its frame (`m.tween("tile-img", { scale: [1, 1.04] })`)
+ * while the frame holds still. `src` is relative to the build (`assets/…`).
+ */
+export function Media({
+  ct,
+  src,
+  alt = "",
+  width = 640,
+  height = 640,
+  treat = "mono",
+  position = "50% 50%",
+  class: cls,
+  children,
+}: Box & { src: string; alt?: string; width?: number; height?: number; treat?: MediaTreat; position?: string }) {
+  return (
+    <div data-ct={id(ct)} class={cx("relative overflow-hidden rounded-surface bg-surface-1", cls)} style={`width:${width}px;height:${height}px`}>
+      <img
+        data-ct={id(ct, "img")}
+        src={src}
+        alt={alt}
+        class="absolute inset-0 h-full w-full"
+        style={`object-fit:cover;object-position:${position};filter:${TREAT[treat]}`}
+      />
+      {children}
+      <Edge />
+    </div>
+  );
+}
+
+/**
+ * An annotation marker (a node): a ring with a numbered mono label, the technical overlay laid on
+ * organic imagery. Place it absolutely on the point it marks (its centre is the ring's
+ * centre); connect markers with `Path` hairlines (strokeWidth 2) and `draw` them on. The
+ * label sits on a canvas chip, so it reads over any imagery.
+ * Parts are `<ct>-ring` and `<ct>-label`.
+ */
+export function Marker({ ct, label, side = "right", class: cls }: { ct: string; label?: string; side?: "left" | "right"; class?: string }) {
+  return (
+    <div data-ct={id(ct)} class={cx("absolute flex h-[24px] w-[24px] items-center", cls)} style="margin:-12px 0 0 -12px">
+      <span data-ct={id(ct, "ring")} class="h-[24px] w-[24px] rounded-full border-2 border-fg bg-canvas" />
+      {label && (
+        <span
+          data-ct={id(ct, "label")}
+          class={cx("absolute whitespace-nowrap rounded-control bg-canvas px-[8px] font-mono text-[26px] leading-[36px] text-fg", side === "right" ? "left-[40px]" : "right-[40px]")}
+        >
+          {label}
+        </span>
+      )}
+    </div>
+  );
+}

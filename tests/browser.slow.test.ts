@@ -44,7 +44,8 @@ d("seeded layout defects (projects/_defects-layout)", () => {
 /**
  * Golden frames per project: coarse 48×27 greyscale signatures at fixed times.
  * _smoke guards the engine path; _type and _transitions guard litt's type and
- * the transition presentations (regenerated for litt, docs/decisions/0006).
+ * the transition presentations (regenerated for litt, docs/decisions/0006); _energetic
+ * guards the grid, Media, Marker and the depth transition (0007).
  */
 const GOLDENS: Array<{ slug: string; times: number[] }> = [
   { slug: "_smoke", times: [0.5, 1.5, 3.4, 4.6] },
@@ -52,6 +53,9 @@ const GOLDENS: Array<{ slug: string; times: number[] }> = [
   { slug: "_type", times: [1.3, 4.9, 9.0, 13.2, 14.4, 18.6] },
   // the intro settled, then each accent at its mid-point: crossfade, dip, push + blur, pushUp + blur, feathered wipe
   { slug: "_transitions", times: [1.2, 3.2, 6.15, 9.05, 11.95, 14.85] },
+  // the energetic register (docs/decisions/0007): each scene settled, and depth in, the steep
+  // blurred push and depth out at their mid-points
+  { slug: "_energetic", times: [1.65, 2.9, 4.2, 5.2, 6.6, 7.7, 9.5] },
 ];
 
 async function signature(file: string): Promise<number[]> {

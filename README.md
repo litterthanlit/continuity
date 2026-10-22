@@ -230,6 +230,12 @@ above. The translation from web UI to video is
   expressive spring per scene (bounce 0.12) — exits at 0.75× that never bounce, 32px travel,
   40ms staggers, the camera's ≤ 3% push as the only ambient life. Transitions are cuts on the
   beat plus crossfade, dip, push and a feathered wipe.
+- **Registers:** the same look, two energies. `calm` (the default) is the above; `energetic`
+  is for brand reels, recaps and montages — steep in-outs for UI and camera, springs that
+  overshoot for things that act like objects, linear for machines, a camera that flies through
+  depth (`depth`), bursts answered by holds, copy that types or wipes, imagery treated into the
+  palette on a static grid. Set `"register"` on the storyboard or a scene; the lint follows
+  ([`docs/decisions/0007`](docs/decisions/0007-registers.md), gallery `projects/_energetic`).
 - **UI kit:** litt's components at 2× (windows, browsers, phones, cards, buttons, tags,
   segmented controls, toasts, sidebars, lists, code, terminals, charts, stats, cursor).
 - **Gates:** the `litt-*` source rules (weights, case, gradients, radii, shadows, accent text,
@@ -237,7 +243,7 @@ above. The translation from web UI to video is
   camera drift, loops) fail anything off-language, with a `litt-allow` escape for a reasoned
   exception.
 
-Galleries: `projects/_kit`, `projects/_type`, `projects/_transitions`; the generated catalog is
+Galleries: `projects/_kit`, `projects/_type`, `projects/_transitions`, `projects/_energetic`; the generated catalog is
 in `plugin/skills/continuity/reference/`.
 
 ## Developing Continuity

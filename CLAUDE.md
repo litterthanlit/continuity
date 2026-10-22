@@ -50,6 +50,10 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
   tiers with one expressive moment per scene, material static, and one transition language
   (cuts + ≤ 2 accents, motion-craft §8). The `litt-*` and motion lint rules gate it; a
   deliberate exception is `allow: [...]` / `litt-allow: <rule> (reason)`.
+- **Two registers** (`docs/decisions/0007`): `calm` (default, the above) and `energetic` for
+  brand reels and montages — easing by role (`steep`/`pop`/`linear`), depth moves, bursts and
+  holds, copy that types or wipes (motion-craft §12). Set storyboard (or scene) `"register"`;
+  the lint's motion bounds follow it (`src/motion/register.ts`). The look never changes.
 - **Open source only.** No GSAP, no fonts outside the theme registry, no network
   assets at render time.
 
@@ -79,7 +83,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
 | `Dockerfile`, `.github/workflows/docker.yml` | images: `toolchain` (pinned Chrome + ffmpeg) and `ct` (default, entrypoint `ct`); CI runs the browser suite inside `toolchain`; release pushes both to GHCR |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
-| `projects/_kit`, `_type`, `_transitions`, `_defects*` | galleries of the litt kit, type and transitions (reference + goldens) and seeded-defect fixtures (tests) |
+| `projects/_kit`, `_type`, `_transitions`, `_energetic`, `_defects*` | galleries of the litt kit, type, transitions and the energetic register (reference + goldens) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands

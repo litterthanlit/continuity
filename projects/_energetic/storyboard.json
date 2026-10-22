@@ -1,0 +1,88 @@
+{
+  "title": "Energetic register gallery",
+  "logline": "litt in the energetic register (docs/decisions/0007): a terminal that types, a collage formula on a grid, an annotation over an organic subject, and a reel that closes its own loop. Reference + lint fixture.",
+  "format": {
+    "aspect": "1:1",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "register": "energetic",
+  "scenes": [
+    {
+      "id": "open",
+      "duration": 3.2,
+      "intent": "The reel opens on a terminal that types its question — linear, mechanical, the machine speaking.",
+      "beats": [
+        { "id": "b1", "at": 0.15 },
+        { "id": "b2", "at": 1.0 }
+      ],
+      "text": {
+        "label": "Continuity"
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A1" },
+        { "id": "term", "role": "ui", "anchor": "B3:E4" }
+      ],
+      "motion": "Card snaps in on the steep ease, the command types, the answer types after it. Then the camera flies forward.",
+      "transition": { "type": "depth" }
+    },
+    {
+      "id": "collage",
+      "duration": 2.8,
+      "intent": "The collage formula: archive image, code, a data card, then the brand sticker slaps on top.",
+      "beats": [
+        { "id": "b1", "at": 0.1 },
+        { "id": "slap", "at": 0.9 }
+      ],
+      "text": {
+        "sticker": "Made in code"
+      },
+      "elements": [
+        { "id": "print", "role": "media", "anchor": "A1:C4" },
+        { "id": "code", "role": "ui", "anchor": "D1:F3" },
+        { "id": "stat", "role": "ui", "anchor": "D4:F6" },
+        { "id": "sticker", "role": "logo", "anchor": "C4:D5" }
+      ],
+      "motion": "Pieces land on the pop spring, staggered 2 frames apart, from up to 128px. The sticker slaps last. Hold ~1s.",
+      "transition": { "type": "push", "dir": "left", "blur": true, "ease": "steep", "duration": 0.4 }
+    },
+    {
+      "id": "annotate",
+      "duration": 3.0,
+      "intent": "Organic subject, technical overlay: a tree ring gets numbered markers joined by hairlines.",
+      "beats": [
+        { "id": "b1", "at": 0.25 },
+        { "id": "b2", "at": 0.7 }
+      ],
+      "text": {
+        "caption": "Growth, measured"
+      },
+      "elements": [
+        { "id": "rings", "role": "media", "anchor": "A1:F6" },
+        { "id": "n1", "role": "decor" },
+        { "id": "n2", "role": "decor" },
+        { "id": "n3", "role": "decor" },
+        { "id": "caption", "role": "caption", "anchor": "A6" }
+      ],
+      "motion": "The image drifts inside its frame; markers pop in, hairlines draw between them on the steep ease, caption wipes on. Then fly back out.",
+      "transition": { "type": "depth", "dir": "out" }
+    },
+    {
+      "id": "end",
+      "duration": 2.6,
+      "intent": "The loop closes: back on the terminal, which types the handle.",
+      "beats": [
+        { "id": "b1", "at": 0.5 }
+      ],
+      "text": {
+        "label": "Continuity"
+      },
+      "elements": [
+        { "id": "label", "role": "label", "anchor": "A1" },
+        { "id": "term", "role": "ui", "anchor": "B3:E4" }
+      ],
+      "motion": "The same terminal as the open; the handle types, the caret blinks, hold."
+    }
+  ]
+}

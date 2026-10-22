@@ -62,6 +62,20 @@ the first target; hide it when it has nothing to do.
 - No 3D tilts or perspective flourishes; depth is surfaces stepping and the zero-offset float.
 - Ambient life is the camera's ≤ 3% push; never floating cards or breathing glows.
 
+## The energetic UI run (motion-craft §12)
+A launch stays `calm`; a **brand reel or a recap** that shows product goes `energetic` — or a calm
+launch gives one chapter to an energetic "UI run" (scene-level `register`). There the UI moves
+like an interface, not like an object:
+- Fast cuts and slide wipes between surfaces (`push`, `blur: true`, `ease: "steep"`, 0.3–0.4s;
+  `wipe` with `ease: "steep"`), 1–2s per surface, then a ~1s hold.
+- Panels and rows on `steep` with `duration: "snap"` (9 frames), staggered 1–3 frames; charts
+  `draw` / bars `grow` on `steep`; search results stack row by row; a highlight block sweeps
+  across the matched text (the selection-block recipe). Queries type on (`m.type`, linear).
+- `pop` only for what acts like an object over the UI — a sticker, a badge, a marker — never
+  for windows, rows or chrome.
+- Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for
+  your own UI, which is already in the palette).
+
 ## Copy
 Title = benefit, not feature ("Ship reviews in minutes", not "Review module"). One supporting
 line max, in the grey. Labels on UI are part of the picture and must be on-message too.

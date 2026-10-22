@@ -31,6 +31,7 @@ const GROUPS: Array<[string, RegExp]> = [
   ["font-stretch", /^font-stretch-/],
   ["case", /^(uppercase|lowercase|capitalize|normal-case)$/],
   ["italic", /^(italic|not-italic)$/],
+  ["position", /^(static|fixed|absolute|relative|sticky)$/],
   ["p", /^p-/],
   ["px", /^px-/],
   ["py", /^py-/],
@@ -77,7 +78,10 @@ export function El({
 }
 
 export interface StageProps extends BaseProps {
-  /** `solid` canvas (the default) or `lit`: litt's one light source, from the top. Use it on the hero, maybe the end card. */
+  /**
+   * `solid` canvas (the default), `lit` (litt's one light source, from the top — the hero, maybe the
+   * end card) or `grid` (a static hairline grid under collage and UI — the energetic register).
+   */
   bg?: StageBackground | "none";
   /** Grain opacity 0..1 (false to disable). Defaults to the theme's (litt: 0.02 light, 0.04 dark). */
   grain?: number | false;
@@ -106,7 +110,7 @@ export function Stage({ bg, grain, class: cls, style, children }: StageProps) {
 export function Backdrop({ kind, ct = "bg" }: { kind: StageBackground; ct?: string }) {
   return (
     <div class="ct-backdrop absolute inset-0 bg-canvas" data-layout-ignore>
-      <div data-ct={ctId(ct)} class={cx("absolute inset-0", kind === "lit" && "ct-lit")} />
+      <div data-ct={ctId(ct)} class={cx("absolute inset-0", kind === "lit" && "ct-lit", kind === "grid" && "ct-grid")} />
     </div>
   );
 }
