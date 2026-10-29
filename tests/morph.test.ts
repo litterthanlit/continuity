@@ -1,5 +1,9 @@
+import * as fontkit from "fontkit";
 import { describe, expect, it } from "vitest";
+import { textOutline } from "../src/build/outline.js";
 import { areaOf, boundsOf, mapContours, morphAt, parsePath, prepareContours, prepareMorph, resample, toPathD, type Contour } from "../src/motion/morph.js";
+import { resolveDep } from "../src/paths.js";
+import { fonts } from "../src/themes/fonts.js";
 
 const circle = (cx: number, cy: number, r: number, sweep = 1) =>
   `M${cx - r} ${cy}A${r} ${r} 0 1 ${sweep} ${cx + r} ${cy}A${r} ${r} 0 1 ${sweep} ${cx - r} ${cy}Z`;
@@ -263,3 +267,51 @@ describe("morph", () => {
   });
 });
 
+describe("textOutline", () => {
+  type Fk = { unitsPerEm: number; layout(s: string): { advanceWidth: number } };
+  const plain = fontkit.openSync(resolveDep(fonts.geist.faces[0].file)) as Fk;
+
+  it("Ship at 112px: ≥ 4 contours, width matches fontkit's advance, identical across calls", () => {
+    const o = textOutline("Ship", { size: 112 });
+    expect(parsePath(o.d).length).toBeGreaterThanOrEqual(4);
+    // fontkit can only lay out the default instance (wght 400); litt's 500 runs ~2% wider.
+    const advance400 = (plain.layout("Ship").advanceWidth / plain.unitsPerEm) * 112;
+    within(textOutline("Ship", { size: 112, weight: 400 }).width, advance400, 0.001);
+    expect(o.width).toBeGreaterThan(advance400);
+    within(o.width, advance400, 0.05);
+    expect(textOutline("Ship", { size: 112 })).toEqual(o);
+  });
+
+  it("lays out px, y down, baseline at ascent", () => {
+    const o = textOutline("Ship", { size: 112 });
+    expect(o.baseline).toBe(o.ascent);
+    expect(o.height).toBeCloseTo(o.ascent + o.descent, 9);
+    expect(o.height).toBeCloseTo(1.3 * 112, 6);
+    const b = boundsOf(parsePath(o.d));
+    expect(b.x).toBeGreaterThanOrEqual(-1);
+    expect(b.y).toBeGreaterThan(0);
+    expect(b.y + b.height).toBeGreaterThan(o.baseline);
+    expect(b.y + b.height).toBeLessThanOrEqual(o.height);
+    const top = boundsOf(parsePath(textOutline("x", { size: 100 }).d));
+    expect(top.y).toBeGreaterThan(boundsOf(parsePath(textOutline("H", { size: 100 }).d)).y);
+    expect(top.y + top.height).toBeCloseTo(textOutline("x", { size: 100 }).baseline, 0);
+  });
+
+  it("applies the variable weight to outlines and advances", () => {
+    const light = textOutline("Ship", { size: 112, weight: 300 });
+    const bold = textOutline("Ship", { size: 112, weight: 800 });
+    expect(bold.d).not.toBe(light.d);
+    expect(bold.width).toBeGreaterThan(light.width);
+    const stem = (w: number) => boundsOf(parsePath(textOutline("l", { size: 100, weight: w }).d)).width;
+    expect(stem(800)).toBeGreaterThan(stem(300) * 1.5);
+  });
+
+  it("adds tracking after every glyph and supports Geist Mono", () => {
+    const base = textOutline("Ship", { size: 112 });
+    expect(textOutline("Ship", { size: 112, tracking: 0.1 }).width).toBeCloseTo(base.width + 4 * 11.2, 6);
+    const mono = (s: string) => textOutline(s, { size: 50, family: "Geist Mono" }).width;
+    expect(mono("ii")).toBeCloseTo(mono("mm"), 6);
+    expect(mono("ii")).not.toBeCloseTo(textOutline("ii", { size: 50 }).width, 1);
+    expect(textOutline("", { size: 50 })).toMatchObject({ d: "", width: 0 });
+  });
+});
