@@ -1,3 +1,4 @@
+import { WHIP_SNAP } from "./easing.js";
 import { PRESS_SCALE, TRAVEL, type DurationToken, type EaseToken } from "./tokens.js";
 import type { PropName, PropRange, TweenKind } from "./types.js";
 
@@ -12,6 +13,8 @@ export interface PresetSegment {
   ease: EaseToken;
   /** Seconds after the preset's start. */
   offset?: number;
+  /** Keeps its own duration and ease whatever the call passes (a motion-blur bell timed to a snap). */
+  fixed?: boolean;
 }
 
 export interface PresetDef {
@@ -29,9 +32,28 @@ export interface PresetOptions {
   base?: Partial<Record<PropName, number>>;
   /** What the target's family can draw, per font channel (filled in by the builder). */
   range?: Partial<Record<PropName, [number, number]>>;
+  /** Direction of travel for directional presets (whip); default left, the reading direction. */
+  dir?: "left" | "right" | "up" | "down";
 }
 
 const d = (o: PresetOptions, fallback = TRAVEL) => o.distance ?? fallback;
+
+/** The whip's travel: the energetic register's longest landing (5× litt's travel). */
+const WHIP_TRAVEL = TRAVEL * 5;
+
+/** Whip and drift along `dir`: the snap smears (a directional blur bell over its ~1.5 frames), the drift is sharp. */
+function whipSegments(o: PresetOptions): PresetSegment[] {
+  const dir = o.dir ?? "left";
+  const axis: PropName = dir === "left" || dir === "right" ? "x" : "y";
+  const blur: PropName = axis === "x" ? "blurX" : "blurY";
+  const from = (dir === "left" || dir === "up" ? 1 : -1) * d(o, WHIP_TRAVEL);
+  const sigma = Math.round(Math.abs(from) * 0.06 * 10) / 10;
+  return [
+    { props: { [axis]: [from, 0], opacity: [0, 1] }, duration: "drift", ease: "whip" },
+    { props: { [blur]: [0, sigma] }, duration: WHIP_SNAP / 2, ease: "out", fixed: true },
+    { props: { [blur]: [sigma, 0] }, duration: WHIP_SNAP * 1.5, ease: "out", offset: WHIP_SNAP / 2, fixed: true },
+  ];
+}
 
 /**
  * litt's vocabulary (docs/decisions/0006). Entrances are springs: responsive by
@@ -91,6 +113,12 @@ export const enterPresets = {
     kind: "enter",
     description: "Characters appear one by one (split: 'chars', or m.type). UI and terminal typing.",
     segments: () => [{ props: { opacity: [0, 1] }, duration: 0.001, ease: "linear" }],
+  },
+  whip: {
+    kind: "enter",
+    description:
+      "Energetic register. Whip and drift: 85% of the way in ~1.5 frames (motion-blurred), then a slow drift for the rest of the `drift` (1s). dir: left (default), right, up, down; distance default 160. Land it on a beat.",
+    segments: whipSegments,
   },
 } satisfies Record<string, PresetDef>;
 

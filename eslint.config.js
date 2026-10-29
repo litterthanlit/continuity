@@ -33,7 +33,7 @@ const determinism = {
 };
 
 export default tseslint.config(
-  { ignores: ["node_modules/", "build/", "out/", "**/.continuity/", ".scratch/", "**/snapshots/"] },
+  { ignores: ["node_modules/", "build/", "out/", "**/.continuity/", ".scratch/", "**/snapshots/", ".claude/worktrees/"] },
   ...tseslint.configs.recommended,
   {
     rules: {

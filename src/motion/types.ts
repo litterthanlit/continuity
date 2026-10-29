@@ -11,7 +11,13 @@ export type EaseSpec =
   | { type: "bezier"; p: [number, number, number, number] }
   /** `visual` / `bounce` record how a spring was defined (tokens.spring); the motion uses stiffness, damping and mass. */
   | { type: "spring"; stiffness: number; damping: number; mass: number; visual?: number; bounce?: number }
-  | { type: "steps"; n: number };
+  | { type: "steps"; n: number }
+  /**
+   * Whip and drift: `share` of the travel lands in the first `snap` of the tween (a fraction of
+   * its progress; the `whip` token keeps that at ~1.5 frames whatever the duration), and the rest
+   * drifts in slowly over the remainder, so the element is still alive while it is read.
+   */
+  | { type: "whip"; snap: number; share: number };
 
 /** Animatable channels. Units: px, %, deg, em or unitless as noted. */
 export const PROPS = [
@@ -161,6 +167,12 @@ export interface Tween {
   allow?: string[];
   /** Tweens declared together (one call on several targets) share a group — choreographed as one unit. */
   group?: string;
+  /**
+   * Squash and stretch, 0..0.5: the element stretches along its velocity and squashes against
+   * its acceleration (x/y channels), so a fast move reads as mass. Evaluated per frame from the
+   * motion itself — a pure function of time.
+   */
+  squash?: number;
 }
 
 /** Continuous, deterministic sine motion added on top of a channel (ambient life). */

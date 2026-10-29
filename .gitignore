@@ -17,3 +17,6 @@ projects/*/.continuity/*
 
 # bench runs create throwaway projects
 projects/bench-*/
+
+# agent worktrees (Claude Code isolation)
+.claude/worktrees/

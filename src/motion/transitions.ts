@@ -1,6 +1,6 @@
 import { sigmaFor } from "./easing.js";
 import type { Register } from "./register.js";
-import { eases, resolveEase, type EaseToken } from "./tokens.js";
+import { eases, fitEase, resolveEase, type EaseToken } from "./tokens.js";
 import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
 
 /**
@@ -226,7 +226,9 @@ export function transitionTweens(
   frame: TransitionFrame = { width: 1920, height: 1080, fps: 30 },
 ): { out: Tween[]; in: Tween[] } {
   const d = spec.duration;
-  const override = spec.ease === undefined ? undefined : typeof spec.ease === "string" ? resolveEase(spec.ease) : { spec: { type: "bezier" as const, p: spec.ease } };
+  const given: Ease | undefined =
+    spec.ease === undefined ? undefined : typeof spec.ease === "string" ? resolveEase(spec.ease) : { spec: { type: "bezier", p: spec.ease } };
+  const override = given && { spec: fitEase(given.spec, given.name, d), name: given.name };
   return TRANSITION_DEFS[spec.type].build({
     spec,
     out: out.id,

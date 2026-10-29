@@ -46,6 +46,23 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): Eas
   };
 }
 
+/** The whip token's natural duration (its drift) and how long its snap takes, in seconds. */
+export const WHIP_DRIFT = 1;
+export const WHIP_SNAP = 0.05;
+
+/**
+ * Whip and drift: a fast exponential approach (95% done at `snap`) carrying `share` of the travel,
+ * plus a quadratic ease-out over the whole tween for the rest, so the drift decelerates to rest
+ * exactly at the end instead of dying early. Monotonic; its speed only ever falls.
+ */
+export function whipEase(snap: number, share: number): EaseFn {
+  const s = Math.min(0.5, Math.max(0.005, snap));
+  const w = Math.min(0.98, Math.max(0.02, share));
+  const a = s / 3;
+  const norm = 1 - Math.exp(-1 / a);
+  return (p) => (p <= 0 ? 0 : p >= 1 ? 1 : (w * (1 - Math.exp(-p / a))) / norm + (1 - w) * (1 - (1 - p) * (1 - p)));
+}
+
 export interface SpringParams {
   stiffness: number;
   damping: number;
@@ -102,7 +119,9 @@ function settleCached(params: SpringParams): number {
  * everything else has no opinion (returns null).
  */
 export function naturalDuration(ease: EaseSpec): number | null {
-  return ease.type === "spring" ? settleCached(ease) : null;
+  if (ease.type === "spring") return settleCached(ease);
+  if (ease.type === "whip") return WHIP_DRIFT;
+  return null;
 }
 
 export function easeFn(ease: EaseSpec): EaseFn {
@@ -115,6 +134,8 @@ export function easeFn(ease: EaseSpec): EaseFn {
       const n = Math.max(1, Math.round(ease.n));
       return (p) => (p >= 1 ? 1 : p <= 0 ? 0 : Math.floor(p * n) / n);
     }
+    case "whip":
+      return whipEase(ease.snap, ease.share);
     case "spring": {
       const settle = settleCached(ease);
       // A spring tween maps progress 0..1 onto the spring's settle time, so a

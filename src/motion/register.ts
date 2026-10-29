@@ -44,6 +44,8 @@ export interface RegisterBounds {
   linearRotation: boolean;
   /** Copy never just fades: it types on or wipes on (`text-fade`). */
   textTypesOrWipes: boolean;
+  /** Whip and drift (the `whip` ease and preset) and squash-and-stretch: performed moves, energetic only (`ease-register`). */
+  whip: boolean;
 }
 
 export const REGISTER_BOUNDS: Record<Register, RegisterBounds> = {
@@ -60,6 +62,7 @@ export const REGISTER_BOUNDS: Record<Register, RegisterBounds> = {
     loops: "warning",
     linearRotation: false,
     textTypesOrWipes: false,
+    whip: false,
   },
   energetic: {
     description: "A brand reel or montage: steep in-outs for UI and camera, pop springs for objects, linear for machines, depth moves, bursts then holds.",
@@ -74,6 +77,7 @@ export const REGISTER_BOUNDS: Record<Register, RegisterBounds> = {
     loops: "info",
     linearRotation: true,
     textTypesOrWipes: true,
+    whip: true,
   },
 };
 

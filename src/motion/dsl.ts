@@ -11,6 +11,7 @@ import {
   EXIT_FACTOR,
   durations,
   eases,
+  fitEase,
   resolveDuration,
   resolveEase,
   resolveStagger,
@@ -49,6 +50,8 @@ export interface TimingOptions {
   ease?: EaseToken | EaseSpec;
   /** Lint rule ids this motion deliberately breaks (document why in a comment). */
   allow?: string[];
+  /** Squash and stretch along the element's own motion, 0..0.5 (energetic register: objects with mass). */
+  squash?: number;
 }
 
 export interface PresetCallOptions extends TimingOptions, PresetOptions {
@@ -156,8 +159,9 @@ export class MotionBuilder {
   /** Free-form tween. Prefer presets; use this for bespoke moves (with token eases/durations). */
   tween(targets: string | string[], props: Partial<Record<PropName, PropRange | number>>, opts: TweenCallOptions = {}): this {
     const list = toList(targets);
-    const { spec, name } = resolveEase(opts.ease ?? "responsive");
-    const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(spec) ?? durations.responsive);
+    const { spec: token, name } = resolveEase(opts.ease ?? "responsive");
+    const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(token) ?? durations.responsive);
+    const spec = fitEase(token, name, duration);
     const start = this.time(opts.at);
     const normalized = normalizeProps(props);
     const offsets = this.targetOffsets(list.length, opts);
@@ -174,6 +178,7 @@ export class MotionBuilder {
         props: normalized,
         ...this.splitFields(opts.split, opts.stagger, opts.mask),
         allow: opts.allow,
+        squash: opts.squash,
       });
     });
     return this;
@@ -187,8 +192,9 @@ export class MotionBuilder {
    */
   camera(props: Partial<Record<PropName, PropRange | number>>, opts: TimingOptions & { origin?: { x: number; y: number } } = {}): this {
     const start = this.time(opts.at);
-    const { spec, name } = resolveEase(opts.ease ?? "inOut");
+    const { spec: token, name } = resolveEase(opts.ease ?? "inOut");
     const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : round(this.duration - start);
+    const spec = fitEase(token, name, duration);
     if (opts.origin && props.scale !== undefined) {
       const [s0, s1] = typeof props.scale === "number" ? [1, props.scale] : [props.scale[0] ?? 1, props.scale[1]];
       const shift = (axis: "x" | "y", centre: number, anchor: number) => {
@@ -246,7 +252,7 @@ export class MotionBuilder {
         kind: "move",
         start,
         duration,
-        ease: spec,
+        ease: fitEase(spec, name, duration),
         easeName: name,
         props: { x: [null, p.x], y: [null, p.y] },
       });
@@ -293,12 +299,13 @@ export class MotionBuilder {
   /** Count a number up/down inside a text element. */
   counter(target: string, opts: CounterOptions): this {
     const { spec, name } = resolveEase(opts.ease ?? "out");
+    const duration = resolveDuration(opts.duration ?? "linger");
     this.push({
       target: this.id(target),
       kind: "emphasis",
       start: this.time(opts.at),
-      duration: resolveDuration(opts.duration ?? "linger"),
-      ease: spec,
+      duration,
+      ease: fitEase(spec, name, duration),
       easeName: name,
       props: { counter: [opts.from ?? 0, opts.to] },
       counter: {
@@ -324,12 +331,12 @@ export class MotionBuilder {
       const fb = this.basesOf?.(this.id(el));
       const segments = def.segments({ ...opts, base: fb?.values, range: fb?.ranges });
       for (const seg of segments) {
-        const { spec, name } = resolveEase(opts.ease ?? seg.ease);
+        const { spec: token, name } = resolveEase(seg.fixed ? seg.ease : (opts.ease ?? seg.ease));
         const segDuration =
-          opts.duration !== undefined
+          opts.duration !== undefined && !seg.fixed
             ? resolveDuration(opts.duration)
-            : spec.type === "spring"
-              ? (naturalDuration(spec) ?? resolveDuration(seg.duration))
+            : token.type === "spring"
+              ? (naturalDuration(token) ?? resolveDuration(seg.duration))
               : def.kind === "exit" && seg.duration === "exit"
                 ? this.exitDuration(this.id(el))
                 : resolveDuration(seg.duration);
@@ -339,12 +346,13 @@ export class MotionBuilder {
           kind: def.kind,
           start: round(start + offsets[i] + (seg.offset ?? 0)),
           duration: segDuration,
-          ease: spec,
+          ease: fitEase(token, name, segDuration),
           easeName: name,
           props: seg.props,
           preset: presetName,
           ...this.splitFields(opts.split, opts.stagger, mask),
           allow: opts.allow,
+          squash: seg.fixed ? undefined : opts.squash,
         });
       }
     });

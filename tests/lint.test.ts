@@ -49,6 +49,7 @@ describe("seeded static defects (projects/_defects)", () => {
       // registers (docs/decisions/0007)
       "lint:transition-register",
       "lint:text-fade",
+      "lint:ease-register",
     ]) {
       expect(ids, r).toContain(r);
     }

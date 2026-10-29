@@ -63,6 +63,7 @@ export const RULES = {
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
   "text-fade": "Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).",
   "weight-role": "litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.",
+  "ease-register": "Whip and drift and squash-and-stretch perform: they belong to the energetic register (a reel, a beat-cut film). A calm scene places things with springs.",
 } as const;
 export type RuleId = keyof typeof RULES;
 
@@ -216,6 +217,12 @@ export function lintTimeline(build: BuildResult): Finding[] {
         if (t.props.ink && t.duration > 0.24 && !allowed(t, "property-motion")) {
           add("property-motion", "info", sc, `${localOf(t.target)}: ink fades over ${t.duration}s`, { ...where, suggestion: 'ink steps at the instant tier (duration "instant")' });
         }
+      }
+      if (!B.whip && (t.ease.type === "whip" || t.squash) && !allowed(t, "ease-register")) {
+        add("ease-register", "warning", sc, `${localOf(t.target)}: ${t.ease.type === "whip" ? "whip" : "squash and stretch"} in a calm scene`, {
+          ...where,
+          suggestion: 'set the scene\'s register to "energetic" (a reel, a beat-cut film), or use ease "responsive"',
+        });
       }
       if (t.kind === "enter" && B.textTypesOrWipes && t.preset !== "typeOn" && isCopy(elements.get(t.target)) && Object.keys(t.props).every((p) => p === "opacity" || p === "scale") && !allowed(t, "text-fade")) {
         add("text-fade", "warning", sc, `${localOf(t.target)} fades in${inRegister}`, { ...where, suggestion: 'type it on (m.type) or wipe it on (m.enter(id, "wipeRight", { duration: "snap", ease: "steep" }))' });
@@ -447,6 +454,9 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
       out.push({ ...where, rule: "transition-too-short", severity: "warning", message: `${t.type} lasts ${t.duration}s (craft range ${def.range[0]}–${def.range[1]}s)`, suggestion: `use ≥ ${def.range[0]}s, or a hard cut` });
     }
     const ease = typeof t.ease === "string" ? eases[t.ease] : undefined;
+    if (ease?.type === "whip" && !own.some((r) => REGISTER_BOUNDS[r].whip)) {
+      out.push({ ...where, rule: "ease-register", severity: "warning", message: `${t.type} whips, but ${sc.id} and ${sb.scenes[i + 1].id} are calm`, suggestion: 'set "register": "energetic", or use ease "inOut"' });
+    }
     if (ease && ease.type === "spring" && bounceOf(ease) > 0) {
       out.push({ ...where, rule: "transition-bounce", severity: "warning", message: `${t.type} uses the springy "${t.ease}" ease — the whole frame overshoots`, suggestion: 'use "inOut" or "out"' });
     }
