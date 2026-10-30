@@ -4,9 +4,11 @@
  *
  * Pure and deterministic; bundled into the browser runtime (no Node, no DOM).
  *
- * A morph renders with `fill-rule="evenodd"`, so a hole is any contour inside
- * another regardless of winding. That lets contours be matched and reversed
- * freely: only the set of enclosed regions matters, not orientation.
+ * A morph renders with SVG's default `fill-rule="nonzero"`, as fonts are drawn:
+ * a hole runs the other way round from the outline around it, and overlapping
+ * outlines (a t's stem and bar) fill as one. So orientation matters. Each shape
+ * is turned so its outer contours run positive, contours pair only with their
+ * own kind (outer with outer, hole with hole), and no contour is ever reversed.
  */
 
 /** A closed polygon as a flat [x0, y0, x1, y1, …] list. */
@@ -363,9 +365,11 @@ export function prepareMorph(paths: string[], opts: MorphOptions = {}): MorphDat
 /**
  * Builds the morph table from parsed shapes.
  *
- * Contours are assigned to slots by walking consecutive shapes: each contour of
- * the next shape, largest first, takes the free slot whose previous contour has
- * the nearest centroid; the rest open new slots. A slot with no contour in a
+ * Each shape is first turned (every contour reversed) if its largest contour, an
+ * outer one, runs negative; nonzero fills it the same. Contours are then assigned
+ * to slots by walking consecutive shapes: each contour of the next shape, largest
+ * first, takes the free slot of its own orientation whose previous contour has the
+ * nearest centroid; the rest open new slots. A slot with no contour in a
  * shape is a point there: at the centroid of the slot's nearest real contour
  * (`collapse: "in-place"`, so a lone contour grows from or collapses to a
  * point), or at the vertex of that shape nearest to it (`"into"`).
@@ -373,27 +377,27 @@ export function prepareMorph(paths: string[], opts: MorphOptions = {}): MorphDat
  * `samples` (default 240) is the point budget per shape, split across slots by
  * perimeter with at least 24 points each. A contour with no more vertices than
  * its budget keeps them all (its morph endpoint is exact); a denser one is
- * resampled evenly. Each neighbouring pair of a slot is then rotated and
- * possibly reversed to the start that minimises the summed squared vertex
- * distance.
+ * resampled evenly. Each neighbouring pair of a slot is then rotated to the start
+ * that minimises the summed squared vertex distance.
  */
 export function prepareContours(shapes: Contour[][], opts: MorphOptions = {}): MorphData {
   const samples = Math.max(1, opts.samples ?? 240);
-  const clean = shapes.map((s) => s.filter((c) => c.length >= 2));
+  const clean = shapes.map((s) => orient(s.filter((c) => c.length >= 2)));
   if (clean.length === 0) return { shapes: [] };
 
   // slots[s][i]: the contour of shape i in slot s, or null when the slot is a point there.
   const slots: (Contour | null)[][] = [];
-  const byArea = (cs: Contour[]) => cs.map((c, i) => ({ c, i, area: Math.abs(areaOf(c)), centroid: centroidOf(c) })).sort((a, b) => b.area - a.area);
+  const byArea = (cs: Contour[]) => cs.map((c, i) => ({ c, i, area: Math.abs(areaOf(c)), sign: Math.sign(areaOf(c)), centroid: centroidOf(c) })).sort((a, b) => b.area - a.area);
   for (const c of byArea(clean[0])) slots.push([c.c]);
   for (let i = 1; i < clean.length; i++) {
     const free = slots.map((_, s) => s).filter((s) => slots[s][i - 1] !== null);
     const freeCentroids = new Map(free.map((s) => [s, centroidOf(slots[s][i - 1]!)]));
+    const freeSigns = new Map(free.map((s) => [s, Math.sign(areaOf(slots[s][i - 1]!))]));
     const placed = new Array<Contour | null>(slots.length).fill(null);
     for (const c of byArea(clean[i])) {
       let best = -1, bestDist = Infinity;
       for (const s of free) {
-        if (placed[s]) continue;
+        if (placed[s] || freeSigns.get(s) !== c.sign) continue;
         const [px, py] = freeCentroids.get(s)!;
         const dist = Math.hypot(px - c.centroid[0], py - c.centroid[1]);
         if (dist < bestDist) { bestDist = dist; best = s; }
@@ -454,27 +458,38 @@ export function prepareContours(shapes: Contour[][], opts: MorphOptions = {}): M
   return { shapes: result };
 }
 
-/** `b` rotated (and reversed if that helps) to the start that minimises Σ|a_k − b_k|². */
+/** `b` rotated to the start that minimises Σ|a_k − b_k|². Both run the same way round. */
 function align(a: Contour, b: Contour): Contour {
   const n = b.length / 2;
-  let best = Infinity, bestOffset = 0, bestReversed = false;
-  for (const reversed of [false, true]) {
-    for (let offset = 0; offset < n; offset++) {
-      let sum = 0;
-      for (let k = 0; k < n && sum < best; k++) {
-        const j = reversed ? (offset - k + n) % n : (offset + k) % n;
-        const dx = a[2 * k] - b[2 * j], dy = a[2 * k + 1] - b[2 * j + 1];
-        sum += dx * dx + dy * dy;
-      }
-      if (sum < best) { best = sum; bestOffset = offset; bestReversed = reversed; }
+  let best = Infinity, bestOffset = 0;
+  for (let offset = 0; offset < n; offset++) {
+    let sum = 0;
+    for (let k = 0; k < n && sum < best; k++) {
+      const j = (offset + k) % n;
+      const dx = a[2 * k] - b[2 * j], dy = a[2 * k + 1] - b[2 * j + 1];
+      sum += dx * dx + dy * dy;
     }
+    if (sum < best) { best = sum; bestOffset = offset; }
   }
   const out: Contour = new Array<number>(b.length);
   for (let k = 0; k < n; k++) {
-    const j = bestReversed ? (bestOffset - k + n) % n : (bestOffset + k) % n;
+    const j = (bestOffset + k) % n;
     out[2 * k] = b[2 * j];
     out[2 * k + 1] = b[2 * j + 1];
   }
+  return out;
+}
+
+/** The shape turned so its largest contour (an outer one) runs positive. */
+function orient(cs: Contour[]): Contour[] {
+  let largest = 0;
+  for (const c of cs) if (Math.abs(areaOf(c)) > Math.abs(largest)) largest = areaOf(c);
+  return largest < 0 ? cs.map(reversed) : cs;
+}
+
+function reversed(c: Contour): Contour {
+  const out: Contour = [];
+  for (let k = c.length - 2; k >= 0; k -= 2) out.push(c[k], c[k + 1]);
   return out;
 }
 

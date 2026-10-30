@@ -4,7 +4,7 @@ import { buildProject } from "../../build/build.js";
 import { nearest } from "../../audio/grid.js";
 import { rel } from "../../paths.js";
 import { formatFindings } from "../../spec/findings.js";
-import { lintTimeline } from "../../lint/timeline.js";
+import { lintTimeline, shownAt } from "../../lint/timeline.js";
 import { requireSlug } from "../lib/args.js";
 import { beatsHtml, motionOnGrid } from "../lib/beats.js";
 import { screenshotHtml } from "../lib/browser.js";
@@ -33,11 +33,13 @@ export const beats: Command = {
     const tl = b.timeline;
     const frame = 1 / tl.fps;
     log(`${b.music.spec.src} · ${g.bpm} bpm · ${g.beatsPerBar}/4 · ${g.beats.length} beats · ${g.bars.length} bars · ${g.hits.length} hits · plays ${g.span[0]}–${g.span[1]}s`);
+    // Measured at the frame where the cut shows, which is what the viewer sees against the sound.
     const cuts = tl.scenes.map((s, i) => {
-      const p = nearest(g.beats, s.start);
-      const off = p === undefined ? null : Math.round((s.start - p) * 1000) / 1000;
+      const shown = shownAt(s.start, tl.fps);
+      const p = nearest(g.beats, shown);
+      const off = p === undefined ? null : Math.round((shown - p) * 1000) / 1000;
       const span = b.storyboard!.scenes[i].span;
-      log(`  ${s.scene.padEnd(14)} ${s.start.toFixed(3).padStart(7)}s  ${off === null ? "" : Math.abs(off) <= frame ? "on the beat" : `${off > 0 ? "+" : ""}${off}s off the beat`}${span ? `  (${JSON.stringify(span)})` : ""}`);
+      log(`  ${s.scene.padEnd(14)} ${s.start.toFixed(3).padStart(7)}s  ${off === null ? "" : Math.abs(off) <= frame / 2 ? "on the beat" : `${off > 0 ? "+" : ""}${off}s off the beat`}${span ? `  (${JSON.stringify(span)})` : ""}`);
       return { scene: s.scene, start: s.start, offBeat: off, span };
     });
     const moves = motionOnGrid(b);

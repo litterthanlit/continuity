@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 
-/** Curve samples per segment of an outline: smooth bevels without a heavy mesh. */
+/** Curve samples per segment of an outline (an arc takes twice as many): smooth bevels without a heavy mesh. */
 const DIVISIONS = 24;
+/** Faces meeting at less than this share a smooth normal on the bevel and walls; a sharper outline corner stays a corner. */
+const CREASE = Math.cos((40 * Math.PI) / 180);
 
 /**
  * An SVG path's filled regions (holes resolved) as point loops in frame px: centred on the origin,
@@ -36,7 +38,43 @@ export function extrude(d: string, size: number, depth: number, bevel = 0): THRE
   });
   g.translate(0, 0, -depth / 2);
   g.computeVertexNormals();
+  smoothSides(g);
   return g;
+}
+
+/**
+ * ExtrudeGeometry is unindexed, so its normals are flat per triangle: every curve sample is a facet
+ * and a highlight running along the bevel breaks into dashes. The sides (group 1: bevel and walls)
+ * get normals averaged over the faces that meet at each vertex within the crease angle. The caps
+ * (group 0) stay flat: their long thin triangles would streak with any tilt.
+ */
+function smoothSides(g: THREE.BufferGeometry): void {
+  const side = g.groups.find((gr) => gr.materialIndex === 1);
+  if (!side) return;
+  const pos = g.getAttribute("position");
+  const nor = g.getAttribute("normal");
+  const end = side.start + side.count;
+  const at = new Map<string, number[]>();
+  const key = (i: number) => `${Math.round(pos.getX(i) * 64)},${Math.round(pos.getY(i) * 64)},${Math.round(pos.getZ(i) * 64)}`;
+  for (let i = side.start; i < end; i++) {
+    const k = key(i);
+    const list = at.get(k);
+    if (list) list.push(i);
+    else at.set(k, [i]);
+  }
+  const out = new Float32Array(side.count * 3);
+  const n = new THREE.Vector3();
+  for (let i = side.start; i < end; i++) {
+    const [fx, fy, fz] = [nor.getX(i), nor.getY(i), nor.getZ(i)];
+    n.set(0, 0, 0);
+    for (const j of at.get(key(i))!) {
+      const [x, y, z] = [nor.getX(j), nor.getY(j), nor.getZ(j)];
+      if (x * fx + y * fy + z * fz >= CREASE) n.add({ x, y, z });
+    }
+    n.normalize();
+    out.set([n.x, n.y, n.z], (i - side.start) * 3);
+  }
+  for (let i = 0; i < side.count; i++) nor.setXYZ(side.start + i, out[i * 3], out[i * 3 + 1], out[i * 3 + 2]);
 }
 
 /** Neon: a tube along every contour of the outline (holes too), closed. */

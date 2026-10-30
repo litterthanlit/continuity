@@ -103,6 +103,9 @@ const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TO
 const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY", "match", "morph"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
+/** The time of the first frame that shows something starting at `t`. */
+export const shownAt = (t: number, fps: number) => Math.ceil(t * fps - 1e-6) / fps;
+
 export const isBlurOnly = (t: Tween) => Object.keys(t.props).every((p) => p === "blurX" || p === "blurY");
 const ROTATION = new Set<string>(["rotate", "rotateX", "rotateY"]);
 /** Only rotation moves: a machine turning (a spinning ring), not a thing travelling. */
@@ -418,9 +421,11 @@ export function lintTimeline(build: BuildResult): Finding[] {
   if (grid) {
     const playing = (t: number) => t >= grid.span[0] && t < grid.span[1];
     for (const sc of tl.scenes.slice(1)) {
-      const p = nearest(grid.beats, sc.start);
-      if (p !== undefined && playing(sc.start) && Math.abs(p - sc.start) > frame) {
-        add("cut-off-beat", "warning", sc, `the cut into ${sc.scene} is ${r2(sc.start - p)}s off the beat`, { time: sc.start, suggestion: "time the scene before it in beats: \"duration\": { \"beats\": N }" });
+      // A cut is seen on the first frame at or after the scene's start, not at the start itself.
+      const shown = shownAt(sc.start, tl.fps);
+      const p = nearest(grid.beats, shown);
+      if (p !== undefined && playing(sc.start) && Math.abs(p - shown) > frame / 2) {
+        add("cut-off-beat", "warning", sc, `the cut into ${sc.scene} shows ${r2(shown - p)}s off the beat`, { time: sc.start, suggestion: "time the scene before it in beats: \"duration\": { \"beats\": N }" });
       }
     }
     const points = [...grid.beats, ...grid.hits.map((h) => h.t)];

@@ -44,7 +44,7 @@ export function Shape({ ct, d, viewBox, width, height, fill = "var(--color-fg)",
   const { w, h } = box(vb, width, height);
   return (
     <svg data-ct={ct ? ctId(ct) : undefined} data-ct-shape="" class={cx("block", cls)} style={style} width={w} height={h} viewBox={vb} aria-hidden="true">
-      <path d={d} fill-rule="evenodd" style={`fill:${fill}`} />
+      <path d={d} style={`fill:${fill}`} />
     </svg>
   );
 }
@@ -81,7 +81,7 @@ export function Morph({
       viewBox={vb}
       aria-hidden="true"
     >
-      <path d={toPathD(morphAt(data, 0))} fill-rule="evenodd" style={`fill:${fill}`} />
+      <path d={toPathD(morphAt(data, 0))} style={`fill:${fill}`} />
     </svg>
   );
 }

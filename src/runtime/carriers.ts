@@ -127,7 +127,6 @@ export function prepareCarriers(host: CarrierHost): Map<HTMLElement, Carrier> {
       // Clipped to the frame, never overflow: visible — see the note on Shape (kit/shape.tsx).
       svg.setAttribute("style", "position:absolute;left:0;top:0");
       const path = document.createElementNS(NS, "path");
-      path.setAttribute("fill-rule", "evenodd");
       svg.appendChild(path);
       el.appendChild(svg);
       c.a.box.style.display = "none";
@@ -188,10 +187,10 @@ export function renderCarrier(c: Carrier, e: number, t: number) {
   }
   const w = lerp(c.a.rect.w, c.b.rect.w, e);
   const h = lerp(c.a.rect.h, c.b.rect.h, e);
-  const x = smooth(0.2, 0.8, e);
+  // One side at a time: two sets of copy at half opacity read as a double exposure.
   for (const [s, o] of [
-    [c.a, 1 - x],
-    [c.b, x],
+    [c.a, 1 - smooth(0.2, 0.5, e)],
+    [c.b, smooth(0.5, 0.8, e)],
   ] as Array<[Side, number]>) {
     s.box.style.transform =
       "translate(" + f3(cx) + "px," + f3(cy) + "px) " + deform + " translate(" + f3(-w / 2) + "px," + f3(-h / 2) + "px) scale(" + f3(w / s.lw) + "," + f3(h / s.lh) + ")";

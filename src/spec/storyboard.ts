@@ -188,10 +188,15 @@ function round(n: number) {
 
 /**
  * Resolve music-timed durations and beats to seconds. A scene timed in beats or bars starts at the
- * grid point nearest its start and ends exactly on the point `n` later, so its cut is on the music.
+ * grid point nearest its start and ends on the frame nearest the point `n` later, so its cut is on
+ * the music.
  */
 function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | undefined, issues: string[]): Storyboard {
   const step = 60 / (grid?.bpm ?? sb.bpm ?? 120);
+  const fps = sb.format.fps;
+  // A cut shows on the first frame at or after the scene's start. Rounding the start to 4 decimals
+  // could land it just after its frame (62/30 → 2.0667), so it rounds down onto the frame's time.
+  const onFrame = (x: number) => Math.floor((Math.round(x * fps) / fps) * 10000 + 1e-6) / 10000;
   let t = 0;
   const scenes = sb.scenes.map((s, i): SceneSpec => {
     const isLast = i === sb.scenes.length - 1;
@@ -206,7 +211,7 @@ function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | u
       const pts = bars ? grid.bars : grid.beats;
       const each = bars ? step * grid.beatsPerBar : step;
       const k = Math.round(indexAt(pts, t, each));
-      duration = round(pointAt(pts, k + ("bars" in s.duration ? s.duration.bars : s.duration.beats), each) - t + overlap);
+      duration = round(onFrame(pointAt(pts, k + ("bars" in s.duration ? s.duration.bars : s.duration.beats), each)) - t + overlap);
       if (duration <= overlap) issues.push(`scenes.${i}.duration: ${JSON.stringify(s.duration)} is no time at this point in the music`);
     }
     const start = t;

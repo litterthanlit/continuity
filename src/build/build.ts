@@ -199,6 +199,12 @@ export async function buildProject(
   const views = new Map<string, string>();
   drainMissingText();
 
+  // Built alone (`only`), a scene's neighbours are placeholders: a morph has nothing to carry, so it crossfades.
+  const transitionOf = (i: number) => {
+    const t = sb.scenes[i].transition;
+    return t && opts.only && t.pairs?.length ? { ...t, pairs: [] } : t;
+  };
+
   for (const [index, sc] of sb.scenes.entries()) {
     const timing = timings.scenes[index];
     const file = join(src, "scenes", `${sc.id}.tsx`);
@@ -286,7 +292,7 @@ export async function buildProject(
     }
     views.set(sc.id, inner);
     // Layers the incoming transition needs: a reveal wrapper (mask) and/or an overlay above the scene.
-    const incoming = index > 0 ? sb.scenes[index - 1].transition : undefined;
+    const incoming = index > 0 ? transitionOf(index - 1) : undefined;
     const layers = incoming ? TRANSITION_DEFS[incoming.type].layers : undefined;
     let body = `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div>`;
     if (layers?.reveal) body = `<div class="ct-reveal" data-ct="${sc.id}.reveal" data-layout-allow-overflow style="position:absolute;inset:0">${body}</div>`;
@@ -317,9 +323,10 @@ export async function buildProject(
 
   // Scene transitions become tweens on the scene roots.
   sb.scenes.forEach((sc, i) => {
-    if (!sc.transition || i === sb.scenes.length - 1) return;
+    const spec = transitionOf(i);
+    if (!spec || i === sb.scenes.length - 1) return;
     const next = sb.scenes[i + 1];
-    const t = transitionTweens(sc.transition, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
+    const t = transitionTweens(spec, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
     scenes.get(sc.id)!.tweens.push(...t.out);
     scenes.get(next.id)!.tweens.unshift(...t.in);
   });

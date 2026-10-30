@@ -80,6 +80,14 @@ describe("build output", () => {
     expect(l1?.split).toBe("lines");
     expect(b.timeline!.scenes.map((s) => s.scene)).toEqual(["hook", "write", "blind", "eyes", "check", "end"]);
   });
+
+  it("builds one scene of a film with a morph alone (its neighbours are placeholders)", async () => {
+    for (const only of ["cards", "stat", "type"]) {
+      const b = await buildProject("example-beat", { write: false, only });
+      expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+      expect(b.ok).toBe(true);
+    }
+  });
 });
 
 describe("registers (docs/decisions/0007)", () => {

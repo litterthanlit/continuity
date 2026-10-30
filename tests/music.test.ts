@@ -76,6 +76,20 @@ describe("storyboard timed by the music", () => {
     expect(Object.fromEntries(r.value.scenes[1].beats.map((b) => [b.id, b.at]))).toEqual({ one: 1, half: 1.25, bar: 3, hit: 1 });
   });
 
+  it("a beat-timed cut lands on the frame nearest the beat, never after that frame's time", () => {
+    for (const first of [0.002, 0.0667, 0.0151]) {
+      const g = musicGrid(track(first), { start: 0, offset: 0 });
+      const r = parseStoryboard(sb([scene("a", { beats: 4 }), scene("b", { beats: 3 }), scene("c", 1)]), { grid: g });
+      if (!r.ok) throw new Error(r.issues.join("\n"));
+      const starts = sceneTimings(r.value).scenes.map((s) => s.start).slice(1);
+      [first + 2, first + 3.5].forEach((beat, i) => {
+        const frame = Math.round(beat * 30);
+        expect(starts[i]).toBeLessThanOrEqual(frame / 30);
+        expect(starts[i]).toBeGreaterThan((frame - 1) / 30);
+      });
+    }
+  });
+
   it("refuses beat timing without music", () => {
     const r = parseStoryboard(sb([scene("a", { beats: 4 })]));
     expect(r.ok).toBe(false);
@@ -145,6 +159,11 @@ describe("lint on the music", () => {
     expect(off).toHaveLength(1);
     expect(off[0].severity).toBe("warning");
     expect(lintTimeline(build([0, 2], 0)).filter((f) => f.rule === "cut-off-beat")).toHaveLength(0);
+  });
+
+  it("a cut is judged where it shows: 2 ms after the beat is a whole frame late", () => {
+    expect(lintTimeline(build([0, 2.002], 0)).filter((f) => f.rule === "cut-off-beat")).toHaveLength(1);
+    expect(lintTimeline(build([0, 1.999], 0)).filter((f) => f.rule === "cut-off-beat")).toHaveLength(0);
   });
 
   it("a move two frames off a beat is a near miss; on it, or far off it, is fine", () => {

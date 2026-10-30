@@ -166,6 +166,43 @@ describe("morph", () => {
     }
   });
 
+  /** Nonzero winding number of (x, y) against every contour (as the renderer fills it). */
+  const winding = (cs: Contour[], x: number, y: number) => {
+    let w = 0;
+    for (const c of cs) {
+      for (let i = 0; i < c.length; i += 2) {
+        const x0 = c[i], y0 = c[i + 1], x1 = c[(i + 2) % c.length], y1 = c[(i + 3) % c.length];
+        const side = (x1 - x0) * (y - y0) - (x - x0) * (y1 - y0);
+        if (y0 <= y && y1 > y && side > 0) w++;
+        else if (y0 > y && y1 <= y && side < 0) w--;
+      }
+    }
+    return w;
+  };
+
+  it("fills under nonzero: a hole stays a hole at rest and in flight, whichever way round it was drawn", () => {
+    // A ring (outer square, inner square drawn the other way round) into two squares side by side.
+    const ring = parsePath(`${rect(0, 0, 200, 200)} M70 70v60h60v-60z`);
+    const pair = parsePath(`${rect(0, 0, 200, 200)} ${rect(260, 70, 60, 60)}`);
+    for (const shapes of [[ring, pair], [pair, ring]]) {
+      const data = prepareContours(shapes);
+      const at = shapes[0] === ring ? 0 : 1;
+      expect(winding(morphAt(data, at), 100, 100)).toBe(0); // the ring's centre is empty at rest
+      expect(winding(morphAt(data, at), 30, 30)).not.toBe(0);
+      expect(winding(morphAt(data, 0.5), 100, 100)).toBe(0); // and it never fills in flight
+    }
+  });
+
+  it("an outline drawn the other way round fills the same", () => {
+    const cw = parsePath(`${rect(0, 0, 200, 200)} M70 70v60h60v-60z`);
+    const ccw = parsePath(`M0 0v200h200v-200z ${rect(70, 70, 60, 60)}`);
+    const data = prepareContours([cw, ccw]);
+    for (const v of [0, 0.5, 1]) {
+      expect(winding(morphAt(data, v), 100, 100)).toBe(0);
+      expect(winding(morphAt(data, v), 30, 30)).not.toBe(0);
+    }
+  });
+
   it("keeps every vertex when the budget allows, so endpoints are exact", () => {
     const tri = [0, 0, 300, 0, 150, 260];
     const data = prepareContours([[tri], [parsePath(circle(150, 90, 80))[0]]], { samples: 60 });

@@ -53,7 +53,7 @@ function material(canvas: HTMLCanvasElement, m: GlMaterial, geometry: GlObject["
     case "glass": {
       const depth = geometry.kind === "extrude" ? geometry.depth : 40;
       const tint = m.color ? color(m.color) : new THREE.Color(1, 1, 1);
-      if (backdrop) return glassMaterial({ tint, thickness: depth * 0.6, backdrop, background: resolveColor(canvas, "canvas"), dispersion: 0.08 });
+      if (backdrop) return glassMaterial({ tint, thickness: depth * 0.6, backdrop, background: resolveColor(canvas, "canvas"), dispersion: 0.03 });
       // No card to refract: three's transmission (renders the scene behind the glass — slow in software).
       return new THREE.MeshPhysicalMaterial({
         color: m.color ? color(m.color) : new THREE.Color(1, 1, 1),
@@ -107,7 +107,7 @@ export function mount(canvas: HTMLCanvasElement, spec: GlSpec): GlHandle {
     else {
       const ink = g.texture !== "grid" && g.texture.ink ? g.texture.ink : "fg-muted";
       const tex = planeTexture(g.texture, g.width, g.height, cssColor(canvas, ink), cssColor(canvas, "canvas"), family);
-      mesh = new THREE.Mesh(new THREE.PlaneGeometry(g.width, g.height), new THREE.MeshBasicMaterial({ map: tex, toneMapped: true }));
+      mesh = new THREE.Mesh(new THREE.PlaneGeometry(g.width, g.height), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
       backdrop ??= { mesh, texture: tex, width: g.width, height: g.height };
     }
     const base = { x: o.x ?? 0, y: o.y ?? 0, z: o.z ?? 0, rotateX: o.rotateX ?? 0, rotateY: o.rotateY ?? 0, rotate: o.rotate ?? 0, scale: o.scale ?? 1 };

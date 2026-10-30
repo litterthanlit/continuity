@@ -1,7 +1,7 @@
 import type { BuildResult } from "../../build/build.js";
 import { analyzePcm, decodeAudio, type Band } from "../../audio/analyze.js";
 import { nearest } from "../../audio/grid.js";
-import { isBlurOnly } from "../../lint/timeline.js";
+import { isBlurOnly, shownAt } from "../../lint/timeline.js";
 import type { Finding } from "../../spec/findings.js";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -54,7 +54,8 @@ export function beatsHtml(b: BuildResult, title: string): string {
   const hits = g.hits.filter((h) => h.t <= dur).map((h) => `<circle cx="${x(h.t)}" cy="${top + wave + 18}" r="${(2 + h.strength * 4).toFixed(1)}" fill="${BAND_COLOR[h.band]}"/>`).join("");
   const cuts = tl.scenes
     .map((s, i) => {
-      const on = i === 0 || Math.abs((nearest(g.beats, s.start) ?? Infinity) - s.start) <= frame;
+      const shown = shownAt(s.start, tl.fps);
+      const on = i === 0 || Math.abs((nearest(g.beats, shown) ?? Infinity) - shown) <= frame / 2;
       return (
         `<line x1="${x(s.start)}" x2="${x(s.start)}" y1="${top}" y2="${top + wave + 120}" stroke="${on ? "#f9f8f7" : "#ff756f"}" stroke-width="2"/>` +
         `<text x="${x(s.start) + 4}" y="${top + wave + 112}" fill="${on ? "#d6d3d1" : "#ff756f"}" font-size="12">${esc(s.scene)}</text>`
