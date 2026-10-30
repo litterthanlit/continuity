@@ -82,8 +82,11 @@ export async function hfCheck(
   const inTransition = (t?: number) => t !== undefined && windows.some(([a, b]) => t >= a - 0.02 && t <= b + 0.02);
   // Mid-transition frames mix two scenes (bands, half-revealed masks): overlap and contrast there are not defects.
   const TRANSIENT = new Set(["content_overlap", "text_occluded", "occlusion", "content_occlusion", "contrast_aa_failure"]);
+  // A WebGL canvas read back by the capture itself (every <Gl> shot): Chrome's performance notice, not a defect.
+  const noise = (f: HfCheckFinding) => f.code === "console_warning" && /GPU stall due to ReadPixels/.test(f.message);
   for (const [section, data] of Object.entries({ runtime: j.runtime, layout: j.layout, motion: j.motion, contrast: j.contrast })) {
     for (const f of data?.findings ?? []) {
+      if (noise(f)) continue;
       const element = f.dataAttributes?.["data-ct"];
       const extra: Record<string, unknown> = { section };
       for (const k of PASSTHROUGH) if (f[k] !== undefined) extra[k] = f[k];

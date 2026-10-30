@@ -154,3 +154,34 @@ describe("lint on the music", () => {
     expect(rules(1.25)).toBe(0);
   });
 });
+
+describe("render QC hears the music where the picture put it (av-sync)", () => {
+  it("passes a muxed track in sync and fails one delayed by 100 ms", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { synthesize, encodeWav } = await import("../src/audio/synth.js");
+    const { analyzePcm } = await import("../src/audio/analyze.js");
+    const { ffmpeg } = await import("../src/cli/lib/ffmpeg.js");
+    const { avSync } = await import("../src/cli/lib/beats.js");
+    const song = synthesize({ bpm: 120, seed: 3, sections: [{ bars: 3, kick: "x...x...x...x...", clap: "....x.......x...", hat: "..x...x...x...x." }] });
+    const dir = mkdtempSync(join(tmpdir(), "ct-av-"));
+    const wav = join(dir, "music.wav");
+    writeFileSync(wav, encodeWav(song.samples, song.sampleRate));
+    const grid = musicGrid(analyzePcm(song.samples, song.sampleRate), { start: 0, offset: 0 });
+    const b = { timeline: { fps: 30, duration: 5.5 }, music: { grid } } as unknown as BuildResult;
+    const mux = async (delayMs: number) => {
+      const out = join(dir, `av-${delayMs}.mp4`);
+      const r = await ffmpeg(["-y", "-v", "error", "-f", "lavfi", "-i", "color=c=black:s=320x180:r=30:d=5.5", "-i", wav, "-af", `adelay=${delayMs}:all=1`, "-c:v", "libx264", "-c:a", "aac", "-shortest", out]);
+      expect(r.code, r.stderr).toBe(0);
+      return avSync(out, b);
+    };
+    const inSync = await mux(0);
+    expect(Math.abs(inSync.offset!)).toBeLessThanOrEqual(1 / 30);
+    expect(inSync.findings.map((f) => f.severity)).toEqual(["info"]);
+    const late = await mux(100);
+    expect(late.offset!).toBeGreaterThan(0.08);
+    expect(late.offset!).toBeLessThan(0.12);
+    expect(late.findings[0]).toMatchObject({ rule: "av-sync", severity: "error" });
+  });
+});

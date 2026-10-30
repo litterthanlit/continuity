@@ -102,6 +102,8 @@ const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TO
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
 const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY", "match", "morph"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
+/** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
+export const isBlurOnly = (t: Tween) => Object.keys(t.props).every((p) => p === "blurX" || p === "blurY");
 const ROTATION = new Set<string>(["rotate", "rotateX", "rotateY"]);
 /** Only rotation moves: a machine turning (a spinning ring), not a thing travelling. */
 const isRotation = (t: Tween) => Object.keys(t.props).filter((p) => SPATIAL_PROPS.has(p as PropName)).every((p) => ROTATION.has(p));
@@ -154,6 +156,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
         t.duration > 0.05 &&
         t.duration < 1.6 &&
         !near(t.duration) &&
+        !isBlurOnly(t) &&
         !allowed(t, "duration-off-token")
       ) {
         add("duration-off-token", "info", sc, `${localOf(t.target)} uses ${t.duration}s (not on the token scale)`, { ...where, suggestion: "prefer instant/responsive/expressive/exit/slow/snap, or a spring ease" });
@@ -423,7 +426,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
     const points = [...grid.beats, ...grid.hits.map((h) => h.t)];
     for (const sc of tl.scenes) {
       for (const t of sc.tweens) {
-        if (t.kind === "transition" || t.kind === "exit" || (t.split && t.stagger)) continue;
+        if (t.kind === "transition" || t.kind === "exit" || (t.split && t.stagger) || isBlurOnly(t)) continue;
         const g = sc.start + t.start;
         const p = nearest(points, g);
         if (p === undefined || !playing(g) || allowed(t, "off-beat")) continue;

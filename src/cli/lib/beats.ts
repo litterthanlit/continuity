@@ -1,6 +1,7 @@
 import type { BuildResult } from "../../build/build.js";
 import { analyzePcm, decodeAudio, type Band } from "../../audio/analyze.js";
 import { nearest } from "../../audio/grid.js";
+import { isBlurOnly } from "../../lint/timeline.js";
 import type { Finding } from "../../spec/findings.js";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -15,7 +16,7 @@ export function motionOnGrid(b: BuildResult): Array<{ t: number; target: string;
   const points = [...grid.beats, ...grid.hits.map((h) => h.t)];
   return tl.scenes.flatMap((sc) =>
     sc.tweens
-      .filter((t) => t.kind !== "transition" && t.kind !== "exit")
+      .filter((t) => t.kind !== "transition" && t.kind !== "exit" && !isBlurOnly(t))
       .map((t) => {
         const g = r3(sc.start + t.start);
         const p = nearest(points, g);

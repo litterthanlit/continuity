@@ -315,3 +315,20 @@ describe("textOutline", () => {
     expect(textOutline("", { size: 50 })).toMatchObject({ d: "", width: 0 });
   });
 });
+
+describe("collapse into the other shape", () => {
+  it("pours a contour with no counterpart into the nearest point of the other shape", () => {
+    const square = (x: number, y: number, s: number) => `M${x} ${y}H${x + s}V${y + s}H${x}Z`;
+    const two = `${square(0, 0, 10)} ${square(100, 0, 10)}`;
+    const one = square(0, 0, 10);
+    const into = prepareMorph([two, one], { collapse: "into" });
+    const inPlace = prepareMorph([two, one]);
+    const vertices = (c: number[]) => Array.from({ length: c.length / 2 }, (_, k) => [c[2 * k], c[2 * k + 1]]);
+    const target = into.shapes[1].find((c) => new Set(vertices(c).map((v) => v.join())).size === 1)!;
+    const [px, py] = target;
+    expect(px).toBeLessThanOrEqual(10); // on the remaining square, not at x ≈ 105
+    expect(vertices(into.shapes[1].find((c) => c !== target)!).some(([x, y]) => x === px && y === py)).toBe(true);
+    const lone = inPlace.shapes[1].find((c) => new Set(vertices(c).map((v) => v.join())).size === 1)!;
+    expect(lone[0]).toBeCloseTo(105, 6); // the default still shrinks in place
+  });
+});

@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 import { textOutline } from "../build/outline.js";
-import { boundsOf, morphAt, parsePath, prepareMorph, toPathD, type MorphData } from "../motion/morph.js";
+import { boundsOf, mapContours, morphAt, parsePath, prepareMorph, toPathD, type MorphData } from "../motion/morph.js";
 import { cx, type BaseProps } from "./core.js";
 import { ctId } from "./context.js";
 
@@ -54,8 +54,19 @@ export function Shape({ ct, d, viewBox, width, height, fill = "var(--color-fg)",
  * (`m.tween("mark", { morph: [0, 1] }, { ease: "expressive" })`). Outlines are matched and
  * aligned at build time, so the frame only interpolates points.
  */
-export function Morph({ ct, shapes, samples, viewBox, width, height, fill = "var(--color-fg)", class: cls, style }: BaseProps & ShapeBox & { shapes: string[]; samples?: number }) {
-  const data = prepareMorph(shapes, { samples });
+export function Morph({
+  ct,
+  shapes,
+  samples,
+  collapse,
+  viewBox,
+  width,
+  height,
+  fill = "var(--color-fg)",
+  class: cls,
+  style,
+}: BaseProps & ShapeBox & { shapes: string[]; samples?: number; collapse?: "in-place" | "into" }) {
+  const data = prepareMorph(shapes, { samples, collapse });
   const vb = viewBox ?? fitBox(shapes);
   const { w, h } = box(vb, width, height);
   return (
@@ -78,6 +89,17 @@ export function Morph({ ct, shapes, samples, viewBox, width, height, fill = "var
 /** Text as an outline path (Geist, laid out with kerning) — for a Shape or a Morph step: `textShape("Ship", { size: 112 })`. */
 export function textShape(text: string, opts: { size: number; weight?: number; family?: "Geist" | "Geist Mono"; tracking?: number }): string {
   return textOutline(text, opts).d;
+}
+
+/** An outline scaled by `scale` about its origin, then moved by (x, y): to put a mark where a morph should land it. */
+export function placeShape(d: string, opts: { x?: number; y?: number; scale?: number }): string {
+  const k = opts.scale ?? 1;
+  return toPathD(mapContours(parsePath(d), (x, y) => [x * k + (opts.x ?? 0), y * k + (opts.y ?? 0)]));
+}
+
+/** The outline's bounding box, in its own units. */
+export function shapeBounds(d: string): { x: number; y: number; width: number; height: number } {
+  return boundsOf(parsePath(d));
 }
 
 function compact(d: MorphData): MorphData {

@@ -685,8 +685,14 @@ function barPhase(beats: number[], onsets: Onset[], s: Stft, beatsPerBar: number
   });
   let best = 0;
   for (let p = 1; p < beatsPerBar; p++) if (scores[p] > scores[best] + 1e-9) best = p;
-  return best;
+  // Four-on-the-floor with a backbeat scores phases 0 and 2 alike; then the bar starts where the
+  // music does — a produced bed opens on a downbeat (a pickup is the exception; `firstDownbeat` says so).
+  const first = 0;
+  return scores[first] >= scores[best] * (1 - OPENING_TIE) ? first : best;
 }
+
+/** Phase scores within this share of the best count as a tie, which the opening downbeat breaks. */
+const OPENING_TIE = 0.15;
 
 function strengthNear(onsets: Onset[], t: number, accept: (o: Onset) => boolean): number {
   let best = 0;

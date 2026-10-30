@@ -345,7 +345,18 @@ export function toPathD(contours: Contour[], precision = 2): string {
 // ---------------------------------------------------------------------------
 // Morph preparation
 
-export function prepareMorph(paths: string[], opts: { samples?: number } = {}): MorphData {
+export interface MorphOptions {
+  /** Total point budget per shape (default 240). */
+  samples?: number;
+  /**
+   * Where a contour with no counterpart goes: `in-place` (default) grows from / shrinks to its own
+   * centroid — an O into an I; `into` pours into the nearest point of the other shape — a word
+   * into a mark.
+   */
+  collapse?: "in-place" | "into";
+}
+
+export function prepareMorph(paths: string[], opts: MorphOptions = {}): MorphData {
   return prepareContours(paths.map((d) => parsePath(d)), opts);
 }
 
@@ -355,8 +366,9 @@ export function prepareMorph(paths: string[], opts: { samples?: number } = {}): 
  * Contours are assigned to slots by walking consecutive shapes: each contour of
  * the next shape, largest first, takes the free slot whose previous contour has
  * the nearest centroid; the rest open new slots. A slot with no contour in a
- * shape is a point there, at the centroid of the slot's nearest real contour,
- * so a lone contour grows from or collapses to a point.
+ * shape is a point there: at the centroid of the slot's nearest real contour
+ * (`collapse: "in-place"`, so a lone contour grows from or collapses to a
+ * point), or at the vertex of that shape nearest to it (`"into"`).
  *
  * `samples` (default 240) is the point budget per shape, split across slots by
  * perimeter with at least 24 points each. A contour with no more vertices than
@@ -365,7 +377,7 @@ export function prepareMorph(paths: string[], opts: { samples?: number } = {}): 
  * possibly reversed to the start that minimises the summed squared vertex
  * distance.
  */
-export function prepareContours(shapes: Contour[][], opts: { samples?: number } = {}): MorphData {
+export function prepareContours(shapes: Contour[][], opts: MorphOptions = {}): MorphData {
   const samples = Math.max(1, opts.samples ?? 240);
   const clean = shapes.map((s) => s.filter((c) => c.length >= 2));
   if (clean.length === 0) return { shapes: [] };
@@ -401,9 +413,24 @@ export function prepareContours(shapes: Contour[][], opts: { samples?: number } 
   const budget = perimeters.map((p) => (totalPerimeter > 0 ? Math.max(MIN_POINTS, Math.round((samples * p) / totalPerimeter)) : MIN_POINTS));
 
   const result: Contour[][] = Array.from({ length: count }, () => []);
-  slots.forEach((slot, s) => {
+  const reals = slots.map((slot, s) => slot.map((c) => (c ? (c.length / 2 <= budget[s] ? densify(c, budget[s]) : resample(c, budget[s])) : null)));
+  /** The vertex of shape i nearest to (x, y), over every slot that has a contour there. */
+  const nearestVertex = (i: number, x: number, y: number): [number, number] | undefined => {
+    let best: [number, number] | undefined;
+    let bestDist = Infinity;
+    for (const r of reals) {
+      const c = r[i];
+      if (!c) continue;
+      for (let k = 0; k < c.length; k += 2) {
+        const d = (c[k] - x) ** 2 + (c[k + 1] - y) ** 2;
+        if (d < bestDist) { bestDist = d; best = [c[k], c[k + 1]]; }
+      }
+    }
+    return best;
+  };
+  slots.forEach((_, s) => {
     const n = budget[s];
-    const real = slot.map((c) => (c ? (c.length / 2 <= n ? densify(c, n) : resample(c, n)) : null));
+    const real = reals[s];
     const nearestReal = (i: number): Contour => {
       for (let k = 0; k < count; k++) {
         if (i - k >= 0 && real[i - k]) return real[i - k]!;
@@ -411,13 +438,14 @@ export function prepareContours(shapes: Contour[][], opts: { samples?: number } 
       }
       throw new Error("prepareContours: empty slot");
     };
-    const pointAt = (c: Contour): Contour => {
-      const [cx, cy] = centroidOf(c);
+    const pointAt = (i: number): Contour => {
+      const [cx, cy] = centroidOf(nearestReal(i));
+      const [px, py] = (opts.collapse === "into" && nearestVertex(i, cx, cy)) || [cx, cy];
       const out: Contour = [];
-      for (let k = 0; k < n; k++) out.push(cx, cy);
+      for (let k = 0; k < n; k++) out.push(px, py);
       return out;
     };
-    const chain: Contour[] = real.map((c, i) => c ?? pointAt(nearestReal(i)));
+    const chain: Contour[] = real.map((c, i) => c ?? pointAt(i));
     for (let i = 1; i < count; i++) {
       if (real[i] && real[i - 1]) chain[i] = align(chain[i - 1], chain[i]);
     }

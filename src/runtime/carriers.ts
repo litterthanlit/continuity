@@ -162,13 +162,17 @@ function eased(c: Carrier, t: number): number {
   return c.ease(Math.min(1, Math.max(0, p)));
 }
 
-/** Place a carrier for eased progress `e` at scene time `t` (velocity, for squash, comes from its tween). */
+/**
+ * Place a carrier for eased progress `e` at scene time `t` (velocity, for squash, comes from its
+ * tween). It hands over when its tween ends — by time, not value: a spring passes 1 mid-flight.
+ */
 export function renderCarrier(c: Carrier, e: number, t: number) {
-  if (e >= 1) {
+  if (t >= c.start + c.duration - 1e-6) {
     c.el.style.visibility = "hidden";
     return;
   }
-  c.el.style.visibility = "visible";
+  // "inherit", never "visible": an explicit visible would show through its scene when the scene is hidden.
+  c.el.style.visibility = "inherit";
   const [cx, cy] = centre(c, e);
   const D = c.squash ? deformation((u) => centre(c, eased(c, u)), t, c.squash) : [1, 0, 0, 1];
   const deform = "matrix(" + [D[0], D[2], D[1], D[3]].map(f3).join(",") + ",0,0)";

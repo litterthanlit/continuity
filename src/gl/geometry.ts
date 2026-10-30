@@ -10,7 +10,7 @@ const DIVISIONS = 24;
  */
 export function outlineShapes(d: string, size: number): THREE.Shape[] {
   const data = new SVGLoader().parse(`<svg xmlns="http://www.w3.org/2000/svg"><path d="${d.replace(/"/g, "")}"/></svg>`);
-  const shapes = data.paths.flatMap((p) => SVGLoader.createShapes(p));
+  const shapes = data.paths.flatMap((p) => p.toShapes());
   const loops = shapes.map((s) => ({ outer: s.getPoints(DIVISIONS), holes: s.holes.map((h) => h.getPoints(DIVISIONS)) }));
   const box = new THREE.Box2();
   for (const l of loops) for (const p of l.outer) box.expandByPoint(p);
