@@ -2,8 +2,8 @@ import { scene, Stage, Row, Headline } from "continuity";
 import { LEFT } from "../lib/layout.js";
 
 // The feel, in three words, each doing what it says on its beat. Whip. snaps in (1.5 frames,
-// blurred, stretched along its path). Drift. slides the whip's distance slowly on an out ease.
-// Land. types on as it drops in on pop, squashing against the stop.
+// blurred, stretched along its path). Drift. is there at once and slides the whip's distance slowly
+// on an out ease. Land. is there at once and drops in on pop, squashing against the stop.
 export default scene({
   view: ({ text }) => (
     <Stage bg="solid">
@@ -16,8 +16,9 @@ export default scene({
   ),
   motion: (m) => {
     m.enter("w1", "whip", { at: "w1", duration: "slow", squash: 0.3 });
-    m.tween("w2", { x: [160, 0], opacity: [0, 1] }, { at: "w2", ease: "out", duration: "slow", kind: "enter" });
-    m.type("w3", { at: "w3", cps: 30 });
+    // Cut on (opacity in zero time, like the whip's first frame), so neither word fades.
+    for (const w of ["w2", "w3"]) m.tween(w, { opacity: [0, 1] }, { at: w, duration: 0, kind: "enter" });
+    m.tween("w2", { x: [160, 0] }, { at: "w2", ease: "out", duration: "slow", kind: "enter" });
     m.tween("w3", { y: [-96, 0] }, { at: "w3", ease: "pop", duration: "snap", squash: 0.3, kind: "enter" });
   },
 });

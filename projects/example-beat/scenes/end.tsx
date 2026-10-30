@@ -7,11 +7,11 @@ const H = 220;
 const MARK_SIZE = 176;
 const WORD_X = MARK_SIZE + 48;
 
-// The wordmark's outline wipes on with the cut (out: nothing can start earlier) and holds; on the
-// kick on beat 2 it pours into the mark at the lockup's left (text to shape: the C becomes the C,
-// every other letter flows into the mark's nearest edge), fastest on the kick and settling after.
-// The real wordmark types on where the outline was, the line wipes so its fastest frame is the
-// next bar's kick, and the command types last.
+// The wordmark's outline whips up whole with the cut (seen from the cut's first frame; a wipe spent
+// its first frames on the empty mark slot) and holds; on the kick on beat 2 it pours into the mark at
+// the lockup's left (text to shape: the C becomes the C, every other letter flows into the mark's
+// nearest edge), fastest on the kick and settling over the drift. The real wordmark types on
+// where the outline was, the line wipes on the and, and the repo types on the next bar's kick.
 const word = textShape("Continuity", { size: 112, weight: 500 });
 const wb = shapeBounds(word);
 const SHAPES = [
@@ -35,10 +35,10 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    m.enter("mark", "wipeRight", { at: 0, duration: "snap", ease: "out" });
-    m.tween("mark", { morph: [0, 1] }, { at: "morph", ease: "out", duration: "slow", kind: "emphasis" });
+    m.enter("mark", "whip", { at: 0, dir: "up", duration: "slow" });
+    m.tween("mark", { morph: [0, 1] }, { at: "morph", ease: "out", duration: "drift", kind: "emphasis" });
     m.type("word", { at: "word", cps: 30 });
-    m.enter("line", "wipeRight", { at: "line-0.15", duration: "snap", ease: "steep" });
+    m.enter("line", "wipeRight", { at: "line", duration: "snap", ease: "out" });
     m.type("cta", { at: "cta", cps: 30 });
     // litt-allow: ease-linear (a 3% push over 3.9s: inOut's tail falls under a pixel a frame and stair-steps)
     m.camera({ scale: [1, 1.03] }, { ease: "linear", allow: ["ease-linear"] });
