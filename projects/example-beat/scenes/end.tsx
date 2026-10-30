@@ -9,9 +9,9 @@ const WORD_X = MARK_SIZE + 48;
 
 // The wordmark's outline whips up whole with the cut (seen from the cut's first frame; a wipe spent
 // its first frames on the empty mark slot) and holds; on the kick on beat 2 it pours into the mark at
-// the lockup's left (text to shape: the C becomes the C, every other letter flows into the mark's
-// nearest edge), fastest on the kick and settling over the drift. The real wordmark types on
-// where the outline was, the line wipes on the and, and the repo types on the next bar's kick.
+// the lockup's left (text to shape: the C becomes the C, every other letter shrinks away where it
+// stands), fastest on the kick and settling over the drift. The real wordmark types back on
+// where the outline was once the mark has cleared it, the line wipes on the and, and the repo types on the next bar's kick.
 const word = textShape("Continuity", { size: 112, weight: 500 });
 const wb = shapeBounds(word);
 const SHAPES = [
@@ -23,7 +23,7 @@ export default scene({
   view: ({ text, width, height }) => (
     <Stage bg="lit">
       <div class="absolute" style={`left:${(width - W) / 2}px;top:${(height - H) / 2}px;width:${W}px;height:${H}px`}>
-        <Morph ct="mark" shapes={SHAPES} samples={600} collapse="into" viewBox={`0 0 ${W} ${H}`} width={W} height={H} class="absolute left-0 top-0" />
+        <Morph ct="mark" shapes={SHAPES} samples={1200} collapse="in-place" viewBox={`0 0 ${W} ${H}`} width={W} height={H} class="absolute left-0 top-0" />
         <div class="absolute flex flex-col gap-[16px]" style={`left:${WORD_X}px;top:0;height:${H}px;justify-content:center`}>
           <Headline ct="word" class="whitespace-nowrap">{text.word}</Headline>
           <Body ct="line" class="whitespace-nowrap">{text.line}</Body>

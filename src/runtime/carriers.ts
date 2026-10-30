@@ -183,10 +183,6 @@ export function prepareCarriers(host: CarrierHost): Map<HTMLElement, Carrier> {
 }
 
 const lerp = (a: number, b: number, e: number) => a + (b - a) * e;
-const smooth = (a: number, b: number, x: number) => {
-  const u = Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return u * u * (3 - 2 * u);
-};
 const f3 = (n: number) => String(Math.round(n * 1000) / 1000);
 
 /** Centre of the carrier at eased progress e: a straight line, bent by `arc` (a share of its length). */
@@ -241,9 +237,9 @@ export function renderCarrier(c: Carrier, e: number, t: number) {
     s.el.style.borderWidth = f3(lerp(s.borderWidth[0], s.borderWidth[1], e)) + "px";
     s.el.style.borderRadius = f3(lerp(s.radius[0], s.radius[1], e)) + "px";
   }
-  // The copy swaps halfway, over about a frame of a fast move, on the shell: a long cross-dissolve
-  // read as a double exposure, and a gap between the two sides left the card empty.
-  const swap = smooth(0.4, 0.6, e);
+  // The copy swaps at halfway, a hard step on the moving shell: any cross-dissolve, however short,
+  // left a frame of text over text, and a gap between the two sides left the card empty.
+  const swap = e >= 0.5 ? 1 : 0;
   for (const [s, o] of [
     [c.a, 1 - swap],
     [c.b, swap],

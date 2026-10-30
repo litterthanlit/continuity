@@ -105,10 +105,10 @@ time the runtime measures the outgoing element where the cut starts and the inco
 it lands, through cameras and all. After that, every frame is a pure function of the carrier's
 `match` channel. The carrier travels between the two rectangles (bent by `arc`, deformed by
 `squash`). Under the clones travels a shell: the container's fill, border and corner radius,
-interpolated from one end to the other. The content swaps on top of it over a short crossfade
-centred on halfway (0.4–0.6 of the carrier's progress), about one frame of a fast move. A long
-cross-dissolve of two sets of copy read as a double exposure, a swap with a gap between the
-sides left the card empty, and a swap without the shell blinked the card out. The rest of the incoming scene crossfades in under the
+interpolated from one end to the other. The content swaps on top of it in one step at halfway,
+on a shell that is moving at its fastest. Every softer version failed a critic frame by frame: a
+long cross-dissolve read as a double exposure, a gap between the sides left the card empty, and a
+crossfade one frame long still left one frame of text over text. The rest of the incoming scene crossfades in under the
 carrier. When both sides are `<Shape>`s, the carrier morphs the outline in frame space instead.
 
 A pair must be at rest at the handoff. The carrier clones the element as built, so a child with

@@ -7,7 +7,7 @@ import { MARK } from "../lib/mark.js";
 // push under the flat mark rasterised its edge differently per worker (ADR 0009 §4).
 // The moves on the music ease out, so their fastest frame is the beat.
 // MATCH: the mark's offset and scale that put it where the neon shot left it (centre, ~576px).
-const MATCH = { x: 281, scale: 3.84 };
+const MATCH = { x: 272, scale: 3.84 };
 export default scene({
   view: ({ text }) => (
     <Stage bg="lit">
