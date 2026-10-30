@@ -173,7 +173,7 @@
       "text": {
         "label": "audio vs picture, measured on the render",
         "value": "0 ms",
-        "note": "median offset · 39 of 39 hits"
+        "note": "median offset · 41 of 41 hits"
       },
       "elements": [
         {
