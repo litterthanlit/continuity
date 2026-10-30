@@ -321,7 +321,9 @@ time. This is the energetic register's toolkit; the look stays litt.
 ### Whip and drift
 `m.enter(id, "whip", { at: "beat:1", dir: "left", duration: "slow" })`: 85% of the travel in
 ~1.5 frames, blurred, then a slow drift that comes to rest — the element is alive while it is
-read. Use it for type and cards that arrive *on* the beat. `duration` is the drift: `slow` (0.6)
+read. Its first frame is already the smear (full opacity, peak blur), so a whip on a cut opens
+the scene with the element, never on an empty frame. For a word that should drift or land rather
+than whip, cut it on (`opacity: [0, 1]` with `duration: 0`) and move it: a fade reads as a fade. Use it for type and cards that arrive *on* the beat. `duration` is the drift: `slow` (0.6)
 for UI that must glance-read inside a bar, `drift` (1s) for a hero, `expressive` (0.35) when the
 copy needs its read time. Distance up to 160px (`distance`). Never whip an exit; never whip in a
 calm scene (`ease-register`).
@@ -355,12 +357,20 @@ becomes a window.
 The logo film form: the same mark, a different material every two beats, a flat lockup at the
 end. `<Gl>` shots are data — `extrude` a mark, give it `chrome`, `glass` or `neon` — and the light
 is litt's: from above, a horizon line across chrome, the accent as neon light with bloom.
-- One idea per shot: chrome whips round to face us; glass bends a line of type behind it (glass
-  needs a `plane` card to refract — two big lines in `fg` ink, so the bevels bend letters); neon
-  glows (bloom threshold below the tube's brightest channel).
+- One idea per shot: chrome whips round to face us; glass bends what is behind it (glass needs a
+  `plane` card to refract: litt's `grid` reads as glass at once and keeps the mark the subject;
+  type behind glass competes with the mark and the bevels garble it); neon glows (bloom threshold
+  below the tube's brightest channel).
+- Chrome is what it reflects: land its face turned slightly *up* (`rotateX` a little negative), so
+  the studio's horizon line crosses it. Tilted down, it mirrors the floor and reads as black.
+- One finish across the cut: the same `grain` and `vignette` on every shot.
+- The match cut out of the last shot: open the flat mark at the GL mark's size and place, hold a
+  beat, then move it into the lockup on an `out` ease. Hold the end card still after that: a
+  camera push under a flat SVG that was just drawn at another scale rasterises differently per
+  worker (ADR 0009 §4).
 - Move the object or the camera (`shot-camera`), never the material: there is no channel for it.
-- Each GL frame costs 70–150 ms to render. Use material shots for the logo and the hero, not for
-  UI; keep a GL film short.
+- Each GL frame costs roughly 60–200 ms to render, depending on the machine (ADR 0009 §5). Use
+  material shots for the logo and the hero, not for UI; keep a GL film short.
 
 ## Recipes
 `recipes.md`: statement, label + statement + summary, feature list, stat, product placed,

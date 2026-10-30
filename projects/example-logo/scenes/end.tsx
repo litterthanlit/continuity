@@ -3,7 +3,8 @@ import { MARK } from "../lib/mark.js";
 
 // The lockup, flat and centred: litt's one centred statement, the logo film's last word. A match
 // cut: the mark opens at the neon mark's size and place, holds a beat, then flies into the lockup.
-// The wordmark types on the "and", the line wipes on the bar; the camera's push carries the hold.
+// The wordmark types on the "and", the line wipes on the bar, and the card holds still: a camera
+// push under the flat mark rasterised its edge differently per worker (ADR 0009 §4).
 // The moves on the music ease out, so their fastest frame is the beat.
 // MATCH: the mark's offset and scale that put it where the neon shot left it (centre, ~576px).
 const MATCH = { x: 281, scale: 3.84 };
@@ -25,6 +26,5 @@ export default scene({
     m.tween("mark", { x: [MATCH.x, 0], scale: [MATCH.scale, 1] }, { at: "move", ease: "out", duration: "snap", allow: ["travel-too-far"] }); // litt-allow: travel-too-far (a match carrier, not an entrance)
     m.type("word", { at: "word", cps: 30 });
     m.enter("line", "wipeRight", { at: "line", duration: "snap", ease: "out" });
-    m.camera({ scale: [1, 1.03] });
   },
 });

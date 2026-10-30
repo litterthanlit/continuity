@@ -50,6 +50,11 @@ when it hears a pickup or half time.
   the first frame at or after its start, and the analysed beat at 1.002 s first showed the next
   scene on frame 31, a whole frame late. The end rounds down onto the frame's time (62/30 must
   not become 2.0667).
+- Moves on the music land on frames too: story beats, `beat:`/`bar:`/`hit:` refs and `snap` all
+  go through one `onFrame`. With only the cut rounded, a scene started on its frame (3.8666 s)
+  and its beat-0 entrance at the analysed 3.8670 s, so every cut opened on an empty frame.
+  Halfway between two frames (an eighth at 120 bpm and 30 fps) takes the earlier one: sound a
+  little after the picture reads as in sync, before it does not (ITU-R BT.1359).
 - A story beat's `at` may be `{ "beat": 2 }` (fractional for off-beats), `{ "bar": 1 }` or
   `{ "hit": 0 }`, counted from the scene's start.
 - Motion code can write `"beat:4"`, `"bar:1"` and `"hit:0"` (with offsets, as `"beat:4-0.05"`),
@@ -83,8 +88,9 @@ beat: they read as late, not as syncopated.
   (about 1.5 frames at 30 fps), the rest drifts on a quadratic ease-out that comes to rest at the
   end. The token keeps the snap at 0.05 s whatever the tween's duration. Its natural duration is
   the new `drift` token (1 s).
-- Enter preset `whip` (`dir`, `distance` default 160) adds a directional motion-blur bell timed to
-  the snap only.
+- Enter preset `whip` (`dir`, `distance` default 160) is seen on its first frame as a smear: full
+  opacity and its peak directional blur, which falls away over the snap. Fading up from nothing,
+  a whip on a cut opened the scene on a blank frame.
 - Tween option `squash` (0–0.5) stretches an element along its velocity and squashes it against
   its acceleration, keeping its area. The runtime computes both from the element's own x/y motion
   at each frame, so it stays a pure function of t.
@@ -99,10 +105,10 @@ time the runtime measures the outgoing element where the cut starts and the inco
 it lands, through cameras and all. After that, every frame is a pure function of the carrier's
 `match` channel. The carrier travels between the two rectangles (bent by `arc`, deformed by
 `squash`). Under the clones travels a shell: the container's fill, border and corner radius,
-interpolated from one end to the other. The content swaps on top of it in sequence, the
-outgoing clone out over the first half and the incoming one in over the second. A
-cross-dissolve of two sets of copy read as a double exposure, and a swap without the shell
-blinked the card out for two frames. The rest of the incoming scene crossfades in under the
+interpolated from one end to the other. The content swaps on top of it over a short crossfade
+centred on halfway (0.4–0.6 of the carrier's progress), about one frame of a fast move. A long
+cross-dissolve of two sets of copy read as a double exposure, a swap with a gap between the
+sides left the card empty, and a swap without the shell blinked the card out. The rest of the incoming scene crossfades in under the
 carrier. When both sides are `<Shape>`s, the carrier morphs the outline in frame space instead.
 
 A pair must be at rest at the handoff. The carrier clones the element as built, so a child with
@@ -125,7 +131,8 @@ incoming scene's carrier over the outgoing scene, and `ct check` caught it as oc
   the right choice for an O into an I. `"into"` pours it into the nearest point of the other
   shape, the right choice for a word into a mark. A lone contour collapses over the first 60% of
   the step and grows over the last 60%: shrinking all the way, a word's letters hung about as a
-  tiny stray caption.
+  tiny stray caption. A lone hole closes where it is, even under `"into"`: poured into the
+  other shape, the o's counter bit a crescent out of the mark's dot.
 - Shapes fill nonzero, SVG's default and the rule fonts are drawn for. Under even-odd, Geist's t
   (its stem and bar overlap) had a hole where they cross. Nonzero makes orientation matter, so
   each shape is first turned so its outer contours run positive (a whole-shape flip fills the

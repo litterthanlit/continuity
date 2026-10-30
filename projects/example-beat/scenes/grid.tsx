@@ -14,7 +14,7 @@ export default scene({
           <Label ct="bpm" class="font-mono">{text.bpm}</Label>
           <div class="flex h-[220px] items-center gap-[12px]">
             {LEVELS.map((v, i) => (
-              <El ct={`b${i}`} class="flex-1 rounded-control bg-current text-fg-muted" style={{ height: `${Math.round(v * 100)}%` }} data-layout-ignore key={i} />
+              <El ct={`b${i}`} class="flex-1 bg-current text-fg-muted" style={{ height: `${Math.round(v * 100)}%` }} data-layout-ignore key={i} />
             ))}
           </div>
           <div class="flex">

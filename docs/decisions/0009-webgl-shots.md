@@ -64,6 +64,21 @@ most 4 levels). We bisected it on a throwaway project. It was not text, not Chro
 `overflow: visible` on the SVG. Clipped, every frame matched. 0008 §7 records the rule and the
 lint that now enforces it.
 
+The same class came back twice, on the DOM side, and both times the GL shots matched:
+
+- **A camera push over a flat SVG.** With a 3% push under the end card, 4 of 180 frames differed
+  (1–5 levels on 8–22 edge pixels of the mark). The mark had just been drawn at 3.84× by the
+  match cut on one worker and never on the other, and Chrome's raster of a layer whose scale keeps
+  changing depends on what it drew before. The end card now holds still: 180 of 180.
+- **Colour changes on rounded shapes inside a layer.** The beat film's level bars light up one
+  per sixteenth inside a window that whipped in. Chrome re-draws only the changed rectangle into
+  the tile it already has, and the anti-aliased rounded corners came out 1 level different from a
+  tile drawn whole: 14 consecutive frames at the start of a worker's chunk, 48 corner pixels each.
+  Square bars: 407 of 407. HyperFrames' Chrome flags have no hook for `--disable-partial-raster`.
+- One run of the beat film had a single frame differ that the next run did not reproduce: a
+  timing-dependent difference, not a history-dependent one. `gl-bench --determinism` is the
+  record; run it more than once before trusting a film.
+
 ### 5. Performance, measured
 
 The budget is the in-page cost of one GL frame at 1080p in SwiftShader on a 4 vCPU container.
@@ -114,14 +129,19 @@ may want fewer workers.
   averaged over the faces that meet within 40°, and the caps stay flat (their long thin triangles
   streak with any tilt). Doubling the curve and bevel samples as well cost chrome 45 ms and glass
   30 ms for no visible gain, so the sample counts stayed.
-- **`chrome`.** Physical metal, roughness 0.08, clearcoat 0.6.
+- **`chrome`.** Metal, roughness 0.08. The first cut had a clearcoat; once the face was turned to
+  catch the studio's horizon it added nothing visible, and dropping it paid for grain and
+  vignette (16 ms on container B). Tilted down 6°, the face mirrored the dark floor and read as
+  black lacquer: chrome needs its face turned toward the light it reflects.
 - **`glass`.** When the shot has a backdrop card, the view ray refracts into the glass (per colour
   channel, for dispersion), crosses a slab of the glass's thickness, leaves parallel to where it
   entered, and samples the card. Reflections come from three's own Fresnel-weighted environment.
   Without a card it falls back to three's transmission, which is about 400 ms a frame. Dispersion
-  is 0.03: at 0.08 every bevel carried RGB fringes. The card itself is not tone mapped, so its
-  canvas colour matches the other shots' background (tone mapped, it rendered at 3.8 against 12.8
-  and dipped at both cuts).
+  is 0.03: at 0.08 every bevel carried RGB fringes. Neither the card nor the light that passes
+  through the glass is tone mapped (only the reflections are), so clear glass never sits below the
+  canvas; tone mapped, the card rendered at 3.8 against 12.8 and dipped at both cuts. Where the
+  ray totally internally reflects, it takes the background colour: a mirrored ray drew an orange
+  comb.
 - **`neon`.** Tubes along every contour of the outline, in the accent at HDR intensity. Bloom
   thresholds on the brightest channel, not luminance: a saturated blue at 4× is only 0.53
   luminance, and the first neon shot never bloomed.
@@ -133,7 +153,11 @@ shot on near-white.
 
 ### 7. Post: bloom now; the full-frame passes later
 
-`post: { bloom, vignette, grain }`. Grain is hashed from the pixel, never from time. Chromatic
+`post: { bloom, vignette, grain }`. Grain is hashed from the pixel, never from time. Without bloom
+the overlay is compiled without its three bloom reads per pixel, so grain and vignette cost one
+blended full-frame pass (16–19 ms on container B). A preprocessor line written on the same line as
+other GLSL failed to compile, and every shot rendered with no post at all; the timings improved
+and only the stills showed it. Chromatic
 aberration, glitch, displacement and depth of field all need the whole frame as a texture: the
 scene rendered into a full-size target (about 40 ms a frame in software, more in half float) and
 read back by the pass. They are deferred until that cost is decided. Running them over DOM scenes
