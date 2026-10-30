@@ -5,8 +5,9 @@
  * At prepare time each end of the cut is measured once — the outgoing element where the cut
  * starts, the incoming one where it lands, cameras and all — so every frame after that is a
  * pure function of the carrier's `match` channel: no layout is read while frames render.
- * Two shapes (`<Shape>` / `<Morph>`) morph their outline in frame space; anything else travels as
- * a pair of clones that cross-dissolve on the way.
+ * Two shapes (`<Shape>` / `<Morph>`) morph their outline in frame space. Anything else travels as
+ * a shell (the container: its fill, border and radius, interpolated) with the two clones' content
+ * swapping on top of it, so the card stays solid while its copy changes.
  */
 import { easeFn } from "../motion/easing.js";
 import { deformation, type CompiledScene } from "../motion/evaluate.js";
@@ -33,10 +34,20 @@ interface ShapeCarrier {
   fills: [number[], number[]];
 }
 
+/** The container that travels between the two: fill, border and corner radius at each end (frame px). */
+interface Shell {
+  el: HTMLElement;
+  fill: [number[], number[]];
+  border: [number[], number[]];
+  borderWidth: [number, number];
+  radius: [number, number];
+}
+
 export interface Carrier {
   el: HTMLElement;
   a: Side;
   b: Side;
+  shell?: Shell;
   arc: number;
   squash: number;
   /** The carrier's own tween: progress → eased value, for the velocity squash reads. */
@@ -73,6 +84,19 @@ function frameContours(svg: Element, root: DOMRect): Contour[] | undefined {
   const m = path?.getScreenCTM();
   if (!path || !m) return undefined;
   return mapContours(parsePath(path.getAttribute("d") ?? ""), (x, y) => [m.a * x + m.c * y + m.e - root.left, m.b * x + m.d * y + m.f - root.top]);
+}
+
+let probe: CanvasRenderingContext2D | null | undefined;
+
+/** Any CSS colour as sRGB bytes and alpha 0..1, through a 1×1 canvas (computed styles can be oklch or color-mix). */
+function rgba(css: string): number[] {
+  probe ??= Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true });
+  if (!probe) return [0, 0, 0, 0];
+  probe.clearRect(0, 0, 1, 1);
+  probe.fillStyle = css;
+  probe.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+  return [r, g, b, a / 255];
 }
 
 function rgb(css: string): number[] {
@@ -119,6 +143,25 @@ export function prepareCarriers(host: CarrierHost): Map<HTMLElement, Carrier> {
       duration: tween.duration,
       ease: easeFn(tween.ease),
     };
+    // A shell under the clones, when either end is a filled or bordered container.
+    const styleA = getComputedStyle(A);
+    const styleB = getComputedStyle(B);
+    const fill: [number[], number[]] = [rgba(styleA.backgroundColor), rgba(styleB.backgroundColor)];
+    const border: [number[], number[]] = [rgba(styleA.borderTopColor), rgba(styleB.borderTopColor)];
+    // Radius and border scale with the element's on-screen size (a camera may have scaled it).
+    const onScreen = (px: string, r: Rect, lw: number) => (parseFloat(px) || 0) * (r.w / Math.max(1, lw));
+    if (!(outlineA && outlineB) && (fill[0][3] > 0 || fill[1][3] > 0 || border[0][3] > 0 || border[1][3] > 0)) {
+      const shell = document.createElement("div");
+      shell.setAttribute("style", "position:absolute;left:0;top:0;box-sizing:border-box;border-style:solid");
+      el.insertBefore(shell, el.firstChild);
+      c.shell = {
+        el: shell,
+        fill,
+        border,
+        borderWidth: [onScreen(styleA.borderTopWidth, rectA, c.a.lw), onScreen(styleB.borderTopWidth, rectB, c.b.lw)],
+        radius: [onScreen(styleA.borderTopLeftRadius, rectA, c.a.lw), onScreen(styleB.borderTopLeftRadius, rectB, c.b.lw)],
+      };
+    }
     if (outlineA && outlineB) {
       const NS = "http://www.w3.org/2000/svg";
       const svg = document.createElementNS(NS, "svg");
@@ -187,6 +230,17 @@ export function renderCarrier(c: Carrier, e: number, t: number) {
   }
   const w = lerp(c.a.rect.w, c.b.rect.w, e);
   const h = lerp(c.a.rect.h, c.b.rect.h, e);
+  if (c.shell) {
+    const s = c.shell;
+    const mix = (pair: [number[], number[]]) => "rgba(" + pair[0].map((v, i) => (i < 3 ? Math.round(lerp(v, pair[1][i], e)) : f3(lerp(v, pair[1][i], e)))).join(",") + ")";
+    s.el.style.width = f3(w) + "px";
+    s.el.style.height = f3(h) + "px";
+    s.el.style.transform = "translate(" + f3(cx) + "px," + f3(cy) + "px) " + deform + " translate(" + f3(-w / 2) + "px," + f3(-h / 2) + "px)";
+    s.el.style.backgroundColor = mix(s.fill);
+    s.el.style.borderColor = mix(s.border);
+    s.el.style.borderWidth = f3(lerp(s.borderWidth[0], s.borderWidth[1], e)) + "px";
+    s.el.style.borderRadius = f3(lerp(s.radius[0], s.radius[1], e)) + "px";
+  }
   // One side at a time: two sets of copy at half opacity read as a double exposure.
   for (const [s, o] of [
     [c.a, 1 - smooth(0.2, 0.5, e)],

@@ -193,6 +193,19 @@ describe("morph", () => {
     }
   });
 
+  it("a contour with no counterpart is gone early and grows late, so it never hangs about small", () => {
+    const two = parsePath(`${rect(0, 0, 200, 200)} ${rect(300, 0, 100, 100)}`);
+    const one = parsePath(rect(0, 0, 200, 200));
+    const lone = (cs: Contour[]) => Math.min(...cs.map((c) => Math.abs(areaOf(c))));
+    const out = prepareContours([two, one]);
+    expect(lone(morphAt(out, 0.3))).toBeGreaterThan(0);
+    expect(lone(morphAt(out, 0.6))).toBeLessThan(1e-9);
+    const back = prepareContours([one, two]);
+    expect(lone(morphAt(back, 0.4))).toBeLessThan(1e-9);
+    expect(lone(morphAt(back, 0.7))).toBeGreaterThan(0);
+    expect(lone(morphAt(back, 1))).toBeCloseTo(10000, 6);
+  });
+
   it("an outline drawn the other way round fills the same", () => {
     const cw = parsePath(`${rect(0, 0, 200, 200)} M70 70v60h60v-60z`);
     const ccw = parsePath(`M0 0v200h200v-200z ${rect(70, 70, 60, 60)}`);

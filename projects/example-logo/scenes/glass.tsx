@@ -1,22 +1,23 @@
 import { scene, Stage, Gl } from "continuity";
 import { MARK } from "../lib/mark.js";
 
-// Glass needs something to bend: a line of type on a card behind it. The mark turns slowly
-// through the shot, so the refraction moves while the material stays still.
+// Glass needs something to bend: the tagline on a card behind it, smaller than the mark so the
+// mark leads. The whip sweeps the refraction across the type on the hit; the material stays still.
+// The card overfills the frame so the orbit never shows its edge.
 export default scene({
-  view: () => (
+  view: ({ text }) => (
     <Stage bg="none">
       <Gl
         ct="shot"
         objects={[
-          { ct: "type", geometry: { kind: "plane", width: 2400, height: 1350, texture: { text: "motion,\nas code", size: 340, ink: "fg" } }, material: { preset: "satin" }, z: -420 },
-          { ct: "mark", geometry: { kind: "extrude", path: MARK, size: 560, depth: 170, bevel: 18 }, material: { preset: "glass" } },
+          { ct: "type", geometry: { kind: "plane", width: 2880, height: 1620, texture: { text: text.type, size: 220, ink: "fg-muted" } }, material: { preset: "satin" }, z: -420 },
+          { ct: "mark", geometry: { kind: "extrude", path: MARK, size: 560, depth: 170, bevel: 8 }, material: { preset: "glass" } },
         ]}
       />
     </Stage>
   ),
   motion: (m) => {
-    m.tween("mark", { rotateY: [18, -14] }, { at: "hit", ease: "whip", duration: 1, kind: "enter" });
-    m.tween("shot-camera", { rotateY: [-4, 3] }, { at: 0, ease: "inOut", duration: 1, kind: "camera" });
+    m.tween("mark", { rotateY: [48, -14] }, { at: "hit", ease: "whip", duration: 1, kind: "enter" });
+    m.tween("shot-camera", { rotateY: [-4, 3] }, { at: 0, ease: "out", duration: 1, kind: "camera" });
   },
 });

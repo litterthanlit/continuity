@@ -89,14 +89,19 @@
           "id": "t0",
           "role": "decor",
           "note": "t0–t3: beat ticks, each brightens on its beat"
+        },
+        {
+          "id": "b0",
+          "role": "decor",
+          "note": "b0–b15: the bar's sixteenths, each lights on its own sixteenth, so the beat shows with the sound off"
         }
       ],
-      "motion": "The window whips up on the downbeat; each beat tick steps to fg on its beat (ink, instant). Cut on the bar."
+      "motion": "The window whips up on the downbeat; the level bars light one per sixteenth and each beat tick steps to fg on its beat (ink, instant). Cut on the bar."
     },
     {
       "id": "cards",
       "duration": {
-        "beats": 5
+        "beats": 4
       },
       "intent": "What it does with the beat: cuts, hits, holds — each card whipping in on its kick.",
       "beats": [
@@ -109,21 +114,14 @@
         {
           "id": "c2",
           "at": {
-            "beat": 0.5
+            "beat": 0.25
           }
         },
         {
           "id": "c3",
           "at": {
-            "beat": 1
+            "beat": 0.5
           }
-        },
-        {
-          "id": "boom",
-          "at": {
-            "beat": 4
-          },
-          "note": "the morph starts on the bar-3 boom"
         }
       ],
       "text": {
@@ -152,7 +150,7 @@
           "note": "carries the cut: morphs into the stat tile"
         }
       ],
-      "motion": "Three cards whip in from the right on eighths (beats 0, ½, 1), blurred snap, squash. Hold. On the bar's boom (beat 4) the last card carries the cut into the stat tile.",
+      "motion": "Three cards whip in from the right on sixteenths (beats 0, ¼, ½), blurred snap, squash. Hold. The cut is the bar's boom (5.81s): the last card is carried into the stat tile, fastest on the boom and settling after (out), so the carry is seen.",
       "transition": {
         "type": "morph",
         "pairs": [
@@ -162,28 +160,27 @@
           ]
         ],
         "duration": 0.48,
-        "ease": "steep",
-        "squash": 0.2
+        "ease": "out"
       }
     },
     {
       "id": "stat",
       "duration": {
-        "beats": 3
+        "beats": 4
       },
       "intent": "The proof, as a number: the render's own audio lands within milliseconds of the picture.",
       "beats": [],
       "text": {
         "label": "audio vs picture, measured on the render",
         "value": "0 ms",
-        "note": "median offset · 8 of 8 hits"
+        "note": "median offset · 39 of 39 hits"
       },
       "elements": [
         {
           "id": "tile",
           "role": "ui",
           "anchor": "B2:E5",
-          "note": "arrives from the card via the morph"
+          "note": "arrives from the card via the morph; c3's aspect (768×304), so the copy never stretches in flight"
         },
         {
           "id": "value",
@@ -240,7 +237,7 @@
           "anchor": "E3"
         }
       ],
-      "motion": "Each word whips in on its beat with squash and stretch; motion blur on the snap. Cut on the bar."
+      "motion": "Each word does what it says on its beat: Whip. snaps in (1.5 frames, blurred, stretched); Drift. slides in slowly on an out ease; Land. drops in on pop and squashes as it lands."
     },
     {
       "id": "end",
@@ -252,8 +249,9 @@
         {
           "id": "morph",
           "at": {
-            "beat": 1
-          }
+            "beat": 2
+          },
+          "note": "the kick on beat 2"
         },
         {
           "id": "word",
@@ -265,12 +263,20 @@
           "id": "line",
           "at": {
             "beat": 4
+          },
+          "note": "the next bar's kick"
+        },
+        {
+          "id": "cta",
+          "at": {
+            "beat": 5
           }
         }
       ],
       "text": {
         "word": "Continuity",
-        "line": "Motion, on the beat."
+        "line": "Motion, on the beat.",
+        "cta": "npx ct beats"
       },
       "elements": [
         {
@@ -286,9 +292,14 @@
         {
           "id": "line",
           "role": "caption"
+        },
+        {
+          "id": "cta",
+          "role": "cta",
+          "note": "the command, mono, in the grey"
         }
       ],
-      "motion": "The outline of 'Continuity' sits centred; on beat 1 it morphs into the mark (expressive) and slides left; the wordmark types on beat 3; the line wipes on beat 4 (the next bar). 3% push."
+      "motion": "The outline of 'Continuity' wipes on with the cut and holds two beats; on the kick on beat 2 it pours into the mark (fast on the kick, settling after); the wordmark types on beat 3; the line wipes so its fastest frame is the next bar's kick; the command types on beat 5. A linear 3% push."
     }
   ]
 }

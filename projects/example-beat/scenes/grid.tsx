@@ -3,8 +3,9 @@ import { scene, Stage, Window, Label, El } from "continuity";
 /** The track's level, a bar of sixteenths (fixed data: the frame is a function of time, not of chance). */
 const LEVELS = [0.92, 0.3, 0.55, 0.28, 0.86, 0.32, 0.6, 0.3, 0.9, 0.34, 0.58, 0.3, 0.84, 0.36, 0.62, 0.4];
 
-// The machine listening: this track's bar in a window, its four beats lighting one by one —
-// each tick steps from the grey to fg on its own beat.
+// The machine listening: this track's bar in a window. Its sixteen level bars light one per
+// sixteenth and its four ticks step from the grey to fg on their beats, so the beat shows with
+// the sound off.
 export default scene({
   view: ({ text }) => (
     <Stage bg="grid">
@@ -13,7 +14,7 @@ export default scene({
           <Label ct="bpm" class="font-mono">{text.bpm}</Label>
           <div class="flex h-[220px] items-center gap-[12px]">
             {LEVELS.map((v, i) => (
-              <div class="flex-1 rounded-control bg-fg/30" style={{ height: `${Math.round(v * 100)}%` }} data-layout-ignore key={i} />
+              <El ct={`b${i}`} class="flex-1 rounded-control bg-current text-fg-muted" style={{ height: `${Math.round(v * 100)}%` }} data-layout-ignore key={i} />
             ))}
           </div>
           <div class="flex">
@@ -30,5 +31,6 @@ export default scene({
   motion: (m) => {
     m.enter("win", "whip", { at: "in", dir: "up", duration: "slow" });
     for (let i = 0; i < 4; i++) m.emphasize(`t${i}`, "ink", { at: `beat:${i}` });
+    LEVELS.forEach((_, i) => m.emphasize(`b${i}`, "ink", { at: `beat:${i / 4}` }));
   },
 });

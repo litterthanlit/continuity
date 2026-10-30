@@ -1,4 +1,4 @@
-import { scene, Stage, Morph, Headline, Body, placeShape, shapeBounds, textShape } from "continuity";
+import { scene, Stage, Morph, Headline, Body, Label, placeShape, shapeBounds, textShape } from "continuity";
 import { MARK } from "../lib/mark.js";
 
 /** The lockup's box, centred: the mark (176) + 48 + the wordmark. */
@@ -7,10 +7,11 @@ const H = 220;
 const MARK_SIZE = 176;
 const WORD_X = MARK_SIZE + 48;
 
-// The wordmark's outline wipes on where the wordmark will sit; on beat 1 it pours into the mark
-// at the lockup's left (text → shape: the C becomes the C, every other letter flows into the
-// mark's nearest edge), fastest on the beat and settling after; the real wordmark types on where
-// the outline was, and the line lands on the next bar.
+// The wordmark's outline wipes on with the cut (out: nothing can start earlier) and holds; on the
+// kick on beat 2 it pours into the mark at the lockup's left (text to shape: the C becomes the C,
+// every other letter flows into the mark's nearest edge), fastest on the kick and settling after.
+// The real wordmark types on where the outline was, the line wipes so its fastest frame is the
+// next bar's kick, and the command types last.
 const word = textShape("Continuity", { size: 112, weight: 500 });
 const wb = shapeBounds(word);
 const SHAPES = [
@@ -28,13 +29,18 @@ export default scene({
           <Body ct="line" class="whitespace-nowrap">{text.line}</Body>
         </div>
       </div>
+      <Label ct="cta" class="absolute bottom-[192px] left-1/2 -translate-x-1/2 whitespace-nowrap font-mono">
+        {text.cta}
+      </Label>
     </Stage>
   ),
   motion: (m) => {
-    m.enter("mark", "wipeRight", { at: 0, duration: "snap", ease: "steep" });
+    m.enter("mark", "wipeRight", { at: 0, duration: "snap", ease: "out" });
     m.tween("mark", { morph: [0, 1] }, { at: "morph", ease: "out", duration: "slow", kind: "emphasis" });
     m.type("word", { at: "word", cps: 30 });
-    m.enter("line", "wipeRight", { at: "line", duration: "snap", ease: "steep" });
-    m.camera({ scale: [1, 1.03] });
+    m.enter("line", "wipeRight", { at: "line-0.15", duration: "snap", ease: "steep" });
+    m.type("cta", { at: "cta", cps: 30 });
+    // litt-allow: ease-linear (a 3% push over 3.9s: inOut's tail falls under a pixel a frame and stair-steps)
+    m.camera({ scale: [1, 1.03] }, { ease: "linear", allow: ["ease-linear"] });
   },
 });

@@ -1,9 +1,11 @@
 import { scene, Stage, Center, Row, Stack, Headline, Body, Shape } from "continuity";
 import { MARK } from "../lib/mark.js";
 
-// The lockup, flat and centred — litt's one centred statement, the logo film's last word. The
-// mark lands with the kick, the wordmark types on the "and", the line wipes on the next beat;
-// the camera's push carries the hold.
+// The lockup, flat and centred: litt's one centred statement, the logo film's last word. A match
+// cut: the mark opens at the neon mark's size and place, holds a beat, then flies into the lockup.
+// The wordmark types on the "and", the line wipes on the bar; the camera's push carries the hold.
+// MATCH: the mark's offset and scale that put it where the neon shot left it (centre, ~576px).
+const MATCH = { x: 281, scale: 3.84 };
 export default scene({
   view: ({ text }) => (
     <Stage bg="lit">
@@ -19,7 +21,7 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    m.enter("mark", "settle", { at: "b1", ease: "pop" });
+    m.tween("mark", { x: [MATCH.x, 0], scale: [MATCH.scale, 1] }, { at: "move", ease: "steep", duration: "snap", allow: ["travel-too-far"] }); // litt-allow: travel-too-far (a match carrier, not an entrance)
     m.type("word", { at: "word", cps: 30 });
     m.enter("line", "wipeRight", { at: "line", duration: "snap", ease: "steep" });
     m.camera({ scale: [1, 1.03] });

@@ -13,7 +13,7 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    m.tween("mark", { rotateX: [-10, 0], rotateY: [8, 0] }, { at: "hit", ease: "whip", duration: 1, kind: "enter" });
+    m.tween("mark", { rotateX: [-12, 0], rotateY: [40, 0] }, { at: "hit", ease: "whip", duration: 1, kind: "enter" });
     m.tween("shot-camera", { z: [0, 140] }, { at: 0, ease: "out", duration: 1, kind: "camera" });
   },
 });

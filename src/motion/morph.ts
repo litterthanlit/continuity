@@ -505,8 +505,20 @@ export function morphAt(data: MorphData, v: number): Contour[] {
   const b = data.shapes[i + 1];
   return a.map((c, s) => {
     const d = b[s];
+    // A contour with no counterpart collapses over the first LONE of the step and grows over the
+    // last: shrinking all the way, the letters a word pours away read as a tiny stray caption.
+    const u = isPoint(d) ? Math.min(1, t / LONE) : isPoint(c) ? Math.max(0, (t - (1 - LONE)) / LONE) : t;
     const out: Contour = new Array<number>(c.length);
-    for (let k = 0; k < c.length; k++) out[k] = c[k] + (d[k] - c[k]) * t;
+    for (let k = 0; k < c.length; k++) out[k] = c[k] + (d[k] - c[k]) * u;
     return out;
   });
+}
+
+/** The share of a morph step over which a lone contour collapses or grows. */
+const LONE = 0.6;
+
+/** A slot with no contour in a shape: every vertex on one point. */
+function isPoint(c: Contour): boolean {
+  for (let k = 2; k < c.length; k += 2) if (c[k] !== c[0] || c[k + 1] !== c[1]) return false;
+  return true;
 }

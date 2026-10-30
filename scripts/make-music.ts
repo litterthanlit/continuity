@@ -45,7 +45,8 @@ const logo: Song = {
 
 /**
  * example-beat: 124 bpm, six scenes of one bar each. An intro bar of kick and hats, a groove,
- * a riser into the morph, a boom where the stat lands, and a last bar for the mark.
+ * a riser into the morph, a boom where the card becomes the stat tile, and two last bars for the
+ * mark with a kick on beats 1 and 3 (the morph lands on the second).
  */
 const beat: Song = {
   bpm: 124,
@@ -100,7 +101,7 @@ const beat: Song = {
         { step: 26, len: 4, note: "A4", vel: 0.7 },
       ],
     },
-    { bars: 2, impact: true, kick: "x...............", hat: "................", chords: ["Am7", "Am7"], bass: [{ step: 0, len: 24, note: "A1" }] },
+    { bars: 2, impact: true, kick: "x.......x.......", hat: "................", chords: ["Am7", "Am7"], bass: [{ step: 0, len: 24, note: "A1" }] },
   ],
 };
 
