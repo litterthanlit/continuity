@@ -31,7 +31,7 @@ export function sourceHash(slug: string, dir = projectDir(slug)): { project: str
   const pf: string[] = [];
   walk(dir, pf);
   const ef: string[] = [];
-  for (const d of ["src/motion", "src/runtime", "src/kit", "src/themes", "src/build"]) walk(join(PKG_ROOT, d), ef);
+  for (const d of ["src/motion", "src/runtime", "src/kit", "src/themes", "src/build", "src/audio", "src/gl"]) walk(join(PKG_ROOT, d), ef);
   // Hash paths relative to the project dir so a source snapshot hashes like the original.
   const project = hashFiles(pf.filter((f) => !f.endsWith(".md")), dir);
   const engine = hashFiles(ef);

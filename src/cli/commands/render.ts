@@ -4,6 +4,7 @@ import { OUT_DIR, buildDir, rel } from "../../paths.js";
 import { countBySeverity, formatFindings } from "../../spec/findings.js";
 import { flagBool, flagNum, flagStr, requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
+import { avSync } from "../lib/beats.js";
 import { probe, qc } from "../lib/ffmpeg.js";
 import { runHf } from "../lib/hf.js";
 import { color, fail, log, ok, secs, step, warn } from "../lib/log.js";
@@ -74,6 +75,7 @@ export const render: Command = {
     copyFileSync(file, join(it.dir, `render${draft ? "-draft" : ""}.${format}`));
 
     const qcFindings = format === "mp4" || format === "webm" || format === "mov" ? await qc(file, tl) : [];
+    if (build.music && format !== "gif") qcFindings.push(...(await avSync(file, build)).findings);
     writeFindings(it.dir, "render-findings.json", qcFindings);
     updateIteration(slug, it.n, { render: { file: rel(file), draft, at: new Date().toISOString() } });
     const q = countBySeverity(qcFindings);

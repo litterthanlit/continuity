@@ -1,3 +1,4 @@
+import { nearest } from "../audio/grid.js";
 import type { BuildResult, ElementInfo } from "../build/build.js";
 import { isLinear, peakSlope } from "../motion/easing.js";
 import { resolveScene } from "../motion/evaluate.js";
@@ -49,7 +50,8 @@ export const RULES = {
   "transition-bounce": "Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, out).",
   "transition-strobe": "A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or lengthen it.",
   "mask-needs-split": "Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.",
-  "cut-off-beat": "Scene cut is not on the music grid (bpm).",
+  "cut-off-beat": "Scene cut is not on the beat. With music, time the scene in beats (duration: { beats: 8 }) so its cut lands on one; without it, the bare bpm grid is checked (info).",
+  "off-beat": "A move starts one to three frames off a beat or hit: it reads as late, not as syncopated. Snap it (snap: \"beat\") or move it decisively off the grid.",
   "axis-reflow": "Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.",
   "axis-unsupported": "The element's family has no such axis, so the channel animates nothing (e.g. wdth or soft on Geist, which has a weight axis only).",
   "axis-range": "Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.",
@@ -98,7 +100,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY", "match", "morph"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 const ROTATION = new Set<string>(["rotate", "rotateX", "rotateY"]);
 /** Only rotation moves: a machine turning (a spinning ring), not a thing travelling. */
@@ -407,8 +409,31 @@ export function lintTimeline(build: BuildResult): Finding[] {
 
   if (build.storyboard) out.push(...lintStoryboard(build.storyboard, tl));
 
+  const grid = build.music?.grid;
   const bpm = build.storyboard?.bpm;
-  if (bpm) {
+  const frame = 1 / tl.fps;
+  if (grid) {
+    const playing = (t: number) => t >= grid.span[0] && t < grid.span[1];
+    for (const sc of tl.scenes.slice(1)) {
+      const p = nearest(grid.beats, sc.start);
+      if (p !== undefined && playing(sc.start) && Math.abs(p - sc.start) > frame) {
+        add("cut-off-beat", "warning", sc, `the cut into ${sc.scene} is ${r2(sc.start - p)}s off the beat`, { time: sc.start, suggestion: "time the scene before it in beats: \"duration\": { \"beats\": N }" });
+      }
+    }
+    const points = [...grid.beats, ...grid.hits.map((h) => h.t)];
+    for (const sc of tl.scenes) {
+      for (const t of sc.tweens) {
+        if (t.kind === "transition" || t.kind === "exit" || (t.split && t.stagger)) continue;
+        const g = sc.start + t.start;
+        const p = nearest(points, g);
+        if (p === undefined || !playing(g) || allowed(t, "off-beat")) continue;
+        const off = Math.abs(p - g);
+        if (off > frame / 2 && off <= 3 * frame) {
+          add("off-beat", "info", sc, `${localOf(t.target)} ${t.kind} starts ${r2(g - p)}s from the beat`, { element: t.target, time: r2(g), suggestion: 'snap: "beat" (or "hit"), or move it off the grid on purpose' });
+        }
+      }
+    }
+  } else if (bpm) {
     const beat = 60 / bpm;
     for (const sc of tl.scenes.slice(1)) {
       const off = sc.start / beat - Math.round(sc.start / beat);

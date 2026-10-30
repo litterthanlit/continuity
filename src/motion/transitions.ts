@@ -15,7 +15,7 @@ import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
  * hide the overlay) and `<id>.fx` (an overlay above it: a flash, a light band).
  * Research: docs/research/2026-10-transitions.md · decision: docs/decisions/0005.
  */
-export const TRANSITIONS = ["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth"] as const;
+export const TRANSITIONS = ["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth", "morph"] as const;
 export type TransitionType = (typeof TRANSITIONS)[number];
 
 /** Planar directions (push, wipe). */
@@ -24,7 +24,10 @@ export type PlanarDir = (typeof PLANAR_DIRS)[number];
 /** Every direction a transition can take: planar, plus depth's in (forward through the stack) and out (back). */
 export const DIRS = [...PLANAR_DIRS, "in", "out"] as const;
 export type Dir = (typeof DIRS)[number];
-export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "blur";
+export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "blur" | "pairs" | "squash" | "arc";
+
+/** A shared element: the same id in both scenes, or [outgoing id, incoming id]. */
+export type MorphPair = string | [string, string];
 
 /** A storyboard `transition` (into the next scene), duration resolved. */
 export interface TransitionSpec {
@@ -40,6 +43,12 @@ export interface TransitionSpec {
   feather?: number;
   /** push: directional motion blur — true = matched to the speed, a number = peak σ px, false = none. */
   blur?: boolean | number;
+  /** morph: the elements that carry the cut, outgoing → incoming. */
+  pairs?: MorphPair[];
+  /** morph: squash and stretch of the carriers along their travel, 0..0.5. */
+  squash?: number;
+  /** morph: bend of the travel path, as a share of its length (−0.5..0.5; 0 = straight). */
+  arc?: number;
 }
 
 export interface TransitionFrame {
@@ -67,6 +76,14 @@ export interface FxLayer {
   inner: string;
 }
 
+/** What a layer can read while the build composes the incoming scene. */
+export interface LayerContext {
+  out: string;
+  into: string;
+  /** Rendered HTML of an element (full id `<scene>.<id>`), from either scene. */
+  html(id: string): string | undefined;
+}
+
 export interface TransitionDef {
   description: string;
   /** Default duration, seconds. */
@@ -78,7 +95,7 @@ export interface TransitionDef {
   /** Registers it belongs to (docs/decisions/0007); omitted = every register. */
   registers?: readonly Register[];
   /** Layers the incoming scene needs (none of litt's transitions do; the build still supports them). */
-  layers?: { reveal?: boolean; fx?: (spec: TransitionSpec) => FxLayer };
+  layers?: { reveal?: boolean; fx?: (spec: TransitionSpec, ctx: LayerContext) => FxLayer };
   build(c: Ctx): { out: Tween[]; in: Tween[] };
 }
 
@@ -123,6 +140,17 @@ function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undef
   }
   return res;
 }
+
+export function pairsOf(spec: TransitionSpec): Array<[string, string]> {
+  return (spec.pairs ?? []).map((p) => (typeof p === "string" ? [p, p] : p));
+}
+
+/** An element's HTML as a carrier: no ids, so it neither collides with nor stands in for the original. */
+function carrierClone(html: string): string {
+  return html.replace(/\s(?:data-ct|id)="[^"]*"/g, "");
+}
+
+const STEP: Ease = { spec: { type: "steps", n: 1 } };
 
 export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
   cut: {
@@ -205,6 +233,45 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
           tw(o, r3(c.os + q), h, { opacity: [null, 0] }, fade),
         ],
         in: [tw(i, 0, c.d, { scale: [back ? DEPTH_NEAR : DEPTH_FAR, 1] }, e), tw(i, q, h, { opacity: [0, 1] }, fade)],
+      };
+    },
+  },
+  morph: {
+    description:
+      "A shared element carries the cut: each pair travels from its place in the outgoing scene to its place in the incoming one (position and size; shapes morph their outline) while the rest crossfades under it — the scenes flow instead of cutting. pairs: [\"logo\"] (same id) or [[\"title\", \"card\"]]; squash 0..0.5 for mass; arc bends the path.",
+    duration: 0.6,
+    range: [0.3, 1.2],
+    params: ["ease", "pairs", "squash", "arc"],
+    layers: {
+      reveal: true,
+      fx: (spec, ctx) => ({
+        style: "position:absolute;inset:0;pointer-events:none",
+        inner: pairsOf(spec)
+          .map(([a, b], i) => {
+            const side = (s: "a" | "b", html: string | undefined) =>
+              `<div data-ct-side="${s}" style="position:absolute;left:0;top:0;transform-origin:0 0">${carrierClone(html ?? "")}</div>`;
+            return (
+              `<div data-ct="${ctx.into}.match-${i}" data-ct-match="${ctx.out}.${a} ${ctx.into}.${b}" data-ct-arc="${spec.arc ?? 0}" ` +
+              `style="position:absolute;left:0;top:0;visibility:hidden">` +
+              side("a", ctx.html(`${ctx.out}.${a}`)) +
+              side("b", ctx.html(`${ctx.into}.${b}`)) +
+              `</div>`
+            );
+          })
+          .join(""),
+      }),
+    },
+    build: (c) => {
+      const pairs = pairsOf(c.spec);
+      const carry = c.ease("inOut");
+      return {
+        // The originals hand over to the carriers: A leaves at the cut, B arrives when the carrier lands.
+        out: pairs.map(([a]) => tw(`${c.out}.${a}`, c.os, 0, { opacity: [null, 0] }, named("linear"))),
+        in: [
+          tw(`${c.into}.reveal`, 0, c.d, { opacity: [0, 1] }, named("inOut")),
+          ...pairs.map(([, b]) => tw(`${c.into}.${b}`, 0, c.d, { opacity: [0, 1] }, STEP)),
+          ...pairs.map((_, i) => ({ ...tw(`${c.into}.match-${i}`, 0, c.d, { match: [0, 1] }, carry), ...(c.spec.squash ? { squash: c.spec.squash } : {}) })),
+        ],
       };
     },
   },

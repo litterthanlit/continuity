@@ -1,3 +1,4 @@
+import { musicAt, nearest, type SceneMusic } from "../audio/grid.js";
 import { naturalDuration } from "./easing.js";
 import {
   allPresets,
@@ -39,8 +40,13 @@ import type {
  * - `"b2"` a storyboard beat, `"b2+0.15"` / `"b2-0.1"` offsets from it
  * - `"end"` / `"end-0.6"` relative to the scene end
  * - `"after:headline"` / `"after:headline+0.1"` when the last tween on that element ends
+ * - with music: `"beat:4"` the scene's 5th beat (0 = its first; `"beat:2.5"` between beats),
+ *   `"bar:1"` its second bar, `"hit:0"` its first strong hit — offsets work: `"beat:4-0.05"`
  */
 export type At = number | string;
+
+/** Grid a start time snaps to (nearest point in the scene): beats, half beats, bars or hits. */
+export type Snap = "beat" | "half" | "bar" | "hit";
 
 export type StaggerSpec = StaggerToken | number | { each: number | StaggerToken; from?: StaggerFrom };
 
@@ -52,6 +58,8 @@ export interface TimingOptions {
   allow?: string[];
   /** Squash and stretch along the element's own motion, 0..0.5 (energetic register: objects with mass). */
   squash?: number;
+  /** Move the start to the nearest beat, half beat, bar or hit of the music. */
+  snap?: Snap;
 }
 
 export interface PresetCallOptions extends TimingOptions, PresetOptions {
@@ -105,6 +113,8 @@ export class MotionBuilder {
     private readonly basesOf?: (target: string) => { values: Partial<Record<PropName, number>>; ranges: Partial<Record<PropName, [number, number]>> } | undefined,
     /** Frame size in px (camera origins). */
     private readonly frame: { width: number; height: number } = { width: 1920, height: 1080 },
+    /** The music on this scene's clock, when the storyboard has a soundtrack: `m.music.beats` etc. */
+    readonly music?: SceneMusic,
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -117,20 +127,44 @@ export class MotionBuilder {
   time(at: At | undefined, fallback = 0): number {
     if (at === undefined) return fallback;
     if (typeof at === "number") return at;
-    const m = /^\s*([A-Za-z_][\w:-]*?)\s*(?:([+-])\s*(\d*\.?\d+))?\s*$/.exec(at);
-    if (!m) throw new MotionError(`[${this.scene}] Can't parse time "${at}". Use seconds, "b1", "b1+0.2", "end-0.5" or "after:el".`);
+    const m = /^\s*([A-Za-z_][\w:.-]*?)\s*(?:([+-])\s*(\d*\.?\d+))?\s*$/.exec(at);
+    if (!m) throw new MotionError(`[${this.scene}] Can't parse time "${at}". Use seconds, "b1", "b1+0.2", "end-0.5", "after:el" or "beat:4".`);
     const [, ref, sign, num] = m;
     const offset = num ? (sign === "-" ? -1 : 1) * Number(num) : 0;
+    const onMusic = /^(beat|bar|hit):(\d*\.?\d+)$/.exec(ref);
     let base: number;
     if (ref === "end") base = this.duration;
     else if (ref === "start") base = 0;
     else if (ref.startsWith("after:")) base = this.endOf(ref.slice(6));
+    else if (onMusic) base = this.onMusic(onMusic[1] as "beat" | "bar" | "hit", Number(onMusic[2]));
     else if (ref in this.beats) base = this.beats[ref];
     else
       throw new MotionError(
         `[${this.scene}] Unknown beat "${ref}". Beats in this scene: ${Object.keys(this.beats).join(", ") || "(none)"}`,
       );
     return round(base + offset);
+  }
+
+  /** Scene time of the scene's Nth beat, bar or hit (0 = the first at or after its start). */
+  private onMusic(kind: "beat" | "bar" | "hit", n: number): number {
+    const m = this.music;
+    if (!m) throw new MotionError(`[${this.scene}] "${kind}:${n}" needs music — add "music" to the storyboard.`);
+    if (kind === "hit" && !Number.isInteger(n)) throw new MotionError(`[${this.scene}] hits are counted in whole numbers ("hit:${Math.floor(n)}").`);
+    const t = musicAt(m, kind === "beat" ? { beat: n } : kind === "bar" ? { bar: n } : { hit: n }, 0, 60 / m.bpm);
+    if (t === undefined) throw new MotionError(`[${this.scene}] there is no hit ${n} in this scene (it has ${m.hits.length}).`);
+    return t;
+  }
+
+  /** A start time: `at`, moved to the nearest point of the music when `snap` asks. */
+  private startOf(opts: { at?: At; snap?: Snap }): number {
+    const t = this.time(opts.at);
+    if (!opts.snap) return t;
+    const m = this.music;
+    if (!m) throw new MotionError(`[${this.scene}] snap: "${opts.snap}" needs music — add "music" to the storyboard.`);
+    const points =
+      opts.snap === "bar" ? m.bars : opts.snap === "hit" ? m.hits.map((h) => h.t) : opts.snap === "half" ? m.beats.flatMap((b, i) => (i + 1 < m.beats.length ? [b, (b + m.beats[i + 1]) / 2] : [b])) : m.beats;
+    const p = nearest(points.filter((x) => x >= 0 && x <= this.duration), t);
+    return p === undefined ? t : round(p);
   }
 
   /** End time of the last tween declared so far on an element. */
@@ -162,7 +196,7 @@ export class MotionBuilder {
     const { spec: token, name } = resolveEase(opts.ease ?? "responsive");
     const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(token) ?? durations.responsive);
     const spec = fitEase(token, name, duration);
-    const start = this.time(opts.at);
+    const start = this.startOf(opts);
     const normalized = normalizeProps(props);
     const offsets = this.targetOffsets(list.length, opts);
     const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;
@@ -191,7 +225,7 @@ export class MotionBuilder {
    * translation (centre − origin) × (scale − 1) — so litt's push never drifts left-aligned type.
    */
   camera(props: Partial<Record<PropName, PropRange | number>>, opts: TimingOptions & { origin?: { x: number; y: number } } = {}): this {
-    const start = this.time(opts.at);
+    const start = this.startOf(opts);
     const { spec: token, name } = resolveEase(opts.ease ?? "inOut");
     const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : round(this.duration - start);
     const spec = fitEase(token, name, duration);
@@ -265,8 +299,8 @@ export class MotionBuilder {
    * A click: the pointer presses at the instant tier and springs back on the
    * responsive one, and a focus-coloured ring opens from its tip (`<target>-ripple`).
    */
-  click(target: string, opts: { at?: At; ripple?: boolean } = {}): this {
-    const at = this.time(opts.at);
+  click(target: string, opts: { at?: At; snap?: Snap; ripple?: boolean } = {}): this {
+    const at = this.startOf(opts);
     const id = this.id(target);
     const back = naturalDuration(eases.responsive) ?? durations.responsive;
     this.push({ target: id, kind: "emphasis", start: at, duration: durations.instant, ease: eases.out, easeName: "out", props: { scale: [null, 0.9] }, preset: "click" });
@@ -303,7 +337,7 @@ export class MotionBuilder {
     this.push({
       target: this.id(target),
       kind: "emphasis",
-      start: this.time(opts.at),
+      start: this.startOf(opts),
       duration,
       ease: fitEase(spec, name, duration),
       easeName: name,
@@ -323,7 +357,7 @@ export class MotionBuilder {
     const def = allPresets[presetName];
     if (!def) throw new MotionError(`[${this.scene}] Unknown preset "${presetName}".`);
     const list = toList(targets);
-    const start = this.time(opts.at);
+    const start = this.startOf(opts);
     const offsets = this.targetOffsets(list.length, opts);
     const mask = opts.mask ?? (def.mask && opts.split ? true : undefined);
     const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;

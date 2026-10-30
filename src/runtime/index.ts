@@ -13,7 +13,11 @@
  * rejects interpolated selectors; esbuild is configured to lower them anyway.
  */
 import { compileScene, mergeVariationSettings, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
+import { morphAt, toPathD, type MorphData } from "../motion/morph.js";
 import type { PartCounts, SplitMode, Timeline } from "../motion/types.js";
+import type { GlHandle } from "../gl/runtime.js";
+import type { GlSpec } from "../gl/spec.js";
+import { prepareCarriers, renderCarrier, type Carrier } from "./carriers.js";
 
 interface CtData {
   timeline: Timeline;
@@ -55,6 +59,13 @@ const compiled = new Map<string, CompiledScene>();
 const variationBase = new Map<HTMLElement, string>();
 /** Per-element SVG filters for directional motion blur (created once, in compiled order). */
 const motionBlurs = new Map<HTMLElement, { id: string; node: SVGFEGaussianBlurElement }>();
+/** Shared-element carriers of morph transitions, measured once at prepare. */
+let carriers = new Map<HTMLElement, Carrier>();
+/** GL shots (continuity-gl.js): which shot answers each GL target id, and each scene's shots. */
+const glTargets = new Map<string, GlHandle>();
+const glScenes = new Map<string, GlHandle[]>();
+/** `<Morph>` shapes: their outlines, aligned at build time. */
+const morphs = new Map<Element, { path: SVGPathElement; data: MorphData }>();
 
 function collect() {
   document.querySelectorAll<HTMLElement>("[data-ct]").forEach((el) => {
@@ -230,6 +241,11 @@ function apply(sceneId: string, t: number) {
   const c = compiled.get(sceneId);
   if (!c) return;
   sampleScene(c, t).forEach((v, key) => {
+    const gl = glTargets.get(key);
+    if (gl) {
+      gl.set(key, v);
+      return;
+    }
     const el = resolveKey(key);
     if (!el) return;
     const s = styleOf(v, c.counters.get(key), c.fx.get(key));
@@ -257,6 +273,35 @@ function apply(sceneId: string, t: number) {
     if (s.fontWeight !== undefined) st.fontWeight = s.fontWeight;
     if (s.fontStretch !== undefined) st.fontStretch = s.fontStretch;
     if (s.fontVariation !== undefined) st.fontVariationSettings = mergeVariationSettings(variationBase.get(el) ?? "normal", s.fontVariation);
+    if (v.morph !== undefined) {
+      const m = morphs.get(el);
+      if (m) m.path.setAttribute("d", toPathD(morphAt(m.data, v.morph)));
+    }
+    if (v.match !== undefined) {
+      const car = carriers.get(el);
+      if (car) renderCarrier(car, v.match, t);
+    }
+  });
+  glScenes.get(sceneId)?.forEach((h) => h.render());
+}
+
+/** Mount every GL shot (fonts are loaded: plane textures draw type). */
+function mountGl() {
+  const api = (window as unknown as { __ctGl?: { mount: (c: HTMLCanvasElement, s: GlSpec) => GlHandle } }).__ctGl;
+  document.querySelectorAll<HTMLCanvasElement>("canvas[data-ct-gl]").forEach((canvas) => {
+    if (!api) throw new Error("continuity-gl.js did not load: a <Gl> shot cannot render");
+    const spec = JSON.parse(canvas.getAttribute("data-ct-gl") as string) as GlSpec;
+    const handle = api.mount(canvas, spec);
+    const scene = spec.id.slice(0, spec.id.indexOf("."));
+    glScenes.set(scene, [...(glScenes.get(scene) ?? []), handle]);
+    for (const id of handle.ids) glTargets.set(id, handle);
+  });
+}
+
+function collectMorphs() {
+  document.querySelectorAll<SVGElement>("[data-ct-morph]").forEach((el) => {
+    const path = el.querySelector("path");
+    if (path) morphs.set(el, { path, data: JSON.parse(el.getAttribute("data-ct-morph") as string) as MorphData });
   });
 }
 
@@ -325,6 +370,17 @@ async function prepare() {
   for (const s of data.timeline.scenes) compiled.set(s.scene, compileScene(s, partCounts));
   captureVariationBases();
   createMotionBlurs();
+  collectMorphs();
+  mountGl();
+  const root = document.querySelector<HTMLElement>("[data-composition-id]");
+  if (root && root.querySelector("[data-ct-match]")) {
+    document.documentElement.classList.add("ct-measuring");
+    try {
+      carriers = prepareCarriers({ byId, compiled, apply, root });
+    } finally {
+      document.documentElement.classList.remove("ct-measuring");
+    }
+  }
   // Paint the first frame of every scene so nothing flashes in its final state.
   for (const s of data.timeline.scenes) apply(s.scene, 0);
 }

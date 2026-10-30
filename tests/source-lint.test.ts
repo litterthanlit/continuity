@@ -37,6 +37,19 @@ describe("source lint (determinism outside this repo's ESLint)", () => {
     expect(lintSources(dir).filter((x) => x.rule === "css-animation")).toHaveLength(4);
   });
 
+  it("flags an unclipped inline svg (edge pixels then depend on the worker's history)", () => {
+    const dir = project({
+      "scenes/a.tsx": [
+        `<svg class="block overflow-visible" viewBox="0 0 10 10"><path d="M0 0L1 1Z" /></svg>`,
+        `<svg style="overflow: visible" viewBox="0 0 10 10" />`,
+        `<svg viewBox="0 0 10 10" class="block" />`,
+        `<div class="overflow-visible" />`,
+      ].join("\n"),
+    });
+    const f = lintSources(dir).filter((x) => x.rule === "svg-overflow");
+    expect(f.map((x) => x.message.split(" ")[0])).toEqual(["scenes/a.tsx:1", "scenes/a.tsx:2"]);
+  });
+
   it("ignores comments, URLs and look-alike identifiers", () => {
     const dir = project({
       "scenes/ok.tsx": [
