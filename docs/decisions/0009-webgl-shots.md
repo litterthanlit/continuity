@@ -54,9 +54,10 @@ same either way.
 
 ### 4. Determinism, measured
 
-`node scripts/gl-bench.mjs example-logo --determinism 4` renders the 5 s film as a PNG sequence
-with 1 and 4 workers and compares the md5 of every frame: **150 of 150 frames byte-identical, 150
-distinct.** The first run gave 145 of 150. All five differing frames were in the DOM end card,
+`node scripts/gl-bench.mjs example-logo --determinism 4` renders the film as a PNG sequence with
+1 and 4 workers and compares the md5 of every frame. For the final 6 s cut: **180 of 180 frames
+byte-identical, 167 distinct** (the end card holds). The 5 s first cut gave 150 of 150 after the
+fix below, and the first run of it gave 145 of 150. All five differing frames were in the DOM end card,
 never in a GL shot, on the edges of the flat SVG mark under the camera push (at most 23 pixels, at
 most 4 levels). We bisected it on a throwaway project. It was not text, not Chrome's partial raster
 (the flag changed nothing) and not layer promotion (`will-change` made it 15 of 60). It was
@@ -65,23 +66,38 @@ lint that now enforces it.
 
 ### 5. Performance, measured
 
-The budget is the in-page cost of one GL frame at 1080p in SwiftShader on this 4 vCPU container.
+The budget is the in-page cost of one GL frame at 1080p in SwiftShader on a 4 vCPU container.
 `gl-bench` seeks frame by frame and reads a pixel back from every GL canvas. `gl.finish()` does
 not wait across Chrome's GPU process: our first timing read 0.5 ms for a 300 ms frame.
 
-| shot | first version | what changed | now (median / p95) |
+| shot | first version | what changed | first cut, container A (median / p95) |
 |---|---|---|---|
 | neon + bloom | 340 ms: scene into a 4-sample MSAA half-float target, UnrealBloom | no MSAA (167); scene straight to the canvas, bloom from a quarter-size re-render (111); 8-bit bloom pyramid (69) | 98 / 118 ms |
 | glass | 410 ms: three's transmission re-renders the scene behind the glass every frame | analytic slab refraction of the shot's backdrop card (167); bilinear, mipmap-free backdrop (127) | 125 / 140 ms |
 | chrome | 88 ms: physical metal with a clearcoat | kept: plain metal is 72 ms and reads flatter | 93 / 104 ms |
 
-Every shot is inside 150 ms. Each full-resolution pass costs 20–40 ms in software at 1080p, so
-the post chain has exactly one: a blended overlay. Half-float targets cost about 40 ms more than
+Those are container A. Each full-resolution pass costs 20–40 ms in software at 1080p, so the
+post chain has exactly one: a blended overlay. Half-float targets cost about 40 ms more than
 8-bit ones, so only the quarter-size scene copy is HDR.
 
-End to end, `ct render example-logo` (5 s, 90 GL frames of 151) takes 48.7 s with 4 workers. Of
-that, each worker spends about 8 s mounting three shots (three environment prefilters and shader
-compiles). The 13.6 s DOM film renders in 23.4 s. A 4-worker PNG render of example-logo took 64 s
+The machine moves the cost more than any change above. The session moved to a second 4 vCPU
+container (B, Xeon at 2.8 GHz) and we measured the same commit on both, then the final films:
+
+| shot | A, first cut | B, first cut | A, final | B, final |
+|---|---|---|---|---|
+| chrome | 93 / 104 | 124 / 169 | 98 / 125 | 143 / 195 |
+| glass | 125 / 140 | 180 / 226 | 123 / 142 | 178 / 215 |
+| neon + bloom | 98 / 118 | 123 / 154 | 70 / 78 | 126 / 152 |
+
+(median / p95 ms.) On A every shot is inside 150 ms. On B, chrome and the bloom shot are inside
+it at the median and glass is not: about 1.4× slower for the same code. The final chrome costs a
+little more than the first because it lands turned, with more bevel on screen. The budget needs
+a reference machine before it can gate anything; until then `gl-bench` is the record, and glass
+is the shot to make cheaper first.
+
+End to end on B, `ct render example-logo` (6 s, 90 GL frames of 180) takes 73.1 s with 4
+workers; each worker spends 8–13 s mounting three shots (three environment prefilters and shader
+compiles). The 13.6 s DOM film renders in 40.2 s. On A the 5 s first cut took 48.7 s. A 4-worker PNG render of example-logo took 64 s
 against 86 s with 1 worker, so 4 workers stay the default. A small GL probe was slower with 4
 workers than with 1, because the SwiftShader instances compete for the same 4 cores. Long GL films
 may want fewer workers.
@@ -92,11 +108,20 @@ may want fewer workers.
   tall card behind the camera that is bright above a crisp horizon line, strips at the sides and a
   faint bounce. Chrome reads as chrome because its face reflects light over dark, and the line
   sweeps across it as the mark turns.
+- **Smooth bevels.** `ExtrudeGeometry` is unindexed, so its normals are flat per triangle: every
+  curve sample was a facet, chrome's highlights broke into dashes along the bevel and the glass
+  refraction sliced the type behind it into a comb. The sides (bevel and walls) now get normals
+  averaged over the faces that meet within 40°, and the caps stay flat (their long thin triangles
+  streak with any tilt). Doubling the curve and bevel samples as well cost chrome 45 ms and glass
+  30 ms for no visible gain, so the sample counts stayed.
 - **`chrome`.** Physical metal, roughness 0.08, clearcoat 0.6.
 - **`glass`.** When the shot has a backdrop card, the view ray refracts into the glass (per colour
   channel, for dispersion), crosses a slab of the glass's thickness, leaves parallel to where it
   entered, and samples the card. Reflections come from three's own Fresnel-weighted environment.
-  Without a card it falls back to three's transmission, which is about 400 ms a frame.
+  Without a card it falls back to three's transmission, which is about 400 ms a frame. Dispersion
+  is 0.03: at 0.08 every bevel carried RGB fringes. The card itself is not tone mapped, so its
+  canvas colour matches the other shots' background (tone mapped, it rendered at 3.8 against 12.8
+  and dipped at both cuts).
 - **`neon`.** Tubes along every contour of the outline, in the accent at HDR intensity. Bloom
   thresholds on the brightest channel, not luminance: a saturated blue at 4× is only 0.53
   luminance, and the first neon shot never bloomed.

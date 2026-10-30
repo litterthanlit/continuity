@@ -307,7 +307,10 @@ time. This is the energetic register's toolkit; the look stays litt.
   scenes and read the chart: every cut white, the bars where you think they are.
 - **The hit is the frame where motion starts.** Place snaps on beats (`at: "beat:2"`), not
   landings: a whip or a cut reads on its first frame. A `steep` move starts slow, so its visible
-  hit comes ~0.1s late; start an ease-out or a whip on the beat instead.
+  hit comes ~0.15s late: start it half its duration early (`at: "l2-0.15"` for a `snap`), or put
+  an ease-out or a whip on the beat. Something that can't start earlier (at a cut) eases `out`.
+- **A cut is a frame.** Scenes timed in beats end on the frame nearest the beat, and `ct beats`
+  judges each cut where it shows. A scene timed in seconds can still put its cut a frame late.
 - Off-beats are deliberate or they are mistakes: a move one to three frames off a beat reads as
   late (`off-beat`). Put it on the beat (`snap: "beat"`), or half a beat away (`"beat:0.5"`).
 - Cascades on eighths: three cards at `beat:0`, `beat:0.5`, `beat:1` land as a burst; the rest
@@ -329,15 +332,21 @@ and squashes against the deceleration when it lands — mass, in two frames. Typ
 0.2–0.3; never on chrome, never on a full-frame move (`transition-bounce` still applies).
 
 ### Morph: let one element carry the cut
-`"transition": { "type": "morph", "pairs": [["card", "tile"]], "duration": 0.48, "ease": "steep", "squash": 0.2 }`
+`"transition": { "type": "morph", "pairs": [["card", "tile"]], "duration": 0.48, "ease": "out" }`
 — the card flies to where the tile sits and becomes it, while the next scene crossfades in under
-it. It is the energetic register's best way to say "this becomes that": text becomes a UI, a
-card becomes a stat, a chip becomes a window.
-- Pair elements of similar role; their sizes may differ. Start the morph on a hit (a boom, a bar).
+it. The container travels as one solid shell; its copy swaps on top halfway. It is the energetic
+register's best way to say "this becomes that": text becomes a UI, a card becomes a stat, a chip
+becomes a window.
+- Pair elements of similar role and the same aspect ratio: sizes may differ, but a card of
+  another shape stretches its copy in flight. No `squash` on a pair that carries copy.
+- Start the morph on a hit (a boom, a bar) with ease `out`, so its fastest frame is the hit and
+  the carry is still seen. A whip snaps it in 1.5 frames and reads as a cut.
+- Clear the stage: the outgoing scene's other elements exit on the cut (`fadeOut` at the cut's
+  beat), or the carrier passes over their copy.
 - Both ends must be at rest at the handoff: the outgoing element settled, the incoming one with
   no entrance of its own (its children included) until the morph ends. The morph is the
   incoming scene's entrance — don't stack another on it.
-- A Shape pair (`<Shape>` both sides) morphs its outline instead of cross-dissolving.
+- A Shape pair (`<Shape>` both sides) morphs its outline instead.
 - Within a scene, `<Morph shapes={[textShape("Word", { size: 112 }), MARK]} collapse="into">`
   turns a word into a mark: the letters that have no counterpart pour into the mark. Ease `out`
   over `slow` (0.6), starting on the beat; a whip is too abrupt to read a transformation.
