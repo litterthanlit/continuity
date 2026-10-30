@@ -188,7 +188,8 @@ describe("lint on the music", () => {
   });
 });
 
-describe("render QC hears the music where the picture put it (av-sync)", () => {
+// Muxes with ffmpeg, which is in the toolchain image (CT_SLOW=1), not the plain unit-test runner.
+describe.skipIf(process.env.CT_SLOW !== "1")("render QC hears the music where the picture put it (av-sync)", () => {
   it("passes a muxed track in sync and fails one delayed by 100 ms", async () => {
     const { mkdtempSync, writeFileSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");

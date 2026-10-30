@@ -10,6 +10,8 @@
  * lines.
  */
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { readWav } from "./wav.js";
 
 export type Band = "low" | "mid" | "high";
 
@@ -159,7 +161,10 @@ export async function decodeAudio(file: string, sampleRate = RATE): Promise<Floa
   return out;
 }
 
+/** A WAV is read in Node (no ffmpeg); anything else is decoded by ffmpeg. */
 export async function analyzeFile(file: string, opts: AnalyzeOptions = {}): Promise<BeatAnalysis> {
+  const wav = readWav(readFileSync(file));
+  if (wav) return analyzePcm(wav.samples, wav.sampleRate, opts);
   return analyzePcm(await decodeAudio(file, RATE), RATE, opts);
 }
 

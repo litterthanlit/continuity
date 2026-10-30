@@ -2,8 +2,12 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { analyzeFile, analyzePcm, type BeatAnalysis } from "../src/audio/analyze.js";
+import { analyzeFile, analyzePcm, decodeAudio, type BeatAnalysis } from "../src/audio/analyze.js";
 import { chordNotes, encodeWav, noteMidi, synthesize, type Note, type Rendered, type Song } from "../src/audio/synth.js";
+import { readWav } from "../src/audio/wav.js";
+
+/** ffmpeg is in the toolchain image, not the plain unit-test runner: like the browser, CT_SLOW=1. */
+const slow = process.env.CT_SLOW === "1";
 
 const line = (notes: [number, number, string][]): Note[] => notes.map(([step, len, note]) => ({ step, len, note }));
 
@@ -138,17 +142,26 @@ describe("beat analysis of synthesized tracks", () => {
     expect(Math.abs(a.downbeats[0] - third)).toBeLessThanOrEqual(TOLERANCE);
   });
 
-  it("gives the same beats from a WAV decoded by ffmpeg as from the samples", async () => {
+  const sameBeats = (a: BeatAnalysis, b: BeatAnalysis) => {
+    expect(a.beats.length).toBe(b.beats.length);
+    a.beats.forEach((t, i) => expect(Math.abs(t - b.beats[i])).toBeLessThanOrEqual(0.001));
+    expect(a.bpm).toBeCloseTo(b.bpm, 1);
+    expect(a.downbeats.length).toBe(b.downbeats.length);
+    expect(Math.abs(a.duration - b.duration)).toBeLessThan(0.002);
+  };
+
+  it("gives the same beats from a WAV file (read without ffmpeg) as from the samples", async () => {
     const r = render("110 bpm, 0.37 s silent lead-in");
     const file = join(mkdtempSync(join(tmpdir(), "ct-audio-")), "song.wav");
     writeFileSync(file, encodeWav(r.samples, r.sampleRate));
-    const fromFile = await analyzeFile(file);
-    const fromPcm = analyzePcm(r.samples, r.sampleRate);
-    expect(fromFile.beats.length).toBe(fromPcm.beats.length);
-    fromFile.beats.forEach((t, i) => expect(Math.abs(t - fromPcm.beats[i])).toBeLessThanOrEqual(0.001));
-    expect(fromFile.bpm).toBeCloseTo(fromPcm.bpm, 1);
-    expect(fromFile.downbeats.length).toBe(fromPcm.downbeats.length);
-    expect(Math.abs(fromFile.duration - fromPcm.duration)).toBeLessThan(0.002);
+    sameBeats(await analyzeFile(file), analyzePcm(r.samples, r.sampleRate));
+  });
+
+  it.skipIf(!slow)("gives the same beats from a WAV decoded by ffmpeg (any other format's path)", async () => {
+    const r = render("110 bpm, 0.37 s silent lead-in");
+    const file = join(mkdtempSync(join(tmpdir(), "ct-audio-")), "song.wav");
+    writeFileSync(file, encodeWav(r.samples, r.sampleRate));
+    sameBeats(analyzePcm(await decodeAudio(file), 22050), analyzePcm(r.samples, r.sampleRate));
   });
 
   it("is deterministic", () => {
@@ -206,5 +219,46 @@ describe("synthesizer", () => {
     expect(chordNotes("A3 C4 E4")).toEqual([57, 60, 64]);
     expect(chordNotes(".")).toEqual([]);
     expect(() => chordNotes("Hm")).toThrow();
+  });
+});
+
+describe("WAV reader", () => {
+  /** A WAV of `frames` frames: format 1 (PCM) or 3 (float), the given bits and channels, filled by `value(frame, channel)`. */
+  const wav = (format: number, bits: number, channels: number, frames: number, value: (f: number, c: number) => number) => {
+    const width = bits / 8;
+    const data = Buffer.alloc(frames * channels * width);
+    for (let f = 0; f < frames; f++)
+      for (let c = 0; c < channels; c++) {
+        const at = (f * channels + c) * width, v = value(f, c);
+        if (format === 3) data.writeFloatLE(v, at);
+        else if (bits === 8) data.writeUInt8(Math.round(128 + v * 127), at);
+        else if (bits === 16) data.writeInt16LE(Math.round(v * 32767), at);
+        else data.writeIntLE(Math.round(v * 8388607), at, 3);
+      }
+    const fmt = Buffer.alloc(16);
+    fmt.writeUInt16LE(format, 0); fmt.writeUInt16LE(channels, 2); fmt.writeUInt32LE(48000, 4);
+    fmt.writeUInt32LE(48000 * channels * width, 8); fmt.writeUInt16LE(channels * width, 12); fmt.writeUInt16LE(bits, 14);
+    const chunk = (id: string, body: Buffer) => { const h = Buffer.alloc(8); h.write(id, 0, "ascii"); h.writeUInt32LE(body.length, 4); return Buffer.concat([h, body]); };
+    const list = chunk("LIST", Buffer.from("INFOxxxx")); // a chunk the reader must skip
+    const body = Buffer.concat([Buffer.from("WAVE"), chunk("fmt ", fmt), list, chunk("data", data)]);
+    return Buffer.concat([chunk("RIFF", body)]);
+  };
+
+  it("reads 16-bit, 24-bit and float WAVs to mono at their own rate", () => {
+    for (const [format, bits] of [[1, 16], [1, 24], [3, 32]]) {
+      const r = readWav(wav(format, bits, 2, 100, (f, c) => (c === 0 ? 0.5 : -0.25) * Math.sin(f / 7)))!;
+      expect(r.sampleRate).toBe(48000);
+      expect(r.samples.length).toBe(100);
+      r.samples.forEach((v, f) => expect(v).toBeCloseTo(0.125 * Math.sin(f / 7), 3));
+    }
+  });
+
+  it("matches the synth's own WAV sample for sample, and leaves other files to ffmpeg", () => {
+    const r = synthesize({ bpm: 120, seed: 1, sections: [{ bars: 1, kick: "x...x...x...x..." }] });
+    const back = readWav(encodeWav(r.samples, r.sampleRate))!;
+    expect(back.sampleRate).toBe(r.sampleRate);
+    back.samples.forEach((v, i) => expect(Math.abs(v - r.samples[i])).toBeLessThan(1 / 16384));
+    expect(readWav(Buffer.from("ID3\u0003not a wav at all"))).toBeUndefined();
+    expect(readWav(wav(1, 8, 1, 10, () => 0))).toBeUndefined(); // 8-bit: ffmpeg's job
   });
 });

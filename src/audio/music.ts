@@ -27,6 +27,7 @@ export async function loadMusic(srcDir: string, spec: MusicSpec): Promise<Music>
     .update(readFileSync(file))
     .update(JSON.stringify(opts))
     .update(readFileSync(join(PKG_ROOT, "src", "audio", "analyze.ts")))
+    .update(readFileSync(join(PKG_ROOT, "src", "audio", "wav.ts")))
     .digest("hex")
     .slice(0, 16);
   const cacheDir = join(BUILD_DIR, ".ct", "music");
