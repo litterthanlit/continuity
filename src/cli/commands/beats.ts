@@ -39,7 +39,7 @@ export const beats: Command = {
       const p = nearest(g.beats, shown);
       const off = p === undefined ? null : Math.round((shown - p) * 1000) / 1000;
       const span = b.storyboard!.scenes[i].span;
-      log(`  ${s.scene.padEnd(14)} ${s.start.toFixed(3).padStart(7)}s  ${off === null ? "" : Math.abs(off) <= frame / 2 ? "on the beat" : `${off > 0 ? "+" : ""}${off}s off the beat`}${span ? `  (${JSON.stringify(span)})` : ""}`);
+      log(`  ${s.scene.padEnd(14)} ${s.start.toFixed(3).padStart(7)}s  ${off === null ? "" : Math.abs(off) <= frame / 2 + 0.001 ? "on the beat" : `${off > 0 ? "+" : ""}${off}s off the beat`}${span ? `  (${JSON.stringify(span)})` : ""}`);
       return { scene: s.scene, start: s.start, offBeat: off, span };
     });
     const moves = motionOnGrid(b);

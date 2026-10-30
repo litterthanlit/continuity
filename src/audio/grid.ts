@@ -20,6 +20,8 @@ export interface MusicGrid {
 
 /** A scene's view of the grid: the same points, on the scene's own clock (0 = its first frame). */
 export interface SceneMusic {
+  /** The video's frame rate: a time on the music lands on its nearest frame. */
+  fps: number;
   bpm: number;
   beatsPerBar: number;
   beats: number[];
@@ -89,11 +91,24 @@ export function firstIndexFrom(points: number[], t: number, fallbackStep: number
   return Math.ceil(indexAt(points, t - ON_GRID, fallbackStep) - 1e-9);
 }
 
+/**
+ * The frame nearest `t`, as a time no later than that frame's own: a cut, or a move, on the music
+ * shows on the frame nearest its beat. Halfway between two frames (an eighth at 120 bpm, 30fps) it
+ * takes the earlier: sound a little after picture reads as in sync, before it does not
+ * (ITU-R BT.1359). Rounding to 4 decimals could land just after the frame (62/30 → 2.0667) and
+ * show it a frame late, so it rounds down.
+ */
+export function onFrame(t: number, fps: number): number {
+  const frame = Math.ceil(t * fps - 0.5 - 1e-9);
+  return Math.floor((frame / fps) * 10000 + 1e-6) / 10000;
+}
+
 /** The scene's slice of the grid, re-clocked to the scene. Points from just before its start (a frame) are kept. */
-export function sceneMusic(g: MusicGrid, start: number, duration: number): SceneMusic {
+export function sceneMusic(g: MusicGrid, start: number, duration: number, fps: number): SceneMusic {
   const local = (t: number) => r4(t - start);
   const within = (t: number) => t >= start - ON_GRID && t <= start + duration + ON_GRID;
   return {
+    fps,
     bpm: g.bpm,
     beatsPerBar: g.beatsPerBar,
     beats: g.beats.filter(within).map(local),

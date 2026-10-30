@@ -372,7 +372,8 @@ export function prepareMorph(paths: string[], opts: MorphOptions = {}): MorphDat
  * nearest centroid; the rest open new slots. A slot with no contour in a
  * shape is a point there: at the centroid of the slot's nearest real contour
  * (`collapse: "in-place"`, so a lone contour grows from or collapses to a
- * point), or at the vertex of that shape nearest to it (`"into"`).
+ * point), or at the vertex of that shape nearest to it (`"into"`; a hole
+ * still closes in place).
  *
  * `samples` (default 240) is the point budget per shape, split across slots by
  * perimeter with at least 24 points each. A contour with no more vertices than
@@ -443,8 +444,11 @@ export function prepareContours(shapes: Contour[][], opts: MorphOptions = {}): M
       throw new Error("prepareContours: empty slot");
     };
     const pointAt = (i: number): Contour => {
-      const [cx, cy] = centroidOf(nearestReal(i));
-      const [px, py] = (opts.collapse === "into" && nearestVertex(i, cx, cy)) || [cx, cy];
+      const near = nearestReal(i);
+      const [cx, cy] = centroidOf(near);
+      // A hole closes where it is: poured into the other shape, it bit out of whatever it crossed.
+      const into = opts.collapse === "into" && areaOf(near) > 0;
+      const [px, py] = (into && nearestVertex(i, cx, cy)) || [cx, cy];
       const out: Contour = [];
       for (let k = 0; k < n; k++) out.push(px, py);
       return out;

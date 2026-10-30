@@ -232,7 +232,8 @@ export function lintTimeline(build: BuildResult): Finding[] {
           suggestion: 'set the scene\'s register to "energetic" (a reel, a beat-cut film), or use ease "responsive"',
         });
       }
-      if (t.kind === "enter" && B.textTypesOrWipes && t.preset !== "typeOn" && isCopy(elements.get(t.target)) && Object.keys(t.props).every((p) => p === "opacity" || p === "scale") && !allowed(t, "text-fade")) {
+      // A zero-length opacity step is a cut-on, not a fade.
+      if (t.kind === "enter" && B.textTypesOrWipes && t.duration > 0 && t.preset !== "typeOn" && isCopy(elements.get(t.target)) && Object.keys(t.props).every((p) => p === "opacity" || p === "scale") && !allowed(t, "text-fade")) {
         add("text-fade", "warning", sc, `${localOf(t.target)} fades in${inRegister}`, { ...where, suggestion: 'type it on (m.type) or wipe it on (m.enter(id, "wipeRight", { duration: "snap", ease: "steep" }))' });
       }
       if (t.kind === "enter") {
@@ -418,13 +419,15 @@ export function lintTimeline(build: BuildResult): Finding[] {
   const grid = build.music?.grid;
   const bpm = build.storyboard?.bpm;
   const frame = 1 / tl.fps;
+  // On the beat: on its nearest frame. Times are kept to 4 decimals, so half a frame plus 1 ms.
+  const ON_FRAME = frame / 2 + 0.001;
   if (grid) {
     const playing = (t: number) => t >= grid.span[0] && t < grid.span[1];
     for (const sc of tl.scenes.slice(1)) {
       // A cut is seen on the first frame at or after the scene's start, not at the start itself.
       const shown = shownAt(sc.start, tl.fps);
       const p = nearest(grid.beats, shown);
-      if (p !== undefined && playing(sc.start) && Math.abs(p - shown) > frame / 2) {
+      if (p !== undefined && playing(sc.start) && Math.abs(p - shown) > ON_FRAME) {
         add("cut-off-beat", "warning", sc, `the cut into ${sc.scene} shows ${r2(shown - p)}s off the beat`, { time: sc.start, suggestion: "time the scene before it in beats: \"duration\": { \"beats\": N }" });
       }
     }
@@ -436,7 +439,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
         const p = nearest(points, g);
         if (p === undefined || !playing(g) || allowed(t, "off-beat")) continue;
         const off = Math.abs(p - g);
-        if (off > frame / 2 && off <= 3 * frame) {
+        if (off > ON_FRAME && off <= 3 * frame) {
           add("off-beat", "info", sc, `${localOf(t.target)} ${t.kind} starts ${r2(g - p)}s from the beat`, { element: t.target, time: r2(g), suggestion: 'snap: "beat" (or "hit"), or move it off the grid on purpose' });
         }
       }

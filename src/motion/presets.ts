@@ -41,7 +41,11 @@ const d = (o: PresetOptions, fallback = TRAVEL) => o.distance ?? fallback;
 /** The whip's travel: the energetic register's longest landing (5× litt's travel). */
 const WHIP_TRAVEL = TRAVEL * 5;
 
-/** Whip and drift along `dir`: the snap smears (a directional blur bell over its ~1.5 frames), the drift is sharp. */
+/**
+ * Whip and drift along `dir`: the snap smears, the drift is sharp. The first frame is already the
+ * smear (there at full opacity, the blur at its peak) and the blur falls away over the snap: a whip
+ * on a cut that faded up from nothing opened the scene on a blank frame.
+ */
 function whipSegments(o: PresetOptions): PresetSegment[] {
   const dir = o.dir ?? "left";
   const axis: PropName = dir === "left" || dir === "right" ? "x" : "y";
@@ -49,9 +53,9 @@ function whipSegments(o: PresetOptions): PresetSegment[] {
   const from = (dir === "left" || dir === "up" ? 1 : -1) * d(o, WHIP_TRAVEL);
   const sigma = Math.round(Math.abs(from) * 0.06 * 10) / 10;
   return [
-    { props: { [axis]: [from, 0], opacity: [0, 1] }, duration: "drift", ease: "whip" },
-    { props: { [blur]: [0, sigma] }, duration: WHIP_SNAP / 2, ease: "out", fixed: true },
-    { props: { [blur]: [sigma, 0] }, duration: WHIP_SNAP * 1.5, ease: "out", offset: WHIP_SNAP / 2, fixed: true },
+    { props: { [axis]: [from, 0] }, duration: "drift", ease: "whip" },
+    { props: { opacity: [0, 1] }, duration: 0, ease: "linear", fixed: true },
+    { props: { [blur]: [sigma, 0] }, duration: WHIP_SNAP * 2, ease: "out", fixed: true },
   ];
 }
 

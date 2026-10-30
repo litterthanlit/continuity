@@ -206,6 +206,16 @@ describe("morph", () => {
     expect(lone(morphAt(back, 1))).toBeCloseTo(10000, 6);
   });
 
+  it("a hole with no counterpart closes where it is, even when the rest pours into the other shape", () => {
+    const ring = parsePath(`${rect(0, 0, 200, 200)} M70 70v60h60v-60z`);
+    const away = parsePath(`${rect(0, 0, 200, 200)} ${rect(400, 400, 40, 40)}`);
+    const data = prepareContours([ring, away], { collapse: "into" });
+    const hole = morphAt(data, 0.3).find((c) => areaOf(c) < 0)!;
+    const b = boundsOf([hole]);
+    expect(b.x + b.width / 2).toBeCloseTo(100, 6);
+    expect(b.y + b.height / 2).toBeCloseTo(100, 6);
+  });
+
   it("an outline drawn the other way round fills the same", () => {
     const cw = parsePath(`${rect(0, 0, 200, 200)} M70 70v60h60v-60z`);
     const ccw = parsePath(`M0 0v200h200v-200z ${rect(70, 70, 60, 60)}`);

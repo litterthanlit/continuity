@@ -1,4 +1,4 @@
-import { musicAt, nearest, type SceneMusic } from "../audio/grid.js";
+import { musicAt, nearest, onFrame, type SceneMusic } from "../audio/grid.js";
 import { naturalDuration } from "./easing.js";
 import {
   allPresets,
@@ -152,7 +152,8 @@ export class MotionBuilder {
     if (kind === "hit" && !Number.isInteger(n)) throw new MotionError(`[${this.scene}] hits are counted in whole numbers ("hit:${Math.floor(n)}").`);
     const t = musicAt(m, kind === "beat" ? { beat: n } : kind === "bar" ? { bar: n } : { hit: n }, 0, 60 / m.bpm);
     if (t === undefined) throw new MotionError(`[${this.scene}] there is no hit ${n} in this scene (it has ${m.hits.length}).`);
-    return t;
+    // The scene starts on a frame, so its frames are this clock's; the move starts on the beat's.
+    return onFrame(t, m.fps);
   }
 
   /** A start time: `at`, moved to the nearest point of the music when `snap` asks. */
@@ -164,7 +165,7 @@ export class MotionBuilder {
     const points =
       opts.snap === "bar" ? m.bars : opts.snap === "hit" ? m.hits.map((h) => h.t) : opts.snap === "half" ? m.beats.flatMap((b, i) => (i + 1 < m.beats.length ? [b, (b + m.beats[i + 1]) / 2] : [b])) : m.beats;
     const p = nearest(points.filter((x) => x >= 0 && x <= this.duration), t);
-    return p === undefined ? t : round(p);
+    return p === undefined ? t : onFrame(p, m.fps);
   }
 
   /** End time of the last tween declared so far on an element. */
@@ -399,7 +400,9 @@ export class MotionBuilder {
    * yet: the expressive exit.
    */
   private exitDuration(target: string): number {
-    const enter = [...this.tweens].reverse().find((t) => t.target === target && t.kind === "enter" && t.duration > 0.01);
+    // The entrance's visual time is its movement: not a zero-length cut-on, not a whip's blur bell.
+    const blurOnly = (t: Tween) => Object.keys(t.props).every((p) => p === "blur" || p === "blurX" || p === "blurY");
+    const enter = [...this.tweens].reverse().find((t) => t.target === target && t.kind === "enter" && t.duration > 0.01 && !blurOnly(t));
     if (!enter) return durations.exit;
     const visual = visualOf(enter.ease) ?? enter.duration;
     return round(Math.min(durations.exit, Math.max(durations.instant, EXIT_FACTOR * visual)));

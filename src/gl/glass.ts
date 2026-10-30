@@ -47,7 +47,7 @@ export function glassMaterial(opts: { tint: THREE.Color; thickness: number; back
           "uniform sampler2D ctBackdrop; uniform vec4 ctPlane; uniform float ctIor; uniform float ctDispersion; uniform float ctThickness; uniform vec3 ctTint; uniform vec3 ctBackground;\n" +
           "vec3 ctThrough(vec3 v, vec3 n, float eta, float aspect) {\n" +
           "  vec3 r = refract(v, n, eta);\n" +
-          "  if (dot(r, r) < 1e-6) r = reflect(v, n);\n" +
+          "  if (dot(r, r) < 1e-6) return ctBackground;\n" +
           "  vec3 q = vCtWorld + r * (ctThickness / max(0.2, abs(dot(r, n))));\n" +
           "  float t = (ctPlane.z - q.z) / (abs(v.z) > 1e-4 ? v.z : -1e-4);\n" +
           "  vec3 hit = q + v * max(t, 0.0);\n" +
@@ -58,7 +58,8 @@ export function glassMaterial(opts: { tint: THREE.Color; thickness: number; back
       )
       .replace(
         "#include <opaque_fragment>",
-        "{\n" +
+        "vec3 ctPass;\n" +
+          "{\n" +
           "  vec3 v = normalize(vCtWorld - cameraPosition);\n" +
           "  vec3 n = inverseTransformDirection(normal, viewMatrix);\n" +
           "  if (dot(n, v) > 0.0) n = -n;\n" +
@@ -71,9 +72,13 @@ export function glassMaterial(opts: { tint: THREE.Color; thickness: number; back
           "    ctThrough(v, n, 1.0 / (ctIor + ctDispersion), aspect).b);\n" +
           "  float f0 = pow((ctIor - 1.0) / (ctIor + 1.0), 2.0);\n" +
           "  float fresnel = f0 + (1.0 - f0) * pow(1.0 - clamp(dot(-v, n), 0.0, 1.0), 5.0);\n" +
-          "  gl_FragColor = vec4(outgoingLight + through * ctTint * (1.0 - fresnel), 1.0);\n" +
+          "  ctPass = through * ctTint * (1.0 - fresnel);\n" +
+          "  gl_FragColor = vec4(outgoingLight, 1.0);\n" +
           "}",
-      );
+      )
+      // The light that passes through is the card as it is, like the card itself: tone mapping
+      // only the reflections keeps clear glass from crushing the canvas below its own black.
+      .replace("#include <tonemapping_fragment>", "#include <tonemapping_fragment>\ngl_FragColor.rgb += ctPass;");
   };
   // One program per material instance: the backdrop's aspect is compiled in.
   m.customProgramCacheKey = () => "ct-glass-" + (opts.backdrop.width / opts.backdrop.height).toFixed(6);

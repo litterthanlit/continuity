@@ -241,10 +241,12 @@ export function renderCarrier(c: Carrier, e: number, t: number) {
     s.el.style.borderWidth = f3(lerp(s.borderWidth[0], s.borderWidth[1], e)) + "px";
     s.el.style.borderRadius = f3(lerp(s.radius[0], s.radius[1], e)) + "px";
   }
-  // One side at a time: two sets of copy at half opacity read as a double exposure.
+  // The copy swaps halfway, over about a frame of a fast move, on the shell: a long cross-dissolve
+  // read as a double exposure, and a gap between the two sides left the card empty.
+  const swap = smooth(0.4, 0.6, e);
   for (const [s, o] of [
-    [c.a, 1 - smooth(0.2, 0.5, e)],
-    [c.b, smooth(0.5, 0.8, e)],
+    [c.a, 1 - swap],
+    [c.b, swap],
   ] as Array<[Side, number]>) {
     s.box.style.transform =
       "translate(" + f3(cx) + "px," + f3(cy) + "px) " + deform + " translate(" + f3(-w / 2) + "px," + f3(-h / 2) + "px) scale(" + f3(w / s.lw) + "," + f3(h / s.lh) + ")";

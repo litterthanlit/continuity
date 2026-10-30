@@ -40,9 +40,13 @@ const OVERLAY =
   "uniform sampler2D b1; uniform sampler2D b2; uniform sampler2D b3; uniform float strength; uniform float radius; uniform float grain; uniform float vignette; uniform vec2 res;" +
   "varying vec2 vUv;" +
   "float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }" +
-  "void main() {" +
+  "void main() {\n" +
+  "  #ifdef BLOOM\n" +
   "  vec3 bloom = (texture2D(b1, vUv).rgb * (1.0 - radius) + texture2D(b2, vUv).rgb + texture2D(b3, vUv).rgb * (0.5 + radius)) * strength * 4.0;" +
-  "  vec3 glow = 1.0 - exp(-bloom);" +
+  "  vec3 glow = 1.0 - exp(-bloom);\n" +
+  "  #else\n" +
+  "  vec3 glow = vec3(0.0);\n" +
+  "  #endif\n" +
   "  vec2 d = (vUv - 0.5) * vec2(res.x / res.y, 1.0);" +
   "  float keep = 1.0 - vignette * smoothstep(0.35, 1.0, length(d));" +
   "  gl_FragColor = vec4(glow + (hash(gl_FragCoord.xy) - 0.5) * grain, keep);" +
@@ -82,6 +86,8 @@ export class Post {
       vignette: { value: post.vignette ?? 0 },
       res: { value: new THREE.Vector2(width, height) },
     });
+    // Without bloom the overlay skips the three bloom reads per pixel (about 40 ms a frame in software).
+    if (post.bloom && post.bloom.strength > 0) this.overlay.defines = { BLOOM: "" };
     Object.assign(this.overlay, { transparent: true, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.SrcAlphaFactor });
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.overlay);
     this.quad.frustumCulled = false;

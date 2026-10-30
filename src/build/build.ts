@@ -10,7 +10,7 @@ import { drainMissingText, textProxy, withScene, type SceneContext } from "../ki
 import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
 import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
-import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
+import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline, Tween } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, MusicSchema, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
@@ -268,7 +268,7 @@ export async function buildProject(
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
             return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
           };
-          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height }, music && sceneMusic(music.grid, timing.start, sc.duration));
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height }, music && sceneMusic(music.grid, timing.start, sc.duration, sb.format.fps));
           try {
             def.motion(mb, ctx);
           } catch (e) {
@@ -555,9 +555,14 @@ export function motionAssertions(timeline: Timeline, elements: ElementInfo[]) {
   const known = new Set(elements.map((e) => e.id));
   const assertions: Array<Record<string, unknown>> = [];
   for (const sc of timeline.scenes) {
+    // An entrance ends when everything that starts with its fade has finished: a cut-on (a
+    // zero-length fade) with a move is not visible "by" its zero-length end, at HyperFrames' sampling.
+    const frame = 1 / timeline.fps;
+    const endOf = (t: Tween) =>
+      Math.max(...sc.tweens.filter((u) => u.target === t.target && u.kind === "enter" && Math.abs(u.start - t.start) <= frame).map((u) => u.start + u.duration));
     const entrances = sc.tweens
       .filter((t) => t.kind === "enter" && !t.split && t.props.opacity && t.props.opacity[0] === 0 && known.has(t.target))
-      .map((t) => ({ target: t.target, start: sc.start + t.start, end: sc.start + t.start + t.duration }))
+      .map((t) => ({ target: t.target, start: sc.start + t.start, end: sc.start + endOf(t) }))
       .sort((a, b) => a.start - b.start);
     const firstByTarget = new Map<string, { start: number; end: number }>();
     for (const e of entrances) if (!firstByTarget.has(e.target)) firstByTarget.set(e.target, e);

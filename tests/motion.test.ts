@@ -273,8 +273,19 @@ describe("whip and drift (energetic register)", () => {
     expect(move.props.y).toEqual([160, 0]);
     expect(move.duration).toBe(1.6);
     const bell = mb.tweens.filter((t) => t.props.blurY);
-    expect(bell).toHaveLength(2);
+    expect(bell.length).toBeGreaterThan(0);
     expect(Math.max(...bell.map((t) => t.start + t.duration))).toBeLessThanOrEqual(0.1);
+  });
+
+  it("is seen on its first frame, as a smear: on a cut it never opens on a blank frame", () => {
+    const mb = new MotionBuilder("s", 3, {});
+    mb.enter("card", "whip", { at: 0.5, dir: "left" });
+    const c = compileScene(scene(mb), {});
+    const first = sampleScene(c, 0.5).get("s.card")!;
+    expect(first.opacity).toBe(1);
+    expect(first.blurX).toBeGreaterThan(8); // the snap's blur, at its peak
+    expect(sampleScene(c, 0.49).get("s.card")!.opacity).toBe(0); // and nothing before it
+    expect(sampleScene(c, 0.6).get("s.card")!.blurX ?? 0).toBeLessThan(1); // sharp by the drift
   });
 });
 

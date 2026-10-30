@@ -41,7 +41,7 @@ describe("music grid", () => {
   });
 
   it("re-clocks a scene's slice to the scene", () => {
-    const m = sceneMusic(musicGrid(track(), { start: 0, offset: 0 }), 2, 2);
+    const m = sceneMusic(musicGrid(track(), { start: 0, offset: 0 }), 2, 2, 30);
     expect(m.beats).toEqual([0, 0.5, 1, 1.5, 2]);
     expect(m.bars).toEqual([0, 2]);
   });
@@ -72,8 +72,9 @@ describe("storyboard timed by the music", () => {
       { grid },
     );
     if (!r.ok) throw new Error(r.issues.join("\n"));
-    // b starts at 1.0: its beats are at 1.0, 1.5, 2.0 …; its first bar at 2.0
-    expect(Object.fromEntries(r.value.scenes[1].beats.map((b) => [b.id, b.at]))).toEqual({ one: 1, half: 1.25, bar: 3, hit: 1 });
+    // b starts at 1.0: its beats are at 1.0, 1.5, 2.0 …; its first bar at 2.0. The half beat at
+    // 2.25s is halfway between frames 67 and 68: it takes the earlier (picture before sound).
+    expect(Object.fromEntries(r.value.scenes[1].beats.map((b) => [b.id, b.at]))).toEqual({ one: 1, half: 1.2333, bar: 3, hit: 1 });
   });
 
   it("a beat-timed cut lands on the frame nearest the beat, never after that frame's time", () => {
@@ -98,13 +99,26 @@ describe("storyboard timed by the music", () => {
 });
 
 describe("motion on the music", () => {
-  const music = sceneMusic(musicGrid(track(), { start: 0, offset: 0 }), 1, 4);
+  const music = sceneMusic(musicGrid(track(), { start: 0, offset: 0 }), 1, 4, 30);
+
+  it("a move on a beat starts on the frame nearest it, like the cut: on the cut it is seen on the cut's frame", () => {
+    // The beat is at 3.867s; the scene before ends on its nearest frame, 116/30 = 3.8666s.
+    const g = musicGrid(track(0.367), { start: 0, offset: 0 });
+    const r = parseStoryboard(sb([scene("a", { beats: 8 }), scene("b", { beats: 4 }, { beats: [{ id: "in", at: { beat: 0 } }, { id: "and", at: { beat: 1 } }] })]), { grid: g });
+    if (!r.ok) throw new Error(r.issues.join("\n"));
+    const start = sceneTimings(r.value).scenes[1].start;
+    expect(start).toBe(3.8666);
+    expect(Object.fromEntries(r.value.scenes[1].beats.map((b) => [b.id, b.at]))).toEqual({ in: 0, and: 0.5 });
+    const m = new MotionBuilder("b", 2, {}, undefined, undefined, undefined, sceneMusic(g, start, 2, 30));
+    expect(m.time("beat:0")).toBe(0);
+    expect(m.time("beat:1")).toBe(0.5);
+  });
 
   it("beat:, bar: and hit: are counted from the scene's start", () => {
     const m = new MotionBuilder("s", 4, {}, undefined, undefined, undefined, music);
     expect(m.time("beat:0")).toBe(0);
     expect(m.time("beat:2")).toBe(1);
-    expect(m.time("beat:2.5")).toBe(1.25);
+    expect(m.time("beat:2.5")).toBe(1.2333); // 1.25 is between frames; the earlier one
     expect(m.time("beat:2-0.05")).toBe(0.95);
     expect(m.time("bar:0")).toBe(1); // the scene starts at 1.0; the bar at 2.0
     expect(m.time("hit:0")).toBe(1);
@@ -115,7 +129,7 @@ describe("motion on the music", () => {
     m.enter("a", "fade", { at: 0.93, snap: "beat" });
     m.enter("b", "fade", { at: 0.7, snap: "half" });
     m.enter("c", "fade", { at: 0.7, snap: "bar" });
-    expect(m.tweens.map((t) => t.start)).toEqual([1, 0.75, 1]);
+    expect(m.tweens.map((t) => t.start)).toEqual([1, 0.7333, 1]); // 0.75 is between frames; the earlier one
   });
 
   it("asks for music when there is none", () => {

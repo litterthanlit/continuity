@@ -21,7 +21,7 @@ export function motionOnGrid(b: BuildResult): Array<{ t: number; target: string;
         const g = r3(sc.start + t.start);
         const p = nearest(points, g);
         const off = p === undefined ? Infinity : Math.abs(p - g);
-        return { t: g, target: t.target, state: off <= frame / 2 ? ("on" as const) : off <= 3 * frame ? ("near" as const) : ("free" as const) };
+        return { t: g, target: t.target, state: off <= frame / 2 + 0.001 ? ("on" as const) : off <= 3 * frame ? ("near" as const) : ("free" as const) };
       }),
   );
 }
@@ -55,7 +55,7 @@ export function beatsHtml(b: BuildResult, title: string): string {
   const cuts = tl.scenes
     .map((s, i) => {
       const shown = shownAt(s.start, tl.fps);
-      const on = i === 0 || Math.abs((nearest(g.beats, shown) ?? Infinity) - shown) <= frame / 2;
+      const on = i === 0 || Math.abs((nearest(g.beats, shown) ?? Infinity) - shown) <= frame / 2 + 0.001;
       return (
         `<line x1="${x(s.start)}" x2="${x(s.start)}" y1="${top}" y2="${top + wave + 120}" stroke="${on ? "#f9f8f7" : "#ff756f"}" stroke-width="2"/>` +
         `<text x="${x(s.start) + 4}" y="${top + wave + 112}" fill="${on ? "#d6d3d1" : "#ff756f"}" font-size="12">${esc(s.scene)}</text>`

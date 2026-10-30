@@ -47,7 +47,7 @@ function material(canvas: HTMLCanvasElement, m: GlMaterial, geometry: GlObject["
   const color = (fallback: string) => resolveColor(canvas, m.color ?? fallback);
   switch (m.preset) {
     case "chrome":
-      return new THREE.MeshPhysicalMaterial({ color: color("fg"), metalness: 1, roughness: 0.08, clearcoat: 0.6, clearcoatRoughness: 0.04, envMapIntensity: 1.15 });
+      return new THREE.MeshStandardMaterial({ color: color("fg"), metalness: 1, roughness: 0.08, envMapIntensity: 1.15 });
     case "satin":
       return new THREE.MeshPhysicalMaterial({ color: color("surface-1"), metalness: 0.2, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.2 });
     case "glass": {

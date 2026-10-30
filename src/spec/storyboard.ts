@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { musicAt, indexAt, pointAt, type MusicGrid, type OnMusic } from "../audio/grid.js";
+import { musicAt, indexAt, onFrame, pointAt, type MusicGrid, type OnMusic } from "../audio/grid.js";
 import { REGISTERS } from "../motion/register.js";
 import { eases } from "../motion/tokens.js";
 import { DIRS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
@@ -194,9 +194,6 @@ function round(n: number) {
 function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | undefined, issues: string[]): Storyboard {
   const step = 60 / (grid?.bpm ?? sb.bpm ?? 120);
   const fps = sb.format.fps;
-  // A cut shows on the first frame at or after the scene's start. Rounding the start to 4 decimals
-  // could land it just after its frame (62/30 → 2.0667), so it rounds down onto the frame's time.
-  const onFrame = (x: number) => Math.floor((Math.round(x * fps) / fps) * 10000 + 1e-6) / 10000;
   let t = 0;
   const scenes = sb.scenes.map((s, i): SceneSpec => {
     const isLast = i === sb.scenes.length - 1;
@@ -211,7 +208,7 @@ function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | u
       const pts = bars ? grid.bars : grid.beats;
       const each = bars ? step * grid.beatsPerBar : step;
       const k = Math.round(indexAt(pts, t, each));
-      duration = round(onFrame(pointAt(pts, k + ("bars" in s.duration ? s.duration.bars : s.duration.beats), each)) - t + overlap);
+      duration = round(onFrame(pointAt(pts, k + ("bars" in s.duration ? s.duration.bars : s.duration.beats), each), fps) - t + overlap);
       if (duration <= overlap) issues.push(`scenes.${i}.duration: ${JSON.stringify(s.duration)} is no time at this point in the music`);
     }
     const start = t;
@@ -222,7 +219,7 @@ function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | u
         issues.push(`scenes.${i}.beats.${j}: ${JSON.stringify(b.at)} — ${grid ? "the music has no such moment in this scene" : "the storyboard has no music"}`);
         return { id: b.id, at: 0, on: b.at };
       }
-      return { id: b.id, at: round(Math.max(0, at - start)), on: b.at, ...(b.note ? { note: b.note } : {}) };
+      return { id: b.id, at: round(Math.max(0, onFrame(at, fps) - start)), on: b.at, ...(b.note ? { note: b.note } : {}) };
     });
     t += duration - overlap;
     return { ...s, duration, beats, ...(typeof s.duration === "number" ? {} : { span: s.duration }) };
