@@ -96,19 +96,21 @@ post chain has exactly one: a blended overlay. Half-float targets cost about 40 
 8-bit ones, so only the quarter-size scene copy is HDR.
 
 The machine moves the cost more than any change above. The session moved to a second 4 vCPU
-container (B, Xeon at 2.8 GHz) and we measured the same commit on both, then the final films:
+container (B, Xeon at 2.8 GHz), and the same commit measured about 1.4× slower there. B is also
+noisy: with no other process running and no CPU steal, the same commit's medians moved by up to
+25% between runs. So the final films are given as the range over their runs:
 
-| shot | A, first cut | B, first cut | A, final | B, final |
+| shot | A, first cut | A, round 1 | B, first cut | B, final (3 runs, median) |
 |---|---|---|---|---|
-| chrome | 93 / 104 | 124 / 169 | 98 / 125 | 143 / 195 |
-| glass | 125 / 140 | 180 / 226 | 123 / 142 | 178 / 215 |
-| neon + bloom | 98 / 118 | 123 / 154 | 70 / 78 | 126 / 152 |
+| chrome | 93 / 104 | 98 / 125 | 124 / 169 | 133–159 |
+| glass | 125 / 140 | 123 / 142 | 180 / 226 | 197–231 |
+| neon + bloom | 98 / 118 | 70 / 78 | 123 / 154 | 123–140 |
 
-(median / p95 ms.) On A every shot is inside 150 ms. On B, chrome and the bloom shot are inside
-it at the median and glass is not: about 1.4× slower for the same code. The final chrome costs a
-little more than the first because it lands turned, with more bevel on screen. The budget needs
-a reference machine before it can gate anything; until then `gl-bench` is the record, and glass
-is the shot to make cheaper first.
+(median / p95 ms where one run.) The final shots all carry grain and vignette, and chrome has no
+clearcoat (§6). On A every shot was inside 150 ms. On B the bloom shot is inside it, chrome is
+inside it on two runs of three, and glass is over it. The budget needs a reference machine and
+several runs before it can gate anything; until then `gl-bench` is the record, and glass is the
+shot to make cheaper first.
 
 End to end on B, `ct render example-logo` (6 s, 90 GL frames of 180) takes 73.1 s with 4
 workers; each worker spends 8–13 s mounting three shots (three environment prefilters and shader
