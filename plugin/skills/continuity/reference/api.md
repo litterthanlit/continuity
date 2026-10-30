@@ -105,11 +105,41 @@ Imagery and annotation
   label on a canvas chip (`<ct>-label`). Absolutely placed by its centre (`class="left-[x] top-[y]"`);
   join markers with `<Path strokeWidth={2}>` and `draw` it.
 - Kit UI roots carry `data-ct-ui`: their text is judged as UI imagery (`ui-glance`, ≥ 0.8s landed), not copy (`read-time`).
+Shapes (`docs/decisions/0008`)
+- `<Shape ct d viewBox? width? height? fill?>` — a filled outline (a logo, a mark). As one side of
+  a `morph` transition pair with another Shape, it morphs its outline across the cut.
+- `<Morph ct shapes={[d0, d1, …]} samples? collapse? viewBox? width? height? fill?>` — outlines that
+  morph on the `morph` channel: `m.tween("mark", { morph: [0, 1] }, { ease: "out", duration: "slow" })`.
+  `collapse: "into"` pours letters with no counterpart into the other shape (a word into a mark);
+  the default grows/shrinks them in place (an O into an I). `samples` 600 for a wordmark.
+- `textShape("Continuity", { size: 112, weight: 500 })` → the word's outline (Geist, kerned).
+  `placeShape(d, { scale, x, y })` puts an outline where the layout needs it; `shapeBounds(d)`.
+- Shapes clip to their viewBox. Never `overflow-visible` on an inline svg (`svg-overflow`): its
+  edges then rasterise differently per worker.
+
+WebGL shots (`docs/decisions/0009`; energetic register; each GL frame costs 70–150 ms to render)
+- `<Gl ct objects={[…]} post? fov? background? exposure?>` — a full-frame three.js shot under litt's
+  light from above. Objects: `{ ct, geometry, material, x?, y?, z?, rotateX?, rotateY?, rotate?, scale? }`.
+  - geometry `{ kind: "extrude", path, size, depth, bevel? }` (a logo as a solid) ·
+    `{ kind: "tubes", path, size, radius }` (neon along its contours) ·
+    `{ kind: "plane", width, height, texture: "grid" | { text, size, ink? } }` (a card behind the
+    subject; `\n` splits lines).
+  - material `{ preset: "chrome" | "glass" | "neon" | "satin", color?, intensity? }` — static. Glass
+    refracts the shot's plane card (give it one); neon is the accent at HDR, with `post.bloom`.
+  - `post`: `{ bloom: { strength, threshold, radius }, vignette?, grain? }`.
+- Objects and the camera `<ct>-camera` are timeline targets: `x y z` (px at the z = 0 plane),
+  `rotateX rotateY rotate` (deg), `scale`. Camera: `x/y` truck, `z` dolly in, `rotateX/rotateY`
+  orbit, `scale` zoom. Any other channel on a GL target is a build error (`gl-prop`).
+- Measure a GL film with `node scripts/gl-bench.mjs <slug> [--determinism 4]`.
 - Characters must exist in the vendored fonts (Latin + "CT Symbols/Arrows/Math" fallbacks: ✓ ✔ ❯ ◆ ⌘ ★ ● ■ ▲ ✕ → ← ↗ × ÷). Emoji are rejected (`glyph-missing`) — draw icons as SVG.
 
 ## Motion DSL (`m`)
 
-Timing (`at`): seconds · `"b1"` · `"b1+0.2"` · `"end-0.6"` · `"after:headline"`.
+Timing (`at`): seconds · `"b1"` · `"b1+0.2"` · `"end-0.6"` · `"after:headline"` · with music,
+`"beat:4"` (the scene's 5th beat; `"beat:2.5"` between beats), `"bar:1"`, `"hit:0"` (its first
+strong hit), with offsets (`"beat:4-0.05"`). `snap: "beat" | "half" | "bar" | "hit"` moves any
+start to the nearest point; `m.music` is `{ bpm, beatsPerBar, beats, bars, hits }` on the scene's
+clock (for loops: `m.music!.beats.forEach((t, i) => …)`).
 
 ```ts
 m.enter(targets, preset, { at, duration?, ease?, split?, stagger?, distance?, mask? })
@@ -124,6 +154,7 @@ m.type("search-text", { at, cps: 22 })                      // typeOn by chars
 m.blink("search-caret", { at, until })                      // caret blink — the one loop litt allows
 m.loop(target, { rotate: 8 }, { period: 2 })                // a sine swing; warns (ambient-loop) — energetic: an info, for an object that swings
 m.time(at) → seconds · m.endOf(id) → seconds
+m.enter("card", "whip", { at: "beat:1", dir: "left", duration: "slow", squash: 0.2 })   // energetic: whip and drift
 ```
 
 - `targets`: one id or an array (auto-staggered 40ms by `list`, override with `stagger`).
@@ -134,14 +165,20 @@ m.time(at) → seconds · m.endOf(id) → seconds
   bounce 0.12 — one per scene), `out` (instant tier, exits), `inOut` (camera, cursor, playhead),
   `linear` (typing, a machine turning); energetic register: `steep` (cubic-bezier(0.87, 0, 0.13, 1) —
   interface and camera) and `pop` (spring, visual 0.3s, bounce 0.3 — things that act like objects);
-  or `spring(visual, bounce)` (bounce ≤ 0.12 calm, ≤ 0.35 energetic).
+  `whip` (energetic: 85% of the move in ~1.5 frames, then a slow drift to rest — its snap stays
+  0.05s whatever the duration; default duration `drift`, 1s); or `spring(visual, bounce)`
+  (bounce ≤ 0.12 calm, ≤ 0.35 energetic).
+- `squash: 0..0.5` on any tween or preset: stretches along the velocity, squashes against the
+  acceleration, area kept (energetic: objects and type with mass). `whip` and `squash` in a calm
+  scene warn (`ease-register`).
 - Durations: `instant` 0.1 · `responsive` 0.2 · `expressive` 0.35 · `exit` 0.26 · `slow` 0.6 ·
   `linger` 1.4 · `snap` 0.3 (energetic: a decisive move on `steep`). Springs take their own settle
   time unless you pass a duration.
 - Props litt animates: `x y (px) xPct yPct scale scaleX scaleY rotate opacity`, `ink` (0 the
   grey → 1 fg), `clipTop clipRight clipBottom clipLeft (% inset)`, `draw (0..1)`, `counter`.
   The engine also has `z rotateX rotateY skewX blur brightness saturate tracking wght wdth opsz
-  soft blurX blurY fx` — outside transform/opacity they warn (`property-motion`).
+  soft blurX blurY fx` — outside transform/opacity they warn (`property-motion`) — plus `morph`
+  (a `<Morph>`'s shape) and `match` (a morph transition's carrier, set by the build).
 - `[from, to]` or just `to` (inherits the current value).
 - `allow: ["rule-id"]` silences a lint rule for that tween — justify in a comment.
 
@@ -158,10 +195,10 @@ Using them in a view is a build error (`reserved-id`).
   "theme": "litt-dark | litt-light",
   "type": "litt",
   "register": "calm | energetic",
-  "bpm": 120,
+  "music": { "src": "assets/music.wav", "start": 0, "offset": 0, "volume": 1, "fadeOut": 0.4 },
   "scenes": [{
     "id": "hook", "duration": 2.8, "intent": "…",
-    "beats": [{ "id": "b1", "at": 0.2, "note": "the statement lands" }],
+    "beats": [{ "id": "b1", "at": 0.2, "note": "the statement lands" }, { "id": "hit", "at": { "beat": 2 } }],
     "text": { "headline": "…" },
     "elements": [{ "id": "headline", "role": "headline", "anchor": "A4:D5" }],
     "motion": "director notes for the builder",
@@ -171,6 +208,15 @@ Using them in a view is a build error (`reserved-id`).
 }
 ```
 Element roles: `headline title body label caption cta stat logo ui decor media`.
+
+Music (`docs/decisions/0008`): `music.src` is an audio file in the project (WAV keeps timing exact);
+`start` is where it starts in the video, `offset` how far into the track; `bpm` / `downbeat` (a
+track time on a bar line) override the analysis when it hears half time or a pickup. With music, a
+scene's `duration` may be `{ "beats": 8 }` or `{ "bars": 2 }` — it ends exactly on that beat, so
+the cut is on the music — and a story beat's `at` may be `{ "beat": 2 }`, `{ "bar": 1 }` or
+`{ "hit": 0 }`. `npx ct beats <slug>` shows the grid against the edit; the render mixes the track
+in and its QC checks the sound lands on the picture (`av-sync`). Without music, `bpm` is a bare
+grid for `cut-off-beat`.
 `register` (top level, default `calm`; a scene's own wins) sets the motion's energy and the lint
 bounds — `catalog.md` → Registers, motion-craft §12.
 Scene `duration` includes the outgoing transition overlap; the next scene starts
@@ -179,8 +225,11 @@ inside it together.
 
 Transition params (validated per type; `duration` defaults per type): `ease` (token or
 `[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, wipe; `in|out`: depth) · `angle` + `feather` (wipe) ·
-`blur` (push/pushUp: `true` = speed-matched, number = σ px, `false`). Types, defaults and
-ranges: `catalog.md` → Scene transitions.
+`blur` (push/pushUp: `true` = speed-matched, number = σ px, `false`) · `pairs` (morph: `["logo"]`
+for the same id in both scenes, `[["card", "tile"]]` for outgoing → incoming) + `squash` + `arc`
+(morph: a bend of the path, −0.5..0.5). A morph pair must be at rest at the handoff: no entrance
+on the incoming element or its children during the morph (the carrier holds its built state).
+Types, defaults and ranges: `catalog.md` → Scene transitions.
 
 ## Brand accent
 

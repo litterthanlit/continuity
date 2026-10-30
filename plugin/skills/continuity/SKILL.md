@@ -47,10 +47,17 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
 - **register** — `calm` (default) or `energetic`; a scene's own `register` wins (one energetic
   chapter in a calm video, or a calm hold in a reel). Energetic scenes run 1–3s, holds 1–1.6s;
   plan the formulas (which scenes repeat which structure) and the mirrored ending here.
+- **music** (optional, `docs/decisions/0008`) — `"music": { "src": "assets/…wav" }`. Then time
+  scenes in the music (`"duration": { "bars": 1 }`, `{ "beats": 6 }`) so every cut lands on a beat,
+  put story beats on it (`{ "beat": 2 }`), and run `npx ct beats <slug>` to see the grid against the
+  edit before building scenes. Motion lands on it with `at: "beat:N"` / `snap: "beat"`; the render
+  mixes the track in and proves sync (`av-sync`). Craft: motion-craft §13.
 - **transition** into the next scene, from litt's ONE language (motion-craft §8):
   `cut` on the beat is the primary; accents `crossfade`, `dip`, `push`, `pushUp`,
   `wipe` — at most two types, with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
-  Energetic: up to three, and `depth` (`dir: "in"` / `"out"`) joins the language.
+  Energetic: up to three, and `depth` (`dir: "in"` / `"out"`) joins the language. `morph`
+  (`"pairs": [["card", "tile"]]`) carries an element across the cut instead of cutting — the
+  incoming element must have no entrance of its own during it.
 - `npx ct lint <slug>` validates the storyboard immediately.
 
 ## 2 · Style frames (builder)
@@ -79,7 +86,8 @@ register instead.
 
 ## 5 · Look (critic)
 `npx ct sheet <slug>` + `npx ct stills <slug>` → read the images.
-`npx ct strip <slug> --scene <id>` shows a scene's motion paths in one image;
+`npx ct strip <slug> --scene <id>` shows a scene's motion paths in one image; with music,
+`npx ct beats <slug>` charts the cuts and every move's start against the beats;
 `npx ct motion <slug>` (after a render) charts the edit's rhythm and flags dead
 zones/jolts. Load the `critique` skill and score the 5 axes with evidence
 (`npx ct score …`). Fix the top issues only.
@@ -112,4 +120,5 @@ limited number of slots automatically. Always finish with a full `ct check`.
 - Presets & tokens with numbers: `motion-craft/SKILL.md`
 - litt's type (scale, weights, inks, spacing): `typography/SKILL.md`
 - The translation table (litt → video): `docs/decisions/0006-litt-house-language.md` in the repo
+- Music, whip, squash, morphs: `docs/decisions/0008`; WebGL material shots (`<Gl>`): `docs/decisions/0009`
 - Rubric: `critique/SKILL.md`
