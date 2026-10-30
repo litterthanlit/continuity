@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { BuildResult } from "../../build/build.js";
 import type { Finding, Severity } from "../../spec/findings.js";
@@ -47,8 +47,12 @@ export async function hfCheck(
 ): Promise<{ findings: Finding[]; raw: unknown }> {
   // --deep: let HyperFrames verify our generated motion assertions against the seeked
   // timeline (slow — ~10s per assertion — so it is reserved for pre-delivery checks).
+  // A film with nothing that fades in on its own (GL shots, carried, typed or wiped copy) has no
+  // assertions; HyperFrames rejects an empty spec, so there is nothing to stage.
   const sidecar = join(build.dir, "index.motion.json");
-  if (opts.deep && existsSync(join(build.dir, "motion-assertions.json"))) copyFileSync(join(build.dir, "motion-assertions.json"), sidecar);
+  const generated = join(build.dir, "motion-assertions.json");
+  const asserted = opts.deep && existsSync(generated) && (JSON.parse(readFileSync(generated, "utf8")) as { assertions: unknown[] }).assertions.length > 0;
+  if (asserted) copyFileSync(generated, sidecar);
   else rmSync(sidecar, { force: true });
   const win = opts.scene ? build.timeline!.scenes.find((s) => s.scene === opts.scene) : undefined;
   const times = auditTimes(build).filter((t) => !win || (t >= win.start && t <= win.start + win.duration));
@@ -67,6 +71,9 @@ export async function hfCheck(
     };
   }
   const findings: Finding[] = [];
+  if (opts.deep && !asserted) {
+    findings.push({ source: "check", rule: "motion-assertions", severity: "info", message: "--deep: nothing in this film fades in on its own, so there were no motion assertions to verify" });
+  }
   if (j.browserSkipped) {
     findings.push({ source: "check", rule: "browser-skipped", severity: "error", message: "the browser audit did not run (lint errors or launch failure) — layout/contrast results are missing, not clean" });
   }
