@@ -1,0 +1,157 @@
+{
+  "title": "Continuity — material cut",
+  "logline": "For designers on X: one mark, three materials, every cut on the beat — made as code.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "register": "energetic",
+  "scenes": [
+    {
+      "id": "chrome",
+      "duration": {
+        "beats": 2
+      },
+      "intent": "Chrome: the mark whips round to face us and drifts — the first hit.",
+      "beats": [
+        {
+          "id": "hit",
+          "at": {
+            "beat": 0
+          },
+          "note": "the downbeat: the whip lands"
+        }
+      ],
+      "elements": [
+        {
+          "id": "shot",
+          "role": "media",
+          "note": "GL canvas"
+        },
+        {
+          "id": "mark",
+          "role": "logo",
+          "note": "extruded mark, chrome"
+        }
+      ],
+      "motion": "rotateY −75° → 0 on the whip (85% in 1.5 frames), scale 0.9 → 1; the camera dollies in 4%."
+    },
+    {
+      "id": "glass",
+      "duration": {
+        "beats": 2
+      },
+      "intent": "Glass: the same mark bends the line of type behind it.",
+      "beats": [
+        {
+          "id": "hit",
+          "at": {
+            "beat": 0
+          }
+        }
+      ],
+      "elements": [
+        {
+          "id": "shot",
+          "role": "media"
+        },
+        {
+          "id": "mark",
+          "role": "logo",
+          "note": "extruded mark, glass"
+        },
+        {
+          "id": "type",
+          "role": "decor",
+          "note": "a plane with 'motion, as code' behind the glass"
+        }
+      ],
+      "motion": "The mark drifts rotateY 18° → −14° and the camera orbits a few degrees: the refraction moves."
+    },
+    {
+      "id": "neon",
+      "duration": {
+        "beats": 2
+      },
+      "intent": "Neon: the mark as light, in the accent.",
+      "beats": [
+        {
+          "id": "hit",
+          "at": {
+            "beat": 0
+          }
+        }
+      ],
+      "elements": [
+        {
+          "id": "shot",
+          "role": "media"
+        },
+        {
+          "id": "mark",
+          "role": "logo",
+          "note": "neon tubes along the outline, bloom"
+        }
+      ],
+      "motion": "The mark whips in from 6° tilt and the camera pushes in; bloom carries the light."
+    },
+    {
+      "id": "end",
+      "duration": {
+        "beats": 4
+      },
+      "intent": "The lockup: flat mark and wordmark, typed on the downbeat; hold.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": {
+            "beat": 0
+          },
+          "note": "the mark lands with the kick"
+        },
+        {
+          "id": "word",
+          "at": {
+            "beat": 0.5
+          },
+          "note": "the wordmark types on the and"
+        },
+        {
+          "id": "line",
+          "at": {
+            "beat": 1
+          },
+          "note": "the line wipes on the next beat"
+        }
+      ],
+      "text": {
+        "word": "Continuity",
+        "line": "Motion, as code."
+      },
+      "elements": [
+        {
+          "id": "mark",
+          "role": "logo",
+          "anchor": "B3"
+        },
+        {
+          "id": "word",
+          "role": "headline",
+          "anchor": "C3:E3"
+        },
+        {
+          "id": "line",
+          "role": "caption",
+          "anchor": "C4:E4"
+        }
+      ],
+      "motion": "Mark settles (pop), the wordmark types on, the line wipes on; the camera pushes 3%."
+    }
+  ],
+  "music": {
+    "src": "assets/music.wav",
+    "fadeOut": 0.3
+  }
+}
