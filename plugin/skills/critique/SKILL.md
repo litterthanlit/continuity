@@ -68,6 +68,14 @@ Mark each ✅ / ❌ / n/a; every ❌ names an element and goes into the fixes.
 - **E7 Formula** — at least one scene formula used twice with new content.
 - **E8 Organic + technical** — markers, hairlines, mono indices over natural imagery where the brief allows.
 - **E9 Loop** — the ending answers the opening (reversed move, the same frame, the CTA).
+- **E10 On the music** (films with `music`) — `npx ct beats` shows every cut white and the moves
+  green on beats or hits, no amber near-misses; the render's `av-sync` QC is an info (sound on
+  picture within a frame); the motion chart's spikes sit on the beat lines. A move that lands a
+  frame or two late reads as sloppy, not syncopated.
+- **E11 Morphs and material** — a morph carries one element whose role survives the cut (a card
+  becomes a tile), both ends at rest at the handoff; a material shot shows one idea (chrome turns,
+  glass bends type, neon glows) and the light comes from above. Type drawn inside a GL shot is
+  invisible to the probe: read it in the stills.
 
 ## Output format (write to the iteration as critique.md, and report)
 ```

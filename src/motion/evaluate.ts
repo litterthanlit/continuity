@@ -33,6 +33,7 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
       fx: tw.fx,
       allow: tw.allow,
       mask: tw.mask,
+      squash: tw.squash,
       source,
     };
     if (tw.split) {
@@ -94,6 +95,8 @@ export interface CompiledScene {
   loops: Map<string, Loop[]>;
   counters: Map<string, CounterFormat>;
   fx: Map<string, FxSpec>;
+  /** key → squash-and-stretch amount (the largest any of its tweens asks for). */
+  squash: Map<string, number>;
   resolved: ResolvedTween[];
   bases: SceneTimeline["bases"];
 }
@@ -111,6 +114,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
   const channels = new Map<string, Map<PropName, Segment[]>>();
   const counters = new Map<string, CounterFormat>();
   const fx = new Map<string, FxSpec>();
+  const squash = new Map<string, number>();
   for (const rt of resolved) {
     let byProp = channels.get(rt.key);
     if (!byProp) channels.set(rt.key, (byProp = new Map()));
@@ -121,6 +125,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
     }
     if (rt.counter) counters.set(rt.key, rt.counter);
     if (rt.fx) fx.set(rt.key, rt.fx);
+    if (rt.squash) squash.set(rt.key, Math.max(squash.get(rt.key) ?? 0, Math.min(0.5, rt.squash)));
   }
   for (const byProp of channels.values()) for (const segs of byProp.values()) segs.sort((a, b) => a.start - b.start);
   const loops = new Map<string, Loop[]>();
@@ -130,10 +135,52 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
     list.push(l);
     if (!channels.has(l.target)) channels.set(l.target, new Map());
   }
-  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, fx, resolved, bases: scene.bases };
+  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, fx, squash, resolved, bases: scene.bases };
 }
 
-export type Values = Partial<Record<PropName, number>>;
+export type Values = Partial<Record<PropName, number>> & {
+  /** Squash-and-stretch deformation, a 2×2 matrix [a, b, c, d] applied in the parent's frame. */
+  deform?: [number, number, number, number];
+};
+
+/** Speed (px/s) at which a stretch is ~76% of its amount, and acceleration (px/s²) for the squash. */
+const STRETCH_SPEED = 2400;
+const SQUASH_ACCEL = 60000;
+/** Finite-difference step for velocity and acceleration: 1/240 s, well inside a frame. */
+const H = 1 / 240;
+
+/**
+ * Squash and stretch from the motion itself: stretch by 1 + k·tanh(|v|/V) along the velocity,
+ * squash by 1 + k·tanh(|a|/A) against the acceleration. Each factor keeps the area (s, 1/s), so
+ * the element never grows; at rest both are the identity.
+ */
+export function deformation(xy: (t: number) => [number, number], t: number, k: number): [number, number, number, number] {
+  const [x0, y0] = xy(t - H);
+  const [x1, y1] = xy(t);
+  const [x2, y2] = xy(t + H);
+  const vx = (x2 - x0) / (2 * H);
+  const vy = (y2 - y0) / (2 * H);
+  const ax = (x2 - 2 * x1 + x0) / (H * H);
+  const ay = (y2 - 2 * y1 + y0) / (H * H);
+  const stretch = along(vx, vy, 1 + k * Math.tanh(Math.hypot(vx, vy) / STRETCH_SPEED));
+  const squash = along(ax, ay, 1 / (1 + k * Math.tanh(Math.hypot(ax, ay) / SQUASH_ACCEL)));
+  return mul(stretch, squash);
+}
+
+/** Scale by `s` along direction (dx, dy) and 1/s across it; identity without a direction. */
+function along(dx: number, dy: number, s: number): [number, number, number, number] {
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6 || Math.abs(s - 1) < 1e-6) return [1, 0, 0, 1];
+  const c = dx / len;
+  const n = dy / len;
+  const q = 1 / s;
+  // R · diag(s, 1/s) · Rᵀ
+  return [c * c * s + n * n * q, c * n * (s - q), c * n * (s - q), n * n * s + c * c * q];
+}
+
+function mul(m: [number, number, number, number], o: [number, number, number, number]): [number, number, number, number] {
+  return [m[0] * o[0] + m[1] * o[2], m[0] * o[1] + m[1] * o[3], m[2] * o[0] + m[3] * o[2], m[2] * o[1] + m[3] * o[3]];
+}
 
 function channelValue(segs: Segment[], t: number): number {
   const first = segs[0];
@@ -162,6 +209,12 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
         const base = v[l.prop] ?? baseValue(c.bases, key.split("::")[0], l.prop);
         v[l.prop] = base + l.amplitude * Math.sin(2 * Math.PI * ((t - l.start) / l.period + l.phase));
       }
+    }
+    const k = c.squash.get(key);
+    if (k) {
+      const xs = byProp.get("x");
+      const ys = byProp.get("y");
+      if (xs || ys) v.deform = deformation((u) => [xs ? channelValue(xs, u) : 0, ys ? channelValue(ys, u) : 0], t, k);
     }
     out.set(key, v);
   }
@@ -227,8 +280,13 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleO
   const s: StyleOut = {};
   const has = (p: PropName) => v[p] !== undefined;
   const g = (p: PropName) => v[p] ?? BASE_VALUES[p];
-  if (TRANSFORM_PROPS.some(has)) {
+  if (TRANSFORM_PROPS.some(has) || v.deform) {
     let tr = "translate3d(" + f4(g("x")) + "px," + f4(g("y")) + "px," + f4(g("z")) + "px)";
+    // In the parent's frame, before the element's own rotation: it stretches along its path on screen.
+    const m = v.deform;
+    if (m && (Math.abs(m[0] - 1) > 1e-4 || Math.abs(m[1]) > 1e-4 || Math.abs(m[2]) > 1e-4 || Math.abs(m[3] - 1) > 1e-4)) {
+      tr += " matrix(" + f4(m[0]) + "," + f4(m[2]) + "," + f4(m[1]) + "," + f4(m[3]) + ",0,0)";
+    }
     if (has("xPct") || has("yPct")) tr += " translate(" + f4(g("xPct")) + "%," + f4(g("yPct")) + "%)";
     if (has("rotateX")) tr += " rotateX(" + f4(g("rotateX")) + "deg)";
     if (has("rotateY")) tr += " rotateY(" + f4(g("rotateY")) + "deg)";

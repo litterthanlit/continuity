@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { beats } from "./commands/beats.js";
 import { build } from "./commands/build.js";
 import { check } from "./commands/check.js";
 import { docs } from "./commands/docs.js";
@@ -33,6 +34,7 @@ const COMMANDS: Command[] = [
   strip,
   render,
   motion,
+  beats,
   status,
   score,
   compare,

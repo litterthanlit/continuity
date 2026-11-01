@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { musicAt, indexAt, onFrame, pointAt, type MusicGrid, type OnMusic } from "../audio/grid.js";
 import { REGISTERS } from "../motion/register.js";
 import { eases } from "../motion/tokens.js";
 import { DIRS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
@@ -16,13 +17,43 @@ const id = z
   .string()
   .regex(/^[a-z][a-z0-9-]*$/, "use lowercase kebab-case ids (a-z, 0-9, -), starting with a letter");
 
+/** A moment on the music, counted from the scene's start (0-based): its Nth beat (fractional = between beats), bar, or hit. */
+export const OnMusicSchema = z.union([
+  z.object({ beat: z.number().min(0) }).strict(),
+  z.object({ bar: z.number().min(0) }).strict(),
+  z.object({ hit: z.number().int().min(0) }).strict(),
+]);
+
 export const BeatSchema = z.object({
   id: z.string().regex(/^[a-z][\w-]*$/i, "beat ids are short words like b1, land, cta"),
-  at: z.number().min(0),
+  /** Seconds into the scene, or a moment on the music ({ "beat": 2 }, { "bar": 1 }, { "hit": 0 }). */
+  at: z.union([z.number().min(0), OnMusicSchema]),
   note: z.string().optional(),
 });
 
-const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur"];
+/**
+ * The soundtrack (docs/decisions/0008). The build analyses it (beats, bars, hits) so scenes can be
+ * timed in beats and motion can land on them, and the render mixes it in.
+ */
+export const MusicSchema = z.object({
+  /** Audio file inside the project, e.g. "assets/music.wav" (WAV keeps sample-exact timing). */
+  src: z.string().regex(/^(?!\/)(?!.*\.\.)[\w./ -]+$/, "a path inside the project, e.g. assets/music.wav"),
+  /** Video time (s) where the track starts playing. */
+  start: z.number().min(0).default(0),
+  /** Track time (s) at that moment — skip an intro. */
+  offset: z.number().min(0).default(0),
+  volume: z.number().min(0).max(1).default(1),
+  fadeIn: z.number().min(0).max(10).optional(),
+  fadeOut: z.number().min(0).max(10).optional(),
+  /** Force the tempo when the analysis hears it wrong (half/double time). */
+  bpm: z.number().min(40).max(240).optional(),
+  /** Force the bar phase: a track time (s) that is a downbeat. */
+  downbeat: z.number().min(0).optional(),
+  beatsPerBar: z.number().int().min(2).max(12).default(4),
+});
+export type MusicSpec = z.infer<typeof MusicSchema>;
+
+const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur", "pairs", "squash", "arc"];
 
 /** Transition into the next scene. Parameters are validated per type (TRANSITION_DEFS); duration defaults per type. */
 export const TransitionSchema = z
@@ -36,6 +67,9 @@ export const TransitionSchema = z
     angle: z.number().min(-360).max(360).optional(),
     feather: z.number().min(0).max(50).optional(),
     blur: z.union([z.boolean(), z.number().min(0).max(200)]).optional(),
+    pairs: z.array(z.union([z.string().regex(/^[a-z][\w-]*$/i), z.tuple([z.string().regex(/^[a-z][\w-]*$/i), z.string().regex(/^[a-z][\w-]*$/i)])])).min(1).max(4).optional(),
+    squash: z.number().min(0).max(0.5).optional(),
+    arc: z.number().min(-0.5).max(0.5).optional(),
   })
   .superRefine((t, ctx) => {
     const def = TRANSITION_DEFS[t.type];
@@ -43,6 +77,9 @@ export const TransitionSchema = z
       if (t[p] !== undefined && !def.params.includes(p)) {
         ctx.addIssue({ code: "custom", path: [p], message: `${t.type} has no "${p}" parameter (it takes: ${def.params.join(", ") || "none"})` });
       }
+    }
+    if (t.type === "morph" && !t.pairs) {
+      ctx.addIssue({ code: "custom", path: ["pairs"], message: 'morph needs the elements that carry the cut: "pairs": ["logo"] or [["title", "card"]]' });
     }
     if (t.dir && def.dirs && !def.dirs.includes(t.dir)) {
       ctx.addIssue({ code: "custom", path: ["dir"], message: `${t.type} runs ${def.dirs.join(" or ")}, not ${t.dir}` });
@@ -62,8 +99,11 @@ export const ElementSchema = z.object({
 
 export const SceneSchema = z.object({
   id,
-  /** Seconds, including any transition overlap into the next scene. */
-  duration: z.number().positive().max(60),
+  /**
+   * Seconds, including any transition overlap into the next scene — or, with music, a span of it:
+   * `{ "beats": 8 }` / `{ "bars": 2 }`, so the cut into the next scene lands on that beat.
+   */
+  duration: z.union([z.number().positive().max(60), z.object({ beats: z.number().positive().max(512) }).strict(), z.object({ bars: z.number().positive().max(128) }).strict()]),
   /** The single thing this scene must make the viewer feel or understand. */
   intent: z.string().min(3),
   beats: z.array(BeatSchema).default([]),
@@ -97,14 +137,24 @@ export const StoryboardSchema = z.object({
    * or `energetic` (brand reels, montages, collage-led social cuts). The lint's motion bounds follow it.
    */
   register: z.enum(REGISTERS).optional(),
-  /** Optional musical grid for cutting on the beat (seam for audio). */
+  /** A bare musical grid for cutting on the beat, when there is no `music` to analyse. */
   bpm: z.number().positive().optional(),
+  /** The soundtrack: analysed for beats, mixed into the render. */
+  music: MusicSchema.optional(),
   scenes: z.array(SceneSchema).min(1),
 });
 
-export type Storyboard = z.infer<typeof StoryboardSchema>;
-export type SceneSpec = z.infer<typeof SceneSchema>;
-export type BeatSpec = z.infer<typeof BeatSchema>;
+type RawScene = z.infer<typeof SceneSchema>;
+/** A story beat with its time resolved to scene seconds (`on`: the music moment it was written as). */
+export interface BeatSpec {
+  id: string;
+  at: number;
+  note?: string;
+  on?: OnMusic;
+}
+/** A scene with its duration resolved to seconds (`span`: the music it was timed to). */
+export type SceneSpec = Omit<RawScene, "duration" | "beats"> & { duration: number; beats: BeatSpec[]; span?: { beats: number } | { bars: number } };
+export type Storyboard = Omit<z.infer<typeof StoryboardSchema>, "scenes"> & { scenes: SceneSpec[] };
 
 export interface SceneTiming {
   id: string;
@@ -136,16 +186,61 @@ function round(n: number) {
   return Math.round(n * 10000) / 10000;
 }
 
-/** Validate and return either the storyboard or readable issues. */
-export function parseStoryboard(raw: unknown): { ok: true; value: Storyboard } | { ok: false; issues: string[] } {
-  const r = StoryboardSchema.safeParse(raw);
-  if (!r.success) {
+/**
+ * Resolve music-timed durations and beats to seconds. A scene timed in beats or bars starts at the
+ * grid point nearest its start and ends on the frame nearest the point `n` later, so its cut is on
+ * the music.
+ */
+function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | undefined, issues: string[]): Storyboard {
+  const step = 60 / (grid?.bpm ?? sb.bpm ?? 120);
+  const fps = sb.format.fps;
+  let t = 0;
+  const scenes = sb.scenes.map((s, i): SceneSpec => {
+    const isLast = i === sb.scenes.length - 1;
+    const overlap = !isLast && s.transition && s.transition.type !== "cut" ? s.transition.duration : 0;
+    let duration: number;
+    if (typeof s.duration === "number") duration = s.duration;
+    else if (!grid) {
+      issues.push(`scenes.${i}.duration: counts ${"beats" in s.duration ? "beats" : "bars"}, but the storyboard has no music`);
+      duration = 1;
+    } else {
+      const bars = "bars" in s.duration;
+      const pts = bars ? grid.bars : grid.beats;
+      const each = bars ? step * grid.beatsPerBar : step;
+      const k = Math.round(indexAt(pts, t, each));
+      duration = round(onFrame(pointAt(pts, k + ("bars" in s.duration ? s.duration.bars : s.duration.beats), each), fps) - t + overlap);
+      if (duration <= overlap) issues.push(`scenes.${i}.duration: ${JSON.stringify(s.duration)} is no time at this point in the music`);
+    }
+    const start = t;
+    const beats = s.beats.map((b, j): BeatSpec => {
+      if (typeof b.at === "number") return { id: b.id, at: b.at, ...(b.note ? { note: b.note } : {}) };
+      const at = grid ? musicAt(grid, b.at, start, step) : undefined;
+      if (at === undefined) {
+        issues.push(`scenes.${i}.beats.${j}: ${JSON.stringify(b.at)} — ${grid ? "the music has no such moment in this scene" : "the storyboard has no music"}`);
+        return { id: b.id, at: 0, on: b.at };
+      }
+      return { id: b.id, at: round(Math.max(0, onFrame(at, fps) - start)), on: b.at, ...(b.note ? { note: b.note } : {}) };
+    });
+    t += duration - overlap;
+    return { ...s, duration, beats, ...(typeof s.duration === "number" ? {} : { span: s.duration }) };
+  });
+  return { ...sb, scenes };
+}
+
+/**
+ * Validate and return either the storyboard (durations and beats in seconds) or readable issues.
+ * `grid` is the analysed music, needed when scenes are timed in beats.
+ */
+export function parseStoryboard(raw: unknown, opts: { grid?: MusicGrid } = {}): { ok: true; value: Storyboard } | { ok: false; issues: string[] } {
+  const parsed = StoryboardSchema.safeParse(raw);
+  if (!parsed.success) {
     return {
       ok: false,
-      issues: r.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`),
+      issues: parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`),
     };
   }
   const issues: string[] = [];
+  const r = { data: resolveTiming(parsed.data, opts.grid, issues) };
   const ids = new Set<string>();
   r.data.scenes.forEach((s, i) => {
     if (ids.has(s.id)) issues.push(`scenes.${i}.id: duplicate scene id "${s.id}"`);

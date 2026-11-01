@@ -1,3 +1,4 @@
+import { nearest } from "../audio/grid.js";
 import type { BuildResult, ElementInfo } from "../build/build.js";
 import { isLinear, peakSlope } from "../motion/easing.js";
 import { resolveScene } from "../motion/evaluate.js";
@@ -49,7 +50,8 @@ export const RULES = {
   "transition-bounce": "Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, out).",
   "transition-strobe": "A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or lengthen it.",
   "mask-needs-split": "Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.",
-  "cut-off-beat": "Scene cut is not on the music grid (bpm).",
+  "cut-off-beat": "Scene cut is not on the beat. With music, time the scene in beats (duration: { beats: 8 }) so its cut lands on one; without it, the bare bpm grid is checked (info).",
+  "off-beat": "A move starts one to three frames off a beat or hit: it reads as late, not as syncopated. Snap it (snap: \"beat\") or move it decisively off the grid.",
   "axis-reflow": "Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.",
   "axis-unsupported": "The element's family has no such axis, so the channel animates nothing (e.g. wdth or soft on Geist, which has a weight axis only).",
   "axis-range": "Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.",
@@ -63,6 +65,7 @@ export const RULES = {
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
   "text-fade": "Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).",
   "weight-role": "litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.",
+  "ease-register": "Whip and drift and squash-and-stretch perform: they belong to the energetic register (a reel, a beat-cut film). A calm scene places things with springs.",
 } as const;
 export type RuleId = keyof typeof RULES;
 
@@ -97,8 +100,13 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY", "match", "morph"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
+/** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
+/** The time of the first frame that shows something starting at `t`. */
+export const shownAt = (t: number, fps: number) => Math.ceil(t * fps - 1e-6) / fps;
+
+export const isBlurOnly = (t: Tween) => Object.keys(t.props).every((p) => p === "blurX" || p === "blurY");
 const ROTATION = new Set<string>(["rotate", "rotateX", "rotateY"]);
 /** Only rotation moves: a machine turning (a spinning ring), not a thing travelling. */
 const isRotation = (t: Tween) => Object.keys(t.props).filter((p) => SPATIAL_PROPS.has(p as PropName)).every((p) => ROTATION.has(p));
@@ -151,6 +159,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
         t.duration > 0.05 &&
         t.duration < 1.6 &&
         !near(t.duration) &&
+        !isBlurOnly(t) &&
         !allowed(t, "duration-off-token")
       ) {
         add("duration-off-token", "info", sc, `${localOf(t.target)} uses ${t.duration}s (not on the token scale)`, { ...where, suggestion: "prefer instant/responsive/expressive/exit/slow/snap, or a spring ease" });
@@ -217,7 +226,14 @@ export function lintTimeline(build: BuildResult): Finding[] {
           add("property-motion", "info", sc, `${localOf(t.target)}: ink fades over ${t.duration}s`, { ...where, suggestion: 'ink steps at the instant tier (duration "instant")' });
         }
       }
-      if (t.kind === "enter" && B.textTypesOrWipes && t.preset !== "typeOn" && isCopy(elements.get(t.target)) && Object.keys(t.props).every((p) => p === "opacity" || p === "scale") && !allowed(t, "text-fade")) {
+      if (!B.whip && (t.ease.type === "whip" || t.squash) && !allowed(t, "ease-register")) {
+        add("ease-register", "warning", sc, `${localOf(t.target)}: ${t.ease.type === "whip" ? "whip" : "squash and stretch"} in a calm scene`, {
+          ...where,
+          suggestion: 'set the scene\'s register to "energetic" (a reel, a beat-cut film), or use ease "responsive"',
+        });
+      }
+      // A zero-length opacity step is a cut-on, not a fade.
+      if (t.kind === "enter" && B.textTypesOrWipes && t.duration > 0 && t.preset !== "typeOn" && isCopy(elements.get(t.target)) && Object.keys(t.props).every((p) => p === "opacity" || p === "scale") && !allowed(t, "text-fade")) {
         add("text-fade", "warning", sc, `${localOf(t.target)} fades in${inRegister}`, { ...where, suggestion: 'type it on (m.type) or wipe it on (m.enter(id, "wipeRight", { duration: "snap", ease: "steep" }))' });
       }
       if (t.kind === "enter") {
@@ -400,8 +416,35 @@ export function lintTimeline(build: BuildResult): Finding[] {
 
   if (build.storyboard) out.push(...lintStoryboard(build.storyboard, tl));
 
+  const grid = build.music?.grid;
   const bpm = build.storyboard?.bpm;
-  if (bpm) {
+  const frame = 1 / tl.fps;
+  // On the beat: on its nearest frame. Times are kept to 4 decimals, so half a frame plus 1 ms.
+  const ON_FRAME = frame / 2 + 0.001;
+  if (grid) {
+    const playing = (t: number) => t >= grid.span[0] && t < grid.span[1];
+    for (const sc of tl.scenes.slice(1)) {
+      // A cut is seen on the first frame at or after the scene's start, not at the start itself.
+      const shown = shownAt(sc.start, tl.fps);
+      const p = nearest(grid.beats, shown);
+      if (p !== undefined && playing(sc.start) && Math.abs(p - shown) > ON_FRAME) {
+        add("cut-off-beat", "warning", sc, `the cut into ${sc.scene} shows ${r2(shown - p)}s off the beat`, { time: sc.start, suggestion: "time the scene before it in beats: \"duration\": { \"beats\": N }" });
+      }
+    }
+    const points = [...grid.beats, ...grid.hits.map((h) => h.t)];
+    for (const sc of tl.scenes) {
+      for (const t of sc.tweens) {
+        if (t.kind === "transition" || t.kind === "exit" || (t.split && t.stagger) || isBlurOnly(t)) continue;
+        const g = sc.start + t.start;
+        const p = nearest(points, g);
+        if (p === undefined || !playing(g) || allowed(t, "off-beat")) continue;
+        const off = Math.abs(p - g);
+        if (off > ON_FRAME && off <= 3 * frame) {
+          add("off-beat", "info", sc, `${localOf(t.target)} ${t.kind} starts ${r2(g - p)}s from the beat`, { element: t.target, time: r2(g), suggestion: 'snap: "beat" (or "hit"), or move it off the grid on purpose' });
+        }
+      }
+    }
+  } else if (bpm) {
     const beat = 60 / bpm;
     for (const sc of tl.scenes.slice(1)) {
       const off = sc.start / beat - Math.round(sc.start / beat);
@@ -447,6 +490,9 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
       out.push({ ...where, rule: "transition-too-short", severity: "warning", message: `${t.type} lasts ${t.duration}s (craft range ${def.range[0]}–${def.range[1]}s)`, suggestion: `use ≥ ${def.range[0]}s, or a hard cut` });
     }
     const ease = typeof t.ease === "string" ? eases[t.ease] : undefined;
+    if (ease?.type === "whip" && !own.some((r) => REGISTER_BOUNDS[r].whip)) {
+      out.push({ ...where, rule: "ease-register", severity: "warning", message: `${t.type} whips, but ${sc.id} and ${sb.scenes[i + 1].id} are calm`, suggestion: 'set "register": "energetic", or use ease "inOut"' });
+    }
     if (ease && ease.type === "spring" && bounceOf(ease) > 0) {
       out.push({ ...where, rule: "transition-bounce", severity: "warning", message: `${t.type} uses the springy "${t.ease}" ease — the whole frame overshoots`, suggestion: 'use "inOut" or "out"' });
     }

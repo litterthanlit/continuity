@@ -1,0 +1,157 @@
+{
+  "title": "Continuity — material cut",
+  "logline": "For designers on X: one mark, three materials, every cut on the beat — made as code.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "register": "energetic",
+  "scenes": [
+    {
+      "id": "chrome",
+      "duration": {
+        "beats": 2
+      },
+      "intent": "Chrome: the mark whips round to face us and drifts — the first hit.",
+      "beats": [
+        {
+          "id": "hit",
+          "at": {
+            "beat": 0
+          },
+          "note": "the downbeat: the whip lands"
+        }
+      ],
+      "elements": [
+        {
+          "id": "shot",
+          "role": "media",
+          "note": "GL canvas"
+        },
+        {
+          "id": "mark",
+          "role": "logo",
+          "note": "extruded mark, chrome"
+        }
+      ],
+      "motion": "rotateY −40° → −14° and rotateX 6° → −2° on the whip (85% in 1.5 frames), scale 0.9 → 1: it lands turned with its face tilted up a touch, so the studio's horizon line crosses the face; the camera dollies in 4%."
+    },
+    {
+      "id": "glass",
+      "duration": {
+        "beats": 2
+      },
+      "intent": "Glass: the same mark bends the grid behind it.",
+      "beats": [
+        {
+          "id": "hit",
+          "at": {
+            "beat": 0
+          }
+        }
+      ],
+      "elements": [
+        {
+          "id": "shot",
+          "role": "media"
+        },
+        {
+          "id": "mark",
+          "role": "logo",
+          "note": "extruded mark, glass"
+        },
+        {
+          "id": "card",
+          "role": "decor",
+          "note": "a card behind the glass with litt's hairline grid, for the bevels to bend"
+        }
+      ],
+      "motion": "The mark turns rotateY 48° → −14° and tilts up (rotateX 10° → −4°) on an out ease, fastest on the cut, so the deep bevels sweep the grid; the camera orbits a few degrees on an out ease."
+    },
+    {
+      "id": "neon",
+      "duration": {
+        "beats": 2
+      },
+      "intent": "Neon: the mark as light, in the accent.",
+      "beats": [
+        {
+          "id": "hit",
+          "at": {
+            "beat": 0
+          }
+        }
+      ],
+      "elements": [
+        {
+          "id": "shot",
+          "role": "media"
+        },
+        {
+          "id": "mark",
+          "role": "logo",
+          "note": "neon tubes along the outline, bloom"
+        }
+      ],
+      "motion": "The mark whips in from rotateY 40° and rotateX −12° and the camera pushes in; bloom carries the light."
+    },
+    {
+      "id": "end",
+      "duration": {
+        "beats": 6
+      },
+      "intent": "The lockup: the neon mark cuts to the flat mark at the same size and place, holds a beat, then flies into the lockup; the wordmark types, the line wipes on the bar.",
+      "beats": [
+        {
+          "id": "move",
+          "at": {
+            "beat": 2
+          },
+          "note": "the louder bar: the mark leaves the neon's place for the lockup"
+        },
+        {
+          "id": "word",
+          "at": {
+            "beat": 2.5
+          },
+          "note": "the wordmark types on the and"
+        },
+        {
+          "id": "line",
+          "at": {
+            "beat": 3
+          },
+          "note": "the line wipes on the next beat"
+        }
+      ],
+      "text": {
+        "word": "Continuity",
+        "line": "Motion, as code."
+      },
+      "elements": [
+        {
+          "id": "mark",
+          "role": "logo",
+          "anchor": "B3"
+        },
+        {
+          "id": "word",
+          "role": "headline",
+          "anchor": "C3:E3"
+        },
+        {
+          "id": "line",
+          "role": "caption",
+          "anchor": "C4:E4"
+        }
+      ],
+      "motion": "Match cut: the mark opens where the neon mark was (centre, ~576px) and holds a beat; on the 4.0s bar it travels into the lockup (out, snap: fastest on the beat). The wordmark types on, the line wipes on, and the card holds still. 3 bars total, so a loop seams on the bar line."
+    }
+  ],
+  "music": {
+    "src": "assets/music.wav",
+    "fadeOut": 0.3
+  }
+}

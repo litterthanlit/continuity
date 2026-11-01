@@ -294,6 +294,84 @@ Build it as one function in `lib/` that takes the content.
 7. Loops on copy or chrome (an object may spin or swing; `ambient-loop` is an info here).
 8. An ending that doesn't answer the opening.
 
+## 13. On the music: beats, whips, morphs and material (docs/decisions/0008, 0009)
+
+The films that travel on X are cut to music: every cut and every snap lands on a beat, moves whip
+in and drift, scenes flow into each other, and a logo is cut through materials a second at a
+time. This is the energetic register's toolkit; the look stays litt.
+
+### Cut on the music
+- Put the track in the storyboard (`music`) and plan **in bars**: a scene is `{ "bars": 1 }` or
+  `{ "beats": 6 }`, so its cut lands on that beat. At 120–128 bpm one bar is ≈ 1.9s: a kinetic
+  line or a UI beat; two beats ≈ 1s: a material shot. Run `npx ct beats <slug>` before building
+  scenes and read the chart: every cut white, the bars where you think they are.
+- **The hit is the frame where motion starts.** Place snaps on beats (`at: "beat:2"`), not
+  landings: a whip or a cut reads on its first frame. A `steep` move starts slow, so its visible
+  hit comes ~0.15s late: start it half its duration early (`at: "l2-0.15"` for a `snap`), or put
+  an ease-out or a whip on the beat. Something that can't start earlier (at a cut) eases `out`.
+- **A cut is a frame.** Scenes timed in beats end on the frame nearest the beat, and `ct beats`
+  judges each cut where it shows. A scene timed in seconds can still put its cut a frame late.
+- Off-beats are deliberate or they are mistakes: a move one to three frames off a beat reads as
+  late (`off-beat`). Put it on the beat (`snap: "beat"`), or half a beat away (`"beat:0.5"`).
+- Cascades on eighths: three cards at `beat:0`, `beat:0.5`, `beat:1` land as a burst; the rest
+  of the bar is the hold.
+- The analysis can mishear: half time (`music.bpm`), a pickup (`music.downbeat`, a track time on
+  a bar line), a clap's attack read ~30ms late. Trust the chart, not the numbers.
+
+### Whip and drift
+`m.enter(id, "whip", { at: "beat:1", dir: "left", duration: "slow" })`: 85% of the travel in
+~1.5 frames, blurred, then a slow drift that comes to rest — the element is alive while it is
+read. Its first frame is already the smear (full opacity, peak blur), so a whip on a cut opens
+the scene with the element, never on an empty frame. For a word that should drift or land rather
+than whip, cut it on (`opacity: [0, 1]` with `duration: 0`) and move it: a fade reads as a fade. Use it for type and cards that arrive *on* the beat. `duration` is the drift: `slow` (0.6)
+for UI that must glance-read inside a bar, `drift` (1s) for a hero, `expressive` (0.35) when the
+copy needs its read time. Distance up to 160px (`distance`). Never whip an exit; never whip in a
+calm scene (`ease-register`).
+
+### Squash and stretch
+`squash: 0.2–0.3` on a whip or a pop: the element stretches along its path for the snap's frame
+and squashes against the deceleration when it lands — mass, in two frames. Type and cards take
+0.2–0.3; never on chrome, never on a full-frame move (`transition-bounce` still applies).
+
+### Morph: let one element carry the cut
+`"transition": { "type": "morph", "pairs": [["card", "tile"]], "duration": 0.48, "ease": "out" }`
+— the card flies to where the tile sits and becomes it, while the next scene crossfades in under
+it. The container travels as one solid shell; its copy swaps on top halfway. It is the energetic
+register's best way to say "this becomes that": text becomes a UI, a card becomes a stat, a chip
+becomes a window.
+- Pair elements of similar role and the same aspect ratio: sizes may differ, but a card of
+  another shape stretches its copy in flight. No `squash` on a pair that carries copy.
+- Start the morph on a hit (a boom, a bar) with ease `out`, so its fastest frame is the hit and
+  the carry is still seen. A whip snaps it in 1.5 frames and reads as a cut.
+- Clear the stage: the outgoing scene's other elements exit on the cut (`fadeOut` at the cut's
+  beat), or the carrier passes over their copy.
+- Both ends must be at rest at the handoff: the outgoing element settled, the incoming one with
+  no entrance of its own (its children included) until the morph ends. The morph is the
+  incoming scene's entrance — don't stack another on it.
+- A Shape pair (`<Shape>` both sides) morphs its outline instead.
+- Within a scene, `<Morph shapes={[textShape("Word", { size: 112 }), MARK]} collapse="into">`
+  turns a word into a mark: the letters that have no counterpart pour into the mark. Ease `out`
+  over `slow` (0.6), starting on the beat; a whip is too abrupt to read a transformation.
+
+### Material shots (WebGL)
+The logo film form: the same mark, a different material every two beats, a flat lockup at the
+end. `<Gl>` shots are data — `extrude` a mark, give it `chrome`, `glass` or `neon` — and the light
+is litt's: from above, a horizon line across chrome, the accent as neon light with bloom.
+- One idea per shot: chrome whips round to face us; glass bends what is behind it (glass needs a
+  `plane` card to refract: litt's `grid` reads as glass at once and keeps the mark the subject;
+  type behind glass competes with the mark and the bevels garble it); neon glows (bloom threshold
+  below the tube's brightest channel).
+- Chrome is what it reflects: land its face turned slightly *up* (`rotateX` a little negative), so
+  the studio's horizon line crosses it. Tilted down, it mirrors the floor and reads as black.
+- One finish across the cut: the same `grain` and `vignette` on every shot.
+- The match cut out of the last shot: open the flat mark at the GL mark's size and place, hold a
+  beat, then move it into the lockup on an `out` ease. Hold the end card still after that: a
+  camera push under a flat SVG that was just drawn at another scale rasterises differently per
+  worker (ADR 0009 §4).
+- Move the object or the camera (`shot-camera`), never the material: there is no channel for it.
+- Each GL frame costs roughly 60–200 ms to render, depending on the machine (ADR 0009 §5). Use
+  material shots for the logo and the hero, not for UI; keep a GL film short.
+
 ## Recipes
 `recipes.md`: statement, label + statement + summary, feature list, stat, product placed,
 UI action with a cursor, a selection that glides, ink emphasis, end card, chart, transitions —

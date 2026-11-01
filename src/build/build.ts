@@ -1,24 +1,27 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseHTML } from "linkedom";
 import { renderToString } from "preact-render-to-string";
+import { sceneMusic } from "../audio/grid.js";
+import { loadMusic, type Music } from "../audio/music.js";
 import type { SceneDefinition } from "../index.js";
 import { drainMissingText, textProxy, withScene, type SceneContext } from "../kit/context.js";
 import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
 import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
-import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline } from "../motion/types.js";
+import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline, Tween } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
-import { ASPECTS, beatsOf, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
+import { ASPECTS, beatsOf, MusicSchema, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
 import { resolveKit, getKit, type TypeKit } from "../themes/kits.js";
 import { buildFamilies, classCandidates, compileCss, fontFaceCss, fontLoadList } from "./css.js";
 import { FONT_CHANNELS, typeBaseOf } from "./typebase.js";
 import { missingGlyphs } from "./glyphs.js";
 import { sourceHash } from "./hash.js";
-import { runtimeBundle } from "./runtime-bundle.js";
+import { glBundle, runtimeBundle } from "./runtime-bundle.js";
+import { cameraId, type GlSpec } from "../gl/spec.js";
 
 export interface ElementInfo {
   id: string;
@@ -45,6 +48,8 @@ export interface BuildResult {
   slug: string;
   dir: string;
   storyboard?: Storyboard;
+  /** The analysed soundtrack, when the storyboard has `music`. */
+  music?: Music;
   theme?: Theme;
   /** The video's type kit (scenes may override it with their own `type`). */
   typeKit?: TypeKit;
@@ -59,7 +64,7 @@ export interface BuildResult {
 const RESERVED = new Set(["scene", "camera", "reveal", "fx"]);
 const OWN_LAYER = /\b(ct-scene|ct-camera|ct-reveal|ct-fx)\b/;
 
-export function loadStoryboard(slug: string, srcDir = projectDir(slug)): { storyboard?: Storyboard; findings: Finding[] } {
+export async function loadStoryboard(slug: string, srcDir = projectDir(slug)): Promise<{ storyboard?: Storyboard; music?: Music; findings: Finding[] }> {
   const file = join(srcDir, "storyboard.json");
   if (!existsSync(file)) {
     return { findings: [{ source: "schema", rule: "storyboard-missing", severity: "error", message: `projects/${slug}/storyboard.json not found` }] };
@@ -70,13 +75,24 @@ export function loadStoryboard(slug: string, srcDir = projectDir(slug)): { story
   } catch (e) {
     return { findings: [{ source: "schema", rule: "storyboard-json", severity: "error", message: `storyboard.json is not valid JSON: ${(e as Error).message}` }] };
   }
-  const parsed = parseStoryboard(raw);
+  // The music is analysed before the storyboard resolves: scenes may be timed in its beats.
+  let music: Music | undefined;
+  const rawMusic = (raw as { music?: unknown } | null)?.music;
+  const spec = rawMusic === undefined ? undefined : MusicSchema.safeParse(rawMusic);
+  if (spec?.success) {
+    try {
+      music = await loadMusic(srcDir, spec.data);
+    } catch (e) {
+      return { findings: [{ source: "schema", rule: "music", severity: "error", message: (e as Error).message, suggestion: "music.src must be an audio file inside the project (WAV keeps timing sample-exact)" }] };
+    }
+  }
+  const parsed = parseStoryboard(raw, { grid: music?.grid });
   if (!parsed.ok) {
     return {
       findings: parsed.issues.map((m) => ({ source: "schema" as const, rule: "storyboard", severity: "error" as const, message: m })),
     };
   }
-  return { storyboard: parsed.value, findings: [] };
+  return { storyboard: parsed.value, music, findings: [] };
 }
 
 /** `export default` of a user module; unwraps the double default a CommonJS-compiled module yields. */
@@ -148,7 +164,7 @@ export async function buildProject(
     return { ...empty, findings: [{ source: "build", rule: "project-missing", severity: "error", message: `${rel(src)} does not exist (try: npx ct new ${slug})` }] };
   }
 
-  const { storyboard: sb, findings: sbFindings } = loadStoryboard(slug, src);
+  const { storyboard: sb, music, findings: sbFindings } = await loadStoryboard(slug, src);
   findings.push(...sbFindings);
   if (!sb) return { ...empty, findings };
 
@@ -179,7 +195,15 @@ export async function buildProject(
   const timings = sceneTimings(sb);
   const scenes = new Map<string, SceneTimeline>();
   const sections: string[] = [];
+  /** Each scene's rendered view, for transitions that carry an element across the cut. */
+  const views = new Map<string, string>();
   drainMissingText();
+
+  // Built alone (`only`), a scene's neighbours are placeholders: a morph has nothing to carry, so it crossfades.
+  const transitionOf = (i: number) => {
+    const t = sb.scenes[i].transition;
+    return t && opts.only && t.pairs?.length ? { ...t, pairs: [] } : t;
+  };
 
   for (const [index, sc] of sb.scenes.entries()) {
     const timing = timings.scenes[index];
@@ -244,7 +268,7 @@ export async function buildProject(
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
             return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
           };
-          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height });
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height }, music && sceneMusic(music.grid, timing.start, sc.duration, sb.format.fps));
           try {
             def.motion(mb, ctx);
           } catch (e) {
@@ -266,13 +290,23 @@ export async function buildProject(
         }
       }
     }
+    views.set(sc.id, inner);
     // Layers the incoming transition needs: a reveal wrapper (mask) and/or an overlay above the scene.
-    const incoming = index > 0 ? sb.scenes[index - 1].transition : undefined;
+    const incoming = index > 0 ? transitionOf(index - 1) : undefined;
     const layers = incoming ? TRANSITION_DEFS[incoming.type].layers : undefined;
     let body = `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div>`;
     if (layers?.reveal) body = `<div class="ct-reveal" data-ct="${sc.id}.reveal" data-layout-allow-overflow style="position:absolute;inset:0">${body}</div>`;
     if (incoming && layers?.fx) {
-      const fx = layers.fx(incoming);
+      const out = sb.scenes[index - 1].id;
+      const fx = layers.fx(incoming, {
+        out,
+        into: sc.id,
+        html: (id) => {
+          const view = views.get(id.slice(0, id.indexOf(".")));
+          if (!view) return undefined;
+          return (parseHTML(`<!doctype html><html><body>${view}</body></html>`).document.querySelector(`[data-ct="${id}"]`) as unknown as Element | null)?.outerHTML;
+        },
+      });
       body += `<div class="ct-fx" data-ct="${sc.id}.fx" data-layout-ignore aria-hidden="true" style="${fx.style}">${fx.inner}</div>`;
     }
     sections.push(
@@ -289,9 +323,10 @@ export async function buildProject(
 
   // Scene transitions become tweens on the scene roots.
   sb.scenes.forEach((sc, i) => {
-    if (!sc.transition || i === sb.scenes.length - 1) return;
+    const spec = transitionOf(i);
+    if (!spec || i === sb.scenes.length - 1) return;
     const next = sb.scenes[i + 1];
-    const t = transitionTweens(sc.transition, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
+    const t = transitionTweens(spec, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
     scenes.get(sc.id)!.tweens.push(...t.out);
     scenes.get(next.id)!.tweens.unshift(...t.in);
   });
@@ -323,6 +358,7 @@ export async function buildProject(
     `<div id="root" data-composition-id="root" data-width="${width}" data-height="${height}" data-fps="${sb.format.fps}" ` +
     `data-start="0" data-duration="${timings.duration}" data-no-timeline style="width:${width}px;height:${height}px">` +
     sections.join("\n") +
+    (music ? audioElement(music, timings.duration) : "") +
     `</div>`;
   const { document } = parseHTML(`<!doctype html><html><head></head><body>${rootHtml}</body></html>`);
   const roleOf = new Map<string, string>();
@@ -361,8 +397,26 @@ export async function buildProject(
       ...(fontTargets.has(id) ? { font: fontInfo(el, sceneKit.get(scene) ?? kit) } : {}),
     });
   }
+  // GL shots: their objects and camera are timeline targets without DOM elements of their own.
+  const glTargets = new Set<string>();
+  for (const canvas of document.querySelectorAll("[data-ct-gl]") as unknown as HTMLElement[]) {
+    const spec = JSON.parse(canvas.getAttribute("data-ct-gl")!) as GlSpec;
+    const scene = spec.id.slice(0, spec.id.indexOf("."));
+    for (const id of [...spec.objects.map((o) => o.id), cameraId(spec)]) {
+      seen.set(id, (seen.get(id) ?? 0) + 1);
+      glTargets.add(id);
+      elements.push({ id, scene, tag: "gl", text: "", ownText: "", decor: true, ancestors: [spec.id], ui: false });
+    }
+  }
   for (const [id, n] of seen) {
     if (n > 1) findings.push({ source: "build", rule: "duplicate-ct", severity: "error", element: id, message: `${n} elements share ct="${id}" — ids must be unique within a scene` });
+  }
+  const GL_PROPS = new Set(["x", "y", "z", "rotateX", "rotateY", "rotate", "scale"]);
+  for (const tl of timeline.scenes) {
+    for (const t of tl.tweens) {
+      const off = glTargets.has(t.target) ? Object.keys(t.props).filter((p) => !GL_PROPS.has(p)) : [];
+      if (off.length) findings.push({ source: "build", rule: "gl-prop", severity: "error", scene: tl.scene, element: t.target, message: `${t.target} is a GL object: it moves (x, y, z, rotateX, rotateY, rotate, scale) but cannot animate ${off.join(", ")}`, suggestion: "fade or mask the <Gl> canvas itself, or cut to the next shot" });
+    }
   }
 
   const byId = new Map(elements.map((e) => [e.id, e]));
@@ -416,7 +470,7 @@ export async function buildProject(
 
   const body = document.querySelector("#root")!.outerHTML;
   const ok = !findings.some((f) => f.severity === "error");
-  const result: BuildResult = { ok, slug, dir, storyboard: sb, theme, typeKit: kit, timeline, elements, partsEstimate, findings, hash };
+  const result: BuildResult = { ok, slug, dir, storyboard: sb, music, theme, typeKit: kit, timeline, elements, partsEstimate, findings, hash };
   if (!write) return result;
 
   // ---- Emit the HyperFrames project.
@@ -428,6 +482,10 @@ export async function buildProject(
   }
   const assets = join(src, "assets");
   if (existsSync(assets)) cpSync(assets, join(dir, "assets"), { recursive: true });
+  if (music) {
+    mkdirSync(dirname(join(dir, music.spec.src)), { recursive: true });
+    copyFileSync(music.file, join(dir, music.spec.src));
+  }
 
   const css = fontFaceCss(families) + "\n" + (await compileCss(theme, kit, sceneKits, classCandidates(body), PKG_ROOT, height > width));
   const html = `<!doctype html>
@@ -443,13 +501,14 @@ ${css}
 <body>
 ${body}
 <script src="ct-data.js"></script>
-<script src="continuity-motion.js"></script>
+${glTargets.size ? '<script src="continuity-gl.js"></script>\n' : ""}<script src="continuity-motion.js"></script>
 </body>
 </html>
 `;
   writeFileSync(join(dir, "index.html"), html);
   writeFileSync(join(dir, "ct-data.js"), `window.__CT__ = ${JSON.stringify({ timeline, fonts: fontLoadList(families) })};\n`);
   writeFileSync(join(dir, "continuity-motion.js"), await runtimeBundle());
+  if (glTargets.size) writeFileSync(join(dir, "continuity-gl.js"), await glBundle());
   // Not named *.motion.json on purpose: HyperFrames auto-runs sidecars and each
   // assertion costs ~10s of timeline sweeping. `ct check --deep` activates it.
   writeFileSync(join(dir, "motion-assertions.json"), JSON.stringify(motionAssertions(timeline, elements), null, 2) + "\n");
@@ -458,6 +517,29 @@ ${body}
     JSON.stringify({ slug, hash, title: sb.title, format: sb.format, width, height, duration: timings.duration, scenes: timings.scenes, elements, partsEstimate }, null, 2) + "\n",
   );
   return result;
+}
+
+/**
+ * The soundtrack as a HyperFrames audio clip: it plays from `start` for as long as both the video
+ * and the track last, from `offset` into the track; the render mixes it into the file.
+ */
+function audioElement(m: Music, videoDuration: number): string {
+  const { start, offset, volume, fadeIn, fadeOut, src } = m.spec;
+  const duration = Math.round(Math.min(videoDuration - start, m.analysis.duration - offset) * 1000) / 1000;
+  if (!(duration > 0)) return "";
+  const attrs = [
+    `id="ct-music"`,
+    `data-ct-music`,
+    `src="${escapeHtml(src)}"`,
+    `data-start="${start}"`,
+    `data-duration="${duration}"`,
+    offset ? `data-media-start="${offset}"` : "",
+    `data-volume="${volume}"`,
+    fadeIn ? `data-fade-in="${fadeIn}"` : "",
+    fadeOut ? `data-fade-out="${fadeOut}"` : "",
+    `preload="auto"`,
+  ].filter(Boolean);
+  return `<audio ${attrs.join(" ")}></audio>`;
 }
 
 function escapeHtml(s: string) {
@@ -473,9 +555,14 @@ export function motionAssertions(timeline: Timeline, elements: ElementInfo[]) {
   const known = new Set(elements.map((e) => e.id));
   const assertions: Array<Record<string, unknown>> = [];
   for (const sc of timeline.scenes) {
+    // An entrance ends when everything that starts with its fade has finished: a cut-on (a
+    // zero-length fade) with a move is not visible "by" its zero-length end, at HyperFrames' sampling.
+    const frame = 1 / timeline.fps;
+    const endOf = (t: Tween) =>
+      Math.max(...sc.tweens.filter((u) => u.target === t.target && u.kind === "enter" && Math.abs(u.start - t.start) <= frame).map((u) => u.start + u.duration));
     const entrances = sc.tweens
       .filter((t) => t.kind === "enter" && !t.split && t.props.opacity && t.props.opacity[0] === 0 && known.has(t.target))
-      .map((t) => ({ target: t.target, start: sc.start + t.start, end: sc.start + t.start + t.duration }))
+      .map((t) => ({ target: t.target, start: sc.start + t.start, end: sc.start + endOf(t) }))
       .sort((a, b) => a.start - b.start);
     const firstByTarget = new Map<string, { start: number; end: number }>();
     for (const e of entrances) if (!firstByTarget.has(e.target)) firstByTarget.set(e.target, e);

@@ -1,3 +1,4 @@
+import { musicAt, nearest, onFrame, type SceneMusic } from "../audio/grid.js";
 import { naturalDuration } from "./easing.js";
 import {
   allPresets,
@@ -11,6 +12,7 @@ import {
   EXIT_FACTOR,
   durations,
   eases,
+  fitEase,
   resolveDuration,
   resolveEase,
   resolveStagger,
@@ -38,8 +40,13 @@ import type {
  * - `"b2"` a storyboard beat, `"b2+0.15"` / `"b2-0.1"` offsets from it
  * - `"end"` / `"end-0.6"` relative to the scene end
  * - `"after:headline"` / `"after:headline+0.1"` when the last tween on that element ends
+ * - with music: `"beat:4"` the scene's 5th beat (0 = its first; `"beat:2.5"` between beats),
+ *   `"bar:1"` its second bar, `"hit:0"` its first strong hit — offsets work: `"beat:4-0.05"`
  */
 export type At = number | string;
+
+/** Grid a start time snaps to (nearest point in the scene): beats, half beats, bars or hits. */
+export type Snap = "beat" | "half" | "bar" | "hit";
 
 export type StaggerSpec = StaggerToken | number | { each: number | StaggerToken; from?: StaggerFrom };
 
@@ -49,6 +56,10 @@ export interface TimingOptions {
   ease?: EaseToken | EaseSpec;
   /** Lint rule ids this motion deliberately breaks (document why in a comment). */
   allow?: string[];
+  /** Squash and stretch along the element's own motion, 0..0.5 (energetic register: objects with mass). */
+  squash?: number;
+  /** Move the start to the nearest beat, half beat, bar or hit of the music. */
+  snap?: Snap;
 }
 
 export interface PresetCallOptions extends TimingOptions, PresetOptions {
@@ -102,6 +113,8 @@ export class MotionBuilder {
     private readonly basesOf?: (target: string) => { values: Partial<Record<PropName, number>>; ranges: Partial<Record<PropName, [number, number]>> } | undefined,
     /** Frame size in px (camera origins). */
     private readonly frame: { width: number; height: number } = { width: 1920, height: 1080 },
+    /** The music on this scene's clock, when the storyboard has a soundtrack: `m.music.beats` etc. */
+    readonly music?: SceneMusic,
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -114,20 +127,45 @@ export class MotionBuilder {
   time(at: At | undefined, fallback = 0): number {
     if (at === undefined) return fallback;
     if (typeof at === "number") return at;
-    const m = /^\s*([A-Za-z_][\w:-]*?)\s*(?:([+-])\s*(\d*\.?\d+))?\s*$/.exec(at);
-    if (!m) throw new MotionError(`[${this.scene}] Can't parse time "${at}". Use seconds, "b1", "b1+0.2", "end-0.5" or "after:el".`);
+    const m = /^\s*([A-Za-z_][\w:.-]*?)\s*(?:([+-])\s*(\d*\.?\d+))?\s*$/.exec(at);
+    if (!m) throw new MotionError(`[${this.scene}] Can't parse time "${at}". Use seconds, "b1", "b1+0.2", "end-0.5", "after:el" or "beat:4".`);
     const [, ref, sign, num] = m;
     const offset = num ? (sign === "-" ? -1 : 1) * Number(num) : 0;
+    const onMusic = /^(beat|bar|hit):(\d*\.?\d+)$/.exec(ref);
     let base: number;
     if (ref === "end") base = this.duration;
     else if (ref === "start") base = 0;
     else if (ref.startsWith("after:")) base = this.endOf(ref.slice(6));
+    else if (onMusic) base = this.onMusic(onMusic[1] as "beat" | "bar" | "hit", Number(onMusic[2]));
     else if (ref in this.beats) base = this.beats[ref];
     else
       throw new MotionError(
         `[${this.scene}] Unknown beat "${ref}". Beats in this scene: ${Object.keys(this.beats).join(", ") || "(none)"}`,
       );
     return round(base + offset);
+  }
+
+  /** Scene time of the scene's Nth beat, bar or hit (0 = the first at or after its start). */
+  private onMusic(kind: "beat" | "bar" | "hit", n: number): number {
+    const m = this.music;
+    if (!m) throw new MotionError(`[${this.scene}] "${kind}:${n}" needs music — add "music" to the storyboard.`);
+    if (kind === "hit" && !Number.isInteger(n)) throw new MotionError(`[${this.scene}] hits are counted in whole numbers ("hit:${Math.floor(n)}").`);
+    const t = musicAt(m, kind === "beat" ? { beat: n } : kind === "bar" ? { bar: n } : { hit: n }, 0, 60 / m.bpm);
+    if (t === undefined) throw new MotionError(`[${this.scene}] there is no hit ${n} in this scene (it has ${m.hits.length}).`);
+    // The scene starts on a frame, so its frames are this clock's; the move starts on the beat's.
+    return onFrame(t, m.fps);
+  }
+
+  /** A start time: `at`, moved to the nearest point of the music when `snap` asks. */
+  private startOf(opts: { at?: At; snap?: Snap }): number {
+    const t = this.time(opts.at);
+    if (!opts.snap) return t;
+    const m = this.music;
+    if (!m) throw new MotionError(`[${this.scene}] snap: "${opts.snap}" needs music — add "music" to the storyboard.`);
+    const points =
+      opts.snap === "bar" ? m.bars : opts.snap === "hit" ? m.hits.map((h) => h.t) : opts.snap === "half" ? m.beats.flatMap((b, i) => (i + 1 < m.beats.length ? [b, (b + m.beats[i + 1]) / 2] : [b])) : m.beats;
+    const p = nearest(points.filter((x) => x >= 0 && x <= this.duration), t);
+    return p === undefined ? t : onFrame(p, m.fps);
   }
 
   /** End time of the last tween declared so far on an element. */
@@ -156,9 +194,10 @@ export class MotionBuilder {
   /** Free-form tween. Prefer presets; use this for bespoke moves (with token eases/durations). */
   tween(targets: string | string[], props: Partial<Record<PropName, PropRange | number>>, opts: TweenCallOptions = {}): this {
     const list = toList(targets);
-    const { spec, name } = resolveEase(opts.ease ?? "responsive");
-    const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(spec) ?? durations.responsive);
-    const start = this.time(opts.at);
+    const { spec: token, name } = resolveEase(opts.ease ?? "responsive");
+    const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : (naturalDuration(token) ?? durations.responsive);
+    const spec = fitEase(token, name, duration);
+    const start = this.startOf(opts);
     const normalized = normalizeProps(props);
     const offsets = this.targetOffsets(list.length, opts);
     const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;
@@ -174,6 +213,7 @@ export class MotionBuilder {
         props: normalized,
         ...this.splitFields(opts.split, opts.stagger, opts.mask),
         allow: opts.allow,
+        squash: opts.squash,
       });
     });
     return this;
@@ -186,9 +226,10 @@ export class MotionBuilder {
    * translation (centre − origin) × (scale − 1) — so litt's push never drifts left-aligned type.
    */
   camera(props: Partial<Record<PropName, PropRange | number>>, opts: TimingOptions & { origin?: { x: number; y: number } } = {}): this {
-    const start = this.time(opts.at);
-    const { spec, name } = resolveEase(opts.ease ?? "inOut");
+    const start = this.startOf(opts);
+    const { spec: token, name } = resolveEase(opts.ease ?? "inOut");
     const duration = opts.duration !== undefined ? resolveDuration(opts.duration) : round(this.duration - start);
+    const spec = fitEase(token, name, duration);
     if (opts.origin && props.scale !== undefined) {
       const [s0, s1] = typeof props.scale === "number" ? [1, props.scale] : [props.scale[0] ?? 1, props.scale[1]];
       const shift = (axis: "x" | "y", centre: number, anchor: number) => {
@@ -246,7 +287,7 @@ export class MotionBuilder {
         kind: "move",
         start,
         duration,
-        ease: spec,
+        ease: fitEase(spec, name, duration),
         easeName: name,
         props: { x: [null, p.x], y: [null, p.y] },
       });
@@ -259,8 +300,8 @@ export class MotionBuilder {
    * A click: the pointer presses at the instant tier and springs back on the
    * responsive one, and a focus-coloured ring opens from its tip (`<target>-ripple`).
    */
-  click(target: string, opts: { at?: At; ripple?: boolean } = {}): this {
-    const at = this.time(opts.at);
+  click(target: string, opts: { at?: At; snap?: Snap; ripple?: boolean } = {}): this {
+    const at = this.startOf(opts);
     const id = this.id(target);
     const back = naturalDuration(eases.responsive) ?? durations.responsive;
     this.push({ target: id, kind: "emphasis", start: at, duration: durations.instant, ease: eases.out, easeName: "out", props: { scale: [null, 0.9] }, preset: "click" });
@@ -293,12 +334,13 @@ export class MotionBuilder {
   /** Count a number up/down inside a text element. */
   counter(target: string, opts: CounterOptions): this {
     const { spec, name } = resolveEase(opts.ease ?? "out");
+    const duration = resolveDuration(opts.duration ?? "linger");
     this.push({
       target: this.id(target),
       kind: "emphasis",
-      start: this.time(opts.at),
-      duration: resolveDuration(opts.duration ?? "linger"),
-      ease: spec,
+      start: this.startOf(opts),
+      duration,
+      ease: fitEase(spec, name, duration),
       easeName: name,
       props: { counter: [opts.from ?? 0, opts.to] },
       counter: {
@@ -316,7 +358,7 @@ export class MotionBuilder {
     const def = allPresets[presetName];
     if (!def) throw new MotionError(`[${this.scene}] Unknown preset "${presetName}".`);
     const list = toList(targets);
-    const start = this.time(opts.at);
+    const start = this.startOf(opts);
     const offsets = this.targetOffsets(list.length, opts);
     const mask = opts.mask ?? (def.mask && opts.split ? true : undefined);
     const group = list.length > 1 ? `${this.scene}#${++this.calls}` : undefined;
@@ -324,12 +366,12 @@ export class MotionBuilder {
       const fb = this.basesOf?.(this.id(el));
       const segments = def.segments({ ...opts, base: fb?.values, range: fb?.ranges });
       for (const seg of segments) {
-        const { spec, name } = resolveEase(opts.ease ?? seg.ease);
+        const { spec: token, name } = resolveEase(seg.fixed ? seg.ease : (opts.ease ?? seg.ease));
         const segDuration =
-          opts.duration !== undefined
+          opts.duration !== undefined && !seg.fixed
             ? resolveDuration(opts.duration)
-            : spec.type === "spring"
-              ? (naturalDuration(spec) ?? resolveDuration(seg.duration))
+            : token.type === "spring"
+              ? (naturalDuration(token) ?? resolveDuration(seg.duration))
               : def.kind === "exit" && seg.duration === "exit"
                 ? this.exitDuration(this.id(el))
                 : resolveDuration(seg.duration);
@@ -339,12 +381,13 @@ export class MotionBuilder {
           kind: def.kind,
           start: round(start + offsets[i] + (seg.offset ?? 0)),
           duration: segDuration,
-          ease: spec,
+          ease: fitEase(token, name, segDuration),
           easeName: name,
           props: seg.props,
           preset: presetName,
           ...this.splitFields(opts.split, opts.stagger, mask),
           allow: opts.allow,
+          squash: seg.fixed ? undefined : opts.squash,
         });
       }
     });
@@ -357,7 +400,9 @@ export class MotionBuilder {
    * yet: the expressive exit.
    */
   private exitDuration(target: string): number {
-    const enter = [...this.tweens].reverse().find((t) => t.target === target && t.kind === "enter" && t.duration > 0.01);
+    // The entrance's visual time is its movement: not a zero-length cut-on, not a whip's blur bell.
+    const blurOnly = (t: Tween) => Object.keys(t.props).every((p) => p === "blur" || p === "blurX" || p === "blurY");
+    const enter = [...this.tweens].reverse().find((t) => t.target === target && t.kind === "enter" && t.duration > 0.01 && !blurOnly(t));
     if (!enter) return durations.exit;
     const visual = visualOf(enter.ease) ?? enter.duration;
     return round(Math.min(durations.exit, Math.max(durations.instant, EXIT_FACTOR * visual)));

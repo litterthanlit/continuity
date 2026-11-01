@@ -26,6 +26,8 @@ export const SOURCE_RULES: Record<string, string> = {
   "litt-accent-text":
     "Accent-coloured text — litt never picks out a headline word in the accent. Rank by ink: the key word in text-fg, the rest in text-fg-muted (or m.emphasize(id, \"ink\")).",
   "litt-hex": "A hard-coded colour — every colour is a litt token (bg-canvas, text-fg-muted, border-line, data hues…), so both themes stay designed.",
+  "svg-overflow":
+    "An inline <svg> with overflow visible — under a transform that changes every frame (a camera push) Chrome rasterises its edges by what the worker drew before, so frames differ between renders. Keep the svg clipped to its viewBox (widen the viewBox instead), or use <Shape>.",
 };
 
 const API = [
@@ -129,6 +131,7 @@ export function lintSources(projectDir: string): Finding[] {
         }
       }
       for (const c of STYLE_CHECKS) if (!hits.has(c.rule) && c.re.test(line)) hits.set(c.rule, c.what);
+      if (/<svg\b[^>]*(?:overflow-visible|overflow\s*[:=]\s*["'`{]?\s*["'`]?visible)/.test(line)) hits.set("svg-overflow", "an <svg> with overflow visible");
       for (const [rule, what] of hits) {
         if (allow.has(rule)) continue;
         findings.push({ source: "lint", rule, severity: "warning", scene, message: `${where}:${i + 1} uses ${what}`, suggestion: SOURCE_RULES[rule].split(" — ")[1] });

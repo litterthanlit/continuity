@@ -9,6 +9,7 @@
 - `slow` 0.6s
 - `linger` 1.4s
 - `snap` 0.3s
+- `drift` 1s
 
 ## Eases
 - `linear` — linear
@@ -18,6 +19,7 @@
 - `expressive` — spring, visual 0.35s, bounce 0.12
 - `steep` — cubic-bezier(0.87, 0, 0.13, 1)
 - `pop` — spring, visual 0.3s, bounce 0.3
+- `whip` — whip
 
 ## Staggers
 - `char` 20ms
@@ -39,6 +41,7 @@
 | `wipeRight` | clipRight | slow (0.6s) | inOut |  | Clip reveal left → right, for data: a chart behind its playhead, a timeline strip. |
 | `draw` | draw | slow (0.6s) | inOut |  | A stroke draws on (Path, LineChart's line). Data only. |
 | `typeOn` | opacity | 0.001s | linear |  | Characters appear one by one (split: 'chars', or m.type). UI and terminal typing. |
+| `whip` | x, opacity, blurX | settles ≈ 1s | whip |  | Energetic register. Whip and drift: 85% of the way in ~1.5 frames (motion-blurred), then a slow drift for the rest of the `drift` (1s). dir: left (default), right, up, down; distance default 160. Land it on a beat. |
 
 ## Exit presets
 | Preset | Animates | Duration | Ease | Mask | Use |
@@ -66,6 +69,7 @@
 | `pushUp` | 0.5s | 0.3–0.8s | ease, blur | push with dir up: the incoming scene pushes up from below. Lists, feeds, 9:16. |
 | `wipe` | 0.5s | 0.35–0.8s | ease, dir, angle, feather | The incoming scene wipes on with a moving edge (dir, default right). feather (8–20) softens it; angle (e.g. 120) runs it diagonally. A state revealed. |
 | `depth` | 0.6s | 0.4–1s | ease, dir (dir: in/out) | Energetic register. The camera flies through the stack: the outgoing scene grows past the viewer as the next one comes forward from behind (dir in, default). dir out is the reverse — close a reel by flying back out of where it opened. |
+| `morph` | 0.6s | 0.3–1.2s | ease, pairs, squash, arc | A shared element carries the cut: each pair travels from its place in the outgoing scene to its place in the incoming one (position and size; shapes morph their outline) while the rest crossfades under it — the scenes flow instead of cutting. pairs: ["logo"] (same id) or [["title", "card"]]; squash 0..0.5 for mass; arc bends the path. |
 
 One transition language per video: cuts on the beat, and at most two accent types (three once a scene is energetic) — see motion-craft §8.
 
@@ -122,7 +126,8 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `transition-bounce` — Spring overshoot on a full-frame scene move looks cheap. Use a bezier ease (inOut, out).
 - `transition-strobe` — A fast push without motion blur jumps over 200px a frame and strobes. Add blur: true, or lengthen it.
 - `mask-needs-split` — Mask presets reveal from behind a clip edge — use split (words/lines) or wrap the element in an overflow-hidden parent.
-- `cut-off-beat` — Scene cut is not on the music grid (bpm).
+- `cut-off-beat` — Scene cut is not on the beat. With music, time the scene in beats (duration: { beats: 8 }) so its cut lands on one; without it, the bare bpm grid is checked (info).
+- `off-beat` — A move starts one to three frames off a beat or hit: it reads as late, not as syncopated. Snap it (snap: "beat") or move it decisively off the grid.
 - `axis-reflow` — Weight/width animation changes letter widths: wrapping text re-breaks its lines mid-motion. Split chars/words, or keep the line nowrap.
 - `axis-unsupported` — The element's family has no such axis, so the channel animates nothing (e.g. wdth or soft on Geist, which has a weight axis only).
 - `axis-range` — Axis values outside what the family can draw are clamped: the motion flatlines at the end of its range.
@@ -136,6 +141,7 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `ambient-loop` — litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.
 - `text-fade` — Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).
 - `weight-role` — litt P9: three weights by role — 400 text, 500 titles, 600 labels. A weight tween settles on one of them.
+- `ease-register` — Whip and drift and squash-and-stretch perform: they belong to the energetic register (a reel, a beat-cut film). A calm scene places things with springs.
 
 ## Source lint rules
 - `nondeterministic-api` — Wall-clock / random APIs (Math.random, Date.now, new Date(), performance.now, setTimeout/setInterval, requestAnimationFrame) in project code — frames are seeked, so results must be a pure function of time. Use the motion DSL; for variety use fixed data or a seeded sequence.
@@ -147,3 +153,4 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `litt-shadow` — An ad-hoc or offset shadow (P4) — use the depth tokens: shadow-raised (cards), shadow-float / shadow-modal / shadow-tooltip (floating), shadow-glow (the one primary action), shadow-hairline / shadow-control / shadow-field / shadow-lift / shadow-focus.
 - `litt-accent-text` — Accent-coloured text — litt never picks out a headline word in the accent. Rank by ink: the key word in text-fg, the rest in text-fg-muted (or m.emphasize(id, "ink")).
 - `litt-hex` — A hard-coded colour — every colour is a litt token (bg-canvas, text-fg-muted, border-line, data hues…), so both themes stay designed.
+- `svg-overflow` — An inline <svg> with overflow visible — under a transform that changes every frame (a camera push) Chrome rasterises its edges by what the worker drew before, so frames differ between renders. Keep the svg clipped to its viewBox (widen the viewBox instead), or use <Shape>.

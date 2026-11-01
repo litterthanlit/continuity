@@ -1,3 +1,4 @@
+import { WHIP_DRIFT, WHIP_SNAP } from "./easing.js";
 import type { EaseSpec, StaggerFrom } from "./types.js";
 
 /**
@@ -26,6 +27,8 @@ export const durations = {
   linger: 1.4,
   /** Energetic register: a decisive UI or camera move on the steep ease (~9 frames at 30fps). */
   snap: 0.3,
+  /** Energetic register: the whip's drift — the slow tail after its 1–2 frame snap. */
+  drift: WHIP_DRIFT,
 } as const;
 export type DurationToken = keyof typeof durations;
 
@@ -78,6 +81,11 @@ export const eases = {
   steep: { type: "bezier", p: [0.87, 0, 0.13, 1] },
   /** Energetic register: spring, visual 0.3s, bounce 0.3 — things that act like objects (a sticker, a collage piece, a node). */
   pop: spring(0.3, 0.3),
+  /**
+   * Energetic register: whip and drift — 85% of the travel in ~1.5 frames, then a slow drift
+   * over the rest of the tween (default the `drift` token, 1s). Cuts and hits on the beat.
+   */
+  whip: { type: "whip", snap: round4(WHIP_SNAP / WHIP_DRIFT), share: 0.85 },
 } as const satisfies Record<string, EaseSpec>;
 export type EaseToken = keyof typeof eases;
 
@@ -123,6 +131,15 @@ export function resolveEase(e: EaseToken | EaseSpec): { spec: EaseSpec; name?: s
     return { spec: spec as EaseSpec, name: e };
   }
   return { spec: e };
+}
+
+/**
+ * Fit a token ease to the duration it runs for. The whip token's snap is a time (~1.5 frames),
+ * not a share of the tween, so a longer drift keeps the same snap.
+ */
+export function fitEase(spec: EaseSpec, name: string | undefined, duration: number): EaseSpec {
+  if (spec.type !== "whip" || name !== "whip" || !(duration > 0)) return spec;
+  return { ...spec, snap: round4(Math.min(0.5, WHIP_SNAP / duration)) };
 }
 
 export function resolveStagger(

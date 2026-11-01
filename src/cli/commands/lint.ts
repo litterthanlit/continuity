@@ -19,7 +19,7 @@ export const lint: Command = {
     const slug = requireSlug(a);
     const json = flagBool(a, "json");
     if (flagBool(a, "storyboard")) {
-      const { storyboard, findings } = loadStoryboard(slug);
+      const { storyboard, findings } = await loadStoryboard(slug);
       if (storyboard) findings.push(...lintStoryboard(storyboard));
       if (storyboard) {
         const t = sceneTimings(storyboard);

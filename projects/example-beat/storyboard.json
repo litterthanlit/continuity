@@ -1,0 +1,305 @@
+{
+  "title": "Continuity — on the beat",
+  "logline": "For motion designers on X: Continuity's films now cut, hit and morph on the music — and prove it.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "register": "energetic",
+  "music": {
+    "src": "assets/music.wav",
+    "fadeOut": 0.4
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": {
+        "bars": 1
+      },
+      "intent": "Stake the claim on the first downbeat: motion that hears the beat.",
+      "beats": [
+        {
+          "id": "l1",
+          "at": {
+            "beat": 0
+          },
+          "note": "'Motion that' wipes on with the boom"
+        },
+        {
+          "id": "l2",
+          "at": {
+            "beat": 1
+          },
+          "note": "'hears the beat.' wipes on the next kick"
+        },
+        {
+          "id": "dim",
+          "at": {
+            "beat": 3
+          },
+          "note": "'Motion that' steps to the grey on the last beat"
+        }
+      ],
+      "text": {
+        "l1": "Motion that",
+        "l2": "hears the beat."
+      },
+      "elements": [
+        {
+          "id": "l1",
+          "role": "headline",
+          "anchor": "A3:D3"
+        },
+        {
+          "id": "l2",
+          "role": "headline",
+          "anchor": "A4:E4"
+        }
+      ],
+      "motion": "Two display lines wipe on, one per kick. On beat 3 the first line dims: rank by ink, on the beat. Hard cut on the bar."
+    },
+    {
+      "id": "grid",
+      "duration": {
+        "bars": 1
+      },
+      "intent": "Show the machine listening: the beat grid of this very track, lighting beat by beat.",
+      "beats": [
+        {
+          "id": "in",
+          "at": {
+            "beat": 0
+          }
+        }
+      ],
+      "text": {
+        "label": "ct beats",
+        "bpm": "124 bpm · 4/4"
+      },
+      "elements": [
+        {
+          "id": "win",
+          "role": "ui",
+          "anchor": "B2:E5",
+          "note": "a window with the track's bars"
+        },
+        {
+          "id": "t0",
+          "role": "decor",
+          "note": "t0–t3: beat ticks, each brightens on its beat"
+        },
+        {
+          "id": "b0",
+          "role": "decor",
+          "note": "b0–b15: the bar's sixteenths, each lights on its own sixteenth, so the beat shows with the sound off"
+        }
+      ],
+      "motion": "The window whips up on the downbeat; the level bars light one per sixteenth and each beat tick steps to fg on its beat (ink, instant). Cut on the bar."
+    },
+    {
+      "id": "cards",
+      "duration": {
+        "beats": 4
+      },
+      "intent": "What it does with the beat: cuts, hits, holds — each card whipping in on its kick.",
+      "beats": [
+        {
+          "id": "c1",
+          "at": {
+            "beat": 0
+          }
+        },
+        {
+          "id": "c2",
+          "at": {
+            "beat": 0.25
+          }
+        },
+        {
+          "id": "c3",
+          "at": {
+            "beat": 0.5
+          }
+        }
+      ],
+      "text": {
+        "k1": "Cuts",
+        "v1": "on the bar",
+        "k2": "Hits",
+        "v2": "on the beat",
+        "k3": "Sync",
+        "v3": "proved on render"
+      },
+      "elements": [
+        {
+          "id": "c1",
+          "role": "ui",
+          "anchor": "A3:B4"
+        },
+        {
+          "id": "c2",
+          "role": "ui",
+          "anchor": "C3:D4"
+        },
+        {
+          "id": "c3",
+          "role": "ui",
+          "anchor": "E3:F4",
+          "note": "carries the cut: morphs into the stat tile"
+        }
+      ],
+      "motion": "Three cards whip in from the right on sixteenths (beats 0, ¼, ½), blurred snap, squash. c1 and c2 lift away during the riser (beats 3 and 3¼), so c3 is alone when it is carried into the stat tile on the boom (5.81s), fastest on the boom and settling after (out).",
+      "transition": {
+        "type": "morph",
+        "pairs": [
+          [
+            "c3",
+            "tile"
+          ]
+        ],
+        "duration": 0.48,
+        "ease": "out"
+      }
+    },
+    {
+      "id": "stat",
+      "duration": {
+        "beats": 4
+      },
+      "intent": "The proof, as a number: the render's own audio lands within milliseconds of the picture.",
+      "beats": [],
+      "text": {
+        "label": "Audio vs picture",
+        "value": "0 ms",
+        "note": "41 of 41 hits"
+      },
+      "elements": [
+        {
+          "id": "tile",
+          "role": "ui",
+          "anchor": "B2:E5",
+          "note": "arrives from the card via the morph; c3's aspect (768×304), so the copy never stretches in flight"
+        },
+        {
+          "id": "value",
+          "role": "stat"
+        }
+      ],
+      "motion": "The tile lands from the morph with its value; the camera's push carries the hold. Cut on the bar."
+    },
+    {
+      "id": "type",
+      "duration": {
+        "bars": 1
+      },
+      "intent": "The feel, in three words: whip, drift, land — each word doing what it says on a beat.",
+      "beats": [
+        {
+          "id": "w1",
+          "at": {
+            "beat": 0
+          }
+        },
+        {
+          "id": "w2",
+          "at": {
+            "beat": 1
+          }
+        },
+        {
+          "id": "w3",
+          "at": {
+            "beat": 2
+          }
+        }
+      ],
+      "text": {
+        "w1": "Whip.",
+        "w2": "Drift.",
+        "w3": "Land."
+      },
+      "elements": [
+        {
+          "id": "w1",
+          "role": "headline",
+          "anchor": "A3"
+        },
+        {
+          "id": "w2",
+          "role": "headline",
+          "anchor": "C3"
+        },
+        {
+          "id": "w3",
+          "role": "headline",
+          "anchor": "E3"
+        }
+      ],
+      "motion": "Each word does what it says on its beat: Whip. snaps in (1.5 frames, blurred, stretched); Drift. cuts on and slides in slowly on an out ease; Land. cuts on and drops in on pop, squashing as it lands."
+    },
+    {
+      "id": "end",
+      "duration": {
+        "bars": 2
+      },
+      "intent": "The wordmark becomes the mark on the downbeat; the line lands; hold.",
+      "beats": [
+        {
+          "id": "morph",
+          "at": {
+            "beat": 2
+          },
+          "note": "the kick on beat 2"
+        },
+        {
+          "id": "word",
+          "at": {
+            "beat": 3
+          }
+        },
+        {
+          "id": "line",
+          "at": {
+            "beat": 3.5
+          }
+        },
+        {
+          "id": "cta",
+          "at": {
+            "beat": 4
+          },
+          "note": "the next bar's kick"
+        }
+      ],
+      "text": {
+        "word": "Continuity",
+        "line": "Motion, on the beat.",
+        "cta": "litterthanlit/continuity"
+      },
+      "elements": [
+        {
+          "id": "mark",
+          "role": "logo",
+          "anchor": "C3:D4",
+          "note": "a Morph: the word's outline → the mark"
+        },
+        {
+          "id": "word",
+          "role": "headline"
+        },
+        {
+          "id": "line",
+          "role": "caption"
+        },
+        {
+          "id": "cta",
+          "role": "cta",
+          "note": "the repo, mono, in the grey: what a stranger can go and find"
+        }
+      ],
+      "motion": "The outline of 'Continuity' whips up with the cut and holds two beats; on the kick on beat 2 it pours into the mark (out, over the drift); the wordmark types on beat 3; the line wipes on the and; the repo types on the next bar's kick. A linear 3% push."
+    }
+  ]
+}

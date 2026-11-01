@@ -52,9 +52,38 @@ describe("every transition", () => {
 });
 
 describe("litt's transition language", () => {
-  it("is cuts plus four accents, and depth for the energetic register; nothing that performs", () => {
-    expect([...TRANSITIONS]).toEqual(["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth"]);
+  it("is cuts plus four accents, depth for the energetic register, and morph; nothing that performs", () => {
+    expect([...TRANSITIONS]).toEqual(["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth", "morph"]);
     expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["depth"]);
+  });
+
+  it("morph hands each pair to a carrier: A leaves at the cut, B arrives when the carrier lands, the rest crossfades", () => {
+    const t = run({ type: "morph", pairs: ["logo", ["title", "card"]], squash: 0.2 });
+    expect(t.out.map((tw) => [tw.target, tw.start, tw.duration, tw.props])).toEqual([
+      ["a.logo", 2.4, 0, { opacity: [null, 0] }],
+      ["a.title", 2.4, 0, { opacity: [null, 0] }],
+    ]);
+    const into = Object.fromEntries(t.in.map((tw) => [tw.target, tw]));
+    expect(into["b.reveal"].props).toEqual({ opacity: [0, 1] });
+    expect(into["b.logo"]).toMatchObject({ start: 0, duration: 0.6, props: { opacity: [0, 1] }, ease: { type: "steps", n: 1 } });
+    expect(into["b.card"]).toMatchObject({ props: { opacity: [0, 1] } });
+    expect(into["b.match-0"]).toMatchObject({ props: { match: [0, 1] }, squash: 0.2, easeName: "inOut" });
+    expect(into["b.match-1"]).toMatchObject({ props: { match: [0, 1] } });
+  });
+
+  it("a morph without pairs is refused by the storyboard", () => {
+    const board = (transition: Record<string, unknown>) => ({
+      title: "t",
+      format: { aspect: "16:9" },
+      scenes: [
+        { id: "a", duration: 2, intent: "the outgoing scene", transition },
+        { id: "b", duration: 2, intent: "the incoming scene" },
+      ],
+    });
+    const r = parseStoryboard(board({ type: "morph" }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues.join()).toMatch(/pairs/);
+    expect(parseStoryboard(board({ type: "morph", pairs: ["logo"] })).ok).toBe(true);
   });
 
   it("depth flies through the stack on the steep ease, and dir out reverses it", () => {

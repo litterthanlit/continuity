@@ -49,6 +49,7 @@ describe("seeded static defects (projects/_defects)", () => {
       // registers (docs/decisions/0007)
       "lint:transition-register",
       "lint:text-fade",
+      "lint:ease-register",
     ]) {
       expect(ids, r).toContain(r);
     }
@@ -78,6 +79,14 @@ describe("build output", () => {
     const l1 = b.elements.find((e) => e.id === "hook.l1");
     expect(l1?.split).toBe("lines");
     expect(b.timeline!.scenes.map((s) => s.scene)).toEqual(["hook", "write", "blind", "eyes", "check", "end"]);
+  });
+
+  it("builds one scene of a film with a morph alone (its neighbours are placeholders)", async () => {
+    for (const only of ["cards", "stat", "type"]) {
+      const b = await buildProject("example-beat", { write: false, only });
+      expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+      expect(b.ok).toBe(true);
+    }
   });
 });
 

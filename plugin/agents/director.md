@@ -49,6 +49,12 @@ Deliverables, in `projects/<slug>/`:
    - energetic: formulas named in `motion` notes ("collage formula, London
      content") so builders share one `lib/` function, and holds as scenes of
      their own (1–1.6s).
+   - with a music track (`music: { src }`, ADR 0008): durations in `{ "beats": N }`
+     or `{ "bars": N }` so every cut lands on the music, beats at `{ "beat": N }`,
+     and `motion` notes that name the beat each move lands on ("c2 whips in on the
+     and of 1"). Run `npx ct beats <slug>` and read the tempo it heard before
+     choosing durations. A `morph` transition names its `pairs`, and both
+     elements of a pair are at rest at the handoff.
 4. Optional `theme.ts` only when the brand has its own accent (litt: one accent per
    project): `defineTheme("litt-dark", { colors: { accent, "accent-text", "accent-tint", focus } })`.
    Neutrals, type and material stay litt's.

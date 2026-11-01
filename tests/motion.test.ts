@@ -241,3 +241,80 @@ describe("motion energy", () => {
     expect(parseEnergy(text)).toEqual([[15.3, 0], [15.3333, 6.94444e-5], [15.3667, 12.5]]);
   });
 });
+
+describe("whip and drift (energetic register)", () => {
+  const at = (mb: MotionBuilder, t: number) => sampleScene(compileScene(scene(mb), {}), t);
+
+  it("lands most of the travel in ~1.5 frames, then drifts the rest until the end", () => {
+    const f = easeFn(eases.whip);
+    expect(f(0)).toBe(0);
+    expect(f(1)).toBe(1);
+    let prev = 0;
+    for (let p = 0.005; p <= 1; p += 0.005) {
+      expect(f(p)).toBeGreaterThanOrEqual(prev - 1e-12);
+      prev = f(p);
+    }
+    expect(f(0.05)).toBeGreaterThan(0.8); // 1.5 frames of the 1s drift
+    expect(f(0.5)).toBeLessThan(0.97); // still drifting half way
+  });
+
+  it("keeps the snap at ~1.5 frames whatever the drift's length", () => {
+    const mb = new MotionBuilder("s", 3, {});
+    mb.tween("card", { x: [400, 0] }, { ease: "whip", duration: 2 });
+    const x = at(mb, 0.05).get("s.card")!.x!;
+    expect(x).toBeLessThan(400 * 0.2); // ≥ 80% of the way after 0.05s, though the tween lasts 2s
+    expect(at(mb, 1).get("s.card")!.x!).toBeGreaterThan(1); // and it is still moving at 1s
+  });
+
+  it("the whip preset blurs only its snap, even when the call sets a long drift", () => {
+    const mb = new MotionBuilder("s", 3, {});
+    mb.enter("card", "whip", { dir: "up", duration: 1.6 });
+    const move = mb.tweens.find((t) => t.props.y)!;
+    expect(move.props.y).toEqual([160, 0]);
+    expect(move.duration).toBe(1.6);
+    const bell = mb.tweens.filter((t) => t.props.blurY);
+    expect(bell.length).toBeGreaterThan(0);
+    expect(Math.max(...bell.map((t) => t.start + t.duration))).toBeLessThanOrEqual(0.1);
+  });
+
+  it("is seen on its first frame, as a smear: on a cut it never opens on a blank frame", () => {
+    const mb = new MotionBuilder("s", 3, {});
+    mb.enter("card", "whip", { at: 0.5, dir: "left" });
+    const c = compileScene(scene(mb), {});
+    const first = sampleScene(c, 0.5).get("s.card")!;
+    expect(first.opacity).toBe(1);
+    expect(first.blurX).toBeGreaterThan(8); // the snap's blur, at its peak
+    expect(sampleScene(c, 0.49).get("s.card")!.opacity).toBe(0); // and nothing before it
+    expect(sampleScene(c, 0.6).get("s.card")!.blurX ?? 0).toBeLessThan(1); // sharp by the drift
+  });
+});
+
+describe("squash and stretch", () => {
+  it("stretches along a fast move, keeps the area, and is the identity at rest", () => {
+    const mb = new MotionBuilder("s", 2, {});
+    mb.tween("ball", { y: [-600, 0] }, { ease: "steep", duration: 0.5, squash: 0.3 });
+    const c = compileScene(scene(mb), {});
+    const mid = sampleScene(c, 0.25).get("s.ball")!.deform!;
+    expect(mid[3]).toBeGreaterThan(1.15); // longer along y, the direction of travel
+    expect(mid[0]).toBeLessThan(0.9); // thinner across it
+    expect(mid[0] * mid[3] - mid[1] * mid[2]).toBeCloseTo(1, 6); // no growth: area kept
+    const rest = sampleScene(c, 1.5).get("s.ball")!;
+    expect(styleOf(rest).transform).not.toContain("matrix(");
+    expect(styleOf(sampleScene(c, 0.25).get("s.ball")!).transform).toContain("matrix(");
+  });
+
+  it("squashes against the deceleration when a springy landing turns round", () => {
+    const mb = new MotionBuilder("s", 2, {});
+    mb.tween("ball", { y: [-300, 0] }, { ease: "pop", squash: 0.3 });
+    const c = compileScene(scene(mb), {});
+    // the overshoot's peak (the furthest past the landing): nearly still, decelerating hard
+    let peak = { t: 0, y: -Infinity };
+    for (let t = 0.05; t < 0.6; t += 1 / 240) {
+      const y = sampleScene(c, t).get("s.ball")!.y!;
+      if (y > peak.y) peak = { t, y };
+    }
+    expect(peak.y).toBeGreaterThan(0);
+    const d = sampleScene(c, peak.t).get("s.ball")!.deform!;
+    expect(d[3]).toBeLessThan(1);
+  });
+});
