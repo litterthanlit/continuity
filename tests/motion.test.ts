@@ -459,3 +459,28 @@ describe("dot grid", () => {
     expect(styleOf(sampleScene(c, 0).get("s.g-0")!).borderRadius).toBe("18%");
   });
 });
+
+describe("pullBack", () => {
+  // A 1400×820 Browser, centred in a 1920×1080 frame: its screen is the 1400×740 body below an 80px bar.
+  const m = () => new MotionBuilder("s", 3, {}, undefined, undefined, undefined, undefined, (t) => (t === "s.browser" ? { screen: "0 40 1400 740" } : undefined));
+  const cam = (b: MotionBuilder, t: number) => sampleScene(compileScene(scene(b), {}), t).get("s.camera")!;
+  // Where the camera puts a frame point: about the frame's centre, scaled, then translated.
+  const place = (v: ReturnType<typeof cam>, x: number, y: number) => [960 + v.x! + v.scale! * (x - 960), 540 + v.y! + v.scale! * (y - 540)];
+
+  it("opens with the screen covering the frame, then flies back to the whole device", () => {
+    const b = m().pullBack("browser", { at: 0.5 });
+    const start = cam(b, 0);
+    const [left, top] = place(start, 960 - 700, 540 - 410 + 80);
+    const [right, bottom] = place(start, 960 + 700, 540 + 410);
+    expect(top).toBeCloseTo(0, 0);
+    expect(bottom).toBeCloseTo(1080, 0);
+    expect(left).toBeLessThanOrEqual(0);
+    expect(right).toBeGreaterThanOrEqual(1920);
+    expect(cam(b, 2.9)).toMatchObject({ scale: 1, x: 0, y: 0 });
+    expect(b.tweens[0].allow).toContain("camera-too-fast");
+  });
+
+  it("names the frames it can pull back from", () => {
+    expect(() => m().pullBack("card")).toThrow(/Window>, <Browser> or <Phone/);
+  });
+});

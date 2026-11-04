@@ -474,6 +474,26 @@ export class MotionBuilder {
     return this;
   }
 
+  /**
+   * The pull-back reveal: the scene opens with a device's screen filling the frame (so a flat
+   * scene before it can cut straight into its content), then the camera flies back until the
+   * whole Window, Browser or Phone is in view. Put the device in the centre of the frame (Center
+   * or a centred Safe). One fast move on the steep ease: it is the scene's reveal, so it may
+   * outrun the camera's speed limit (`camera-too-fast` is allowed for it). Push in again later
+   * with m.camera.
+   */
+  pullBack(device: string, opts: { at?: At; snap?: Snap; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const screen = this.dataOf?.(this.id(device))?.screen?.split(" ").map(Number);
+    if (!screen || screen.length !== 4 || !(screen[2] > 0 && screen[3] > 0)) throw new MotionError(`[${this.scene}] m.pullBack("${device}") needs a <Window>, <Browser> or <Phone ct="${device}"> (it reads where the screen sits).`);
+    const [dx, dy, w, h] = screen;
+    // Cover: the screen fills the frame on both axes, its centre on the frame's centre.
+    const s = Math.round(Math.max(this.frame.width / w, this.frame.height / h) * 10000) / 10000;
+    return this.camera(
+      { scale: [s, 1], x: [round(-s * dx), 0], y: [round(-s * dy), 0] },
+      { at: opts.at, snap: opts.snap, duration: opts.duration ?? "slow", ease: opts.ease ?? "steep", allow: [...(opts.allow ?? []), "camera-too-fast"] },
+    );
+  }
+
   /** How many parts a kit component rendered (its `data-ct-count`). */
   private countOf(target: string, component: string): number {
     const n = Number(this.dataOf?.(this.id(target))?.count);

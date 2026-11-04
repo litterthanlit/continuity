@@ -160,6 +160,7 @@ m.cycle("tool", { times: ["b1", "b2", "b3"], ease: "steep", duration: "snap" }) 
 m.stackIn("alerts", { at: "b1", every: 0.55, ease: "steep" })                             // notifications arrive, the stack steps down as one
 m.ring("score", { at: "b2", duration: "slow" })                                           // a <Ring>'s arc and number fill together
 m.grid("days", "fill", { at: "b1", span: 0.8 }); m.grid("days", "dots", { at: "b2" })   // a <DotGrid> fills on a wave, then turns to dots
+m.pullBack("browser", { at: "b1" })                                                      // open on a centred device's screen, full frame, and fly back to the device
 m.blink("search-caret", { at, until })                      // caret blink — the one loop litt allows
 m.loop(target, { rotate: 8 }, { period: 2 })                // a sine swing; warns (ambient-loop) — energetic: an info, for an object that swings
 m.time(at) → seconds · m.endOf(id) → seconds

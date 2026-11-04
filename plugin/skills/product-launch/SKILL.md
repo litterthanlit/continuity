@@ -84,6 +84,11 @@ like an interface, not like an object:
   `<Ring>` (`m.ring`): the arc and its number fill as one, so the figure never disagrees with it.
   A before and after over time is a `<DotGrid>`: the weeks fill on a wave (`m.grid(ct, "fill")`),
   then the squares become dots sized by each day (`"dots"`): one series, one hue.
+- **The reveal that explains scale.** Open a scene on the product's own screen, full frame, and
+  fly back to show the device it lives in: put a `<Browser>`, `<Window>` or `<Phone>` in the
+  frame's centre (`<Center>`) and `m.pullBack(ct, { at: "b1" })`. The scene before it can cut
+  straight in when it ends on the same flat surface as the screen. Then load the content and push
+  in on the action with `m.camera` (a pan never wider than its zoom: `camera-edge`).
 - **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`)
   and hold the last frame: the beat dropping out is the full stop the film has been driving to.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for

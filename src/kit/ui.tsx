@@ -54,10 +54,21 @@ function Dots() {
 
 // ---------------------------------------------------------------- frames
 
+/**
+ * Where a frame's screen sits, for m.pullBack: "dx dy w h", the screen's centre from the frame's
+ * centre and its size, px. `side` is the inset left and right (and below, for a bezel), `top` above.
+ */
+function screenData(side: number, top: number, width: number, height: number): string {
+  const bottom = side;
+  const w = width - 2 * side;
+  const h = height - top - bottom;
+  return `0 ${(top - bottom) / 2} ${w} ${h}`;
+}
+
 /** App window: a solid surface with the raised edge and a zero-offset float glow. Body is `<ct>-body`. */
 export function Window({ ct, title, width = 1280, height = 760, class: cls, children }: Box & { title?: string; width?: number; height?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
+    <div data-ct={id(ct)} data-ct-ui data-ct-screen={screenData(0, 64, width, height)} class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
       <div class="flex h-[64px] items-center gap-[12px] border-b-2 border-line px-[24px]">
         <Dots />
         {title && <span class="ml-[16px] font-sans text-[28px] font-title text-fg-muted">{title}</span>}
@@ -73,7 +84,7 @@ export function Window({ ct, title, width = 1280, height = 760, class: cls, chil
 /** Browser window with an address field. Body is `<ct>-body`, the URL `<ct>-url`. */
 export function Browser({ ct, url = "app.example.com", width = 1400, height = 820, class: cls, children }: Box & { url?: string; width?: number; height?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
+    <div data-ct={id(ct)} data-ct-ui data-ct-screen={screenData(0, 80, width, height)} class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
       <div class="flex h-[80px] items-center gap-[12px] border-b-2 border-line px-[24px]">
         <Dots />
         <div class="mx-auto flex h-[48px] w-[52%] items-center justify-center gap-[12px] rounded-control bg-surface-2 font-sans text-[26px] text-fg-muted shadow-hairline">
@@ -96,7 +107,7 @@ export function Browser({ ct, url = "app.example.com", width = 1400, height = 82
 export function Phone({ ct, width = 460, class: cls, children }: Box & { width?: number }) {
   const height = Math.round(width * 2.05);
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative rounded-[68px] border-[14px] border-device bg-canvas shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
+    <div data-ct={id(ct)} data-ct-ui data-ct-screen={screenData(14, 14, width, height)} class={cx("relative rounded-[68px] border-[14px] border-device bg-canvas shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
       <div class="absolute left-1/2 top-[18px] z-10 h-[36px] w-[132px] -translate-x-1/2 rounded-full bg-device" />
       <div data-ct={id(ct, "screen")} class="absolute inset-0 overflow-hidden rounded-[54px]">
         {children}

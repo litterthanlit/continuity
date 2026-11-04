@@ -63,6 +63,7 @@ export const RULES = {
   "material-motion": "litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.",
   "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter, a cell's radius). Tracking, weight, blur and filters perform.",
   "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.",
+  "camera-edge": "The camera shows past the edge of the scene: a pan can be at most what the zoom adds (|x| ≤ (scale − 1) × half the width, the same for y), and the camera never zooms below 1.",
   "camera-drift": "The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).",
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
   "text-fade": "Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).",
@@ -251,6 +252,11 @@ export function lintTimeline(build: BuildResult): Finding[] {
         const zoom = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1));
         if (t.duration >= sc.duration * 0.6 && zoom > B.maxDrift + 1e-6 && !allowed(t, "camera-drift")) {
           add("camera-drift", "warning", sc, `the ambient camera zooms ${r2(zoom * 100)}% over the scene${inRegister}`, { ...where, suggestion: `push 1 → ${r2(1 + B.maxDrift)} or less; a deliberate focus move is a short inOut tween` });
+        }
+        const ends = [0, 1].map((k) => ({ s: t.props.scale?.[k] ?? 1, x: t.props.x?.[k] ?? 0, y: t.props.y?.[k] ?? 0 }));
+        const bare = ends.find((e) => e.s < 1 - 1e-6 || Math.abs(e.x) > (tl.width / 2) * (e.s - 1) + 0.5 || Math.abs(e.y) > (tl.height / 2) * (e.s - 1) + 0.5);
+        if (bare && !allowed(t, "camera-edge")) {
+          add("camera-edge", "warning", sc, `the camera at scale ${r2(bare.s)} pans ${Math.round(bare.x)}px, ${Math.round(bare.y)}px: the scene's edge shows`, { ...where, suggestion: `pan at most ${Math.round((tl.width / 2) * (bare.s - 1))}px across and ${Math.round((tl.height / 2) * (bare.s - 1))}px down at that scale, or zoom further` });
         }
         const ds = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1)) / Math.max(0.01, t.duration);
         const dx = Math.max(Math.abs((t.props.x?.[1] ?? 0) - (t.props.x?.[0] ?? 0)), Math.abs((t.props.y?.[1] ?? 0) - (t.props.y?.[0] ?? 0))) / Math.max(0.01, t.duration);
