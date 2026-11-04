@@ -449,6 +449,15 @@ describe("dot grid", () => {
     expect(new Set(left.tweens.map((t) => t.group)).size).toBe(1);
   });
 
+  it("with a before, keeps every cell on show and lights its after over it", () => {
+    const m = new MotionBuilder("s", 3, {}, undefined, undefined, undefined, undefined, (t) => (t === "s.g" ? { ...data["s.g"], from: "1" } : data[t]));
+    m.grid("g", "fill", { at: 0.5, span: 0.4 });
+    expect(m.tweens.map((t) => t.target)).toEqual([0, 1, 2, 3, 4, 5].map((i) => `s.g-${i}-to`));
+    const before = sampleScene(compileScene(scene(m), {}), 0.4);
+    expect(before.get("s.g-0")).toBeUndefined();
+    expect(before.get("s.g-0-to")!.opacity).toBe(0);
+  });
+
   it("turns each square into a circle sized by its value", () => {
     const m = grid().grid("g", "dots", { at: 0 });
     const c = compileScene(scene(m), {});

@@ -446,7 +446,8 @@ export class MotionBuilder {
   }
 
   /**
-   * A `<DotGrid>` on a wave: `"fill"` brings the cells in (from 40% size, fading up), `"dots"`
+   * A `<DotGrid>` on a wave: `"fill"` brings the cells in (from 40% size, fading up) or, when the
+   * grid has a before (`from`), lights each cell from its before ink up to its value; `"dots"`
    * turns the squares into circles sized by their values. The wave crosses the grid in `span`
    * seconds (default 0.8), column by column (`wave: "left"`) or corner to corner (`"diagonal"`).
    */
@@ -456,7 +457,9 @@ export class MotionBuilder {
     opts: { at?: At; snap?: Snap; span?: number; wave?: "left" | "diagonal"; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] } = {},
   ): this {
     const n = this.countOf(target, "DotGrid");
-    const rows = Number(this.dataOf!(this.id(target))!.rows) || 1;
+    const data = this.dataOf!(this.id(target))!;
+    const rows = Number(data.rows) || 1;
+    const before = data.from === "1";
     const cols = Math.ceil(n / rows);
     const at = this.startOf(opts);
     const span = opts.span ?? 0.8;
@@ -467,9 +470,11 @@ export class MotionBuilder {
       const step = opts.wave === "diagonal" ? c + (i % rows) : c;
       const cell = `${target}-${i}`;
       const start = round(at + (steps ? (span * step) / steps : 0));
-      const props: Partial<Record<PropName, PropRange>> =
-        mode === "fill" ? { scale: [0.4, 1], opacity: [0, 1] } : { radius: [CELL_RADIUS, 50], scale: [1, dotScale(Number(this.dataOf!(this.id(cell))?.v) || 0)] };
-      this.flip(cell, mode === "fill" ? "enter" : "move", "grid", props, { at: start, ease: opts.ease, duration: opts.duration, allow: opts.allow }, group);
+      const timing = { at: start, ease: opts.ease, duration: opts.duration, allow: opts.allow };
+      // With a before (`from`), the cells are there already: fill lights each one up to its value.
+      if (mode === "fill" && before) this.flip(`${cell}-to`, "enter", "grid", { scale: [0.6, 1], opacity: [0, 1] }, timing, group);
+      else if (mode === "fill") this.flip(cell, "enter", "grid", { scale: [0.4, 1], opacity: [0, 1] }, timing, group);
+      else this.flip(cell, "move", "grid", { radius: [CELL_RADIUS, 50], scale: [1, dotScale(Number(this.dataOf!(this.id(cell))?.v) || 0)] }, timing, group);
     }
     return this;
   }

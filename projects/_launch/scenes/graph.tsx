@@ -1,7 +1,7 @@
 import { DotGrid, Headline, Label, scene, Safe, Stage } from "continuity";
 
-// The before and after in one grid: the weeks fill in on a wave, then every square turns into a
-// dot sized by what shipped that day. Teal names the one series; colour carries the data.
+// The before and after in one grid: a sparse half-year lights up on a wave, then every square turns
+// into a dot sized by what shipped that day. Teal names the one series; colour carries the data.
 const WEEKS = 26;
 const DAYS = 7;
 // Deterministic data: a rising trend, broken up so it reads as real days (no Math.random).
@@ -14,6 +14,9 @@ const VALUES = Array.from({ length: WEEKS * DAYS }, (_, i) => {
   return week < 8 && jitter < 0.3 ? 0 : Math.round(v * 100) / 100;
 });
 
+// The before: the odd day that got done by hand.
+const BEFORE = VALUES.map((v, i) => ((i * 7) % 9 === 0 ? Math.min(v, 0.3) : 0));
+
 export default scene({
   view: ({ text }) => (
     <Stage bg="grid">
@@ -22,7 +25,7 @@ export default scene({
           <Label ct="label">{text.label}</Label>
           <Headline ct="headline">{text.headline}</Headline>
         </div>
-        <DotGrid ct="days" values={VALUES} rows={DAYS} cell={44} gap={12} hue="teal" />
+        <DotGrid ct="days" values={VALUES} from={BEFORE} rows={DAYS} cell={44} gap={12} hue="teal" />
       </Safe>
     </Stage>
   ),
