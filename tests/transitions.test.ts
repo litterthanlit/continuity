@@ -58,8 +58,19 @@ describe("litt's transition language", () => {
     expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["pixels", "depth"]);
   });
 
-  it("pixels reveals square cells in a dither that sweeps the way it travels", () => {
-    const [tw] = run({ type: "pixels", dir: "left" }).in;
+  it("pixels goes through the canvas: cells cover the outgoing scene, then uncover the incoming one", () => {
+    const t = run({ type: "pixels" });
+    const at = (target: string, prop: string) => t.in.concat(t.out).filter((tw) => tw.target === target && prop in tw.props).map((tw) => [tw.start, tw.duration, tw.props[prop as "fx"]]);
+    expect(at("b.fx", "fx")).toEqual([[0, 0.25, [0, 1]]]);
+    expect(at("b.fx", "opacity")).toEqual([[0, 0.25, [1, 0]]]);
+    expect(at("b.reveal", "fx")).toEqual([[0.25, 0.25, [0, 1]]]);
+    // A one-step ease: the outgoing scene goes at the midpoint (2.75), when the canvas covers it.
+    expect(at("a.scene", "opacity")).toEqual([[2.5, 0.25, [null, 0]]]);
+    expect(TRANSITION_DEFS.pixels.layers?.fx?.({ type: "pixels", duration: 0.5 }, { out: "a", into: "b", html: () => undefined }).style).toContain("var(--color-canvas)");
+  });
+
+  it("pixels lights square cells in a dither that sweeps the way it travels", () => {
+    const tw = run({ type: "pixels", dir: "left" }).in.find((x) => x.target === "b.reveal")!;
     const spec = tw.fx as Extract<FxSpec, { kind: "pixels" }>;
     expect(spec).toEqual({ kind: "pixels", angle: 270, cols: 24, rows: 13.5 });
     const lit = (p: number) => {

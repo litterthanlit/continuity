@@ -215,16 +215,27 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
   },
   pixels: {
     description:
-      "Energetic register. The incoming scene arrives in square cells (a 24th of the frame's long side), an ordered dither sweeping in the direction of travel (dir, default right). A digital cut: the product loads, a machine takes over.",
+      "Energetic register. A digital cut through the canvas: square cells (a 24th of the frame's long side) of the canvas colour dissolve over the outgoing scene in an ordered dither, then the incoming scene appears through the same dither, both sweeping in the direction of travel (dir, default right). No frame mixes two scenes' type. The product loads, a machine takes over.",
     duration: 0.5,
     range: [0.3, 0.8],
     params: ["ease", "dir"],
     dirs: PLANAR_DIRS,
     registers: ["energetic"],
+    layers: { reveal: true, fx: () => ({ style: "position:absolute;inset:0;background:var(--color-canvas)", inner: "" }) },
     build: (c) => {
       const cell = Math.max(c.frame.width, c.frame.height) / PIXEL_CELLS;
       const fx: FxSpec = { kind: "pixels", angle: DIR_ANGLE[(c.spec.dir as PlanarDir | undefined) ?? "right"], cols: Math.round(c.frame.width / cell), rows: r3(c.frame.height / cell) };
-      return { out: [], in: [tw(`${c.into}.scene`, 0, c.d, { fx: [0, 1] }, c.ease("linear"), fx)] };
+      const e = c.ease("linear");
+      const h = r3(c.d / 2);
+      return {
+        // At the midpoint the frame is all canvas: the outgoing scene and the covering cells step off together.
+        out: [tw(`${c.out}.scene`, c.os, h, { opacity: [null, 0] }, STEP)],
+        in: [
+          tw(`${c.into}.fx`, 0, h, { fx: [0, 1] }, e, fx),
+          tw(`${c.into}.fx`, 0, h, { opacity: [1, 0] }, STEP),
+          tw(`${c.into}.reveal`, h, h, { fx: [0, 1] }, e, fx),
+        ],
+      };
     },
   },
   depth: {
