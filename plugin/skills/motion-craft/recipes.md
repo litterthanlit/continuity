@@ -205,6 +205,22 @@ m.tween("sel", { clipLeft: [0, 100] }, { at: "after:sel", duration: "snap", ease
 ```
 Lighter version for a label: `m.enter("label", "wipeRight", { duration: "snap", ease: "steep" })`.
 
+## One phrase, one UI (the retype)
+```tsx
+<Headline ct="line" balance={false} class="whitespace-nowrap">
+  <span class="text-fg-muted">{text.lead}</span> <Typed ct="end" />
+</Headline>
+```
+```ts
+// The lead-in stays; the ending is deleted back to it and retyped on each beat. Each claim's
+// card lands with its last key (22 keys/s) and leaves as the claim is deleted.
+m.retype("end", [text.e0, { text: text.e1, at: "b2" }, { text: text.e2, at: "b3" }], { at: "b1", caret: "end-caret" });
+m.tween("rank", { y: [48, 0], opacity: [0, 1] }, { at: m.time("b1") + text.e0.length / 22, duration: "snap", ease: "steep", kind: "enter" });
+m.tween("rank", { opacity: [1, 0] }, { at: "b2-0.3", duration: "instant", ease: "out", kind: "exit" });
+```
+Space the beats ~2s apart: the `retype-hold` lint wants each claim readable before its first key
+goes. The full scene is `projects/_launch/scenes/value.tsx`.
+
 ## The terminal (a machine speaks)
 ```tsx
 <Window ct="term" title="zsh" width={864} height={288}>

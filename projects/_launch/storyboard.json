@@ -1,0 +1,157 @@
+{
+  "title": "Launch devices gallery",
+  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn). Harbor is an invented product. Reference + lint fixture.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-light",
+  "type": "litt",
+  "register": "energetic",
+  "scenes": [
+    {
+      "id": "intro",
+      "duration": 2.8,
+      "intent": "SEO, run by [a word that flips]: the slot cycles three stand-ins and lands on the name, at the end of the line where its spare width is unseen.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.5
+        },
+        {
+          "id": "b2",
+          "at": 1.0
+        },
+        {
+          "id": "b3",
+          "at": 1.5
+        }
+      ],
+      "text": {
+        "lead": "SEO, run by",
+        "w0": "an agency",
+        "w1": "a freelancer",
+        "w2": "a spreadsheet",
+        "w3": "Harbor"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A3:F3",
+          "note": "One display line, left-aligned: lead in the grey, then the Cycle slot."
+        },
+        {
+          "id": "tool",
+          "role": "headline",
+          "anchor": "D3",
+          "note": "<Cycle> of w0\u2026w3; tool-0\u2026tool-3 are its words."
+        }
+      ],
+      "motion": "The line types on, then the slot flips on b1, b2, b3 (steep, snap) and holds on Harbor.",
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "value",
+      "duration": 6.2,
+      "intent": "One phrase, one UI: the ending is retyped three times and each claim's proof springs up beside it.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.3
+        },
+        {
+          "id": "b2",
+          "at": 2.3
+        },
+        {
+          "id": "b3",
+          "at": 4.3
+        }
+      ],
+      "text": {
+        "lead": "Your website is",
+        "e0": "ranking #1",
+        "e1": "booking demos",
+        "e2": "cited by AI"
+      },
+      "elements": [
+        {
+          "id": "line",
+          "role": "headline",
+          "anchor": "A3:D3",
+          "note": "Lead in the grey, the typed ending in fg."
+        },
+        {
+          "id": "end",
+          "role": "headline",
+          "anchor": "C3",
+          "note": "<Typed>: the retyped ending; end-caret is its caret."
+        },
+        {
+          "id": "rank",
+          "role": "ui",
+          "anchor": "E2:F4",
+          "note": "Card + Stat: average position #1."
+        },
+        {
+          "id": "demos",
+          "role": "ui",
+          "anchor": "E2:F4",
+          "note": "Card + Stat: demos booked this week, counts to 24."
+        },
+        {
+          "id": "cited",
+          "role": "ui",
+          "anchor": "E2:F4",
+          "note": "Card + Stat: AI answers citing you, counts to 89."
+        }
+      ],
+      "motion": "Each phrase types on its beat; its card snaps up as the phrase lands and leaves as the phrase is deleted.",
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "alerts",
+      "duration": 3.4,
+      "intent": "The reward: notifications stack in on a lock screen.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.4
+        }
+      ],
+      "text": {
+        "label": "Harbor",
+        "headline": "Results, overnight."
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A2"
+        },
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A3:C3"
+        },
+        {
+          "id": "phone",
+          "role": "ui",
+          "anchor": "D1:E6"
+        },
+        {
+          "id": "alerts",
+          "role": "ui",
+          "anchor": "D2:E4",
+          "note": "<NotificationStack> of four; alerts-0 arrives first."
+        }
+      ],
+      "motion": "Label and headline wipe on; four notifications drop in, newest on top, the rest stepping down a row."
+    }
+  ]
+}

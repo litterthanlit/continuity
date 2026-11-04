@@ -30,6 +30,7 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
       easeName: tw.easeName,
       preset: tw.preset,
       counter: tw.counter,
+      tape: tw.tape,
       fx: tw.fx,
       allow: tw.allow,
       mask: tw.mask,
@@ -94,6 +95,7 @@ export interface CompiledScene {
   channels: Map<string, Map<PropName, Segment[]>>;
   loops: Map<string, Loop[]>;
   counters: Map<string, CounterFormat>;
+  tapes: Map<string, string[]>;
   fx: Map<string, FxSpec>;
   /** key → squash-and-stretch amount (the largest any of its tweens asks for). */
   squash: Map<string, number>;
@@ -113,6 +115,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
   const resolved = resolveScene(scene, parts);
   const channels = new Map<string, Map<PropName, Segment[]>>();
   const counters = new Map<string, CounterFormat>();
+  const tapes = new Map<string, string[]>();
   const fx = new Map<string, FxSpec>();
   const squash = new Map<string, number>();
   for (const rt of resolved) {
@@ -124,6 +127,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
       segs.push({ start: rt.start, end: rt.start + rt.duration, from: range[0], to: range[1], ease: cachedEase(rt) });
     }
     if (rt.counter) counters.set(rt.key, rt.counter);
+    if (rt.tape) tapes.set(rt.key, rt.tape);
     if (rt.fx) fx.set(rt.key, rt.fx);
     if (rt.squash) squash.set(rt.key, Math.max(squash.get(rt.key) ?? 0, Math.min(0.5, rt.squash)));
   }
@@ -135,7 +139,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
     list.push(l);
     if (!channels.has(l.target)) channels.set(l.target, new Map());
   }
-  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, fx, squash, resolved, bases: scene.bases };
+  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, tapes, fx, squash, resolved, bases: scene.bases };
 }
 
 export type Values = Partial<Record<PropName, number>> & {
@@ -265,6 +269,22 @@ const f4 = (n: number) => {
   return Object.is(r, -0) ? "0" : String(r);
 };
 
+/**
+ * The text a tape shows at keystroke `k`: each phrase is typed one key at a time, then deleted
+ * one key at a time, before the next. Fractional keystrokes round down (a key is pressed or not).
+ */
+export function tapeText(tape: string[], k: number): string {
+  let left = Math.floor(k + 1e-6);
+  for (const phrase of tape) {
+    const n = [...phrase].length;
+    if (left <= n) return [...phrase].slice(0, left).join("");
+    left -= n;
+    if (left <= n) return [...phrase].slice(0, n - left).join("");
+    left -= n;
+  }
+  return "";
+}
+
 export function formatCounter(value: number, fmt: CounterFormat): string {
   const fixed = value.toFixed(fmt.decimals);
   const [int, dec] = fixed.split(".");
@@ -276,7 +296,7 @@ export function formatCounter(value: number, fmt: CounterFormat): string {
 }
 
 /** Turn channel values into CSS. Only channels that are animated are emitted. */
-export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleOut {
+export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: string[]): StyleOut {
   const s: StyleOut = {};
   const has = (p: PropName) => v[p] !== undefined;
   const g = (p: PropName) => v[p] ?? BASE_VALUES[p];
@@ -306,10 +326,9 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleO
     s.filter = parts.join(" ");
   }
   if (CLIP_PROPS.some(has)) {
-    s.clipPath =
-      "inset(" +
-      CLIP_PROPS.map((p) => f4(Math.min(100, Math.max(0, g(p)))) + "%").join(" ") +
-      ")";
+    const insets = CLIP_PROPS.map((p) => Math.min(100, Math.max(0, g(p))));
+    // Fully open is no clip: inset(0) would keep cutting ink that leaves the box (a descender under tight leading).
+    s.clipPath = insets.every((v) => v === 0) ? "none" : "inset(" + insets.map((v) => f4(v) + "%").join(" ") + ")";
   }
   if (has("fx") && fx) {
     const shape = fxStyle(fx, g("fx"));
@@ -324,6 +343,7 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleO
   }
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });
+  if (has("typed") && tape) s.text = tapeText(tape, g("typed"));
   if (has("wght")) s.fontWeight = f4(Math.min(1000, Math.max(1, g("wght"))));
   if (has("wdth")) s.fontStretch = f4(Math.min(200, Math.max(50, g("wdth")))) + "%";
   for (const [prop, tag] of Object.entries(VARIATION_AXES) as Array<[PropName, string]>) {

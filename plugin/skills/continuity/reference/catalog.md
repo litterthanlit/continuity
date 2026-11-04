@@ -108,6 +108,8 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `exit-slower-than-enter` — Exits should be quicker than entrances (attention has moved on).
 - `settle-interrupted` — A new tween on the same property starts before the previous one settled — motion never lands.
 - `read-time` — Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.
+- `retype-hold` — A retyped phrase (m.retype) must be readable before its first key is deleted: ≈17 chars/s + 0.4s from when it starts typing, and ≥ 0.6s complete.
+- `cycle-glance` — A word in a Cycle (m.cycle) is on show for under 0.25s between flips: it reads as flicker, not as a list. Fewer words, or more time between steps.
 - `hold-too-short` — Element exits almost as soon as it lands.
 - `ui-glance` — UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).
 - `scene-overrun` — Motion is still running after the scene has ended (it will be cut off).

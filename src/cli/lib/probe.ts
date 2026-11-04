@@ -83,8 +83,15 @@ window.__ctMeasure = function (time, neutral) {
     var tr = range.getBoundingClientRect();
     if (tr.width < 1) tr = r;
     for (var q = el; q && q !== document.body; q = q.parentElement) {
-      if (q.classList.contains("ct-m") || q.classList.contains("ct-l") || q.classList.contains("ct-li")) continue;
       if (q.classList.contains("ct-scene") || q.classList.contains("ct-camera") || q.classList.contains("ct-stage")) break;
+      // Our own reveal masks (split parts, a Cycle's slot) clip on purpose: glyphs wholly outside
+      // one are not on screen yet (a word waiting below the slot), glyphs partly inside are revealing.
+      if (q.classList.contains("ct-m") || q.classList.contains("ct-l") || q.classList.contains("ct-li") || q.classList.contains("ct-slot")) {
+        if (q === el) continue;
+        var mk = q.getBoundingClientRect();
+        if (tr.left >= mk.right || tr.right <= mk.left || tr.top >= mk.bottom || tr.bottom <= mk.top) return;
+        continue;
+      }
       var qs = getComputedStyle(q);
       if (qs.overflowX !== "visible" || qs.overflowY !== "visible" || qs.clipPath !== "none") {
         var b = q.getBoundingClientRect();

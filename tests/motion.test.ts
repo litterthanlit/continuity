@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { MotionBuilder, staggerOffsets } from "../src/motion/dsl.js";
+import { MotionBuilder, round, staggerOffsets } from "../src/motion/dsl.js";
 import { cubicBezier, easeFn, isLinear, springPosition, springSettleTime } from "../src/motion/easing.js";
-import { compileScene, formatCounter, mergeVariationSettings, resolveScene, sampleScene, styleOf } from "../src/motion/evaluate.js";
+import { compileScene, formatCounter, mergeVariationSettings, resolveScene, sampleScene, styleOf, tapeText } from "../src/motion/evaluate.js";
 import { bounceOf, eases, readTime, spring, visualOf } from "../src/motion/tokens.js";
 import { transitionTweens } from "../src/motion/transitions.js";
 import { parseEnergy } from "../src/cli/lib/energy.js";
@@ -186,6 +186,7 @@ describe("evaluate", () => {
     expect(styleOf({ opacity: 0.5 })).toEqual({ opacity: "0.5" });
     expect(styleOf({ y: 10 }).transform).toBe("translate3d(0px,10px,0px)");
     expect(styleOf({ clipRight: 40 }).clipPath).toBe("inset(0% 40% 0% 0%)");
+    expect(styleOf({ clipRight: 0 }).clipPath).toBe("none");
   });
 
   it("formats counters", () => {
@@ -316,5 +317,99 @@ describe("squash and stretch", () => {
     expect(peak.y).toBeGreaterThan(0);
     const d = sampleScene(c, peak.t).get("s.ball")!.deform!;
     expect(d[3]).toBeLessThan(1);
+  });
+});
+
+describe("retype", () => {
+  const tape = ["ranking #1", "booking demos"];
+
+  it("types a phrase, deletes it key by key, then types the next", () => {
+    expect(tapeText(tape, 0)).toBe("");
+    expect(tapeText(tape, 4)).toBe("rank");
+    expect(tapeText(tape, 10)).toBe("ranking #1");
+    expect(tapeText(tape, 13)).toBe("ranking");
+    expect(tapeText(tape, 20)).toBe("");
+    expect(tapeText(tape, 27)).toBe("booking");
+    expect(tapeText(tape, 10.9)).toBe("ranking #1");
+    expect(tapeText(tape, 99)).toBe("");
+  });
+
+  it("holds each phrase long enough to read before deleting it, and keeps the last", () => {
+    const m = new MotionBuilder("s", 6, {});
+    m.retype("end", tape, { at: 0.5, cps: 20, caret: "caret" });
+    const [type0, del0, type1] = m.tweens;
+    expect(m.tweens).toHaveLength(3);
+    expect(type0).toMatchObject({ target: "s.end", start: 0.5, duration: 0.5, props: { typed: [0, 10] }, tape });
+    const reading = del0.start - (type0.start + 0.3 * type0.duration);
+    expect(reading).toBeGreaterThanOrEqual(readTime(10) - 1e-9);
+    expect(del0.start - (type0.start + type0.duration)).toBeGreaterThanOrEqual(0.6);
+    expect(del0.props.typed).toEqual([10, 20]);
+    expect(del0.duration).toBe(0.2);
+    expect(type1.start).toBeCloseTo(del0.start + del0.duration + 0.1, 6);
+    expect(m.loops.map((l) => [l.start, l.end])).toEqual([
+      [1, del0.start],
+      [type1.start + type1.duration, null],
+    ]);
+  });
+
+  it("lands a phrase with its own at and deletes the one before just in time", () => {
+    const m = new MotionBuilder("s", 6, { b2: 3 });
+    m.retype("end", ["ranking #1", { text: "booking demos", at: "b2" }], { cps: 20 });
+    const del0 = m.tweens[1];
+    expect(round(del0.start + del0.duration + 0.1)).toBe(3);
+    expect(m.tweens[2].start).toBe(3);
+  });
+
+  it("refuses a phrase that would start before the one before it is typed", () => {
+    const m = new MotionBuilder("s", 6, {});
+    expect(() => m.retype("end", ["ranking #1", { text: "booking", at: 0.2 }])).toThrow(/finishes typing|before the phrase before/);
+  });
+
+  it("shows the tape's text through the compiled scene", () => {
+    const m = new MotionBuilder("s", 6, {});
+    m.retype("end", tape, { at: 0, cps: 10 });
+    const c = compileScene(scene(m), {});
+    const textAt = (t: number) => styleOf(sampleScene(c, t).get("s.end")!, undefined, undefined, c.tapes.get("s.end")).text;
+    expect(textAt(0)).toBe("");
+    expect(textAt(0.45)).toBe("rank");
+    expect(textAt(1.2)).toBe("ranking #1");
+    expect(textAt(5.9)).toBe("booking demos");
+  });
+});
+
+describe("cycle and stackIn", () => {
+  const withData = (data: Record<string, Record<string, string>>) => new MotionBuilder("s", 4, { b1: 1 }, undefined, undefined, undefined, undefined, (t) => data[t]);
+
+  it("flips each word out as the next rises in, one step per time, and keeps the last", () => {
+    const m = withData({ "s.tool": { count: "3" } });
+    m.cycle("tool", { times: [0.5, "b1"] });
+    const rows = m.tweens.map((t) => [t.target, t.kind, t.start, t.props.yPct]);
+    expect(rows).toEqual([
+      ["s.tool-0", "exit", 0.5, [0, -120]],
+      ["s.tool-1", "enter", 0.5, [120, 0]],
+      ["s.tool-1", "exit", 1, [0, -120]],
+      ["s.tool-2", "enter", 1, [120, 0]],
+    ]);
+    expect(m.tweens[0].group).toBe(m.tweens[1].group);
+  });
+
+  it("names the component it needs when the target is not one", () => {
+    expect(() => withData({}).cycle("tool")).toThrow(/not a <Cycle>/);
+    expect(() => withData({ "s.alerts": { count: "2" } }).stackIn("alerts")).toThrow(/row pitch/);
+  });
+
+  it("moves the stack down a row as one while each notification rides in from the row above", () => {
+    const m = withData({ "s.alerts": { count: "3", pitch: "148" } });
+    m.stackIn("alerts", { at: 0.2, every: 0.6 });
+    const c = compileScene(scene(m), {});
+    const yAt = (i: number, t: number) => sampleScene(c, t).get(`s.alerts-${i}`)!.y!;
+    expect(sampleScene(c, 0.5).get("s.alerts-2")!.opacity).toBe(0);
+    // While only the first is in, the stack sits two rows up, so it shows at the top row.
+    expect(yAt(0, 0.79)).toBeCloseTo(-296, 0);
+    // Mid-step every card shares one offset from its layout row, so they keep their pitch: none crosses another.
+    for (const t of [0.85, 0.9, 1.0, 1.45, 1.5]) expect(yAt(0, t)).toBeCloseTo(yAt(1, t), 6);
+    for (const t of [1.45, 1.5]) expect(yAt(2, t)).toBeCloseTo(yAt(1, t), 6);
+    for (const i of [0, 1, 2]) expect(yAt(i, 3.9)).toBeCloseTo(0, 3);
+    expect(m.tweens.filter((t) => t.start === 1.4).map((t) => t.target)).toEqual(["s.alerts-2", "s.alerts-0", "s.alerts-1"]);
   });
 });

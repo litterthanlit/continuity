@@ -265,9 +265,22 @@ export function Segmented({ ct, items, active = 0, segment = 200, class: cls }: 
  * A notification: glass (it floats), the surface radius, a zero-offset float. No
  * icon, no dot: an error's title is danger, and the words say the rest.
  */
-export function Toast({ ct, title, body, tone = "neutral", class: cls }: Box & { title: string; body?: string; tone?: "neutral" | "danger" }) {
+export function Toast({
+  ct,
+  title,
+  body,
+  tone = "neutral",
+  width = 640,
+  height,
+  class: cls,
+}: Box & { title: string; body?: string; tone?: "neutral" | "danger"; width?: number; height?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("ct-glass flex w-[640px] flex-col gap-[8px] rounded-surface px-[32px] py-[24px]", cls)}>
+    <div
+      data-ct={id(ct)}
+      data-ct-ui
+      class={cx("ct-glass flex flex-col justify-center gap-[8px] overflow-hidden rounded-surface px-[32px] py-[24px]", cls)}
+      style={{ width: `${width}px`, ...(height !== undefined ? { height: `${height}px` } : {}) }}
+    >
       <div data-ct={id(ct, "title")} class={cx("font-sans text-[28px] font-title", tone === "danger" ? "text-danger" : "text-fg")}>
         {title}
       </div>
@@ -276,6 +289,41 @@ export function Toast({ ct, title, body, tone = "neutral", class: cls }: Box & {
           {body}
         </div>
       )}
+    </div>
+  );
+}
+
+export interface Notification {
+  title: string;
+  body?: string;
+  tone?: "neutral" | "danger";
+}
+
+/**
+ * Notifications that arrive one after another (m.stackIn), newest on top, each a Toast in a row
+ * of fixed height so the stack steps by a known pitch. Keep each title and body to one line: the
+ * gate reports copy that runs past its row. Item i (in arrival order) is `<ct>-<i>`.
+ * Laid out settled: every item in, the last to arrive at the top. On a lock screen, put it in a
+ * `<Phone>` with `width` about the screen's less 48px.
+ */
+export function NotificationStack({
+  ct,
+  items,
+  width = 640,
+  rowHeight = 132,
+  gap = 16,
+  class: cls,
+}: Box & { items: Notification[]; width?: number; rowHeight?: number; gap?: number }) {
+  return (
+    <div data-ct={id(ct)} data-ct-ui data-ct-count={items.length} data-ct-pitch={rowHeight + gap} class={cx("flex flex-col", cls)} style={{ width: `${width}px`, gap: `${gap}px` }}>
+      {items
+        .map((item, i) => (
+          // A later arrival slides over the ones it pushes down.
+          <div key={i} class="relative" style={{ zIndex: i + 1 }}>
+            <Toast ct={`${ct}-${i}`} title={item.title} body={item.body} tone={item.tone} width={width} height={rowHeight} />
+          </div>
+        ))
+        .reverse()}
     </div>
   );
 }

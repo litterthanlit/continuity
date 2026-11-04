@@ -1,9 +1,9 @@
 import { nearest } from "../audio/grid.js";
 import type { BuildResult, ElementInfo } from "../build/build.js";
 import { isLinear, peakSlope } from "../motion/easing.js";
-import { resolveScene } from "../motion/evaluate.js";
+import { resolveScene, tapeText } from "../motion/evaluate.js";
 import { REGISTER_BOUNDS, registerOf, type Register } from "../motion/register.js";
-import { EXIT_FACTOR, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
+import { EXIT_FACTOR, SETTLED_HOLD, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
 import { WEIGHTS } from "../themes/kits.js";
 import { TRANSITION_DEFS } from "../motion/transitions.js";
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
@@ -32,6 +32,8 @@ export const RULES = {
   "exit-slower-than-enter": "Exits should be quicker than entrances (attention has moved on).",
   "settle-interrupted": "A new tween on the same property starts before the previous one settled — motion never lands.",
   "read-time": "Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.",
+  "retype-hold": "A retyped phrase (m.retype) must be readable before its first key is deleted: ≈17 chars/s + 0.4s from when it starts typing, and ≥ 0.6s complete.",
+  "cycle-glance": "A word in a Cycle (m.cycle) is on show for under 0.25s between flips: it reads as flicker, not as a list. Fewer words, or more time between steps.",
   "hold-too-short": "Element exits almost as soon as it lands.",
   "ui-glance": "UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).",
   "scene-overrun": "Motion is still running after the scene has ended (it will be cut off).",
@@ -100,7 +102,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY", "match", "morph"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */
@@ -112,6 +114,8 @@ const ROTATION = new Set<string>(["rotate", "rotateX", "rotateY"]);
 const isRotation = (t: Tween) => Object.keys(t.props).filter((p) => SPATIAL_PROPS.has(p as PropName)).every((p) => ROTATION.has(p));
 /** Copy (not UI imagery) with readable words of its own. */
 const isCopy = (e: ElementInfo | undefined) => !!e && !e.ui && !e.decor && e.role !== "decor" && e.ownText.replace(/[\s\d.,%+$€£-]/g, "").length >= 2;
+/** m.cycle: the shortest time a word may show between flips. */
+const CYCLE_GLANCE = 0.25;
 const localOf = (id: string) => id.slice(id.indexOf(".") + 1);
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -150,7 +154,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
       if ((t.kind === "enter" || t.kind === "exit") && isSpatial(t) && t.duration < 0.15 && !allowed(t, "duration-too-fast")) {
         add("duration-too-fast", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "use the responsive spring (the preset default) or the exit presets' derived timing" });
       }
-      if ((t.kind === "enter" || t.kind === "exit" || t.kind === "emphasis") && !t.counter && t.duration > 1.6 && !allowed(t, "duration-too-slow")) {
+      if ((t.kind === "enter" || t.kind === "exit" || t.kind === "emphasis") && !t.counter && !t.tape && t.duration > 1.6 && !allowed(t, "duration-too-slow")) {
         add("duration-too-slow", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "entrances are springs (≈0.35s responsive, ≈0.58s expressive); slow drift belongs to the camera" });
       }
       if (
@@ -237,7 +241,8 @@ export function lintTimeline(build: BuildResult): Finding[] {
         add("text-fade", "warning", sc, `${localOf(t.target)} fades in${inRegister}`, { ...where, suggestion: 'type it on (m.type) or wipe it on (m.enter(id, "wipeRight", { duration: "snap", ease: "steep" }))' });
       }
       if (t.kind === "enter") {
-        const far = Math.max(...(["x", "y"] as const).map((p) => Math.abs(t.props[p]?.[0] ?? 0)));
+        // The distance travelled: an entrance may land somewhere other than its layout place (a stacked notification).
+        const far = Math.max(...(["x", "y"] as const).map((p) => { const r = t.props[p]; return r && r[0] !== null ? Math.abs(r[0] - r[1]) : 0; }));
         if (far > B.maxTravel && !allowed(t, "travel-too-far")) {
           add("travel-too-far", "warning", sc, `${localOf(t.target)} enters from ${far}px away${inRegister}`, { ...where, suggestion: `travel ${TRAVEL}px (the preset default)${register === "calm" ? "" : `, ≤ ${B.maxTravel}px for a piece that lands`}` });
         }
@@ -303,10 +308,11 @@ export function lintTimeline(build: BuildResult): Finding[] {
       if (outgoing) exitStart.set(t.target, Math.min(exitStart.get(t.target) ?? Infinity, t.start));
     }
     const textLeaf = (e: ElementInfo) => !e.decor && e.role !== "decor" && e.ownText.replace(/[\s\d.,%+$€£-]/g, "").length >= 2;
-    const counted = new Set(sc.tweens.filter((t) => t.counter).map((t) => t.target));
-    const SETTLED_HOLD = 0.6;
+    const counted = new Set(sc.tweens.filter((t) => t.counter || t.tape).map((t) => t.target));
+    // A Cycle's words that flip away are a rhythm, not copy: they get a glance, the last one a read.
+    const flipped = new Set(sc.tweens.filter((t) => t.preset === "cycle" && t.kind === "exit").map((t) => t.target));
     for (const e of build.elements) {
-      if (e.scene !== sc.scene || !textLeaf(e) || counted.has(e.id)) continue;
+      if (e.scene !== sc.scene || !textLeaf(e) || counted.has(e.id) || flipped.has(e.id)) continue;
       // Part of a larger copy element (e.g. an accent word inside a headline): judged with its parent.
       if (e.ancestors.some((a) => elements.get(a) && !elements.get(a)!.ui && textLeaf(elements.get(a)!))) continue;
       const chain = [e.id, ...e.ancestors];
@@ -324,7 +330,9 @@ export function lintTimeline(build: BuildResult): Finding[] {
         continue;
       }
       const window = until - readable;
-      const need = readTime(e.text.length);
+      // A line that holds a Cycle is read with the word that stays, not the ones that flip away.
+      const flippedAway = [...flipped].filter((f) => elements.get(f)?.ancestors.includes(e.id)).reduce((n, f) => n + elements.get(f)!.text.length, 0);
+      const need = readTime(e.text.length - flippedAway);
       const quote = `"${e.text.slice(0, 48)}${e.text.length > 48 ? "…" : ""}"`;
       if (window < need) {
         add("read-time", "error", sc, `${quote} is on screen for ${r2(Math.max(0, window))}s of reading, needs ~${r2(need)}s`, {
@@ -339,6 +347,35 @@ export function lintTimeline(build: BuildResult): Finding[] {
           suggestion: `let it hold ≥ ${SETTLED_HOLD}s after the last part lands (tighten the stagger or start earlier)`,
         });
       }
+    }
+    for (const id of flipped) {
+      const shownFrom = Math.max(0, ...sc.tweens.filter((t) => t.target === id && t.preset === "cycle" && t.kind === "enter").map((t) => t.start));
+      const exit = sc.tweens.find((t) => t.target === id && t.preset === "cycle" && t.kind === "exit")!;
+      if (exit.start - shownFrom < CYCLE_GLANCE && !allowed(exit, "cycle-glance")) {
+        add("cycle-glance", "warning", sc, `${localOf(id)} is on show for ${r2(exit.start - shownFrom)}s`, { element: id, time: at(shownFrom), suggestion: `step every ${CYCLE_GLANCE}s or more` });
+      }
+    }
+    // Retyped phrases: each is read from its first key until its first key is deleted.
+    const tapes = new Map<string, Tween[]>();
+    for (const t of sc.tweens) if (t.tape && t.props.typed) tapes.set(t.target, [...(tapes.get(t.target) ?? []), t]);
+    for (const [id, list] of tapes) {
+      list.sort((a, b) => a.start - b.start);
+      list.forEach((t, i) => {
+        const [from, to] = t.props.typed as [number, number];
+        const phrase = tapeText(t.tape!, to);
+        if (phrase.length <= tapeText(t.tape!, from ?? 0).length) return;
+        const until = list[i + 1]?.start ?? sc.duration;
+        const typed = t.start + t.duration;
+        const window = until - (t.start + 0.3 * t.duration);
+        const need = readTime(phrase.length);
+        if ((window < need || until - typed < SETTLED_HOLD) && !allowed(t, "retype-hold")) {
+          add("retype-hold", "error", sc, `"${phrase}" holds ${r2(Math.max(0, until - typed))}s once typed (${r2(Math.max(0, window))}s of reading, needs ~${r2(need)}s)`, {
+            element: id,
+            time: at(typed),
+            suggestion: `delete it ${r2(Math.max(need - window, SETTLED_HOLD - (until - typed)))}s later: drop the phrase's "hold", or move the next phrase's "at"`,
+          });
+        }
+      });
     }
     for (const [id, end] of enterEnd) {
       const ex = exitStart.get(id);

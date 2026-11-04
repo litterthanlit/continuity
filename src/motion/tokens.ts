@@ -114,6 +114,9 @@ export function readTime(chars: number): number {
   return Math.max(0.83, chars / 17 + 0.4);
 }
 
+/** A line of copy is seen complete for at least this long before it leaves or changes (read-time, retype-hold). */
+export const SETTLED_HOLD = 0.6;
+
 /** Durations are allowed within this fraction of a token before lint calls them "off-token". */
 export const TOKEN_TOLERANCE = 0.2;
 

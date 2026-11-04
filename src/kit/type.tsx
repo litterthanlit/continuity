@@ -109,3 +109,40 @@ export function Counter({
     </span>
   );
 }
+
+/**
+ * The ending of a line that m.retype types, deletes and types again: the text `<ct>` (empty until
+ * typed) and the caret `<ct>-caret` (pass `caret: "<ct>-caret"` to m.retype). Set the line
+ * left-aligned, so the lead-in before it never moves as the ending changes length.
+ */
+export function Typed({ ct, caret = true, class: cls }: { ct: string; caret?: boolean; class?: string }) {
+  return (
+    <span class={cx("whitespace-nowrap", cls)}>
+      <span data-ct={ctId(ct)} />
+      {caret && <span data-ct={ctId(`${ct}-caret`)} data-layout-ignore class="ml-[0.04em] inline-block h-[0.9em] w-[0.06em] bg-focus align-[-0.1em]" />}
+    </span>
+  );
+}
+
+/**
+ * A word that flips through a list in place, m.cycle: "SEO, run by [an agency]". The words share
+ * one grid cell, so the slot is as wide as the widest and the line never reflows; a clip a little
+ * outside the line hides the words waiting below and the ones gone above. The spare width sits
+ * after a short word, so end the line on the slot (or keep the words close in length). Word i is
+ * `<ct>-<i>`; the first shows until m.cycle flips it. Copy from the storyboard: `words={[text.w0, …]}`.
+ */
+export function Cycle({ ct, words, align = "start", class: cls }: { ct: string; words: string[]; align?: "start" | "center" | "end"; class?: string }) {
+  return (
+    <span data-ct={ctId(ct)} data-ct-count={words.length} class={cx("ct-slot inline-grid", cls)} style={{ clipPath: "inset(-0.15em -0.5em)" }}>
+      {words.map((w, i) => (
+        <span
+          data-ct={ctId(`${ct}-${i}`)}
+          class={cx("[grid-area:1/1] whitespace-nowrap", { start: "justify-self-start", center: "justify-self-center", end: "justify-self-end" }[align])}
+          style={i ? { transform: "translateY(120%)" } : undefined}
+        >
+          {w}
+        </span>
+      ))}
+    </span>
+  );
+}

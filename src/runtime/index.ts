@@ -248,7 +248,7 @@ function apply(sceneId: string, t: number) {
     }
     const el = resolveKey(key);
     if (!el) return;
-    const s = styleOf(v, c.counters.get(key), c.fx.get(key));
+    const s = styleOf(v, c.counters.get(key), c.fx.get(key), c.tapes.get(key));
     const st = el.style;
     if (s.transform !== undefined) st.transform = s.transform;
     if (s.opacity !== undefined) st.opacity = s.opacity;

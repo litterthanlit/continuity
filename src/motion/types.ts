@@ -44,6 +44,7 @@ export const PROPS = [
   "tracking", // letter-spacing, em
   "draw", // 0..1 svg stroke reveal (pathLength=1)
   "counter", // number rendered as text
+  "typed", // keystrokes along the tween's tape (Tween.tape): the element shows the text at that keystroke
   "wght", // font-weight (variable families)
   "wdth", // font-stretch, % (width-variable families)
   "opsz", // optical size axis
@@ -96,6 +97,7 @@ export const BASE_VALUES: Record<PropName, number> = {
   tracking: 0,
   draw: 1,
   counter: 0,
+  typed: 0,
   wght: 400,
   wdth: 100,
   opsz: 16,
@@ -165,6 +167,11 @@ export interface Tween {
   stagger?: Stagger;
   preset?: string;
   counter?: CounterFormat;
+  /**
+   * Phrases typed and deleted in turn (m.retype): keystroke k of the tape types phrase 0, then
+   * deletes it, then types phrase 1… The `typed` channel says which keystroke the element shows.
+   */
+  tape?: string[];
   /** Shape presentation the `fx` channel drives. */
   fx?: FxSpec;
   /** Lint rule ids this tween deliberately breaks. */

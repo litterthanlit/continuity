@@ -13,9 +13,11 @@ import {
   durations,
   eases,
   fitEase,
+  readTime,
   resolveDuration,
   resolveEase,
   resolveStagger,
+  SETTLED_HOLD,
   staggers,
   type DurationToken,
   type EaseToken,
@@ -98,6 +100,11 @@ const DEFAULT_SPLIT_STAGGER: Record<SplitMode, StaggerToken> = {
 
 export class MotionError extends Error {}
 
+/** m.retype: the pause between a cleared phrase and the next one's first key. */
+const RETYPE_GAP = 0.1;
+/** m.cycle: how far (% of its own height) a word travels to clear the slot's clip. */
+const CYCLE_TRAVEL = 120;
+
 export class MotionBuilder {
   readonly tweens: Tween[] = [];
   readonly loops: Loop[] = [];
@@ -115,6 +122,8 @@ export class MotionBuilder {
     private readonly frame: { width: number; height: number } = { width: 1920, height: 1080 },
     /** The music on this scene's clock, when the storyboard has a soundtrack: `m.music.beats` etc. */
     readonly music?: SceneMusic,
+    /** A rendered element's `data-ct-*` attributes (without the prefix): what a kit component says about its own parts. */
+    private readonly dataOf?: (target: string) => Record<string, string> | undefined,
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -324,6 +333,112 @@ export class MotionBuilder {
   /** Type text on, character by character, at a human rate (default 22 chars/s). */
   type(target: string, opts: { at?: At; cps?: number } = {}): this {
     return this.enter(target, "typeOn", { at: opts.at, split: "chars", stagger: round(1 / (opts.cps ?? 22)) });
+  }
+
+  /**
+   * Type a phrase, hold it, delete it key by key and type the next, in one text element (the
+   * ending after a fixed lead-in: "Your website is ▍ranking #1"). Each phrase holds long enough
+   * to read (≈17 chars/s, the `retype-hold` lint) unless `hold` says otherwise; a phrase with its
+   * own `at` starts typing then, and the one before it is deleted just in time. The last phrase
+   * stays unless `clear`. With `caret`, that element blinks while a phrase holds and stays solid
+   * while keys are pressed. Copy comes from the storyboard: `[text.e1, text.e2, …]`.
+   */
+  retype(
+    target: string,
+    phrases: Array<string | { text: string; at?: At; hold?: number }>,
+    opts: { at?: At; snap?: Snap; cps?: number; deleteCps?: number; hold?: number; gap?: number; clear?: boolean; caret?: string; allow?: string[] } = {},
+  ): this {
+    if (!phrases.length) throw new MotionError(`[${this.scene}] m.retype("${target}") needs at least one phrase.`);
+    const list = phrases.map((p) => (typeof p === "string" ? { text: p } : p));
+    const tape = list.map((p) => p.text);
+    const cps = opts.cps ?? 22;
+    const deleteCps = opts.deleteCps ?? cps * 2.5;
+    const id = this.id(target);
+    const push = (from: number, n: number, start: number, duration: number) =>
+      this.push({ target: id, kind: "emphasis", start, duration, ease: eases.linear, easeName: "linear", props: { typed: [from, from + n] }, preset: "retype", tape, allow: opts.allow });
+    let key = 0;
+    let free = this.startOf(opts);
+    list.forEach((p, i) => {
+      const n = [...p.text].length;
+      const start = p.at !== undefined ? this.time(p.at) : free;
+      if (start < free - 1e-6) throw new MotionError(`[${this.scene}] m.retype("${target}"): phrase ${i} ("${p.text}") starts at ${start}s, before the phrase before it is deleted (${round(free)}s).`);
+      const typing = round(n / cps);
+      push(key, n, start, typing);
+      key += n;
+      const typed = round(start + typing);
+      const last = i === list.length - 1;
+      if (last && !opts.clear) {
+        if (opts.caret) this.blink(opts.caret, { at: typed });
+        return;
+      }
+      const deleting = round(n / deleteCps);
+      const next = last ? undefined : list[i + 1].at;
+      const hold = p.hold ?? opts.hold ?? Math.ceil(Math.max(SETTLED_HOLD, readTime(n) - 0.7 * typing) * 100) / 100;
+      const del = next !== undefined ? round(this.time(next) - (opts.gap ?? RETYPE_GAP) - deleting) : round(typed + hold);
+      if (del < typed) throw new MotionError(`[${this.scene}] m.retype("${target}"): phrase ${i + 1} starts before "${p.text}" finishes typing — move its "at" later.`);
+      if (opts.caret && del > typed) this.blink(opts.caret, { at: typed, until: del });
+      push(key, n, del, deleting);
+      key += n;
+      free = round(del + deleting + (opts.gap ?? RETYPE_GAP));
+    });
+    return this;
+  }
+
+  /**
+   * Flip a `<Cycle>` through its words in place: each step the word on show leaves upward behind
+   * the slot's clip as the next rises into it. Steps fall every `every` seconds from `at`, or at
+   * `times` (one per step: beats, `"beat:4"`…). The last word stays.
+   */
+  cycle(
+    target: string,
+    opts: { at?: At; every?: number; times?: At[]; snap?: Snap; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] } = {},
+  ): this {
+    const n = this.countOf(target, "Cycle");
+    const first = this.startOf(opts);
+    for (let k = 0; k < n - 1; k++) {
+      const at = opts.times?.[k] !== undefined ? this.time(opts.times[k]) : round(first + k * (opts.every ?? 0.5));
+      const group = `${this.scene}#${++this.calls}`;
+      const step = { at, ease: opts.ease, duration: opts.duration, allow: opts.allow };
+      this.flip(`${target}-${k}`, "exit", "cycle", { yPct: [0, -CYCLE_TRAVEL] }, step, group);
+      this.flip(`${target}-${k + 1}`, "enter", "cycle", { yPct: [CYCLE_TRAVEL, 0] }, step, group);
+    }
+    return this;
+  }
+
+  /**
+   * Notifications arrive in a `<NotificationStack>`, newest on top: the stack moves down one row as
+   * one, and each new notification rides in from the row above, fading up, so the spacing never
+   * changes and no card crosses another. Arrivals fall every `every` seconds from `at`, or at `times`.
+   */
+  stackIn(target: string, opts: { at?: At; every?: number; times?: At[]; snap?: Snap; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const n = this.countOf(target, "NotificationStack");
+    const pitch = Number(this.dataOf?.(this.id(target))?.pitch);
+    if (!(pitch > 0)) throw new MotionError(`[${this.scene}] m.stackIn("${target}") needs a <NotificationStack ct="${target}"> (it reads the row pitch from it).`);
+    const first = this.startOf(opts);
+    // Items lay out newest on top; while only arrivals 0…j are in, the whole stack sits n-1-j rows up.
+    const rest = (j: number) => round((j - (n - 1)) * pitch);
+    for (let j = 0; j < n; j++) {
+      const at = opts.times?.[j] !== undefined ? this.time(opts.times[j]) : round(first + j * (opts.every ?? 0.5));
+      const group = `${this.scene}#${++this.calls}`;
+      const step = { at, ease: opts.ease };
+      // The arrival travels one row, as far as every card below it moves: the stack's step, not a throw.
+      this.flip(`${target}-${j}`, "enter", "stackIn", { y: [rest(j) - pitch, rest(j)], opacity: [0, 1] }, { ...step, allow: [...(opts.allow ?? []), "travel-too-far"] }, group);
+      for (let i = 0; i < j; i++) this.flip(`${target}-${i}`, "move", "stackIn", { y: [null, rest(j)] }, { ...step, allow: opts.allow }, group);
+    }
+    return this;
+  }
+
+  /** How many parts a kit component rendered (its `data-ct-count`). */
+  private countOf(target: string, component: string): number {
+    const n = Number(this.dataOf?.(this.id(target))?.count);
+    if (!(n >= 1)) throw new MotionError(`[${this.scene}] "${target}" is not a <${component}> in this scene's view.`);
+    return n;
+  }
+
+  private flip(target: string, kind: TweenKind, preset: string, props: Partial<Record<PropName, PropRange>>, o: { at: number; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] }, group: string) {
+    const { spec: token, name } = resolveEase(o.ease ?? "responsive");
+    const duration = o.duration !== undefined ? resolveDuration(o.duration) : (naturalDuration(token) ?? durations.responsive);
+    this.push({ target: this.id(target), group, kind, start: o.at, duration, ease: fitEase(token, name, duration), easeName: name, props, preset, allow: o.allow });
   }
 
   /** Caret blink (soft, deterministic) between `at` and `until` — the one loop litt allows. */

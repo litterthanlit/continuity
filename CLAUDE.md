@@ -83,7 +83,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
 | `Dockerfile`, `.github/workflows/docker.yml` | images: `toolchain` (pinned Chrome + ffmpeg) and `ct` (default, entrypoint `ct`); CI runs the browser suite inside `toolchain`; release pushes both to GHCR |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
-| `projects/_kit`, `_type`, `_transitions`, `_energetic`, `_defects*` | galleries of the litt kit, type, transitions and the energetic register (reference + goldens) and seeded-defect fixtures (tests) |
+| `projects/_kit`, `_type`, `_transitions`, `_energetic`, `_launch`, `_defects*` | galleries of the litt kit, type, transitions, the energetic register and launch devices (Cycle, retype, notification stack) (reference + goldens) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands

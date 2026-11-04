@@ -73,6 +73,14 @@ like an interface, not like an object:
   across the matched text (the selection-block recipe). Queries type on (`m.type`, linear).
 - `pop` only for what acts like an object over the UI — a sticker, a badge, a marker — never
   for windows, rows or chrome.
+- **One phrase, one UI.** The sentence narrates and the UI proves it: a fixed lead-in ("Your
+  website is") stays still while `m.retype` deletes the ending and types the next claim, and each
+  claim's UI lands with its last key and leaves as it is deleted. Give each phrase its beat
+  (`{ text, at: "b2" }`); the `retype-hold` lint keeps every claim on screen long enough to read.
+  Three or four claims, never more.
+- A name reveal can flip a `<Cycle>` through stand-ins on the beats and land on the product
+  (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
+  `<Phone>` for a lock screen: the stack steps down as one, so cards never cross.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for
   your own UI, which is already in the palette).
 

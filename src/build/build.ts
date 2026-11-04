@@ -268,7 +268,14 @@ export async function buildProject(
             const node = viewDoc.querySelector(`[data-ct="${target}"]`);
             return node ? typeBaseOf(node as unknown as Parameters<typeof typeBaseOf>[0], ctx.typeKit) : undefined;
           };
-          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height }, music && sceneMusic(music.grid, timing.start, sc.duration, sb.format.fps));
+          const dataOf = (target: string) => {
+            const node = viewDoc.querySelector(`[data-ct="${target}"]`);
+            if (!node) return undefined;
+            const out: Record<string, string> = {};
+            for (const a of [...node.attributes]) if (a.name.startsWith("data-ct-")) out[a.name.slice(8)] = a.value;
+            return out;
+          };
+          const mb = new MotionBuilder(sc.id, sc.duration, beats, partsOf, baseOf, { width, height }, music && sceneMusic(music.grid, timing.start, sc.duration, sb.format.fps), dataOf);
           try {
             def.motion(mb, ctx);
           } catch (e) {
