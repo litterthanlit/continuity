@@ -45,6 +45,13 @@ export const MusicSchema = z.object({
   volume: z.number().min(0).max(1).default(1),
   fadeIn: z.number().min(0).max(10).optional(),
   fadeOut: z.number().min(0).max(10).optional(),
+  /**
+   * Where the music stops dead, so an end card can land in silence: a moment in a scene —
+   * `{ "scene": "end" }` (the cut into it), `{ "scene": "end", "at": 0.5 }`, `{ "scene": "end",
+   * "at": { "beat": 2 } }` — or video seconds. A 10 ms fade takes the click off the cut; `fadeOut`
+   * replaces it with a longer one that ends there.
+   */
+  stop: z.union([z.number().min(0), z.object({ scene: id, at: z.union([z.number().min(0), OnMusicSchema]).optional() }).strict()]).optional(),
   /** Force the tempo when the analysis hears it wrong (half/double time). */
   bpm: z.number().min(40).max(240).optional(),
   /** Force the bar phase: a track time (s) that is a downbeat. */
@@ -178,6 +185,29 @@ export function sceneTimings(sb: Storyboard): { scenes: SceneTiming[]; duration:
   return { scenes: out, duration: round(last.start + last.duration) };
 }
 
+/**
+ * The video time the music stops (`music.stop`), on the frame the cut is seen when it names a
+ * scene. `grid` resolves a stop written as a moment on the music.
+ */
+export function musicStop(sb: Storyboard, grid?: MusicGrid): { at: number } | { issue: string } | undefined {
+  const music = sb.music;
+  if (music?.stop === undefined) return undefined;
+  const { scenes, duration } = sceneTimings(sb);
+  const stop = music.stop;
+  let at: number;
+  if (typeof stop === "number") at = stop;
+  else {
+    const sc = scenes.find((s) => s.id === stop.scene);
+    if (!sc) return { issue: `music.stop: there is no scene "${stop.scene}"` };
+    let t: number | undefined = sc.start + (typeof stop.at === "number" ? stop.at : 0);
+    if (stop.at !== undefined && typeof stop.at !== "number") t = grid ? musicAt(grid, stop.at, sc.start, 60 / grid.bpm) : undefined;
+    if (t === undefined) return { issue: `music.stop: ${JSON.stringify(stop.at)} — the music has no such moment in "${stop.scene}"` };
+    at = Math.ceil(t * sb.format.fps - 1e-6) / sb.format.fps;
+  }
+  if (at <= music.start || at > duration) return { issue: `music.stop: ${round(at)}s is not while the music plays (from ${music.start}s to the video's end at ${duration}s)` };
+  return { at: round(at) };
+}
+
 export function beatsOf(scene: SceneSpec): Record<string, number> {
   return Object.fromEntries(scene.beats.map((b) => [b.id, b.at]));
 }
@@ -241,6 +271,8 @@ export function parseStoryboard(raw: unknown, opts: { grid?: MusicGrid } = {}): 
   }
   const issues: string[] = [];
   const r = { data: resolveTiming(parsed.data, opts.grid, issues) };
+  const stop = musicStop(r.data, opts.grid);
+  if (stop && "issue" in stop) issues.push(stop.issue);
   const ids = new Set<string>();
   r.data.scenes.forEach((s, i) => {
     if (ids.has(s.id)) issues.push(`scenes.${i}.id: duplicate scene id "${s.id}"`);

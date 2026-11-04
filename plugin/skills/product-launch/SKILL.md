@@ -81,6 +81,8 @@ like an interface, not like an object:
 - A name reveal can flip a `<Cycle>` through stand-ins on the beats and land on the product
   (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
   `<Phone>` for a lock screen: the stack steps down as one, so cards never cross.
+- **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`)
+  and hold the last frame: the beat dropping out is the full stop the film has been driving to.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for
   your own UI, which is already in the palette).
 

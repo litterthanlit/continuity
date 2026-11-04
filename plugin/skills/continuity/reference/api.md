@@ -217,7 +217,9 @@ Using them in a view is a build error (`reserved-id`).
 Element roles: `headline title body label caption cta stat logo ui decor media`.
 
 Music (`docs/decisions/0008`): `music.src` is an audio file in the project (WAV keeps timing exact);
-`start` is where it starts in the video, `offset` how far into the track; `bpm` / `downbeat` (a
+`start` is where it starts in the video, `offset` how far into the track; `stop` cuts it dead so an
+end card lands in silence (`{ "scene": "end" }` at the cut, `{ "scene": "end", "at": { "beat": 1 } }`,
+or video seconds; a 10 ms fade takes the click off, `fadeOut` makes it longer); `bpm` / `downbeat` (a
 track time on a bar line) override the analysis when it hears half time or a pickup. With music, a
 scene's `duration` may be `{ "beats": 8 }` or `{ "bars": 2 }` — it ends exactly on that beat, so
 the cut is on the music — and a story beat's `at` may be `{ "beat": 2 }`, `{ "bar": 1 }` or

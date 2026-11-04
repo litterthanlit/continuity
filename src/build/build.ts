@@ -13,7 +13,7 @@ import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
 import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline, Tween } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
-import { ASPECTS, beatsOf, MusicSchema, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
+import { ASPECTS, beatsOf, MusicSchema, musicStop, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
 import { resolveKit, getKit, type TypeKit } from "../themes/kits.js";
 import { buildFamilies, classCandidates, compileCss, fontFaceCss, fontLoadList } from "./css.js";
@@ -92,6 +92,9 @@ export async function loadStoryboard(slug: string, srcDir = projectDir(slug)): P
       findings: parsed.issues.map((m) => ({ source: "schema" as const, rule: "storyboard", severity: "error" as const, message: m })),
     };
   }
+  const stop = music && musicStop(parsed.value, music.grid);
+  // After the stop the beat is not heard: the grid's span ends there, so the beat rules stop too.
+  if (music && stop && "at" in stop) music = { ...music, stopAt: stop.at, grid: { ...music.grid, span: [music.grid.span[0], Math.min(music.grid.span[1], stop.at)] } };
   return { storyboard: parsed.value, music, findings: [] };
 }
 
@@ -526,13 +529,17 @@ ${glTargets.size ? '<script src="continuity-gl.js"></script>\n' : ""}<script src
   return result;
 }
 
+/** A stop's fade when none is asked for: long enough to take the click off, too short to hear. */
+const DECLICK = 0.01;
+
 /**
- * The soundtrack as a HyperFrames audio clip: it plays from `start` for as long as both the video
- * and the track last, from `offset` into the track; the render mixes it into the file.
+ * The soundtrack as a HyperFrames audio clip: it plays from `start` for as long as the video, the
+ * track and any `stop` allow, from `offset` into the track; the render mixes it into the file.
  */
-function audioElement(m: Music, videoDuration: number): string {
-  const { start, offset, volume, fadeIn, fadeOut, src } = m.spec;
-  const duration = Math.round(Math.min(videoDuration - start, m.analysis.duration - offset) * 1000) / 1000;
+export function audioElement(m: Music, videoDuration: number): string {
+  const { start, offset, volume, fadeIn, src } = m.spec;
+  const fadeOut = m.spec.fadeOut ?? (m.stopAt !== undefined ? DECLICK : undefined);
+  const duration = Math.round(Math.min(Math.min(videoDuration, m.stopAt ?? Infinity) - start, m.analysis.duration - offset) * 1000) / 1000;
   if (!(duration > 0)) return "";
   const attrs = [
     `id="ct-music"`,

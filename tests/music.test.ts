@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { musicGrid, sceneMusic, type MusicGrid } from "../src/audio/grid.js";
 import type { BeatAnalysis } from "../src/audio/analyze.js";
-import type { BuildResult } from "../src/build/build.js";
+import { audioElement, type BuildResult } from "../src/build/build.js";
+import type { Music } from "../src/audio/music.js";
 import { lintTimeline } from "../src/lint/timeline.js";
 import { MotionBuilder } from "../src/motion/dsl.js";
-import { parseStoryboard, sceneTimings } from "../src/spec/storyboard.js";
+import { musicStop, parseStoryboard, sceneTimings } from "../src/spec/storyboard.js";
 
 /** A 120 bpm track: a beat every 0.5s from `first`, a bar every 4 beats, a strong hit on each bar. */
 function track(first = 0, beats = 64): BeatAnalysis {
@@ -217,5 +218,38 @@ describe.skipIf(process.env.CT_SLOW !== "1")("render QC hears the music where th
     expect(late.offset!).toBeGreaterThan(0.08);
     expect(late.offset!).toBeLessThan(0.12);
     expect(late.findings[0]).toMatchObject({ rule: "av-sync", severity: "error" });
+  });
+});
+
+describe("music.stop", () => {
+  const grid = musicGrid(track(), { start: 0, offset: 0 });
+  const music = (stop: unknown) => ({ music: { src: "assets/music.wav", stop } });
+  const stopOf = (stop: unknown, scenes = [scene("a", 2.01), scene("end", 3)]) => {
+    const r = parseStoryboard(sb(scenes, music(stop)), { grid });
+    if (!r.ok) return r.issues;
+    return musicStop(r.value, grid);
+  };
+
+  it("stops on the frame the cut into a scene is seen", () => {
+    expect(stopOf({ scene: "end" })).toEqual({ at: 2.0333 });
+  });
+
+  it("stops at seconds into a scene, or on a beat of it", () => {
+    expect(stopOf({ scene: "end", at: 0.5 })).toEqual({ at: 2.5333 });
+    // The scene starts at 2.01; its beat 0 is the first at or after that (2.5), beat 1 is 3.
+    expect(stopOf({ scene: "end", at: { beat: 1 } })).toEqual({ at: 3 });
+    expect(stopOf(4.2)).toEqual({ at: 4.2 });
+  });
+
+  it("names a scene that does not exist, or a stop outside the music", () => {
+    expect(stopOf({ scene: "outro" })).toEqual(['music.stop: there is no scene "outro"']);
+    expect(stopOf(9)).toEqual([expect.stringContaining("not while the music plays")]);
+  });
+
+  it("cuts the clip at the stop with a de-click, or the fade asked for", () => {
+    const m = (spec: Record<string, unknown>) => ({ spec: { src: "assets/music.wav", start: 0, offset: 0, volume: 1, beatsPerBar: 4, ...spec }, file: "", analysis: track(), grid, stopAt: 2.0333 }) as Music;
+    expect(audioElement(m({}), 5)).toContain('data-duration="2.033" data-volume="1" data-fade-out="0.01"');
+    expect(audioElement(m({ fadeOut: 0.4 }), 5)).toContain('data-fade-out="0.4"');
+    expect(audioElement({ ...m({}), stopAt: undefined }, 5)).not.toContain("data-fade-out");
   });
 });
