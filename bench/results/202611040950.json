@@ -1,0 +1,17 @@
+[
+  {
+    "brief": "seo-agent-launch",
+    "project": "bench-seo-agent-launch-202611040950",
+    "ok": true,
+    "wallSeconds": 903,
+    "costUsd": 3.3008265000000003,
+    "turns": 78,
+    "gate": {
+      "ok": true,
+      "errors": 0,
+      "warnings": 30
+    },
+    "iterations": 19,
+    "render": "out/bench-seo-agent-launch-202611040950/bench-seo-agent-launch-202611040950-a03f2f44fbc0.mp4"
+  }
+]
