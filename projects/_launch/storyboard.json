@@ -1,6 +1,6 @@
 {
   "title": "Launch devices gallery",
-  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn). Harbor is an invented product. Reference + lint fixture.",
+  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn), with a ring gauge (Ring, m.ring) as the third claim's proof. Harbor is an invented product. Reference + lint fixture.",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -106,7 +106,7 @@
           "id": "cited",
           "role": "ui",
           "anchor": "E2:F4",
-          "note": "Card + Stat: AI answers citing you, counts to 89."
+          "note": "Card: a Ring that fills to 89 beside a Stat of AI answers citing you, counting to 412."
         }
       ],
       "motion": "Each phrase types on its beat; its card snaps up as the phrase lands and leaves as the phrase is deleted.",

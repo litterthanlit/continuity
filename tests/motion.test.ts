@@ -413,3 +413,23 @@ describe("cycle and stackIn", () => {
     expect(m.tweens.filter((t) => t.start === 1.4).map((t) => t.target)).toEqual(["s.alerts-2", "s.alerts-0", "s.alerts-1"]);
   });
 });
+
+describe("ring", () => {
+  const ringed = () => new MotionBuilder("s", 3, {}, undefined, undefined, undefined, undefined, (t) => (t === "s.score" ? { value: "89", max: "100", suffix: "%" } : undefined));
+
+  it("fills the arc and counts the number together, to the ring's own value", () => {
+    const m = ringed();
+    m.ring("score", { at: 0.4 });
+    const c = compileScene(scene(m), {});
+    for (const t of [0.4, 0.7, 1.1, 1.8, 2.5]) {
+      const v = sampleScene(c, t);
+      expect(v.get("s.score-arc")!.draw! * 100).toBeCloseTo(v.get("s.score")!.counter!, 6);
+    }
+    expect(sampleScene(c, 2.9).get("s.score")!.counter).toBeCloseTo(89, 6);
+    expect(styleOf(sampleScene(c, 2.9).get("s.score")!, c.counters.get("s.score")).text).toBe("89%");
+  });
+
+  it("says what it needs when the target is not a ring", () => {
+    expect(() => ringed().ring("other")).toThrow(/not a <Ring>/);
+  });
+});

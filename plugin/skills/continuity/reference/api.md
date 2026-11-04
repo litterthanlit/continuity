@@ -96,7 +96,7 @@ Product UI (litt's components at 2×; UI text ≥ 26px; sub-parts expose `<ct>-�
 - `<Segmented ct items active segment?>` — the selected segment raised (P12); move `<ct>-thumb` x by `segment`, `ink`/`dim` the labels `<ct>-s0…`
 - `<Toast ct title body tone? width? height?>` (glass) · `<NotificationStack ct items width? rowHeight? gap?>` + `m.stackIn(ct, { at, every })` (newest on top, `<ct>-0…` in arrival order; one line per title and body) · `<Sidebar ct items active heading?>` (`<ct>-i0…`; the current item is the raised segment) · `<List ct rows>` (`<ct>-r0…`; rows `{ title, meta?, tag?, tone? }`)
 - `<CodeBlock ct code>` (lines `<ct>-l0…`, litt's quiet highlighting) · `<Terminal ct lines>` (`<ct>-l0…`)
-- `<BarChart ct data current? hue?>` (bars `<ct>-b0…`, `grow` from the baseline; fg 55%, the current bar fg) · `<LineChart ct data hue?>` (`<ct>-line` draw, `<ct>-dot`) · `<Stat ct value label unit? delta? deltaTone? size?>` (label above, `<ct>-label`, `<ct>-delta`; + `m.counter`)
+- `<BarChart ct data current? hue?>` (bars `<ct>-b0…`, `grow` from the baseline; fg 55%, the current bar fg) · `<LineChart ct data hue?>` (`<ct>-line` draw, `<ct>-dot`) · `<Stat ct value label unit? delta? deltaTone? size?>` (label above, `<ct>-label`, `<ct>-delta`; + `m.counter`) · `<Ring ct value max? size? stroke? hue? label? suffix?>` + `m.ring(ct, { at })` (a gauge: the arc `<ct>-arc` fills and the number `<ct>` counts together, to `value`)
 - `<Cursor ct class="left-… top-…">` (+ `<ct>-ripple`, the focus colour)
 
 Imagery and annotation
@@ -158,6 +158,7 @@ m.type("search-text", { at, cps: 22 })                      // typeOn by chars
 m.retype("end", [text.e0, { text: text.e1, at: "b2" }], { at: "b1", caret: "end-caret" })   // type, hold to read, delete, type the next
 m.cycle("tool", { times: ["b1", "b2", "b3"], ease: "steep", duration: "snap" })            // flip a <Cycle> one word per time
 m.stackIn("alerts", { at: "b1", every: 0.55, ease: "steep" })                             // notifications arrive, the stack steps down as one
+m.ring("score", { at: "b2", duration: "slow" })                                           // a <Ring>'s arc and number fill together
 m.blink("search-caret", { at, until })                      // caret blink — the one loop litt allows
 m.loop(target, { rotate: 8 }, { period: 2 })                // a sine swing; warns (ambient-loop) — energetic: an info, for an object that swings
 m.time(at) → seconds · m.endOf(id) → seconds

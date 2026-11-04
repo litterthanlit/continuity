@@ -1,5 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
+import { formatCounter } from "../motion/evaluate.js";
 import type { ComponentChildren } from "preact";
 import { DATA_HUES, type DataHue } from "../themes/index.js";
 import { ctId, useScene } from "./context.js";
@@ -558,6 +559,67 @@ export function Stat({
       {delta && (
         <span data-ct={id(ct, "delta")} class={cx("font-sans text-small", { neutral: "text-fg-subtle", success: "text-success", danger: "text-danger" }[deltaTone])}>
           {delta}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A ring gauge: one value against a whole, the Meter bent round. An arc over a rail at fg 12%
+ * (fg, or a data hue that names the thing), from twelve o'clock clockwise with square ends (a
+ * round cap would overstate the value), and the number in its centre with an optional label
+ * under it in the grey. Laid out settled, full to `value`; m.ring(ct) fills it from 0 and counts
+ * the number with it. Number `<ct>`, arc `<ct>-arc`, label `<ct>-label`.
+ */
+export function Ring({
+  ct,
+  value,
+  max = 100,
+  size = 320,
+  stroke = 24,
+  hue,
+  label,
+  suffix,
+  class: cls,
+}: {
+  ct: string;
+  value: number;
+  max?: number;
+  size?: number;
+  stroke?: number;
+  hue?: DataHue;
+  label?: string;
+  suffix?: string;
+  class?: string;
+}) {
+  const figures = useScene().typeKit.figures;
+  const c = size / 2;
+  const r = c - stroke / 2;
+  const fill = Math.min(1, Math.max(0, value / max));
+  return (
+    <div class={cx("relative flex flex-col items-center justify-center", cls)} style={{ width: `${size}px`, height: `${size}px` }}>
+      <svg class="absolute inset-0" width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" data-layout-ignore>
+        <circle cx={c} cy={c} r={r} stroke="var(--color-fg)" stroke-opacity="0.12" stroke-width={stroke} />
+        <circle
+          data-ct={id(ct, "arc")}
+          cx={c}
+          cy={c}
+          r={r}
+          pathLength={1}
+          stroke={hue ? `var(--color-data-${hue})` : "var(--color-fg)"}
+          stroke-width={stroke}
+          stroke-linecap="butt"
+          transform={`rotate(-90 ${c} ${c})`}
+          style={{ strokeDasharray: "1", strokeDashoffset: String(Math.round((1 - fill) * 10000) / 10000) }}
+        />
+      </svg>
+      <span data-ct={id(ct)} data-ct-value={value} data-ct-max={max} data-ct-suffix={suffix} class={cx(`font-${figures} text-title font-title tabular-nums text-fg`)}>
+        {formatCounter(value, { decimals: 0, suffix })}
+      </span>
+      {label && (
+        <span data-ct={id(ct, "label")} class="font-sans text-small text-fg-subtle">
+          {label}
         </span>
       )}
     </div>

@@ -80,7 +80,8 @@ like an interface, not like an object:
   Three or four claims, never more.
 - A name reveal can flip a `<Cycle>` through stand-ins on the beats and land on the product
   (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
-  `<Phone>` for a lock screen: the stack steps down as one, so cards never cross.
+  `<Phone>` for a lock screen: the stack steps down as one, so cards never cross. A score is a
+  `<Ring>` (`m.ring`): the arc and its number fill as one, so the figure never disagrees with it.
 - **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`)
   and hold the last frame: the beat dropping out is the full stop the film has been driving to.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for

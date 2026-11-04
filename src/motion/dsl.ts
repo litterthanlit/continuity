@@ -428,6 +428,21 @@ export class MotionBuilder {
     return this;
   }
 
+  /**
+   * Fill a `<Ring>` and count its number with it: one start, one duration, one ease, so the arc
+   * and the figure always agree. Fills from `from` (default 0) to the ring's own value.
+   */
+  ring(target: string, opts: { from?: number; to?: number; at?: At; snap?: Snap; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const data = this.dataOf?.(this.id(target));
+    const max = Number(data?.max);
+    if (!(max > 0)) throw new MotionError(`[${this.scene}] "${target}" is not a <Ring> in this scene's view.`);
+    const from = opts.from ?? 0;
+    const to = opts.to ?? Number(data!.value);
+    const timing = { at: this.startOf(opts), duration: opts.duration ?? ("linger" as const), ease: opts.ease ?? ("out" as const), allow: opts.allow };
+    this.tween(`${target}-arc`, { draw: [from / max, to / max] }, { ...timing, kind: "emphasis" });
+    return this.counter(target, { ...timing, from, to, suffix: data!.suffix });
+  }
+
   /** How many parts a kit component rendered (its `data-ct-count`). */
   private countOf(target: string, component: string): number {
     const n = Number(this.dataOf?.(this.id(target))?.count);

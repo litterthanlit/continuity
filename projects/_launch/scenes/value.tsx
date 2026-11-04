@@ -1,4 +1,4 @@
-import { Card, Headline, scene, Safe, Stage, Stat, Typed } from "continuity";
+import { Card, Headline, Ring, scene, Safe, Stage, Stat, Typed } from "continuity";
 
 // One phrase, one UI. The lead-in never moves; the ending is deleted back to it and retyped on
 // each beat. The card that proves the claim snaps up as the phrase lands and leaves as it is
@@ -21,8 +21,9 @@ export default scene({
           <Card ct="demos" class="[grid-area:1/1] p-[48px]">
             <Stat ct="demos-v" value={0} label="Demos booked this week" size="display" />
           </Card>
-          <Card ct="cited" class="[grid-area:1/1] p-[48px]">
-            <Stat ct="cited-v" value={0} label="AI answers citing you" size="display" />
+          <Card ct="cited" class="[grid-area:1/1] flex items-center gap-[48px] p-[48px]">
+            <Ring ct="cited-v" value={89} size={200} stroke={16} />
+            <Stat ct="cited-n" value={412} label="AI answers citing you" />
           </Card>
         </div>
       </Safe>
@@ -38,6 +39,7 @@ export default scene({
       if (i < PROOF.length - 1) m.tween(id, { opacity: [1, 0] }, { at: `${BEATS[i + 1]}-0.3`, duration: "instant", ease: "out", kind: "exit" });
     });
     m.counter("demos-v", { from: 0, to: 24, at: m.time("b2") + 0.6, duration: "slow" });
-    m.counter("cited-v", { from: 0, to: 89, at: m.time("b3") + 0.5, duration: "slow" });
+    m.ring("cited-v", { at: m.time("b3") + 0.5, duration: "slow" });
+    m.counter("cited-n", { from: 0, to: 412, at: m.time("b3") + 0.5, duration: "slow" });
   },
 });
