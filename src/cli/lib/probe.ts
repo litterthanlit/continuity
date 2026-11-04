@@ -229,7 +229,9 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       await page.setViewport({ width, height, deviceScaleFactor: 1 });
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(String((e as Error).message ?? e)));
-      await page.goto(srv.url + "index.html", { waitUntil: "networkidle0", timeout: 30_000 });
+      // Not networkidle0: a long soundtrack's preload keeps the network busy past the timeout. The
+      // probe needs no audio; `load` waits for images and __ct.ready for the fonts.
+      await page.goto(srv.url + "index.html", { waitUntil: "load", timeout: 30_000 });
       await page.waitForFunction(() => Boolean((window as unknown as { __ct?: unknown }).__ct), { timeout: 15_000 });
       await page.evaluate(() => (window as unknown as { __ct: { ready: Promise<void> } }).__ct.ready);
 
