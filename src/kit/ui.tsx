@@ -30,8 +30,18 @@ interface Box {
 
 export type Tone = "neutral" | "success" | "warning" | "danger";
 
+/**
+ * A data hue's colour variable (`suffix` "-text" or "-tint" for its tones). An unknown hue is an
+ * error: scenes are not type-checked, and a missing variable would draw nothing at all.
+ */
+function dataVar(hue: DataHue, suffix = ""): string {
+  if (!DATA_HUES.includes(hue)) throw new Error(`hue "${hue}" is not a data hue — use one of ${DATA_HUES.join(", ")}, or leave it out for fg (the accent is for the one primary action)`);
+  return `var(--color-data-${hue}${suffix})`;
+}
+
 /** A data hue's tint fill with its text tone, a 24% hairline of the hue and the top highlight (tags, avatars). */
 function hueStyle(hue: DataHue): string {
+  dataVar(hue);
   const { highlight } = useScene().theme.material;
   return `background:var(--color-data-${hue}-tint);color:var(--color-data-${hue}-text);box-shadow:inset 0 0 0 2px color-mix(in oklab,var(--color-data-${hue}) 24%,transparent),inset 0 2px 0 ${highlight}`;
 }
@@ -240,7 +250,7 @@ export function Meter({ ct, value = 1, hue, class: cls, width = 640 }: Box & { v
       <div
         data-ct={id(ct, "fill")}
         class={cx("absolute inset-y-0 left-0", !hue && "bg-fg")}
-        style={{ width: `${Math.round(value * 100)}%`, transformOrigin: "left center", ...(hue ? { background: `var(--color-data-${hue})` } : {}) }}
+        style={{ width: `${Math.round(value * 100)}%`, transformOrigin: "left center", ...(hue ? { background: dataVar(hue) } : {}) }}
       />
     </div>
   );
@@ -498,7 +508,7 @@ export function BarChart({
             style={{
               height: `${Math.max(1, (v / max) * 100)}%`,
               transformOrigin: "bottom center",
-              ...(hue ? { background: i === cur ? `var(--color-data-${hue}-text)` : `var(--color-data-${hue})` } : {}),
+              ...(hue ? { background: i === cur ? dataVar(hue, "-text") : dataVar(hue) } : {}),
             }}
           />
         </div>
@@ -514,11 +524,11 @@ export function LineChart({ ct, data, width = 640, height = 260, class: cls, hue
   const pts = data.map((v, i) => [(i / (data.length - 1)) * (width - 16) + 8, height - ((v - min) / (max - min || 1)) * (height - 16) - 8]);
   const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
   const [lx, ly] = pts[pts.length - 1];
-  const stroke = hue ? `var(--color-data-${hue})` : "var(--color-fg)";
+  const stroke = hue ? dataVar(hue) : "var(--color-fg)";
   return (
     <svg data-ct={id(ct)} class={cls} width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" data-layout-ignore>
       <path data-ct={id(ct, "line")} d={d} pathLength={1} stroke={stroke} stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style={{ strokeDasharray: "1", strokeDashoffset: "0" }} />
-      <circle data-ct={id(ct, "dot")} cx={lx.toFixed(1)} cy={ly.toFixed(1)} r="8" fill={hue ? `var(--color-data-${hue}-text)` : "var(--color-fg)"} />
+      <circle data-ct={id(ct, "dot")} cx={lx.toFixed(1)} cy={ly.toFixed(1)} r="8" fill={hue ? dataVar(hue, "-text") : "var(--color-fg)"} />
     </svg>
   );
 }
@@ -619,7 +629,7 @@ export function Ring({
           cy={c}
           r={r}
           pathLength={1}
-          stroke={hue ? `var(--color-data-${hue})` : "var(--color-fg)"}
+          stroke={hue ? dataVar(hue) : "var(--color-fg)"}
           stroke-width={stroke}
           stroke-linecap="butt"
           transform={`rotate(-90 ${c} ${c})`}
@@ -642,7 +652,8 @@ export function Ring({
  * A grid of cells, one value each from 0 to 1: a contribution graph. Columns run left to right,
  * each filled top to bottom (`values[col * rows + row]`). Colour carries the data: an empty cell
  * is fg at 8%, a value mixes the hue (or fg) in from 35% to 100%. Laid out settled as squares, or
- * with `dots` as circles sized by value. m.grid(ct, "fill") brings the cells in on a wave;
+ * with `dots` as circles sized by value. m.grid(ct, "fill") brings the cells in on a wave — or,
+ * with `from` (the before, one value per cell), lights each cell from its before ink to its value;
  * m.grid(ct, "dots") turns the squares into the dots on one. Cell i is `<ct>-<i>`.
  */
 export function DotGrid({
@@ -653,10 +664,12 @@ export function DotGrid({
   gap = 8,
   hue,
   dots = false,
+  from,
   class: cls,
 }: {
   ct: string;
   values: number[];
+  from?: number[];
   rows?: number;
   cell?: number;
   gap?: number;
@@ -664,13 +677,15 @@ export function DotGrid({
   dots?: boolean;
   class?: string;
 }) {
-  const ink = hue ? `var(--color-data-${hue})` : "var(--color-fg)";
+  if (from && from.length !== values.length) throw new Error(`DotGrid "${ct}": from has ${from.length} values, values has ${values.length}`);
+  const ink = hue ? dataVar(hue) : "var(--color-fg)";
   const fill = (v: number) => (v > 0 ? `color-mix(in oklab, ${ink} ${Math.round(35 + 65 * Math.min(1, v))}%, transparent)` : "color-mix(in oklab, var(--color-fg) 8%, transparent)");
   return (
     <div
       data-ct={id(ct)}
       data-ct-count={values.length}
       data-ct-rows={rows}
+      data-ct-from={from ? "1" : undefined}
       class={cx("grid grid-flow-col", cls)}
       style={{ gridTemplateRows: `repeat(${rows}, ${cell}px)`, gridAutoColumns: `${cell}px`, gap: `${gap}px` }}
     >
@@ -679,8 +694,12 @@ export function DotGrid({
           key={i}
           data-ct={id(ct, String(i))}
           data-ct-v={v}
-          style={{ background: fill(v), borderRadius: `${dots ? 50 : CELL_RADIUS}%`, ...(dots ? { transform: `scale(${dotScale(v)})` } : {}) }}
-        />
+          class="relative"
+          style={{ background: fill(from ? from[i] : v), borderRadius: `${dots ? 50 : CELL_RADIUS}%`, ...(dots ? { transform: `scale(${dotScale(v)})` } : {}) }}
+        >
+          {/* The after, over the before: m.grid "fill" fades it up. */}
+          {from && <div data-ct={id(ct, `${i}-to`)} class="absolute inset-0" style={{ background: fill(v), borderRadius: "inherit" }} />}
+        </div>
       ))}
     </div>
   );
