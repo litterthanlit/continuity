@@ -82,6 +82,8 @@ like an interface, not like an object:
   (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
   `<Phone>` for a lock screen: the stack steps down as one, so cards never cross. A score is a
   `<Ring>` (`m.ring`): the arc and its number fill as one, so the figure never disagrees with it.
+  A before and after over time is a `<DotGrid>`: the weeks fill on a wave (`m.grid(ct, "fill")`),
+  then the squares become dots sized by each day (`"dots"`): one series, one hue.
 - **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`)
   and hold the last frame: the beat dropping out is the full stop the film has been driving to.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for

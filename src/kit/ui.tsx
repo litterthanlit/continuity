@@ -1,6 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 import { formatCounter } from "../motion/evaluate.js";
+import { CELL_RADIUS, dotScale } from "../motion/tokens.js";
 import type { ComponentChildren } from "preact";
 import { DATA_HUES, type DataHue } from "../themes/index.js";
 import { ctId, useScene } from "./context.js";
@@ -622,6 +623,54 @@ export function Ring({
           {label}
         </span>
       )}
+    </div>
+  );
+}
+
+/**
+ * A grid of cells, one value each from 0 to 1: a contribution graph. Columns run left to right,
+ * each filled top to bottom (`values[col * rows + row]`). Colour carries the data: an empty cell
+ * is fg at 8%, a value mixes the hue (or fg) in from 35% to 100%. Laid out settled as squares, or
+ * with `dots` as circles sized by value. m.grid(ct, "fill") brings the cells in on a wave;
+ * m.grid(ct, "dots") turns the squares into the dots on one. Cell i is `<ct>-<i>`.
+ */
+export function DotGrid({
+  ct,
+  values,
+  rows = 7,
+  cell = 28,
+  gap = 8,
+  hue,
+  dots = false,
+  class: cls,
+}: {
+  ct: string;
+  values: number[];
+  rows?: number;
+  cell?: number;
+  gap?: number;
+  hue?: DataHue;
+  dots?: boolean;
+  class?: string;
+}) {
+  const ink = hue ? `var(--color-data-${hue})` : "var(--color-fg)";
+  const fill = (v: number) => (v > 0 ? `color-mix(in oklab, ${ink} ${Math.round(35 + 65 * Math.min(1, v))}%, transparent)` : "color-mix(in oklab, var(--color-fg) 8%, transparent)");
+  return (
+    <div
+      data-ct={id(ct)}
+      data-ct-count={values.length}
+      data-ct-rows={rows}
+      class={cx("grid grid-flow-col", cls)}
+      style={{ gridTemplateRows: `repeat(${rows}, ${cell}px)`, gridAutoColumns: `${cell}px`, gap: `${gap}px` }}
+    >
+      {values.map((v, i) => (
+        <div
+          key={i}
+          data-ct={id(ct, String(i))}
+          data-ct-v={v}
+          style={{ background: fill(v), borderRadius: `${dots ? 50 : CELL_RADIUS}%`, ...(dots ? { transform: `scale(${dotScale(v)})` } : {}) }}
+        />
+      ))}
     </div>
   );
 }

@@ -55,6 +55,7 @@ export const PROPS = [
   "blurY", // px, directional (motion) blur along y
   "match", // 0..1 progress of a shared-element carrier (the morph transition) from its outgoing to its incoming place
   "morph", // shape of a <Morph>: 0 its first shape, 1 the second … (fractional = in between)
+  "radius", // corner radius, % of the element's size: 0 square … 50 a circle (a cell becoming a dot)
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
@@ -108,6 +109,7 @@ export const BASE_VALUES: Record<PropName, number> = {
   blurY: 0,
   match: 1,
   morph: 0,
+  radius: 0,
 };
 
 /** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */

@@ -433,3 +433,29 @@ describe("ring", () => {
     expect(() => ringed().ring("other")).toThrow(/not a <Ring>/);
   });
 });
+
+describe("dot grid", () => {
+  // 3 columns of 2 rows; cell i holds value i / 5.
+  const data: Record<string, Record<string, string>> = { "s.g": { count: "6", rows: "2" } };
+  for (let i = 0; i < 6; i++) data[`s.g-${i}`] = { v: String(i / 5) };
+  const grid = () => new MotionBuilder("s", 3, {}, undefined, undefined, undefined, undefined, (t) => data[t]);
+  const startOf = (m: MotionBuilder, i: number) => m.tweens.find((t) => t.target === `s.g-${i}`)!.start;
+
+  it("fills column by column across the span, or corner to corner on a diagonal", () => {
+    const left = grid().grid("g", "fill", { at: 0.5, span: 0.4 });
+    expect([0, 1, 2, 3, 4, 5].map((i) => startOf(left, i))).toEqual([0.5, 0.5, 0.7, 0.7, 0.9, 0.9]);
+    const diagonal = grid().grid("g", "fill", { at: 0, span: 0.3, wave: "diagonal" });
+    expect([0, 1, 2, 3, 4, 5].map((i) => startOf(diagonal, i))).toEqual([0, 0.1, 0.1, 0.2, 0.2, 0.3]);
+    expect(new Set(left.tweens.map((t) => t.group)).size).toBe(1);
+  });
+
+  it("turns each square into a circle sized by its value", () => {
+    const m = grid().grid("g", "dots", { at: 0 });
+    const c = compileScene(scene(m), {});
+    const end = sampleScene(c, 2.9);
+    expect(end.get("s.g-0")).toMatchObject({ radius: 50, scale: 0.3 });
+    expect(end.get("s.g-5")!.scale).toBeCloseTo(1, 6);
+    expect(styleOf(end.get("s.g-5")!).borderRadius).toBe("50%");
+    expect(styleOf(sampleScene(c, 0).get("s.g-0")!).borderRadius).toBe("18%");
+  });
+});

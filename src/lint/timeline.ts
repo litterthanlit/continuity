@@ -61,7 +61,7 @@ export const RULES = {
   "exit-bounce": "litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).",
   "expressive-budget": "litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive. Energetic register: up to three (a group counts once).",
   "material-motion": "litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.",
-  "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter). Tracking, weight, blur and filters perform.",
+  "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter, a cell's radius). Tracking, weight, blur and filters perform.",
   "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.",
   "camera-drift": "The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).",
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
@@ -102,7 +102,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */
@@ -430,8 +430,11 @@ export function lintTimeline(build: BuildResult): Finding[] {
 
     // Unstaggered groups.
     const groups = new Map<string, Span[]>();
+    // A group declared together and staggered (a wave across a grid's columns) is choreographed already.
+    const groupStarts = new Map<string, Set<number>>();
+    for (const s of ss) if (s.tween.group) groupStarts.set(s.tween.group, (groupStarts.get(s.tween.group) ?? new Set()).add(s.start));
     for (const s of ss) {
-      if (s.tween.kind !== "enter" || s.tween.split) continue;
+      if (s.tween.kind !== "enter" || s.tween.split || (s.tween.group && groupStarts.get(s.tween.group)!.size > 1)) continue;
       const k = `${s.tween.preset ?? "custom"}@${s.start}`;
       (groups.get(k) ?? groups.set(k, []).get(k)!).push(s);
     }

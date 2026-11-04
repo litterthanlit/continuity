@@ -269,6 +269,7 @@ function apply(sceneId: string, t: number) {
     if (s.letterSpacing !== undefined) st.letterSpacing = s.letterSpacing;
     if (s.color !== undefined) st.color = s.color;
     if (s.strokeDashoffset !== undefined) st.strokeDashoffset = s.strokeDashoffset;
+    if (s.borderRadius !== undefined) st.borderRadius = s.borderRadius;
     if (s.text !== undefined && el.textContent !== s.text) el.textContent = s.text;
     if (s.fontWeight !== undefined) st.fontWeight = s.fontWeight;
     if (s.fontStretch !== undefined) st.fontStretch = s.fontStretch;

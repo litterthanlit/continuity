@@ -161,3 +161,7 @@ export function resolveStagger(
 function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
 }
+
+/** DotGrid: a square cell's corner radius (% of its size), and the size a value gives its dot. */
+export const CELL_RADIUS = 18;
+export const dotScale = (v: number) => Math.round((0.3 + 0.7 * Math.min(1, Math.max(0, v))) * 1000) / 1000;

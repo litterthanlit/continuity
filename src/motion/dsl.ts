@@ -13,6 +13,8 @@ import {
   durations,
   eases,
   fitEase,
+  CELL_RADIUS,
+  dotScale,
   readTime,
   resolveDuration,
   resolveEase,
@@ -441,6 +443,35 @@ export class MotionBuilder {
     const timing = { at: this.startOf(opts), duration: opts.duration ?? ("linger" as const), ease: opts.ease ?? ("out" as const), allow: opts.allow };
     this.tween(`${target}-arc`, { draw: [from / max, to / max] }, { ...timing, kind: "emphasis" });
     return this.counter(target, { ...timing, from, to, suffix: data!.suffix });
+  }
+
+  /**
+   * A `<DotGrid>` on a wave: `"fill"` brings the cells in (from 40% size, fading up), `"dots"`
+   * turns the squares into circles sized by their values. The wave crosses the grid in `span`
+   * seconds (default 0.8), column by column (`wave: "left"`) or corner to corner (`"diagonal"`).
+   */
+  grid(
+    target: string,
+    mode: "fill" | "dots",
+    opts: { at?: At; snap?: Snap; span?: number; wave?: "left" | "diagonal"; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] } = {},
+  ): this {
+    const n = this.countOf(target, "DotGrid");
+    const rows = Number(this.dataOf!(this.id(target))!.rows) || 1;
+    const cols = Math.ceil(n / rows);
+    const at = this.startOf(opts);
+    const span = opts.span ?? 0.8;
+    const steps = opts.wave === "diagonal" ? cols - 1 + rows - 1 : cols - 1;
+    const group = `${this.scene}#${++this.calls}`;
+    for (let i = 0; i < n; i++) {
+      const c = Math.floor(i / rows);
+      const step = opts.wave === "diagonal" ? c + (i % rows) : c;
+      const cell = `${target}-${i}`;
+      const start = round(at + (steps ? (span * step) / steps : 0));
+      const props: Partial<Record<PropName, PropRange>> =
+        mode === "fill" ? { scale: [0.4, 1], opacity: [0, 1] } : { radius: [CELL_RADIUS, 50], scale: [1, dotScale(Number(this.dataOf!(this.id(cell))?.v) || 0)] };
+      this.flip(cell, mode === "fill" ? "enter" : "move", "grid", props, { at: start, ease: opts.ease, duration: opts.duration, allow: opts.allow }, group);
+    }
+    return this;
   }
 
   /** How many parts a kit component rendered (its `data-ct-count`). */

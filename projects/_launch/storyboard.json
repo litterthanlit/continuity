@@ -1,6 +1,6 @@
 {
   "title": "Launch devices gallery",
-  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn), with a ring gauge (Ring, m.ring) as the third claim's proof. Harbor is an invented product. Reference + lint fixture.",
+  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn), with a ring gauge (Ring, m.ring) as the third claim's proof, a contribution grid that fills and turns to dots (DotGrid, m.grid), and the pixels transition. Harbor is an invented product. Reference + lint fixture.",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -113,6 +113,44 @@
       "transition": {
         "type": "cut"
       }
+    },
+    {
+      "id": "graph",
+      "duration": 3.6,
+      "intent": "Before and after in one grid: the weeks fill in on a wave, then every square turns into a dot sized by its day.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.4
+        },
+        {
+          "id": "b2",
+          "at": 1.7
+        }
+      ],
+      "text": {
+        "label": "Harbor, 26 weeks",
+        "headline": "Now your SEO looks like this."
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A2"
+        },
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A2:E2"
+        },
+        {
+          "id": "days",
+          "role": "ui",
+          "anchor": "A4:F5",
+          "note": "<DotGrid> 26 weeks x 7 days in teal; days-0... are its cells."
+        }
+      ],
+      "motion": "Label and headline wipe on; b1 the cells fill left to right (steep, snap, 0.8s span); b2 the squares become dots on the same wave. Hold."
     },
     {
       "id": "alerts",
