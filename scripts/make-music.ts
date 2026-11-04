@@ -105,7 +105,54 @@ const beat: Song = {
   ],
 };
 
+/** A section's bass: the chord roots on every beat of each bar (steps run on across the section's bars). */
+const pulse = (roots: string[]) => roots.flatMap((note, bar) => [0, 4, 8, 12].map((step) => ({ step: bar * 16 + step, len: 3, note })));
+
+/**
+ * bench/assets/launch.wav: 128 bpm, 21 bars (~39s), for the launch-film bench brief — long enough
+ * that a ~35s film can cut its music on the end card (music.stop) instead of running out. An intro,
+ * an 8-bar groove, a riser, a 6-bar drop and a half-time outro.
+ */
+const launch: Song = {
+  bpm: 128,
+  seed: 31,
+  sections: [
+    { bars: 2, impact: true, kick: "x...x...x...x...", hat: "..x...x...x...x.", chords: ["Am7", "Am7"], bass: [{ step: 0, len: 28, note: "A1" }] },
+    {
+      bars: 8,
+      kick: "x...x...x...x...",
+      snare: "....x.......x...",
+      hat: "x.xox.x.x.xox.xO",
+      chords: ["Am7", "Fmaj7", "C", "Dm7", "Am7", "Fmaj7", "C", "Dm7"],
+      bass: pulse(["A1", "F1", "C2", "D2", "A1", "F1", "C2", "D2"]),
+    },
+    { bars: 2, riser: true, kick: "x...x...x...x...", snare: "....x...x.x.xxxx", hat: "x.x.x.x.x.x.x.x.", chords: ["Dm7", "Dm7"], bass: pulse(["D2", "D2"]) },
+    {
+      bars: 6,
+      impact: true,
+      kick: "x...x...x...x...",
+      snare: "....x.......x...",
+      hat: "x.xox.x.x.xox.xO",
+      chords: ["Am7", "Fmaj7", "C", "Dm7", "Am7", "Fmaj7"],
+      bass: pulse(["A1", "F1", "C2", "D2", "A1", "F1"]),
+      lead: [
+        { step: 0, len: 2, note: "E5", vel: 0.7 },
+        { step: 2, len: 2, note: "C5", vel: 0.6 },
+        { step: 4, len: 4, note: "A4", vel: 0.7 },
+        { step: 32, len: 2, note: "E5", vel: 0.7 },
+        { step: 34, len: 2, note: "D5", vel: 0.6 },
+        { step: 36, len: 4, note: "C5", vel: 0.7 },
+        { step: 64, len: 2, note: "E5", vel: 0.7 },
+        { step: 66, len: 2, note: "C5", vel: 0.6 },
+        { step: 68, len: 6, note: "A4", vel: 0.8 },
+      ],
+    },
+    { bars: 3, impact: true, kick: "x.......x.......", hat: "..x...x...x...x.", chords: ["Am7", "Am7", "Am7"], bass: [{ step: 0, len: 44, note: "A1" }] },
+  ],
+};
+
 const TRACKS: Array<{ file: string; song: Song }> = [
+  { file: "bench/assets/launch.wav", song: launch },
   { file: "projects/example-logo/assets/music.wav", song: logo },
   { file: "projects/example-beat/assets/music.wav", song: beat },
 ];
