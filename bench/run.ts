@@ -52,7 +52,9 @@ function runBrief(brief: string, runId: string, model?: string): BriefResult {
   // The project's own allow list (.claude/settings.json) is ignored until someone accepts the workspace
   // trust dialog, which a fresh checkout or container never has: grant the same commands here.
   const allow = [...PROJECT_ALLOW, "Read", "Write", "Edit", "Glob", "Grep", "Task", "Agent"];
-  const args = ["-p", prompt, "--output-format", "json", "--permission-mode", "acceptEdits", "--allowedTools", allow.join(" ")];
+  // The run is measured, so it must not change what measures it: no edits outside projects/.
+  const engine = ["src", "bin", "plugin", "templates", "tests", "bench", "scripts", ".claude"].flatMap((d) => [`Edit(${d}/**)`, `Write(${d}/**)`]);
+  const args = ["-p", prompt, "--output-format", "json", "--permission-mode", "acceptEdits", "--allowedTools", allow.join(" "), "--disallowedTools", engine.join(" ")];
   if (model) args.push("--model", model);
   const t0 = Date.now();
   const r = spawnSync("claude", args, { cwd: ROOT, encoding: "utf8", timeout: 3 * 60 * 60_000, maxBuffer: 64 * 1024 * 1024 });
