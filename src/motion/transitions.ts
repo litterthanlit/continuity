@@ -15,7 +15,7 @@ import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
  * hide the overlay) and `<id>.fx` (an overlay above it: a flash, a light band).
  * Research: docs/research/2026-10-transitions.md · decision: docs/decisions/0005.
  */
-export const TRANSITIONS = ["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth", "morph"] as const;
+export const TRANSITIONS = ["cut", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"] as const;
 export type TransitionType = (typeof TRANSITIONS)[number];
 
 /** Planar directions (push, wipe). */
@@ -117,6 +117,8 @@ const DIR_ANGLE: Record<PlanarDir, number> = { right: 90, left: 270, down: 180, 
 const DEPTH_NEAR = 1.8;
 const DEPTH_FAR = 0.6;
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
+/** pixels: cells across the frame's long side. Big enough to read as pixels, not as noise. */
+const PIXEL_CELLS = 24;
 
 /** Translate both scenes edge to edge in the direction of travel (+ an optional motion-blur bell). */
 function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undefined): { out: Tween[]; in: Tween[] } {
@@ -209,6 +211,20 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
       }
       const fx: FxSpec = { kind: "wipe", angle: angle ?? DIR_ANGLE[dir ?? "right"], feather: feather ?? 12 };
       return { out: [], in: [tw(i, 0, c.d, { fx: [0, 1] }, e, fx)] };
+    },
+  },
+  pixels: {
+    description:
+      "Energetic register. The incoming scene arrives in square cells (a 24th of the frame's long side), an ordered dither sweeping in the direction of travel (dir, default right). A digital cut: the product loads, a machine takes over.",
+    duration: 0.5,
+    range: [0.3, 0.8],
+    params: ["ease", "dir"],
+    dirs: PLANAR_DIRS,
+    registers: ["energetic"],
+    build: (c) => {
+      const cell = Math.max(c.frame.width, c.frame.height) / PIXEL_CELLS;
+      const fx: FxSpec = { kind: "pixels", angle: DIR_ANGLE[(c.spec.dir as PlanarDir | undefined) ?? "right"], cols: Math.round(c.frame.width / cell), rows: r3(c.frame.height / cell) };
+      return { out: [], in: [tw(`${c.into}.scene`, 0, c.d, { fx: [0, 1] }, c.ease("linear"), fx)] };
     },
   },
   depth: {

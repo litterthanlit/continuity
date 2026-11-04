@@ -126,7 +126,9 @@ export type SplitMode = "chars" | "words" | "lines";
 /** A shape presentation driven by the `fx` channel (src/motion/fx.ts). */
 export type FxSpec =
   /** Feathered linear mask; `angle` is a CSS gradient angle (90 = the edge travels right). `feather` in % of the gradient line. */
-  { kind: "wipe"; angle: number; feather: number };
+  | { kind: "wipe"; angle: number; feather: number }
+  /** Square cells revealed in an ordered dither that sweeps along `angle` (CSS angle). `cols` × `rows` cells cover the element (`rows` may be fractional: cells stay square). */
+  | { kind: "pixels"; angle: number; cols: number; rows: number };
 
 export type StaggerFrom = "start" | "end" | "center" | "edges";
 

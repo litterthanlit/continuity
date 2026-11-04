@@ -143,6 +143,7 @@ three once a scene is energetic):
 | `push` | 0.5 | dir, blur, ease | sequential steps, in reading direction; `blur: true` when fast |
 | `pushUp` | 0.5 | blur, ease | lists, feeds, 9:16 |
 | `wipe` | 0.5 | dir, angle, feather, ease | a state revealed; `feather: 8–20`, `angle: 120` for a soft diagonal |
+| `pixels` | 0.5 | dir, ease | **energetic only**: the next scene arrives in square cells, an ordered dither sweeping the way it travels. A digital cut (the product loads, a machine takes over); once a film, as an accent |
 | `depth` | 0.6 | dir (`in`/`out`), ease | **energetic only** (`transition-register`): fly through stacked scenes; `out` reverses it to close the loop |
 
 ```json
