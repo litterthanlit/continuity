@@ -376,6 +376,20 @@ describe("retype", () => {
     expect(color(second.start + 0.05)).toContain("var(--color-accent-text) 100%");
   });
 
+  it("types a field with a caret by its content, so the caret follows the last key", () => {
+    const m = new MotionBuilder("s", 3, {}, undefined, undefined, undefined, undefined, (t) => (t === "s.site-text" ? { caret: "s.site-caret", tape: "harbor.dev" } : undefined));
+    m.type("site-text", { at: 0.5, cps: 20 });
+    const c = compileScene(scene(m), {});
+    const text = (t: number) => styleOf(sampleScene(c, t).get("s.site-text")!, undefined, undefined, c.tapes.get("s.site-text")).text;
+    expect(text(0.4)).toBe("");
+    expect(text(0.71)).toBe("harb");
+    expect(text(2.9)).toBe("harbor.dev");
+    expect(m.loops.map((l) => [l.target, l.start])).toEqual([["s.site-caret", 1]]);
+    // A line with no caret still types by opacity, character by character.
+    const plain = new MotionBuilder("s", 3, {}).type("l0", { at: 0 });
+    expect(plain.tweens[0]).toMatchObject({ preset: "typeOn", split: "chars" });
+  });
+
   it("shows the tape's text through the compiled scene", () => {
     const m = new MotionBuilder("s", 6, {});
     m.retype("end", tape, { at: 0, cps: 10 });

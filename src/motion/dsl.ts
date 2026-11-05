@@ -336,8 +336,17 @@ export class MotionBuilder {
     return this;
   }
 
-  /** Type text on, character by character, at a human rate (default 22 chars/s). */
+  /**
+   * Type text on, character by character, at a human rate (default 22 chars/s). A field with a
+   * caret (an <Input>'s text) types by its content, so the caret follows the last key instead of
+   * waiting at the end of the whole string; the caret blinks once the text is in.
+   */
   type(target: string, opts: { at?: At; cps?: number } = {}): this {
+    const d = this.dataOf?.(this.id(target));
+    if (d?.caret && d.tape) {
+      const caret = d.caret.slice(d.caret.indexOf(".") + 1);
+      return this.retype(target, [d.tape], { at: opts.at, cps: opts.cps, caret });
+    }
     return this.enter(target, "typeOn", { at: opts.at, split: "chars", stagger: round(1 / (opts.cps ?? 22)) });
   }
 
@@ -348,8 +357,8 @@ export class MotionBuilder {
    * own `at` starts typing then, and the one before it is deleted just in time. The last phrase
    * stays unless `clear`. With `caret`, that element blinks while a phrase holds and stays solid
    * while keys are pressed. With `accent`, each phrase types in the accent's text tone, like live
-   * input, and settles to its ink as it lands (litt keeps no accent word on screen: it is gone
-   * before the phrase is read). Copy comes from the storyboard: `[text.e1, text.e2, …]`.
+   * input, and settles to its ink as it lands: a deliberate exception to litt's P1 (no accent word in
+   * copy), for a brief that asks for that look. Copy comes from the storyboard: `[text.e1, text.e2, …]`.
    */
   retype(
     target: string,

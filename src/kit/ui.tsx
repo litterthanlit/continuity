@@ -218,7 +218,8 @@ export function Input({
       )}
       <span class="relative flex items-center">
         {placeholder && !value && <span class="text-fg-subtle">{placeholder}</span>}
-        <span data-ct={id(ct, "text")} class="text-fg">
+        {/* The caret follows the typed text: m.type swaps in the characters typed so far. */}
+        <span data-ct={id(ct, "text")} data-ct-caret={id(ct, "caret")} data-ct-tape={value} class="text-fg">
           {value}
         </span>
         <span data-ct={id(ct, "caret")} data-layout-ignore class="ml-[4px] inline-block h-[36px] w-[3px] bg-focus" />
