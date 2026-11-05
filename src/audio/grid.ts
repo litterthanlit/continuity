@@ -22,6 +22,8 @@ export interface MusicGrid {
 export interface SceneMusic {
   /** The video's frame rate: a time on the music lands on its nearest frame. */
   fps: number;
+  /** The scene's start on the video's clock: a beat lands on the video's frame nearest it. */
+  start: number;
   bpm: number;
   beatsPerBar: number;
   beats: number[];
@@ -31,8 +33,12 @@ export interface SceneMusic {
 
 /** Onsets at least this strong (0..1 of the track's strongest) count as hits. */
 export const HIT_STRENGTH = 0.35;
-/** A time this close to a grid point is on it (a quarter of a 30fps frame). */
-export const ON_GRID = 1 / 120;
+/**
+ * A time this close to a grid point is on it: half a frame at 24fps, the coarsest rate. A cut
+ * lands on the frame nearest its beat, so up to half a frame after it; a quarter-frame tolerance
+ * lost the scene's beat 0 to the next beat whenever the frame fell later than that.
+ */
+export const ON_GRID = 1 / 48;
 
 export interface MusicPlacement {
   /** Video time the track starts playing. */
@@ -109,6 +115,7 @@ export function sceneMusic(g: MusicGrid, start: number, duration: number, fps: n
   const within = (t: number) => t >= start - ON_GRID && t <= start + duration + ON_GRID;
   return {
     fps,
+    start,
     bpm: g.bpm,
     beatsPerBar: g.beatsPerBar,
     beats: g.beats.filter(within).map(local),

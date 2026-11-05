@@ -163,8 +163,9 @@ export class MotionBuilder {
     if (kind === "hit" && !Number.isInteger(n)) throw new MotionError(`[${this.scene}] hits are counted in whole numbers ("hit:${Math.floor(n)}").`);
     const t = musicAt(m, kind === "beat" ? { beat: n } : kind === "bar" ? { bar: n } : { hit: n }, 0, 60 / m.bpm);
     if (t === undefined) throw new MotionError(`[${this.scene}] there is no hit ${n} in this scene (it has ${m.hits.length}).`);
-    // The scene starts on a frame, so its frames are this clock's; the move starts on the beat's.
-    return onFrame(t, m.fps);
+    // On the video's frames, as the storyboard's beats are: rounding on the scene's clock could
+    // land a frame away from them.
+    return round(Math.max(0, onFrame(m.start + t, m.fps) - m.start));
   }
 
   /** A start time: `at`, moved to the nearest point of the music when `snap` asks. */
@@ -176,7 +177,7 @@ export class MotionBuilder {
     const points =
       opts.snap === "bar" ? m.bars : opts.snap === "hit" ? m.hits.map((h) => h.t) : opts.snap === "half" ? m.beats.flatMap((b, i) => (i + 1 < m.beats.length ? [b, (b + m.beats[i + 1]) / 2] : [b])) : m.beats;
     const p = nearest(points.filter((x) => x >= 0 && x <= this.duration), t);
-    return p === undefined ? t : onFrame(p, m.fps);
+    return p === undefined ? t : round(Math.max(0, onFrame(m.start + p, m.fps) - m.start));
   }
 
   /** End time of the last tween declared so far on an element. */

@@ -236,9 +236,15 @@ describe("music.stop", () => {
 
   it("stops at seconds into a scene, or on a beat of it", () => {
     expect(stopOf({ scene: "end", at: 0.5 })).toEqual({ at: 2.5333 });
-    // The scene starts at 2.01; its beat 0 is the first at or after that (2.5), beat 1 is 3.
-    expect(stopOf({ scene: "end", at: { beat: 1 } })).toEqual({ at: 3 });
+    // The scene starts at 2.01, a third of a frame after the beat at 2.0: that beat is its beat 0, beat 1 is 2.5.
+    expect(stopOf({ scene: "end", at: { beat: 1 } })).toEqual({ at: 2.5 });
     expect(stopOf(4.2)).toEqual({ at: 4.2 });
+  });
+
+  it("waits for the transition into the scene to land, unless an `at` says otherwise", () => {
+    const scenes = [scene("a", 2.5, { transition: { type: "crossfade", duration: 0.5 } }), scene("end", 3)];
+    expect(stopOf({ scene: "end" }, scenes)).toEqual({ at: 2.5 });
+    expect(stopOf({ scene: "end", at: 0 }, scenes)).toEqual({ at: 2 });
   });
 
   it("names a scene that does not exist, or a stop outside the music", () => {
@@ -251,5 +257,26 @@ describe("music.stop", () => {
     expect(audioElement(m({}), 5)).toContain('data-duration="2.033" data-volume="1" data-fade-out="0.01"');
     expect(audioElement(m({ fadeOut: 0.4 }), 5)).toContain('data-fade-out="0.4"');
     expect(audioElement({ ...m({}), stopAt: undefined }, 5)).not.toContain("data-fade-out");
+  });
+});
+
+describe("a scene's beats when its cut lands just after a beat", () => {
+  // 120 bpm from 0: beats every 0.5s. At 30fps the frame nearest the beat at 2.0 is 2.0; at 24fps
+  // a scene can start at 2.0167 (a third of a frame late) and still be on that beat.
+  const grid = musicGrid(track(), { start: 0, offset: 0 });
+
+  it("counts the beat it was cut on as beat 0, in the storyboard and in motion alike", () => {
+    const m = sceneMusic(grid, 2.0167, 2, 24);
+    expect(m.beats[0]).toBeCloseTo(-0.0167, 4);
+    const mb = new MotionBuilder("s", 2, {}, undefined, undefined, undefined, m);
+    expect(mb.time("beat:0")).toBe(0);
+    expect(mb.time("beat:1")).toBeCloseTo(0.4833, 4);
+  });
+
+  it("puts a motion beat on the video's frame, the same frame as the storyboard's", () => {
+    // A scene at 10.7666 on 30fps with a beat at 10.7833: half a frame in, which the video rounds back to 10.7666.
+    const g: typeof grid = { ...grid, beats: [10.7833, 11.2833], bars: [10.7833] };
+    const mb = new MotionBuilder("s", 2, {}, undefined, undefined, undefined, sceneMusic(g, 10.7666, 2, 30));
+    expect(mb.time("beat:0")).toBe(0);
   });
 });

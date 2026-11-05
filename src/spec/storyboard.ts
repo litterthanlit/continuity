@@ -47,8 +47,8 @@ export const MusicSchema = z.object({
   fadeOut: z.number().min(0).max(10).optional(),
   /**
    * Where the music stops dead, so an end card can land in silence: a moment in a scene —
-   * `{ "scene": "end" }` (the cut into it), `{ "scene": "end", "at": 0.5 }`, `{ "scene": "end",
-   * "at": { "beat": 2 } }` — or video seconds. A 10 ms fade takes the click off the cut; `fadeOut`
+   * `{ "scene": "end" }` (when the cut or transition into it has landed), `{ "scene": "end", "at":
+   * 0.5 }` (seconds from the scene's start), `{ "scene": "end", "at": { "beat": 2 } }` — or video seconds. A 10 ms fade takes the click off the cut; `fadeOut`
    * replaces it with a longer one that ends there.
    */
   stop: z.union([z.number().min(0), z.object({ scene: id, at: z.union([z.number().min(0), OnMusicSchema]).optional() }).strict()]).optional(),
@@ -197,9 +197,13 @@ export function musicStop(sb: Storyboard, grid?: MusicGrid): { at: number } | { 
   let at: number;
   if (typeof stop === "number") at = stop;
   else {
-    const sc = scenes.find((s) => s.id === stop.scene);
-    if (!sc) return { issue: `music.stop: there is no scene "${stop.scene}"` };
-    let t: number | undefined = sc.start + (typeof stop.at === "number" ? stop.at : 0);
+    const i = scenes.findIndex((s) => s.id === stop.scene);
+    if (i < 0) return { issue: `music.stop: there is no scene "${stop.scene}"` };
+    const sc = scenes[i];
+    // Without an `at`, the stop waits for the transition into the scene to land: the beat drops
+    // as the end card is fully on screen, not as the move into it begins.
+    const landed = sc.start + (i > 0 ? scenes[i - 1].overlapNext : 0);
+    let t: number | undefined = stop.at === undefined ? landed : sc.start + (typeof stop.at === "number" ? stop.at : 0);
     if (stop.at !== undefined && typeof stop.at !== "number") t = grid ? musicAt(grid, stop.at, sc.start, 60 / grid.bpm) : undefined;
     if (t === undefined) return { issue: `music.stop: ${JSON.stringify(stop.at)} — the music has no such moment in "${stop.scene}"` };
     at = Math.ceil(t * sb.format.fps - 1e-6) / sb.format.fps;
