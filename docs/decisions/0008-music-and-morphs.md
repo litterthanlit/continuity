@@ -18,7 +18,9 @@ performs. 0007 created the energetic register for films where performed moves ar
 
 ### 1. Music is storyboard data, analysed at build time
 
-`music: { src, start, offset, volume, fadeIn, fadeOut, bpm?, downbeat?, beatsPerBar }`. The
+`music: { src, start, offset, volume, fadeIn, fadeOut, stop?, bpm?, downbeat?, beatsPerBar }`
+(`stop`, added later, ends the clip at a scene's cut or a beat inside it; the grid's span ends
+there too, so the beat rules do not judge motion against music nobody hears). The
 build decodes the track with ffmpeg and analyses it in Node (`src/audio/analyze.ts`): an STFT,
 spectral flux in three bands, tempo by autocorrelation, beats by dynamic programming, each beat
 and onset refined to its true attack in the time domain, and the bar phase from a kick and

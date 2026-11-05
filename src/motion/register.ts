@@ -34,6 +34,8 @@ export interface RegisterBounds {
   /** Camera speed before `camera-too-fast` warns: zoom per second, px per second. */
   cameraZoomRate: number;
   cameraPan: number;
+  /** The longest stretch with nothing moving before `dead-air` warns, seconds. */
+  maxStill: number;
   /** Independent movers mid-entrance at once before `crowded` warns. */
   crowded: number;
   /** Accent transition types (besides cuts) before `transition-language` warns. */
@@ -55,6 +57,7 @@ export const REGISTER_BOUNDS: Record<Register, RegisterBounds> = {
     moments: 1,
     maxTravel: TRAVEL * 2,
     maxDrift: MAX_DRIFT,
+    maxStill: 2.5,
     cameraZoomRate: 0.15,
     cameraPan: 160,
     crowded: 5,
@@ -70,6 +73,8 @@ export const REGISTER_BOUNDS: Record<Register, RegisterBounds> = {
     moments: 3,
     maxTravel: TRAVEL * 5,
     maxDrift: 0.08,
+    // motion-craft §12: a hold is about a second; one past ~1.6s has stalled.
+    maxStill: 1.6,
     cameraZoomRate: 0.5,
     cameraPan: 480,
     crowded: 7,

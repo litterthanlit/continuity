@@ -20,7 +20,7 @@ describe("kit components set litt's type by role", async () => {
   const { renderToString } = await import("preact-render-to-string");
   const { withScene } = await import("../src/kit/context.js");
   const { Body, Caption, Headline, Label, Title } = await import("../src/kit/type.js");
-  const { Button, Sidebar, Stat, Tag, Toggle } = await import("../src/kit/ui.js");
+  const { Button, DotGrid, Ring, Sidebar, Stat, Tag, Toggle } = await import("../src/kit/ui.js");
   const { littDark } = await import("../src/themes/index.js");
   const { littKit } = await import("../src/themes/kits.js");
   const ctx = { id: "s", text: {}, aspect: "16:9", width: 1920, height: 1080, portrait: false, landscape: true, square: false, theme: littDark, typeKit: littKit, beats: {}, duration: 3, index: 0, total: 1 } as const;
@@ -34,6 +34,16 @@ describe("kit components set litt's type by role", async () => {
     expect(render(h(Caption, { ct: "c" }, "Hi"))).toContain("text-small font-sans text-fg-subtle");
     expect(render(h(Label, { ct: "l" }, "Hi"))).toContain("text-label font-sans font-label text-fg-subtle");
     expect(render(h(Label, { ct: "l" }, "Hi"))).not.toMatch(/uppercase|font-mono|tracking/);
+  });
+
+  it("a data hue must be one of the five: an unknown one fails the view instead of drawing nothing", () => {
+    expect(render(h(Ring, { ct: "r", value: 89, hue: "teal" }))).toContain("var(--color-data-teal)");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => render(h(Ring, { ct: "r", value: 89, hue: "accent" as any }))).toThrow(/not a data hue — use one of blue, amber, teal, violet, rose/);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => render(h(Tag, { ct: "t", hue: "brand" as any }, "x"))).toThrow(/not a data hue/);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => render(h(DotGrid, { ct: "g", values: [0.5], hue: "green" as any }))).toThrow(/not a data hue/);
   });
 
   it("an explicit class still overrides the kit", () => {

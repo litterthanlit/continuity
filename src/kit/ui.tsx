@@ -1,5 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
+import { formatCounter } from "../motion/evaluate.js";
+import { CELL_RADIUS, dotScale } from "../motion/tokens.js";
 import type { ComponentChildren } from "preact";
 import { DATA_HUES, type DataHue } from "../themes/index.js";
 import { ctId, useScene } from "./context.js";
@@ -28,8 +30,18 @@ interface Box {
 
 export type Tone = "neutral" | "success" | "warning" | "danger";
 
+/**
+ * A data hue's colour variable (`suffix` "-text" or "-tint" for its tones). An unknown hue is an
+ * error: scenes are not type-checked, and a missing variable would draw nothing at all.
+ */
+function dataVar(hue: DataHue, suffix = ""): string {
+  if (!DATA_HUES.includes(hue)) throw new Error(`hue "${hue}" is not a data hue — use one of ${DATA_HUES.join(", ")}, or leave it out for fg (the accent is for the one primary action)`);
+  return `var(--color-data-${hue}${suffix})`;
+}
+
 /** A data hue's tint fill with its text tone, a 24% hairline of the hue and the top highlight (tags, avatars). */
 function hueStyle(hue: DataHue): string {
+  dataVar(hue);
   const { highlight } = useScene().theme.material;
   return `background:var(--color-data-${hue}-tint);color:var(--color-data-${hue}-text);box-shadow:inset 0 0 0 2px color-mix(in oklab,var(--color-data-${hue}) 24%,transparent),inset 0 2px 0 ${highlight}`;
 }
@@ -52,10 +64,21 @@ function Dots() {
 
 // ---------------------------------------------------------------- frames
 
+/**
+ * Where a frame's screen sits, for m.pullBack: "dx dy w h", the screen's centre from the frame's
+ * centre and its size, px. `side` is the inset left and right (and below, for a bezel), `top` above.
+ */
+function screenData(side: number, top: number, width: number, height: number): string {
+  const bottom = side;
+  const w = width - 2 * side;
+  const h = height - top - bottom;
+  return `0 ${(top - bottom) / 2} ${w} ${h}`;
+}
+
 /** App window: a solid surface with the raised edge and a zero-offset float glow. Body is `<ct>-body`. */
 export function Window({ ct, title, width = 1280, height = 760, class: cls, children }: Box & { title?: string; width?: number; height?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
+    <div data-ct={id(ct)} data-ct-ui data-ct-screen={screenData(0, 64, width, height)} class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
       <div class="flex h-[64px] items-center gap-[12px] border-b-2 border-line px-[24px]">
         <Dots />
         {title && <span class="ml-[16px] font-sans text-[28px] font-title text-fg-muted">{title}</span>}
@@ -71,7 +94,7 @@ export function Window({ ct, title, width = 1280, height = 760, class: cls, chil
 /** Browser window with an address field. Body is `<ct>-body`, the URL `<ct>-url`. */
 export function Browser({ ct, url = "app.example.com", width = 1400, height = 820, class: cls, children }: Box & { url?: string; width?: number; height?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
+    <div data-ct={id(ct)} data-ct-ui data-ct-screen={screenData(0, 80, width, height)} class={cx("relative overflow-hidden rounded-surface bg-surface-1 shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
       <div class="flex h-[80px] items-center gap-[12px] border-b-2 border-line px-[24px]">
         <Dots />
         <div class="mx-auto flex h-[48px] w-[52%] items-center justify-center gap-[12px] rounded-control bg-surface-2 font-sans text-[26px] text-fg-muted shadow-hairline">
@@ -94,7 +117,7 @@ export function Browser({ ct, url = "app.example.com", width = 1400, height = 82
 export function Phone({ ct, width = 460, class: cls, children }: Box & { width?: number }) {
   const height = Math.round(width * 2.05);
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative rounded-[68px] border-[14px] border-device bg-canvas shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
+    <div data-ct={id(ct)} data-ct-ui data-ct-screen={screenData(14, 14, width, height)} class={cx("relative rounded-[68px] border-[14px] border-device bg-canvas shadow-lift", cls)} style={{ width: `${width}px`, height: `${height}px` }}>
       <div class="absolute left-1/2 top-[18px] z-10 h-[36px] w-[132px] -translate-x-1/2 rounded-full bg-device" />
       <div data-ct={id(ct, "screen")} class="absolute inset-0 overflow-hidden rounded-[54px]">
         {children}
@@ -195,7 +218,8 @@ export function Input({
       )}
       <span class="relative flex items-center">
         {placeholder && !value && <span class="text-fg-subtle">{placeholder}</span>}
-        <span data-ct={id(ct, "text")} class="text-fg">
+        {/* The caret follows the typed text: m.type swaps in the characters typed so far. */}
+        <span data-ct={id(ct, "text")} data-ct-caret={id(ct, "caret")} data-ct-tape={value} class="text-fg">
           {value}
         </span>
         <span data-ct={id(ct, "caret")} data-layout-ignore class="ml-[4px] inline-block h-[36px] w-[3px] bg-focus" />
@@ -227,7 +251,7 @@ export function Meter({ ct, value = 1, hue, class: cls, width = 640 }: Box & { v
       <div
         data-ct={id(ct, "fill")}
         class={cx("absolute inset-y-0 left-0", !hue && "bg-fg")}
-        style={{ width: `${Math.round(value * 100)}%`, transformOrigin: "left center", ...(hue ? { background: `var(--color-data-${hue})` } : {}) }}
+        style={{ width: `${Math.round(value * 100)}%`, transformOrigin: "left center", ...(hue ? { background: dataVar(hue) } : {}) }}
       />
     </div>
   );
@@ -265,9 +289,22 @@ export function Segmented({ ct, items, active = 0, segment = 200, class: cls }: 
  * A notification: glass (it floats), the surface radius, a zero-offset float. No
  * icon, no dot: an error's title is danger, and the words say the rest.
  */
-export function Toast({ ct, title, body, tone = "neutral", class: cls }: Box & { title: string; body?: string; tone?: "neutral" | "danger" }) {
+export function Toast({
+  ct,
+  title,
+  body,
+  tone = "neutral",
+  width = 640,
+  height,
+  class: cls,
+}: Box & { title: string; body?: string; tone?: "neutral" | "danger"; width?: number; height?: number }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("ct-glass flex w-[640px] flex-col gap-[8px] rounded-surface px-[32px] py-[24px]", cls)}>
+    <div
+      data-ct={id(ct)}
+      data-ct-ui
+      class={cx("ct-glass flex flex-col justify-center gap-[8px] overflow-hidden rounded-surface px-[32px] py-[24px]", cls)}
+      style={{ width: `${width}px`, ...(height !== undefined ? { height: `${height}px` } : {}) }}
+    >
       <div data-ct={id(ct, "title")} class={cx("font-sans text-[28px] font-title", tone === "danger" ? "text-danger" : "text-fg")}>
         {title}
       </div>
@@ -276,6 +313,41 @@ export function Toast({ ct, title, body, tone = "neutral", class: cls }: Box & {
           {body}
         </div>
       )}
+    </div>
+  );
+}
+
+export interface Notification {
+  title: string;
+  body?: string;
+  tone?: "neutral" | "danger";
+}
+
+/**
+ * Notifications that arrive one after another (m.stackIn), newest on top, each a Toast in a row
+ * of fixed height so the stack steps by a known pitch. Keep each title and body to one line: the
+ * gate reports copy that runs past its row. Item i (in arrival order) is `<ct>-<i>`.
+ * Laid out settled: every item in, the last to arrive at the top. On a lock screen, put it in a
+ * `<Phone>` with `width` about the screen's less 48px.
+ */
+export function NotificationStack({
+  ct,
+  items,
+  width = 640,
+  rowHeight = 132,
+  gap = 16,
+  class: cls,
+}: Box & { items: Notification[]; width?: number; rowHeight?: number; gap?: number }) {
+  return (
+    <div data-ct={id(ct)} data-ct-ui data-ct-count={items.length} data-ct-pitch={rowHeight + gap} class={cx("flex flex-col", cls)} style={{ width: `${width}px`, gap: `${gap}px` }}>
+      {items
+        .map((item, i) => (
+          // A later arrival slides over the ones it pushes down.
+          <div key={i} class="relative" style={{ zIndex: i + 1 }}>
+            <Toast ct={`${ct}-${i}`} title={item.title} body={item.body} tone={item.tone} width={width} height={rowHeight} />
+          </div>
+        ))
+        .reverse()}
     </div>
   );
 }
@@ -437,7 +509,7 @@ export function BarChart({
             style={{
               height: `${Math.max(1, (v / max) * 100)}%`,
               transformOrigin: "bottom center",
-              ...(hue ? { background: i === cur ? `var(--color-data-${hue}-text)` : `var(--color-data-${hue})` } : {}),
+              ...(hue ? { background: i === cur ? dataVar(hue, "-text") : dataVar(hue) } : {}),
             }}
           />
         </div>
@@ -453,11 +525,11 @@ export function LineChart({ ct, data, width = 640, height = 260, class: cls, hue
   const pts = data.map((v, i) => [(i / (data.length - 1)) * (width - 16) + 8, height - ((v - min) / (max - min || 1)) * (height - 16) - 8]);
   const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
   const [lx, ly] = pts[pts.length - 1];
-  const stroke = hue ? `var(--color-data-${hue})` : "var(--color-fg)";
+  const stroke = hue ? dataVar(hue) : "var(--color-fg)";
   return (
     <svg data-ct={id(ct)} class={cls} width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" data-layout-ignore>
       <path data-ct={id(ct, "line")} d={d} pathLength={1} stroke={stroke} stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style={{ strokeDasharray: "1", strokeDashoffset: "0" }} />
-      <circle data-ct={id(ct, "dot")} cx={lx.toFixed(1)} cy={ly.toFixed(1)} r="8" fill={hue ? `var(--color-data-${hue}-text)` : "var(--color-fg)"} />
+      <circle data-ct={id(ct, "dot")} cx={lx.toFixed(1)} cy={ly.toFixed(1)} r="8" fill={hue ? dataVar(hue, "-text") : "var(--color-fg)"} />
     </svg>
   );
 }
@@ -512,6 +584,124 @@ export function Stat({
           {delta}
         </span>
       )}
+    </div>
+  );
+}
+
+/**
+ * A ring gauge: one value against a whole, the Meter bent round. An arc over a rail at fg 12%
+ * (fg, or a data hue that names the thing), from twelve o'clock clockwise with square ends (a
+ * round cap would overstate the value), and the number in its centre with an optional label
+ * under it in the grey. Laid out settled, full to `value`; m.ring(ct) fills it from 0 and counts
+ * the number with it. Number `<ct>`, arc `<ct>-arc`, label `<ct>-label`.
+ */
+export function Ring({
+  ct,
+  value,
+  max = 100,
+  size = 320,
+  stroke = 24,
+  hue,
+  label,
+  suffix,
+  class: cls,
+}: {
+  ct: string;
+  value: number;
+  max?: number;
+  size?: number;
+  stroke?: number;
+  hue?: DataHue;
+  label?: string;
+  suffix?: string;
+  class?: string;
+}) {
+  const figures = useScene().typeKit.figures;
+  const c = size / 2;
+  const r = c - stroke / 2;
+  const fill = Math.min(1, Math.max(0, value / max));
+  return (
+    <div class={cx("relative flex flex-col items-center justify-center", cls)} style={{ width: `${size}px`, height: `${size}px` }}>
+      <svg class="absolute inset-0" width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" data-layout-ignore>
+        <circle cx={c} cy={c} r={r} stroke="var(--color-fg)" stroke-opacity="0.12" stroke-width={stroke} />
+        <circle
+          data-ct={id(ct, "arc")}
+          cx={c}
+          cy={c}
+          r={r}
+          pathLength={1}
+          stroke={hue ? dataVar(hue) : "var(--color-fg)"}
+          stroke-width={stroke}
+          stroke-linecap="butt"
+          transform={`rotate(-90 ${c} ${c})`}
+          style={{ strokeDasharray: "1", strokeDashoffset: String(Math.round((1 - fill) * 10000) / 10000) }}
+        />
+      </svg>
+      <span data-ct={id(ct)} data-ct-value={value} data-ct-max={max} data-ct-suffix={suffix} class={cx(`font-${figures} text-title font-title tabular-nums text-fg`)}>
+        {formatCounter(value, { decimals: 0, suffix })}
+      </span>
+      {label && (
+        <span data-ct={id(ct, "label")} class="font-sans text-small text-fg-subtle">
+          {label}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A grid of cells, one value each from 0 to 1: a contribution graph. Columns run left to right,
+ * each filled top to bottom (`values[col * rows + row]`). Colour carries the data: an empty cell
+ * is fg at 8%, a value mixes the hue (or fg) in from 35% to 100%. Laid out settled as squares, or
+ * with `dots` as circles sized by value. m.grid(ct, "fill") brings the cells in on a wave — or,
+ * with `from` (the before, one value per cell), lights each cell from its before ink to its value;
+ * m.grid(ct, "dots") turns the squares into the dots on one. Cell i is `<ct>-<i>`.
+ */
+export function DotGrid({
+  ct,
+  values,
+  rows = 7,
+  cell = 28,
+  gap = 8,
+  hue,
+  dots = false,
+  from,
+  class: cls,
+}: {
+  ct: string;
+  values: number[];
+  from?: number[];
+  rows?: number;
+  cell?: number;
+  gap?: number;
+  hue?: DataHue;
+  dots?: boolean;
+  class?: string;
+}) {
+  if (from && from.length !== values.length) throw new Error(`DotGrid "${ct}": from has ${from.length} values, values has ${values.length}`);
+  const ink = hue ? dataVar(hue) : "var(--color-fg)";
+  const fill = (v: number) => (v > 0 ? `color-mix(in oklab, ${ink} ${Math.round(35 + 65 * Math.min(1, v))}%, transparent)` : "color-mix(in oklab, var(--color-fg) 8%, transparent)");
+  return (
+    <div
+      data-ct={id(ct)}
+      data-ct-count={values.length}
+      data-ct-rows={rows}
+      data-ct-from={from ? "1" : undefined}
+      class={cx("grid grid-flow-col", cls)}
+      style={{ gridTemplateRows: `repeat(${rows}, ${cell}px)`, gridAutoColumns: `${cell}px`, gap: `${gap}px` }}
+    >
+      {values.map((v, i) => (
+        <div
+          key={i}
+          data-ct={id(ct, String(i))}
+          data-ct-v={v}
+          class="relative"
+          style={{ background: fill(from ? from[i] : v), borderRadius: `${dots ? 50 : CELL_RADIUS}%`, ...(dots ? { transform: `scale(${dotScale(v)})` } : {}) }}
+        >
+          {/* The after, over the before: m.grid "fill" fades it up. */}
+          {from && <div data-ct={id(ct, `${i}-to`)} class="absolute inset-0" style={{ background: fill(v), borderRadius: "inherit" }} />}
+        </div>
+      ))}
     </div>
   );
 }

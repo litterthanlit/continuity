@@ -18,5 +18,5 @@
     }
   },
   "include": ["src", "projects", "templates", "tests", "bench"],
-  "exclude": ["node_modules", "build", "out", "**/.continuity"]
+  "exclude": ["node_modules", "build", "out", "**/.continuity", "projects/bench-*"]
 }

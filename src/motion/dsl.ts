@@ -13,9 +13,13 @@ import {
   durations,
   eases,
   fitEase,
+  CELL_RADIUS,
+  dotScale,
+  readTime,
   resolveDuration,
   resolveEase,
   resolveStagger,
+  SETTLED_HOLD,
   staggers,
   type DurationToken,
   type EaseToken,
@@ -98,6 +102,14 @@ const DEFAULT_SPLIT_STAGGER: Record<SplitMode, StaggerToken> = {
 
 export class MotionError extends Error {}
 
+/** m.retype: the pause between a cleared phrase and the next one's first key. */
+const RETYPE_GAP = 0.1;
+/** m.grid "grow": a cell's size as a dot, and how long it stays one before it swells into its square. */
+const GROW_DOT = 0.3;
+const GROW_LEAD = 0.2;
+/** m.cycle: how far (% of its own height) a word travels to clear the slot's clip. */
+const CYCLE_TRAVEL = 120;
+
 export class MotionBuilder {
   readonly tweens: Tween[] = [];
   readonly loops: Loop[] = [];
@@ -115,6 +127,8 @@ export class MotionBuilder {
     private readonly frame: { width: number; height: number } = { width: 1920, height: 1080 },
     /** The music on this scene's clock, when the storyboard has a soundtrack: `m.music.beats` etc. */
     readonly music?: SceneMusic,
+    /** A rendered element's `data-ct-*` attributes (without the prefix): what a kit component says about its own parts. */
+    private readonly dataOf?: (target: string) => Record<string, string> | undefined,
   ) {}
 
   /** Full `data-ct` id for a scene element. */
@@ -152,8 +166,9 @@ export class MotionBuilder {
     if (kind === "hit" && !Number.isInteger(n)) throw new MotionError(`[${this.scene}] hits are counted in whole numbers ("hit:${Math.floor(n)}").`);
     const t = musicAt(m, kind === "beat" ? { beat: n } : kind === "bar" ? { bar: n } : { hit: n }, 0, 60 / m.bpm);
     if (t === undefined) throw new MotionError(`[${this.scene}] there is no hit ${n} in this scene (it has ${m.hits.length}).`);
-    // The scene starts on a frame, so its frames are this clock's; the move starts on the beat's.
-    return onFrame(t, m.fps);
+    // On the video's frames, as the storyboard's beats are: rounding on the scene's clock could
+    // land a frame away from them.
+    return round(Math.max(0, onFrame(m.start + t, m.fps) - m.start));
   }
 
   /** A start time: `at`, moved to the nearest point of the music when `snap` asks. */
@@ -165,7 +180,7 @@ export class MotionBuilder {
     const points =
       opts.snap === "bar" ? m.bars : opts.snap === "hit" ? m.hits.map((h) => h.t) : opts.snap === "half" ? m.beats.flatMap((b, i) => (i + 1 < m.beats.length ? [b, (b + m.beats[i + 1]) / 2] : [b])) : m.beats;
     const p = nearest(points.filter((x) => x >= 0 && x <= this.duration), t);
-    return p === undefined ? t : onFrame(p, m.fps);
+    return p === undefined ? t : round(Math.max(0, onFrame(m.start + p, m.fps) - m.start));
   }
 
   /** End time of the last tween declared so far on an element. */
@@ -321,9 +336,236 @@ export class MotionBuilder {
     return this;
   }
 
-  /** Type text on, character by character, at a human rate (default 22 chars/s). */
+  /**
+   * Type text on, character by character, at a human rate (default 22 chars/s). A field with a
+   * caret (an <Input>'s text) types by its content, so the caret follows the last key instead of
+   * waiting at the end of the whole string; the caret blinks once the text is in.
+   */
   type(target: string, opts: { at?: At; cps?: number } = {}): this {
+    const d = this.dataOf?.(this.id(target));
+    if (d?.caret && d.tape) {
+      const caret = d.caret.slice(d.caret.indexOf(".") + 1);
+      return this.retype(target, [d.tape], { at: opts.at, cps: opts.cps, caret });
+    }
     return this.enter(target, "typeOn", { at: opts.at, split: "chars", stagger: round(1 / (opts.cps ?? 22)) });
+  }
+
+  /**
+   * Type a phrase, hold it, delete it key by key and type the next, in one text element (the
+   * ending after a fixed lead-in: "Your website is ▍ranking #1"). Each phrase holds long enough
+   * to read (≈17 chars/s, the `retype-hold` lint) unless `hold` says otherwise; a phrase with its
+   * own `at` starts typing then, and the one before it is deleted just in time. The last phrase
+   * stays unless `clear`. With `caret`, that element blinks while a phrase holds and stays solid
+   * while keys are pressed. With `accent`, each phrase types in the accent's text tone, like live
+   * input, and settles to its ink as it lands: a deliberate exception to litt's P1 (no accent word in
+   * copy), for a brief that asks for that look. Copy comes from the storyboard: `[text.e1, text.e2, …]`.
+   */
+  retype(
+    target: string,
+    phrases: Array<string | { text: string; at?: At; hold?: number }>,
+    opts: { at?: At; snap?: Snap; cps?: number; deleteCps?: number; hold?: number; gap?: number; clear?: boolean; caret?: string; accent?: boolean; allow?: string[] } = {},
+  ): this {
+    if (!phrases.length) throw new MotionError(`[${this.scene}] m.retype("${target}") needs at least one phrase.`);
+    const list = phrases.map((p) => (typeof p === "string" ? { text: p } : p));
+    const tape = list.map((p) => p.text);
+    const cps = opts.cps ?? 22;
+    const deleteCps = opts.deleteCps ?? cps * 2.5;
+    const id = this.id(target);
+    const push = (from: number, n: number, start: number, duration: number) =>
+      this.push({ target: id, kind: "emphasis", start, duration, ease: eases.linear, easeName: "linear", props: { typed: [from, from + n] }, preset: "retype", tape, allow: opts.allow });
+    // A person's cadence, not a metronome: the phrase takes its time (n / cps), spent unevenly —
+    // a beat before each word, a little more on a space, each key ±20% (seeded by the phrase, so
+    // every render types it the same way). One tween per key; returns when the last one lands.
+    const typeKeys = (from: number, text: string, start: number, total: number) => {
+      const chars = [...text];
+      const seed = chars.reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+      const w = chars.map((ch, i) => (ch === " " ? 1.3 : 1) * (i > 0 && chars[i - 1] === " " ? 1.5 : 1) * (0.8 + 0.4 * ((((i + 1) * 2654435761 + seed) >>> 0) % 1000) / 1000));
+      const sum = w.reduce((a, b) => a + b, 0);
+      let t = start;
+      chars.forEach((_, i) => {
+        const d = round((total * w[i]) / sum);
+        push(from + i, 1, t, d);
+        t = round(t + d);
+      });
+      return t;
+    };
+    let key = 0;
+    let free = this.startOf(opts);
+    list.forEach((p, i) => {
+      const n = [...p.text].length;
+      const start = p.at !== undefined ? this.time(p.at) : free;
+      if (start < free - 1e-6) throw new MotionError(`[${this.scene}] m.retype("${target}"): phrase ${i} ("${p.text}") starts at ${start}s, before the phrase before it is deleted (${round(free)}s).`);
+      const typed = typeKeys(key, p.text, start, round(n / cps));
+      key += n;
+      if (opts.accent) {
+        // Live input: the keys land in the accent, and the phrase settles to its ink once typed.
+        this.push({ target: id, kind: "emphasis", start, duration: 0, ease: eases.linear, easeName: "linear", props: { accent: [0, 1] }, preset: "retype" });
+        this.push({ target: id, kind: "emphasis", start: typed, duration: durations.snap, ease: eases.out, easeName: "out", props: { accent: [1, 0] }, preset: "retype" });
+      }
+      const last = i === list.length - 1;
+      if (last && !opts.clear) {
+        if (opts.caret) this.blink(opts.caret, { at: typed });
+        return;
+      }
+      const deleting = round(n / deleteCps);
+      const next = last ? undefined : list[i + 1].at;
+      const hold = p.hold ?? opts.hold ?? Math.ceil(Math.max(SETTLED_HOLD, readTime(n) - 0.7 * (typed - start)) * 100) / 100;
+      const del = next !== undefined ? round(this.time(next) - (opts.gap ?? RETYPE_GAP) - deleting) : round(typed + hold);
+      if (del < typed) throw new MotionError(`[${this.scene}] m.retype("${target}"): phrase ${i + 1} starts before "${p.text}" finishes typing — move its "at" later.`);
+      if (opts.caret && del > typed) this.blink(opts.caret, { at: typed, until: del });
+      push(key, n, del, deleting);
+      key += n;
+      free = round(del + deleting + (opts.gap ?? RETYPE_GAP));
+    });
+    return this;
+  }
+
+  /**
+   * Flip a `<Cycle>` through its words in place: each step the word on show leaves upward behind
+   * the slot's clip as the next rises into it. Steps fall every `every` seconds from `at`, or at
+   * `times` (one per step: beats, `"beat:4"`…). The last word stays.
+   */
+  cycle(
+    target: string,
+    opts: { at?: At; every?: number; times?: At[]; snap?: Snap; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] } = {},
+  ): this {
+    const n = this.countOf(target, "Cycle");
+    const first = this.startOf(opts);
+    for (let k = 0; k < n - 1; k++) {
+      const at = opts.times?.[k] !== undefined ? this.time(opts.times[k]) : round(first + k * (opts.every ?? 0.5));
+      const group = `${this.scene}#${++this.calls}`;
+      const step = { at, ease: opts.ease, duration: opts.duration, allow: opts.allow };
+      this.flip(`${target}-${k}`, "exit", "cycle", { yPct: [0, -CYCLE_TRAVEL] }, step, group);
+      this.flip(`${target}-${k + 1}`, "enter", "cycle", { yPct: [CYCLE_TRAVEL, 0] }, step, group);
+    }
+    return this;
+  }
+
+  /**
+   * Notifications arrive in a `<NotificationStack>`, newest on top: the stack moves down one row as
+   * one, and each new notification rides in from the row above, fading up, so the spacing never
+   * changes and no card crosses another. Arrivals fall every `every` seconds from `at`, or at `times`.
+   */
+  stackIn(target: string, opts: { at?: At; every?: number; times?: At[]; snap?: Snap; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const n = this.countOf(target, "NotificationStack");
+    const pitch = Number(this.dataOf?.(this.id(target))?.pitch);
+    if (!(pitch > 0)) throw new MotionError(`[${this.scene}] m.stackIn("${target}") needs a <NotificationStack ct="${target}"> (it reads the row pitch from it).`);
+    const first = this.startOf(opts);
+    // Items lay out newest on top; while only arrivals 0…j are in, the whole stack sits n-1-j rows up.
+    const rest = (j: number) => round((j - (n - 1)) * pitch);
+    for (let j = 0; j < n; j++) {
+      const at = opts.times?.[j] !== undefined ? this.time(opts.times[j]) : round(first + j * (opts.every ?? 0.5));
+      const group = `${this.scene}#${++this.calls}`;
+      const step = { at, ease: opts.ease };
+      // The arrival travels one row, as far as every card below it moves: the stack's step, not a throw.
+      this.flip(`${target}-${j}`, "enter", "stackIn", { y: [rest(j) - pitch, rest(j)], opacity: [0, 1] }, { ...step, allow: [...(opts.allow ?? []), "travel-too-far"] }, group);
+      for (let i = 0; i < j; i++) this.flip(`${target}-${i}`, "move", "stackIn", { y: [null, rest(j)] }, { ...step, allow: opts.allow }, group);
+    }
+    return this;
+  }
+
+  /**
+   * Fill a `<Ring>` and count its number with it: one start, one duration, one ease, so the arc
+   * and the figure always agree. Fills from `from` (default 0) to the ring's own value.
+   */
+  ring(target: string, opts: { from?: number; to?: number; at?: At; snap?: Snap; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const data = this.dataOf?.(this.id(target));
+    const max = Number(data?.max);
+    if (!(max > 0)) throw new MotionError(`[${this.scene}] "${target}" is not a <Ring> in this scene's view.`);
+    const from = opts.from ?? 0;
+    const to = opts.to ?? Number(data!.value);
+    const timing = { at: this.startOf(opts), duration: opts.duration ?? ("linger" as const), ease: opts.ease ?? ("out" as const), allow: opts.allow };
+    this.tween(`${target}-arc`, { draw: [from / max, to / max] }, { ...timing, kind: "emphasis" });
+    return this.counter(target, { ...timing, from, to, suffix: data!.suffix });
+  }
+
+  /**
+   * A `<DotGrid>` on a wave: `"fill"` brings the cells in (from 40% size, fading up) or, when the
+   * grid has a before (`from`), lights each cell from its before ink up to its value; `"dots"`
+   * turns the squares into circles sized by their values; `"grow"` brings each cell in as a small
+   * dot ahead of the wave that then swells into its square (the leading edge reads as dots). The
+   * wave crosses the grid in `span` seconds (default 0.8), column by column (`wave: "left"`) or
+   * corner to corner (`"diagonal"`).
+   */
+  grid(
+    target: string,
+    mode: "fill" | "dots" | "grow",
+    opts: { at?: At; snap?: Snap; span?: number; wave?: "left" | "diagonal"; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] } = {},
+  ): this {
+    const n = this.countOf(target, "DotGrid");
+    const data = this.dataOf!(this.id(target))!;
+    const rows = Number(data.rows) || 1;
+    const before = data.from === "1";
+    const cols = Math.ceil(n / rows);
+    const at = this.startOf(opts);
+    const span = opts.span ?? 0.8;
+    const steps = opts.wave === "diagonal" ? cols - 1 + rows - 1 : cols - 1;
+    const group = `${this.scene}#${++this.calls}`;
+    for (let i = 0; i < n; i++) {
+      const c = Math.floor(i / rows);
+      const step = opts.wave === "diagonal" ? c + (i % rows) : c;
+      const cell = `${target}-${i}`;
+      const start = round(at + (steps ? (span * step) / steps : 0));
+      const timing = { at: start, ease: opts.ease, duration: opts.duration, allow: opts.allow };
+      // With a before (`from`), the cells are there already: fill lights each one up to its value.
+      if (mode === "fill" && before) this.flip(`${cell}-to`, "enter", "grid", { scale: [0.6, 1], opacity: [0, 1] }, timing, group);
+      else if (mode === "fill") this.flip(cell, "enter", "grid", { scale: [0.4, 1], opacity: [0, 1] }, timing, group);
+      else if (mode === "grow") {
+        // The dot pops on the instant tier; the swell starts once it has landed.
+        this.flip(cell, "enter", "grid", { scale: [0, GROW_DOT], radius: [50, 50], opacity: [0, 1] }, { at: start, ease: "out", duration: "instant", allow: opts.allow }, group);
+        this.flip(cell, "move", "grid", { scale: [GROW_DOT, 1], radius: [50, CELL_RADIUS] }, { ...timing, at: round(start + GROW_LEAD) }, group);
+      }
+      else this.flip(cell, "move", "grid", { radius: [CELL_RADIUS, 50], scale: [1, dotScale(Number(this.dataOf!(this.id(cell))?.v) || 0)] }, timing, group);
+    }
+    return this;
+  }
+
+  /**
+   * The pull-back reveal: the scene opens with a device's screen filling the frame (so a flat
+   * scene before it can cut straight into its content), then the camera flies back until the
+   * whole Window, Browser or Phone is in view. Put the device in the centre of the frame (Center
+   * or a centred Safe). One fast move on the steep ease: it is the scene's reveal, so it may
+   * outrun the camera's speed limit (`camera-too-fast` is allowed for it). Push in again later
+   * with m.camera.
+   */
+  pullBack(device: string, opts: { at?: At; snap?: Snap; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const screen = this.dataOf?.(this.id(device))?.screen?.split(" ").map(Number);
+    if (!screen || screen.length !== 4 || !(screen[2] > 0 && screen[3] > 0)) throw new MotionError(`[${this.scene}] m.pullBack("${device}") needs a <Window>, <Browser> or <Phone ct="${device}"> (it reads where the screen sits).`);
+    const [dx, dy, w, h] = screen;
+    // Cover: the screen fills the frame on both axes, its centre on the frame's centre.
+    const s = Math.round(Math.max(this.frame.width / w, this.frame.height / h) * 10000) / 10000;
+    return this.camera(
+      { scale: [s, 1], x: [round(-s * dx), 0], y: [round(-s * dy), 0] },
+      { at: opts.at, snap: opts.snap, duration: opts.duration ?? "slow", ease: opts.ease ?? "steep", allow: [...(opts.allow ?? []), "camera-too-fast"] },
+    );
+  }
+
+  /**
+   * Zoom the camera in on an element until it fills `fill` of the frame (default 0.6; above 1 is a
+   * macro, the element bigger than the frame), centred as far as the scene's edge allows. Where the
+   * element sits is measured by the runtime once, at the end of the move, so it works on any layout.
+   * Back out with m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }).
+   */
+  zoomTo(target: string, opts: { at?: At; snap?: Snap; fill?: number; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const fill = opts.fill ?? 0.6;
+    if (!(fill > 0)) throw new MotionError(`[${this.scene}] m.zoomTo("${target}"): fill is the share of the frame the element fills, above 0.`);
+    // A zoom reads as a camera when it eases in and out over time enough for its size (zoom-lunge).
+    this.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: opts.at, snap: opts.snap, duration: opts.duration ?? "linger", ease: opts.ease ?? "inOut", allow: opts.allow });
+    this.tweens[this.tweens.length - 1].measure = { kind: "focus", target: this.id(target), fill };
+    return this;
+  }
+
+  /** How many parts a kit component rendered (its `data-ct-count`). */
+  private countOf(target: string, component: string): number {
+    const n = Number(this.dataOf?.(this.id(target))?.count);
+    if (!(n >= 1)) throw new MotionError(`[${this.scene}] "${target}" is not a <${component}> in this scene's view.`);
+    return n;
+  }
+
+  private flip(target: string, kind: TweenKind, preset: string, props: Partial<Record<PropName, PropRange>>, o: { at: number; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] }, group: string) {
+    const { spec: token, name } = resolveEase(o.ease ?? "responsive");
+    const duration = o.duration !== undefined ? resolveDuration(o.duration) : (naturalDuration(token) ?? durations.responsive);
+    this.push({ target: this.id(target), group, kind, start: o.at, duration, ease: fitEase(token, name, duration), easeName: name, props, preset, allow: o.allow });
   }
 
   /** Caret blink (soft, deterministic) between `at` and `until` — the one loop litt allows. */

@@ -1,11 +1,11 @@
 import { nearest } from "../audio/grid.js";
 import type { BuildResult, ElementInfo } from "../build/build.js";
 import { isLinear, peakSlope } from "../motion/easing.js";
-import { resolveScene } from "../motion/evaluate.js";
+import { resolveScene, tapeText } from "../motion/evaluate.js";
 import { REGISTER_BOUNDS, registerOf, type Register } from "../motion/register.js";
-import { EXIT_FACTOR, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
+import { EXIT_FACTOR, SETTLED_HOLD, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
 import { WEIGHTS } from "../themes/kits.js";
-import { TRANSITION_DEFS } from "../motion/transitions.js";
+import { isCut, TRANSITION_DEFS } from "../motion/transitions.js";
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
 import type { Finding, Severity } from "../spec/findings.js";
 import { ASPECTS, sceneTimings, type Storyboard } from "../spec/storyboard.js";
@@ -32,11 +32,13 @@ export const RULES = {
   "exit-slower-than-enter": "Exits should be quicker than entrances (attention has moved on).",
   "settle-interrupted": "A new tween on the same property starts before the previous one settled — motion never lands.",
   "read-time": "Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.",
+  "retype-hold": "A retyped phrase (m.retype) must be readable before its first key is deleted: ≈17 chars/s + 0.4s from when it starts typing, and ≥ 0.6s complete.",
+  "cycle-glance": "A word in a Cycle (m.cycle) is on show for under 0.25s between flips: it reads as flicker, not as a list. Fewer words, or more time between steps.",
   "hold-too-short": "Element exits almost as soon as it lands.",
   "ui-glance": "UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).",
   "scene-overrun": "Motion is still running after the scene has ended (it will be cut off).",
   "late-entrance": "Element enters in the last moments of the scene — it pops in and is gone.",
-  "dead-air": "Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.",
+  "dead-air": "Nothing moves for too long (2.5s; energetic register: 1.6s, a hold is about a second). Let the camera carry the hold (a push of 3% or less) or tighten the scene.",
   "crowded": "Too many independent elements animating at once — the eye can't follow (calm: 5, energetic: 7).",
   "unstaggered-group": "Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.",
   "slow-open": "The video's first motion starts late — the opening frame is dead.",
@@ -59,8 +61,9 @@ export const RULES = {
   "exit-bounce": "litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).",
   "expressive-budget": "litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive. Energetic register: up to three (a group counts once).",
   "material-motion": "litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.",
-  "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter). Tracking, weight, blur and filters perform.",
+  "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter, a cell's radius). Tracking, weight, blur and filters perform.",
   "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.",
+  "camera-edge": "The camera shows past the edge of the scene: a pan can be at most what the zoom adds (|x| ≤ (scale − 1) × half the width, the same for y), and the camera never zooms below 1.",
   "camera-drift": "The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).",
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
   "text-fade": "Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).",
@@ -100,7 +103,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "blurX", "blurY", "match", "morph"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */
@@ -112,6 +115,8 @@ const ROTATION = new Set<string>(["rotate", "rotateX", "rotateY"]);
 const isRotation = (t: Tween) => Object.keys(t.props).filter((p) => SPATIAL_PROPS.has(p as PropName)).every((p) => ROTATION.has(p));
 /** Copy (not UI imagery) with readable words of its own. */
 const isCopy = (e: ElementInfo | undefined) => !!e && !e.ui && !e.decor && e.role !== "decor" && e.ownText.replace(/[\s\d.,%+$€£-]/g, "").length >= 2;
+/** m.cycle: the shortest time a word may show between flips. */
+const CYCLE_GLANCE = 0.25;
 const localOf = (id: string) => id.slice(id.indexOf(".") + 1);
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -150,7 +155,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
       if ((t.kind === "enter" || t.kind === "exit") && isSpatial(t) && t.duration < 0.15 && !allowed(t, "duration-too-fast")) {
         add("duration-too-fast", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "use the responsive spring (the preset default) or the exit presets' derived timing" });
       }
-      if ((t.kind === "enter" || t.kind === "exit" || t.kind === "emphasis") && !t.counter && t.duration > 1.6 && !allowed(t, "duration-too-slow")) {
+      if ((t.kind === "enter" || t.kind === "exit" || t.kind === "emphasis") && !t.counter && !t.tape && t.duration > 1.6 && !allowed(t, "duration-too-slow")) {
         add("duration-too-slow", "warning", sc, `${localOf(t.target)} ${t.kind} takes ${t.duration}s`, { ...where, suggestion: "entrances are springs (≈0.35s responsive, ≈0.58s expressive); slow drift belongs to the camera" });
       }
       if (
@@ -202,7 +207,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
         }
       }
       if (t.preset && (t.preset === "maskUp" || t.preset === "maskDown" || t.preset === "maskOut") && !t.split && !allowed(t, "mask-needs-split")) {
-        add("mask-needs-split", "info", sc, `${localOf(t.target)} uses ${t.preset} without split`, { ...where, suggestion: 'add split: "lines" (or wrap it in an overflow-hidden parent)' });
+        add("mask-needs-split", "warning", sc, `${localOf(t.target)} uses ${t.preset} without split: it travels ${t.preset === "maskOut" ? "up" : "in"} its own height with nothing to hide it`, { ...where, suggestion: 'add split: "lines" (or, inside an overflow-hidden parent, allow: ["mask-needs-split"])' });
       }
       if (t.kind !== "transition") {
         const bounce = bounceOf(t.ease);
@@ -237,15 +242,22 @@ export function lintTimeline(build: BuildResult): Finding[] {
         add("text-fade", "warning", sc, `${localOf(t.target)} fades in${inRegister}`, { ...where, suggestion: 'type it on (m.type) or wipe it on (m.enter(id, "wipeRight", { duration: "snap", ease: "steep" }))' });
       }
       if (t.kind === "enter") {
-        const far = Math.max(...(["x", "y"] as const).map((p) => Math.abs(t.props[p]?.[0] ?? 0)));
+        // The distance travelled: an entrance may land somewhere other than its layout place (a stacked notification).
+        const far = Math.max(...(["x", "y"] as const).map((p) => { const r = t.props[p]; return r && r[0] !== null ? Math.abs(r[0] - r[1]) : 0; }));
         if (far > B.maxTravel && !allowed(t, "travel-too-far")) {
           add("travel-too-far", "warning", sc, `${localOf(t.target)} enters from ${far}px away${inRegister}`, { ...where, suggestion: `travel ${TRAVEL}px (the preset default)${register === "calm" ? "" : `, ≤ ${B.maxTravel}px for a piece that lands`}` });
         }
       }
-      if (t.kind === "camera") {
+      // A measured move (m.zoomTo) has its values only once the runtime has measured the layout; it clamps its own pan.
+      if (t.kind === "camera" && !t.measure) {
         const zoom = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1));
         if (t.duration >= sc.duration * 0.6 && zoom > B.maxDrift + 1e-6 && !allowed(t, "camera-drift")) {
           add("camera-drift", "warning", sc, `the ambient camera zooms ${r2(zoom * 100)}% over the scene${inRegister}`, { ...where, suggestion: `push 1 → ${r2(1 + B.maxDrift)} or less; a deliberate focus move is a short inOut tween` });
+        }
+        const ends = [0, 1].map((k) => ({ s: t.props.scale?.[k] ?? 1, x: t.props.x?.[k] ?? 0, y: t.props.y?.[k] ?? 0 }));
+        const bare = ends.find((e) => e.s < 1 - 1e-6 || Math.abs(e.x) > (tl.width / 2) * (e.s - 1) + 0.5 || Math.abs(e.y) > (tl.height / 2) * (e.s - 1) + 0.5);
+        if (bare && !allowed(t, "camera-edge")) {
+          add("camera-edge", "warning", sc, `the camera at scale ${r2(bare.s)} pans ${Math.round(bare.x)}px, ${Math.round(bare.y)}px: the scene's edge shows`, { ...where, suggestion: `pan at most ${Math.round((tl.width / 2) * (bare.s - 1))}px across and ${Math.round((tl.height / 2) * (bare.s - 1))}px down at that scale, or zoom further` });
         }
         const ds = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1)) / Math.max(0.01, t.duration);
         const dx = Math.max(Math.abs((t.props.x?.[1] ?? 0) - (t.props.x?.[0] ?? 0)), Math.abs((t.props.y?.[1] ?? 0) - (t.props.y?.[0] ?? 0))) / Math.max(0.01, t.duration);
@@ -303,10 +315,11 @@ export function lintTimeline(build: BuildResult): Finding[] {
       if (outgoing) exitStart.set(t.target, Math.min(exitStart.get(t.target) ?? Infinity, t.start));
     }
     const textLeaf = (e: ElementInfo) => !e.decor && e.role !== "decor" && e.ownText.replace(/[\s\d.,%+$€£-]/g, "").length >= 2;
-    const counted = new Set(sc.tweens.filter((t) => t.counter).map((t) => t.target));
-    const SETTLED_HOLD = 0.6;
+    const counted = new Set(sc.tweens.filter((t) => t.counter || t.tape).map((t) => t.target));
+    // A Cycle's words that flip away are a rhythm, not copy: they get a glance, the last one a read.
+    const flipped = new Set(sc.tweens.filter((t) => t.preset === "cycle" && t.kind === "exit").map((t) => t.target));
     for (const e of build.elements) {
-      if (e.scene !== sc.scene || !textLeaf(e) || counted.has(e.id)) continue;
+      if (e.scene !== sc.scene || !textLeaf(e) || counted.has(e.id) || flipped.has(e.id)) continue;
       // Part of a larger copy element (e.g. an accent word inside a headline): judged with its parent.
       if (e.ancestors.some((a) => elements.get(a) && !elements.get(a)!.ui && textLeaf(elements.get(a)!))) continue;
       const chain = [e.id, ...e.ancestors];
@@ -324,7 +337,9 @@ export function lintTimeline(build: BuildResult): Finding[] {
         continue;
       }
       const window = until - readable;
-      const need = readTime(e.text.length);
+      // A line that holds a Cycle is read with the word that stays, not the ones that flip away.
+      const flippedAway = [...flipped].filter((f) => elements.get(f)?.ancestors.includes(e.id)).reduce((n, f) => n + elements.get(f)!.text.length, 0);
+      const need = readTime(e.text.length - flippedAway);
       const quote = `"${e.text.slice(0, 48)}${e.text.length > 48 ? "…" : ""}"`;
       if (window < need) {
         add("read-time", "error", sc, `${quote} is on screen for ${r2(Math.max(0, window))}s of reading, needs ~${r2(need)}s`, {
@@ -339,6 +354,45 @@ export function lintTimeline(build: BuildResult): Finding[] {
           suggestion: `let it hold ≥ ${SETTLED_HOLD}s after the last part lands (tighten the stagger or start earlier)`,
         });
       }
+    }
+    for (const id of flipped) {
+      const shownFrom = Math.max(0, ...sc.tweens.filter((t) => t.target === id && t.preset === "cycle" && t.kind === "enter").map((t) => t.start));
+      const exit = sc.tweens.find((t) => t.target === id && t.preset === "cycle" && t.kind === "exit")!;
+      if (exit.start - shownFrom < CYCLE_GLANCE && !allowed(exit, "cycle-glance")) {
+        add("cycle-glance", "warning", sc, `${localOf(id)} is on show for ${r2(exit.start - shownFrom)}s`, { element: id, time: at(shownFrom), suggestion: `step every ${CYCLE_GLANCE}s or more` });
+      }
+    }
+    // Retyped phrases: each is read from its first key until its first key is deleted.
+    const tapes = new Map<string, Tween[]>();
+    for (const t of sc.tweens) if (t.tape && t.props.typed) tapes.set(t.target, [...(tapes.get(t.target) ?? []), t]);
+    for (const [id, list] of tapes) {
+      list.sort((a, b) => a.start - b.start);
+      const grows = (t: Tween) => {
+        const [from, to] = t.props.typed as [number, number];
+        return tapeText(t.tape!, to).length > tapeText(t.tape!, from ?? 0).length;
+      };
+      // A phrase types as a run of keys: judge the run, from its first key to the key that completes it.
+      let runStart: Tween | undefined;
+      list.forEach((t, i) => {
+        if (!grows(t)) return void (runStart = undefined);
+        runStart ??= t;
+        if (list[i + 1] && grows(list[i + 1])) return;
+        const first = runStart;
+        runStart = undefined;
+        const phrase = tapeText(t.tape!, (t.props.typed as [number, number])[1]);
+        const until = list[i + 1]?.start ?? sc.duration;
+        const typed = t.start + t.duration;
+        const typing = typed - first.start;
+        const window = until - (first.start + 0.3 * typing);
+        const need = readTime(phrase.length);
+        if ((window < need || until - typed < SETTLED_HOLD) && !allowed(t, "retype-hold")) {
+          add("retype-hold", "error", sc, `"${phrase}" holds ${r2(Math.max(0, until - typed))}s once typed (${r2(Math.max(0, window))}s of reading, needs ~${r2(need)}s)`, {
+            element: id,
+            time: at(typed),
+            suggestion: `delete it ${r2(Math.max(need - window, SETTLED_HOLD - (until - typed)))}s later: drop the phrase's "hold", or move the next phrase's "at"`,
+          });
+        }
+      });
     }
     for (const [id, end] of enterEnd) {
       const ex = exitStart.get(id);
@@ -377,7 +431,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
     if (cursor < sc.duration) gaps.push([cursor, sc.duration]);
     for (const [a, b] of gaps) {
       const len = b - a;
-      if (len > 2.5) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a), suggestion: "m.camera({ scale: [1, 1.03] }), or tighten the scene" });
+      if (len > B.maxStill) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)${inRegister}`, { time: at(a), suggestion: "m.camera({ scale: [1, 1.03] }) over the hold, a caret blink on an end card, or tighten the scene" });
       else if (len > 1.6) add("dead-air", "info", sc, `static for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a) });
     }
 
@@ -393,8 +447,11 @@ export function lintTimeline(build: BuildResult): Finding[] {
 
     // Unstaggered groups.
     const groups = new Map<string, Span[]>();
+    // A group declared together and staggered (a wave across a grid's columns) is choreographed already.
+    const groupStarts = new Map<string, Set<number>>();
+    for (const s of ss) if (s.tween.group) groupStarts.set(s.tween.group, (groupStarts.get(s.tween.group) ?? new Set()).add(s.start));
     for (const s of ss) {
-      if (s.tween.kind !== "enter" || s.tween.split) continue;
+      if (s.tween.kind !== "enter" || s.tween.split || (s.tween.group && groupStarts.get(s.tween.group)!.size > 1)) continue;
       const k = `${s.tween.preset ?? "custom"}@${s.start}`;
       (groups.get(k) ?? groups.set(k, []).get(k)!).push(s);
     }
@@ -469,7 +526,8 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
   const accents = Math.max(...sb.scenes.map((s) => REGISTER_BOUNDS[registerOf(sb, s.id)].accents));
   sb.scenes.forEach((sc, i) => {
     const t = sc.transition;
-    if (!t || t.type === "cut" || i === sb.scenes.length - 1) return;
+    // Cuts and match cuts are the primary: not accents, no craft range to keep.
+    if (!t || isCut(t) || i === sb.scenes.length - 1) return;
     const def = TRANSITION_DEFS[t.type];
     const at = r2(timings[i].start + sc.duration - t.duration);
     const where = { source: "lint" as const, scene: sc.id, time: at };

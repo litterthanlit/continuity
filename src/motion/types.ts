@@ -44,6 +44,7 @@ export const PROPS = [
   "tracking", // letter-spacing, em
   "draw", // 0..1 svg stroke reveal (pathLength=1)
   "counter", // number rendered as text
+  "typed", // keystrokes along the tween's tape (Tween.tape): the element shows the text at that keystroke
   "wght", // font-weight (variable families)
   "wdth", // font-stretch, % (width-variable families)
   "opsz", // optical size axis
@@ -54,6 +55,8 @@ export const PROPS = [
   "blurY", // px, directional (motion) blur along y
   "match", // 0..1 progress of a shared-element carrier (the morph transition) from its outgoing to its incoming place
   "morph", // shape of a <Morph>: 0 its first shape, 1 the second … (fractional = in between)
+  "accent", // 0..1: live input in the accent's text tone (1) settling to the element's ink (0) — m.retype's accent
+  "radius", // corner radius, % of the element's size: 0 square … 50 a circle (a cell becoming a dot)
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
@@ -96,6 +99,7 @@ export const BASE_VALUES: Record<PropName, number> = {
   tracking: 0,
   draw: 1,
   counter: 0,
+  typed: 0,
   wght: 400,
   wdth: 100,
   opsz: 16,
@@ -106,6 +110,8 @@ export const BASE_VALUES: Record<PropName, number> = {
   blurY: 0,
   match: 1,
   morph: 0,
+  radius: 0,
+  accent: 0,
 };
 
 /** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
@@ -124,7 +130,9 @@ export type SplitMode = "chars" | "words" | "lines";
 /** A shape presentation driven by the `fx` channel (src/motion/fx.ts). */
 export type FxSpec =
   /** Feathered linear mask; `angle` is a CSS gradient angle (90 = the edge travels right). `feather` in % of the gradient line. */
-  { kind: "wipe"; angle: number; feather: number };
+  | { kind: "wipe"; angle: number; feather: number }
+  /** Square cells revealed in an ordered dither that sweeps along `angle` (CSS angle). `cols` × `rows` cells cover the element (`rows` may be fractional: cells stay square). */
+  | { kind: "pixels"; angle: number; cols: number; rows: number };
 
 export type StaggerFrom = "start" | "end" | "center" | "edges";
 
@@ -165,8 +173,19 @@ export interface Tween {
   stagger?: Stagger;
   preset?: string;
   counter?: CounterFormat;
+  /**
+   * Phrases typed and deleted in turn (m.retype): keystroke k of the tape types phrase 0, then
+   * deletes it, then types phrase 1… The `typed` channel says which keystroke the element shows.
+   */
+  tape?: string[];
   /** Shape presentation the `fx` channel drives. */
   fx?: FxSpec;
+  /**
+   * Geometry the runtime measures once at prepare (layout is unknown to the build) and writes into
+   * this tween's values, as the morph carriers do: `focus` zooms the camera until `target` fills
+   * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end.
+   */
+  measure?: { kind: "focus"; target: string; fill: number } | { kind: "match"; from: string };
   /** Lint rule ids this tween deliberately breaks. */
   allow?: string[];
   /** Tweens declared together (one call on several targets) share a group — choreographed as one unit. */

@@ -84,15 +84,19 @@ Type (litt: weight and ink by role)
 - `<Emph text word>{(w) => …}</Emph>` — treat one word of storyboard copy on its own (by ink).
 - `<Fit ct max min>` — single-line auto-fit for variable data (never to fit more copy).
 - `<Counter ct from decimals prefix suffix>` + `m.counter(ct, { to })` (tabular figures).
+- `<Typed ct caret?>` + `m.retype(ct, [...])` — the ending of a line, deleted and retyped after a
+  fixed lead-in; caret `<ct>-caret`. Left-align the line so the lead-in never moves.
+- `<Cycle ct words align?>` + `m.cycle(ct, { times })` — a word that flips in place (`<ct>-0…`).
+  The slot is as wide as the widest word: end the line on it.
 
 Product UI (litt's components at 2×; UI text ≥ 26px; sub-parts expose `<ct>-…` ids)
 - `<Window ct title width height>` (body `<ct>-body`) · `<Browser ct url>` (`<ct>-url`, `<ct>-body`) · `<Phone ct width>` (`<ct>-screen`)
 - `<Card ct>` (flat, raised) · `<Button variant="primary|secondary|ghost" size="sm|md|lg">` (primary = the one accent fill per frame) · `<Tag tone="neutral|success|warning|danger" hue?>` (status in words; a category takes a data hue) · `<Kbd>` · `<Avatar initials hue?>` (identity = a data hue)
 - `<Input ct value placeholder focus?>` → type `<ct>-text`, blink `<ct>-caret` · `<Toggle ct on?>` → `<ct>-knob` x 0→32, `<ct>-on` + `<ct>-knob-on` opacity (instant) · `<Meter ct value hue?>` → `<ct>-fill` scaleX
 - `<Segmented ct items active segment?>` — the selected segment raised (P12); move `<ct>-thumb` x by `segment`, `ink`/`dim` the labels `<ct>-s0…`
-- `<Toast ct title body tone?>` (glass) · `<Sidebar ct items active heading?>` (`<ct>-i0…`; the current item is the raised segment) · `<List ct rows>` (`<ct>-r0…`; rows `{ title, meta?, tag?, tone? }`)
+- `<Toast ct title body tone? width? height?>` (glass) · `<NotificationStack ct items width? rowHeight? gap?>` + `m.stackIn(ct, { at, every })` (newest on top, `<ct>-0…` in arrival order; one line per title and body) · `<Sidebar ct items active heading?>` (`<ct>-i0…`; the current item is the raised segment) · `<List ct rows>` (`<ct>-r0…`; rows `{ title, meta?, tag?, tone? }`)
 - `<CodeBlock ct code>` (lines `<ct>-l0…`, litt's quiet highlighting) · `<Terminal ct lines>` (`<ct>-l0…`)
-- `<BarChart ct data current? hue?>` (bars `<ct>-b0…`, `grow` from the baseline; fg 55%, the current bar fg) · `<LineChart ct data hue?>` (`<ct>-line` draw, `<ct>-dot`) · `<Stat ct value label unit? delta? deltaTone? size?>` (label above, `<ct>-label`, `<ct>-delta`; + `m.counter`)
+- `<BarChart ct data current? hue?>` (bars `<ct>-b0…`, `grow` from the baseline; fg 55%, the current bar fg) · `<LineChart ct data hue?>` (`<ct>-line` draw, `<ct>-dot`) · `<Stat ct value label unit? delta? deltaTone? size?>` (label above, `<ct>-label`, `<ct>-delta`; + `m.counter`) · `<Ring ct value max? size? stroke? hue? label? suffix?>` + `m.ring(ct, { at })` (a gauge: the arc `<ct>-arc` fills and the number `<ct>` counts together, to `value`) · `<DotGrid ct values from? rows? cell? gap? hue? dots?>` + `m.grid(ct, "fill" | "dots", { at, span?, wave? })` (a contribution graph, `values[col * rows + row]` in 0..1; cells `<ct>-<i>` fill on a wave, or with `from` (the before) light up from it; then the squares turn into dots sized by value). Data hues are `blue amber teal violet rose`; anything else fails the build
 - `<Cursor ct class="left-… top-…">` (+ `<ct>-ripple`, the focus colour)
 
 Imagery and annotation
@@ -151,6 +155,15 @@ m.counter(target, { from?, to, at, duration?, decimals?, prefix?, suffix? })
 m.path("cursor", [{ x: -272, y: -336 }, { x: 40, y: 16, hold: 0.3 }], { at })   // waypoints, px offsets
 m.click("cursor", { at })                                   // press + focus ring
 m.type("search-text", { at, cps: 22 })                      // typeOn by chars
+m.retype("end", [text.e0, { text: text.e1, at: "b2" }], { at: "b1", caret: "end-caret" })   // type, hold to read, delete, type the next
+m.cycle("tool", { times: ["b1", "b2", "b3"], ease: "steep", duration: "snap" })            // flip a <Cycle> one word per time
+m.stackIn("alerts", { at: "b1", every: 0.55, ease: "steep" })                             // notifications arrive, the stack steps down as one
+m.ring("score", { at: "b2", duration: "slow" })                                           // a <Ring>'s arc and number fill together
+m.grid("days", "fill", { at: "b1", span: 0.8 }); m.grid("days", "dots", { at: "b2" })   // a <DotGrid> fills on a wave, then turns to dots
+m.pullBack("browser", { at: "b1" })                                                      // open on a centred device's screen, full frame, and fly back to the device
+m.zoomTo("site-text", { at: "b3", fill: 1.4 })                                          // camera in on any element (measured at runtime); fill > 1 is a macro
+m.grid("days", "grow", { at: "b1" })                                                     // a <DotGrid> builds as dots that swell into squares, on a wave
+m.retype("end", phrases, { accent: true })                                               // each phrase types in the accent and settles to ink as it lands
 m.blink("search-caret", { at, until })                      // caret blink — the one loop litt allows
 m.loop(target, { rotate: 8 }, { period: 2 })                // a sine swing; warns (ambient-loop) — energetic: an info, for an object that swings
 m.time(at) → seconds · m.endOf(id) → seconds
@@ -210,7 +223,10 @@ Using them in a view is a build error (`reserved-id`).
 Element roles: `headline title body label caption cta stat logo ui decor media`.
 
 Music (`docs/decisions/0008`): `music.src` is an audio file in the project (WAV keeps timing exact);
-`start` is where it starts in the video, `offset` how far into the track; `bpm` / `downbeat` (a
+`start` is where it starts in the video, `offset` how far into the track; `stop` cuts it dead so an
+end card lands in silence (`{ "scene": "end" }` once the cut or transition into it has landed,
+`{ "scene": "end", "at": { "beat": 1 } }` from the scene's start, or video seconds; a 10 ms fade
+takes the click off, `fadeOut` makes it longer); `bpm` / `downbeat` (a
 track time on a bar line) override the analysis when it hears half time or a pickup. With music, a
 scene's `duration` may be `{ "beats": 8 }` or `{ "bars": 2 }` — it ends exactly on that beat, so
 the cut is on the music — and a story beat's `at` may be `{ "beat": 2 }`, `{ "bar": 1 }` or

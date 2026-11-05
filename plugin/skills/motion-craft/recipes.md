@@ -205,6 +205,22 @@ m.tween("sel", { clipLeft: [0, 100] }, { at: "after:sel", duration: "snap", ease
 ```
 Lighter version for a label: `m.enter("label", "wipeRight", { duration: "snap", ease: "steep" })`.
 
+## One phrase, one UI (the retype)
+```tsx
+<Headline ct="line" balance={false} class="whitespace-nowrap">
+  <span class="text-fg-muted">{text.lead}</span> <Typed ct="end" />
+</Headline>
+```
+```ts
+// The lead-in stays; the ending is deleted back to it and retyped on each beat. Each claim's
+// card lands with its last key (22 keys/s) and leaves as the claim is deleted.
+m.retype("end", [text.e0, { text: text.e1, at: "b2" }, { text: text.e2, at: "b3" }], { at: "b1", caret: "end-caret" });
+m.tween("rank", { y: [48, 0], opacity: [0, 1] }, { at: m.time("b1") + text.e0.length / 22, duration: "snap", ease: "steep", kind: "enter" });
+m.tween("rank", { opacity: [1, 0] }, { at: "b2-0.3", duration: "instant", ease: "out", kind: "exit" });
+```
+Space the beats ~2s apart: the `retype-hold` lint wants each claim readable before its first key
+goes. The full scene is `projects/_launch/scenes/value.tsx`.
+
 ## The terminal (a machine speaks)
 ```tsx
 <Window ct="term" title="zsh" width={864} height={288}>
@@ -247,6 +263,23 @@ export const GLOBE = { left: 316, top: 316, size: 448 };
 Scene A ends on the pixel globe at `GLOBE`; scene B opens on a grid of 1s and 0s occupying the
 same box, already settled, then the digits start to change. The storyboard transition is a plain
 cut — the rhyme is the geometry, not an effect.
+
+When the two elements sit in different places (a headline word becomes a small label), let the
+cut carry it: `"transition": { "type": "match", "pairs": [["tool-3", "brand"]] }`. It is still a
+hard cut, but the incoming element starts exactly where its partner was (place and size, measured
+by the runtime) and settles home over the duration. Give that element no entrance of its own.
+
+## A zoom-in (the macro)
+```ts
+m.type("site-text", { at: "b2", cps: 18 });
+m.zoomTo("site-text", { at: "b3", fill: 1.4 }); // inOut over 1.4s: a dive, not a lunge
+m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: "b4", duration: "linger", ease: "inOut" });
+```
+The runtime measures where the element is, so it works on any layout; the pan stops before the
+scene's edge would show. The zoom runs about its fixed point at a steady proportional rate, so the
+ease shapes it; a big zoom needs time (a 15× macro wants ~1.4s on inOut). Never `steep` for a zoom:
+it doubles the frame's scale in a single frame (`zoom-lunge` reports it, with the time it needs).
+The full scene is `projects/_launch/scenes/input.tsx`.
 
 ## The mirrored ending (close the loop)
 ```jsonc

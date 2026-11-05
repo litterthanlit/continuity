@@ -30,6 +30,7 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
       easeName: tw.easeName,
       preset: tw.preset,
       counter: tw.counter,
+      tape: tw.tape,
       fx: tw.fx,
       allow: tw.allow,
       mask: tw.mask,
@@ -94,9 +95,14 @@ export interface CompiledScene {
   channels: Map<string, Map<PropName, Segment[]>>;
   loops: Map<string, Loop[]>;
   counters: Map<string, CounterFormat>;
+  tapes: Map<string, string[]>;
   fx: Map<string, FxSpec>;
   /** key → squash-and-stretch amount (the largest any of its tweens asks for). */
   squash: Map<string, number>;
+  /** Frames per second: what one frame of shutter blur is measured against. */
+  fps: number;
+  /** Keys that move fast enough to need the shutter's motion blur (sampleScene derives it per frame). */
+  shutter: Set<string>;
   resolved: ResolvedTween[];
   bases: SceneTimeline["bases"];
 }
@@ -109,10 +115,18 @@ function cachedEase(rt: ResolvedTween): EaseFn {
   return f;
 }
 
-export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledScene {
+/** Motion blur per px/frame of travel: a 180° shutter (as push transitions use, easing.sigmaFor). */
+export const SHUTTER = 0.144;
+/** A move gets the shutter's blur when it would peak at this σ (px) or more; below it the blur is unseen. */
+const SHUTTER_MIN = 1.5;
+/** Layers the build owns: the scene root, its camera and transition layers keep their own blur. */
+const OWN_LAYER_KEY = /\.(scene|camera|reveal|fx)$/;
+
+export function compileScene(scene: SceneTimeline, parts: PartCounts, fps = 30): CompiledScene {
   const resolved = resolveScene(scene, parts);
   const channels = new Map<string, Map<PropName, Segment[]>>();
   const counters = new Map<string, CounterFormat>();
+  const tapes = new Map<string, string[]>();
   const fx = new Map<string, FxSpec>();
   const squash = new Map<string, number>();
   for (const rt of resolved) {
@@ -124,6 +138,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
       segs.push({ start: rt.start, end: rt.start + rt.duration, from: range[0], to: range[1], ease: cachedEase(rt) });
     }
     if (rt.counter) counters.set(rt.key, rt.counter);
+    if (rt.tape) tapes.set(rt.key, rt.tape);
     if (rt.fx) fx.set(rt.key, rt.fx);
     if (rt.squash) squash.set(rt.key, Math.max(squash.get(rt.key) ?? 0, Math.min(0.5, rt.squash)));
   }
@@ -135,7 +150,23 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts): CompiledS
     list.push(l);
     if (!channels.has(l.target)) channels.set(l.target, new Map());
   }
-  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, fx, squash, resolved, bases: scene.bases };
+  // Fast movers: the fastest any x/y segment travels, in px per frame, at its ease's steepest.
+  const shutter = new Set<string>();
+  for (const [key, byProp] of channels) {
+    if (OWN_LAYER_KEY.test(key) || byProp.has("blurX") || byProp.has("blurY")) continue;
+    let peak = 0;
+    for (const prop of ["x", "y"] as const) {
+      for (const seg of byProp.get(prop) ?? []) {
+        const dur = seg.end - seg.start;
+        if (!(dur > 0) || seg.from === seg.to) continue;
+        let slope = 0;
+        for (let i = 0; i < 40; i++) slope = Math.max(slope, Math.abs(seg.ease((i + 1) / 40) - seg.ease(i / 40)) * 40);
+        peak = Math.max(peak, (Math.abs(seg.to - seg.from) * slope) / (dur * fps));
+      }
+    }
+    if (SHUTTER * peak >= SHUTTER_MIN) shutter.add(key);
+  }
+  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, tapes, fx, squash, fps, shutter, resolved, bases: scene.bases };
 }
 
 export type Values = Partial<Record<PropName, number>> & {
@@ -196,12 +227,53 @@ function channelValue(segs: Segment[], t: number): number {
   return active.from + (active.to - active.from) * active.ease(p);
 }
 
+/** The segment in force at `t` and its eased progress, while it runs. */
+function running(segs: Segment[], t: number): { seg: Segment; e: number } | undefined {
+  let active: Segment | undefined;
+  for (const s of segs) {
+    if (s.start <= t) active = s;
+    else break;
+  }
+  if (!active || t >= active.end) return undefined;
+  const span = active.end - active.start;
+  return { seg: active, e: active.ease(span <= 0 ? 1 : (t - active.start) / span) };
+}
+
+/** Below this change in scale a move is not a zoom: its path stays as it is. */
+const ZOOM_MIN = 0.05;
+
+/**
+ * A zoom (a scale change, with or without a pan, in one move) runs about its fixed point, the one
+ * place the start and end framings agree, at a steady proportional rate: scale on a log curve,
+ * every point on a straight line. Interpolating scale linearly instead crawls, then lunges (a
+ * 15x zoom quadrupled its size in a frame). The ends are exactly the move's own values.
+ */
+function zoomPath(byProp: Map<PropName, Segment[]>, t: number, v: Values) {
+  const scale = byProp.get("scale");
+  const run = scale && running(scale, t);
+  if (!run) return;
+  const { seg, e } = run;
+  if (!(seg.from > 0 && seg.to > 0) || Math.abs(Math.log(seg.to / seg.from)) < ZOOM_MIN) return;
+  const r = seg.to / seg.from;
+  const rho = Math.pow(r, e);
+  v.scale = seg.from * rho;
+  for (const axis of ["x", "y"] as const) {
+    const pan = byProp.get(axis)?.find((p) => p.start === seg.start && p.end === seg.end);
+    const t0 = pan ? pan.from : (v[axis] ?? 0);
+    const t1 = pan ? pan.to : t0;
+    // The fixed point, relative to the transform origin: where start and end framings coincide.
+    const f = (t1 - r * t0) / (1 - r);
+    if (pan || v[axis] !== undefined) v[axis] = f * (1 - rho) + rho * t0;
+  }
+}
+
 /** Values of every animated channel at scene-local time `t`. */
 export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
   const out = new Map<string, Values>();
   for (const [key, byProp] of c.channels) {
     const v: Values = {};
     for (const [prop, segs] of byProp) v[prop] = channelValue(segs, t);
+    zoomPath(byProp, t, v);
     const loops = c.loops.get(key);
     if (loops) {
       for (const l of loops) {
@@ -209,6 +281,16 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
         const base = v[l.prop] ?? baseValue(c.bases, key.split("::")[0], l.prop);
         v[l.prop] = base + l.amplitude * Math.sin(2 * Math.PI * ((t - l.start) / l.period + l.phase));
       }
+    }
+    // The shutter: a fast mover smears along its path, by its speed this frame (gone as it settles).
+    if (c.shutter.has(key)) {
+      const xs = byProp.get("x");
+      const ys = byProp.get("y");
+      const speed = (segs: Segment[] | undefined) => (segs ? Math.abs(channelValue(segs, t + H) - channelValue(segs, t - H)) / (2 * H) : 0);
+      const bx = (SHUTTER * speed(xs)) / c.fps;
+      const by = (SHUTTER * speed(ys)) / c.fps;
+      v.blurX = bx >= 0.5 ? bx : 0;
+      v.blurY = by >= 0.5 ? by : 0;
     }
     const k = c.squash.get(key);
     if (k) {
@@ -234,6 +316,7 @@ export interface StyleOut {
   /** The ink channel: a mix of the grey and fg. */
   color?: string;
   strokeDashoffset?: string;
+  borderRadius?: string;
   text?: string;
   fontWeight?: string;
   fontStretch?: string;
@@ -265,6 +348,22 @@ const f4 = (n: number) => {
   return Object.is(r, -0) ? "0" : String(r);
 };
 
+/**
+ * The text a tape shows at keystroke `k`: each phrase is typed one key at a time, then deleted
+ * one key at a time, before the next. Fractional keystrokes round down (a key is pressed or not).
+ */
+export function tapeText(tape: string[], k: number): string {
+  let left = Math.floor(k + 1e-6);
+  for (const phrase of tape) {
+    const n = [...phrase].length;
+    if (left <= n) return [...phrase].slice(0, left).join("");
+    left -= n;
+    if (left <= n) return [...phrase].slice(0, n - left).join("");
+    left -= n;
+  }
+  return "";
+}
+
 export function formatCounter(value: number, fmt: CounterFormat): string {
   const fixed = value.toFixed(fmt.decimals);
   const [int, dec] = fixed.split(".");
@@ -276,7 +375,7 @@ export function formatCounter(value: number, fmt: CounterFormat): string {
 }
 
 /** Turn channel values into CSS. Only channels that are animated are emitted. */
-export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleOut {
+export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: string[]): StyleOut {
   const s: StyleOut = {};
   const has = (p: PropName) => v[p] !== undefined;
   const g = (p: PropName) => v[p] ?? BASE_VALUES[p];
@@ -306,10 +405,9 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleO
     s.filter = parts.join(" ");
   }
   if (CLIP_PROPS.some(has)) {
-    s.clipPath =
-      "inset(" +
-      CLIP_PROPS.map((p) => f4(Math.min(100, Math.max(0, g(p)))) + "%").join(" ") +
-      ")";
+    const insets = CLIP_PROPS.map((p) => Math.min(100, Math.max(0, g(p))));
+    // Fully open is no clip: inset(0) would keep cutting ink that leaves the box (a descender under tight leading).
+    s.clipPath = insets.every((v) => v === 0) ? "none" : "inset(" + insets.map((v) => f4(v) + "%").join(" ") + ")";
   }
   if (has("fx") && fx) {
     const shape = fxStyle(fx, g("fx"));
@@ -322,8 +420,14 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec): StyleO
     const p = Math.round(Math.min(1, Math.max(0, g("ink"))) * 1000) / 10;
     s.color = "color-mix(in oklab, var(--color-fg) " + p + "%, var(--color-fg-muted))";
   }
+  if (has("accent")) {
+    const p = Math.round(Math.min(1, Math.max(0, g("accent"))) * 1000) / 10;
+    s.color = "color-mix(in oklab, var(--color-accent-text) " + p + "%, " + (s.color ?? "var(--color-fg)") + ")";
+  }
+  if (has("radius")) s.borderRadius = f4(Math.min(50, Math.max(0, g("radius")))) + "%";
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });
+  if (has("typed") && tape) s.text = tapeText(tape, g("typed"));
   if (has("wght")) s.fontWeight = f4(Math.min(1000, Math.max(1, g("wght"))));
   if (has("wdth")) s.fontStretch = f4(Math.min(200, Math.max(50, g("wdth")))) + "%";
   for (const [prop, tag] of Object.entries(VARIATION_AXES) as Array<[PropName, string]>) {

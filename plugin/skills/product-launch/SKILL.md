@@ -73,6 +73,38 @@ like an interface, not like an object:
   across the matched text (the selection-block recipe). Queries type on (`m.type`, linear).
 - `pop` only for what acts like an object over the UI — a sticker, a badge, a marker — never
   for windows, rows or chrome.
+- **Zoom in, cut on the match.** Go in on the one thing to read (`m.zoomTo(id, { fill })`; above 1 is
+  a macro) and back out; carry an element across a cut with a `match` transition instead of fading.
+- **One phrase, one UI.** The sentence narrates and the UI proves it: a fixed lead-in ("Your
+  website is") stays still while `m.retype` deletes the ending and types the next claim, and each
+  claim's UI lands with its last key and leaves as it is deleted. Give each phrase its beat
+  (`{ text, at: "b2" }`); the `retype-hold` lint keeps every claim on screen long enough to read.
+  `accent: true` types each claim in the accent, like live input, and settles it to ink as it lands.
+  It is a deliberate exception to P1 (no accent word in copy), and critics count it as one: use it
+  only when the brief asks for that look, and say so in the brief.
+  Three or four claims, never more.
+- A name reveal can flip a `<Cycle>` through stand-ins on the beats and land on the product
+  (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
+  `<Phone>` for a lock screen: the stack steps down as one, so cards never cross. A score is a
+  `<Ring>` (`m.ring`): the arc and its number fill as one, so the figure never disagrees with it.
+  A grid can also build as dots that swell into squares on the wave (`m.grid(ct, "grow")`), the way
+  a contribution graph fills in. A before and after over time is one `<DotGrid values={after} from={before}>`: the sparse before
+  is on screen, `m.grid(ct, "fill")` lights it up to the after on a wave, then `"dots"` turns the
+  squares into dots sized by each day: one series, one data hue (never the accent).
+- **The reveal that explains scale.** Open a scene on the product's own screen, full frame, and
+  fly back to show the device it lives in: put a `<Browser>`, `<Window>` or `<Phone>` in the
+  frame's centre (`<Center>`) and `m.pullBack(ct, { at: "b1" })`. The pull-back is the scene's
+  reveal: give it its own beat after the cut lands, never under a transition (a `pixels` or
+  `depth` into the scene hides it). The scene before it can cut
+  straight in when it ends on the same flat surface as the screen. Then load the content and push
+  in on the action with `m.camera` (a pan never wider than its zoom: `camera-edge`).
+- **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`;
+  it waits for the transition into the card to land). The silence is the full stop, but the frame
+  still breathes: a caret blinks on a typed URL (`m.blink`), or the camera pushes ≤ 3% over the
+  hold. An energetic hold past ~1.6s with nothing moving is `dead-air`.
+- **Devices fit or bleed.** A Window, Browser or Phone sits inside title-safe (a Phone in 16:9 is
+  at most ~470px wide) or bleeds off the frame by a fifth or more on purpose; one that grazes the
+  edge is `frame-edge`.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for
   your own UI, which is already in the palette).
 

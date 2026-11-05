@@ -11,7 +11,7 @@
  * deliberately (e.g. after a harness change), not in CI.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PKG_ROOT as ROOT, PROJECTS_DIR } from "../src/paths.js";
 import { readState } from "../src/cli/lib/store.js";
@@ -33,6 +33,9 @@ interface BriefResult {
   error?: string;
 }
 
+/** The Bash commands this repo allows its agents (.claude/settings.json). */
+const PROJECT_ALLOW = (JSON.parse(readFileSync(join(ROOT, ".claude/settings.json"), "utf8")) as { permissions: { allow: string[] } }).permissions.allow;
+
 const briefs = () => readdirSync(BRIEFS).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, "")).sort();
 
 function flag(args: string[], name: string): string | undefined {
@@ -42,12 +45,20 @@ function flag(args: string[], name: string): string | undefined {
 
 function runBrief(brief: string, runId: string, model?: string): BriefResult {
   const project = `bench-${brief}-${runId}`;
+  // A brief's input files (bench/assets/<brief>/) are staged in the project, so every run gets the
+  // same input without copying anything (runs may not run cp, nor write outside projects/).
+  const assets = join(ROOT, "bench/assets", brief);
+  if (existsSync(assets)) cpSync(assets, join(PROJECTS_DIR, project, "assets"), { recursive: true });
   const prompt =
     `/make-video ${join("bench/briefs", `${brief}.md`)} --slug ${project}\n\n` +
     `This is an unattended benchmark run: never ask the user questions — make reasonable assumptions and record them in brief.md. ` +
     `Finish with the final render and report.`;
-  const args = ["-p", prompt, "--output-format", "json", "--permission-mode", "acceptEdits",
-    "--allowedTools", "Bash(pnpm ct:*) Bash(pnpm -s ct:*) Read Write Edit Glob Grep Task Agent"];
+  // The project's own allow list (.claude/settings.json) is ignored until someone accepts the workspace
+  // trust dialog, which a fresh checkout or container never has: grant the same commands here.
+  const allow = [...PROJECT_ALLOW, "Read", "Write", "Edit", "Glob", "Grep", "Task", "Agent"];
+  // The run is measured, so it must not change what measures it: no edits outside projects/.
+  const engine = ["src", "bin", "plugin", "templates", "tests", "bench", "scripts", ".claude"].flatMap((d) => [`Edit(${d}/**)`, `Write(${d}/**)`]);
+  const args = ["-p", prompt, "--output-format", "json", "--permission-mode", "acceptEdits", "--allowedTools", allow.join(" "), "--disallowedTools", engine.join(" ")];
   if (model) args.push("--model", model);
   const t0 = Date.now();
   const r = spawnSync("claude", args, { cwd: ROOT, encoding: "utf8", timeout: 3 * 60 * 60_000, maxBuffer: 64 * 1024 * 1024 });
@@ -64,7 +75,7 @@ function runBrief(brief: string, runId: string, model?: string): BriefResult {
   return {
     brief,
     project,
-    ok: r.status === 0 && !meta.is_error,
+    ok: r.status === 0 && !meta.is_error && state.iterations.length > 0,
     wallSeconds,
     costUsd: meta.total_cost_usd,
     turns: meta.num_turns,
@@ -72,7 +83,7 @@ function runBrief(brief: string, runId: string, model?: string): BriefResult {
     scores: best?.scores,
     iterations: state.iterations.length,
     render: best?.render?.file,
-    error: r.status === 0 ? undefined : (r.stderr || meta.result || "").slice(-2000),
+    error: r.status === 0 && state.iterations.length ? undefined : (r.stderr || meta.result || "").slice(-2000),
   };
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildProject } from "../src/build/build.js";
 import { join } from "node:path";
 import { lintTimeline } from "../src/lint/timeline.js";
+import type { Tween } from "../src/motion/types.js";
 import { PKG_ROOT } from "../src/paths.js";
 
 /** Projects that live outside projects/ (shipped with the package). */
@@ -57,7 +58,7 @@ describe("seeded static defects (projects/_defects)", () => {
 });
 
 describe("good projects stay clean (no false positives)", () => {
-  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions", "_energetic"]) {
+  for (const slug of ["example-type", "_kit", "_smoke", "_template", "_type", "_transitions", "_energetic", "_launch"]) {
     it(slug, async () => {
       const { findings } = await rules(slug);
       const errors = findings.filter((f) => f.severity === "error");
@@ -106,5 +107,57 @@ describe("registers (docs/decisions/0007)", () => {
     const found = lintTimeline({ ...b, storyboard: { ...sb, scenes } }).filter((f) => f.rule === "spring-bounce");
     expect(found.length).toBeGreaterThan(0);
     expect(new Set(found.map((f) => f.scene))).toEqual(new Set(["collage"]));
+  });
+});
+
+describe("launch devices (projects/_launch)", () => {
+  /** The gallery with every tween on `target` from the first that `from` picks (in time order) moved earlier by `by` seconds. */
+  async function rushed(target: string, from: number | ((t: Tween) => boolean), by: number) {
+    const { b } = await rules("_launch");
+    const scenes = b.timeline!.scenes.map((sc) => {
+      const mine = sc.tweens.filter((t) => t.target === target).sort((x, y) => x.start - y.start);
+      const first = typeof from === "number" ? mine[from] : mine.find(from);
+      const cut = first ? first.start : Infinity;
+      return { ...sc, tweens: sc.tweens.map((t) => (t.target === target && t.start >= cut ? { ...t, start: Math.max(0, t.start - by) } : t)) };
+    });
+    return lintTimeline({ ...b, timeline: { ...b.timeline!, scenes } });
+  }
+
+  it("retype-hold fires when a claim is deleted before it can be read", async () => {
+    // From the deletion of "ranking #1" (keys 10 → 20) on, everything comes 0.9s early.
+    const found = (await rushed("value.end", (t) => t.props.typed?.[0] === 10 && t.props.typed?.[1] === 20, 0.9)).filter((f) => f.rule === "retype-hold");
+    expect(found.map((f) => f.message)).toEqual([expect.stringContaining('"ranking #1"')]);
+  });
+
+  it("cycle-glance fires when a word flips away almost as soon as it lands", async () => {
+    const found = (await rushed("intro.tool-1", 1, 0.4)).filter((f) => f.rule === "cycle-glance");
+    expect(found.map((f) => f.element)).toEqual(["intro.tool-1"]);
+  });
+
+  it("camera-edge fires when a pan outruns its zoom and shows the scene's edge", async () => {
+    const { b } = await rules("_launch");
+    const scenes = b.timeline!.scenes.map((sc) => ({
+      ...sc,
+      tweens: sc.tweens.map((t) => (sc.scene === "product" && t.kind === "camera" && t.start > 1 ? { ...t, props: { ...t.props, y: [0, 200] as [number, number] } } : t)),
+    }));
+    const found = lintTimeline({ ...b, timeline: { ...b.timeline!, scenes } }).filter((f) => f.rule === "camera-edge");
+    expect(found.map((f) => f.scene)).toEqual(["product"]);
+    expect(lintTimeline(b).filter((f) => f.rule === "camera-edge")).toEqual([]);
+  });
+
+  it("dead-air: an energetic hold past 1.6s warns; the same hold judged calm is an info", async () => {
+    const { b } = await rules("_launch");
+    // Drop the last two notifications: the scene then stands still for about two seconds.
+    const scenes = b.timeline!.scenes.map((sc) => (sc.scene === "alerts" ? { ...sc, tweens: sc.tweens.filter((t) => t.start < 1.4), loops: [] } : sc));
+    const still = { ...b, timeline: { ...b.timeline!, scenes } };
+    const found = (bb: typeof b) => lintTimeline(bb).filter((f) => f.rule === "dead-air" && f.scene === "alerts").map((f) => f.severity);
+    expect(found(still)).toEqual(["warning"]);
+    expect(found({ ...still, storyboard: { ...still.storyboard!, register: "calm" } })).toEqual(["info"]);
+  });
+
+  it("the stack's arrivals travel one row without tripping travel-too-far, even judged calm", async () => {
+    const { b } = await rules("_launch");
+    const calm = lintTimeline({ ...b, storyboard: { ...b.storyboard!, register: "calm" } });
+    expect(calm.filter((f) => f.rule === "travel-too-far" && f.element?.startsWith("alerts.alerts-"))).toEqual([]);
   });
 });

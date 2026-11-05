@@ -143,6 +143,7 @@ three once a scene is energetic):
 | `push` | 0.5 | dir, blur, ease | sequential steps, in reading direction; `blur: true` when fast |
 | `pushUp` | 0.5 | blur, ease | lists, feeds, 9:16 |
 | `wipe` | 0.5 | dir, angle, feather, ease | a state revealed; `feather: 8–20`, `angle: 120` for a soft diagonal |
+| `pixels` | 0.5 | dir, ease | **energetic only**: a digital cut through the canvas — cells dissolve the outgoing scene to the canvas, then reveal the next, an ordered dither sweeping the way it travels. Once a film, as an accent |
 | `depth` | 0.6 | dir (`in`/`out`), ease | **energetic only** (`transition-register`): fly through stacked scenes; `out` reverses it to close the loop |
 
 ```json
@@ -165,7 +166,10 @@ or the text drifts and every hard cut snaps it back. A
 deliberate focus move — zoom to the part of the UI that matters, hold, then act — is a short
 `inOut` tween (`slow` or a little longer, ≤ 15% zoom/s, `camera-too-fast`). When the camera
 moves, the content holds still. The energetic camera travels: pans across a collage on `steep`
-(≤ 480px/s, ≤ 50% zoom/s), an ambient push up to 8% — §12.
+(≤ 480px/s, ≤ 50% zoom/s), an ambient push up to 8% — §12. A zoom (a scale change) runs about its
+fixed point at a proportional rate, so its ease is its feel: `inOut`, with time for its size (a
+15× macro wants ~1.4s). `steep` on a zoom doubles the frame in one frame (`zoom-lunge`).
+Fast moves carry the shutter's motion blur by themselves; nothing to add.
 
 ## 10. Emphasis: by ink
 

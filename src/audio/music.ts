@@ -12,6 +12,8 @@ export interface Music {
   file: string;
   analysis: BeatAnalysis;
   grid: MusicGrid;
+  /** Video time the music stops early (`music.stop`, resolved). */
+  stopAt?: number;
 }
 
 /**

@@ -63,11 +63,13 @@
 | type | default | range | params | what it is |
 |---|---|---|---|---|
 | `cut` | — | — | — | Hard cut, on the beat. The primary: most of a litt edit is cuts. |
+| `match` | 0.6s | 0.3–1.2s | ease, pairs | A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. pairs: ["logo"] (same id) or [["ring", "badge"]]. A primary move, like a cut: it is not an accent. |
 | `crossfade` | 0.4s | 0.25–0.8s | ease | The incoming scene fades over the outgoing one. The same surface in a new state. |
 | `dip` | 0.5s | 0.3–1s | ease | Out fades to the canvas, then in fades up. A breath between chapters, before the end card. |
 | `push` | 0.5s | 0.3–0.8s | ease, dir, blur | The incoming scene pushes the outgoing one off in the direction of travel (dir, default left = reading order). Sequential steps. blur: true when it moves fast. |
 | `pushUp` | 0.5s | 0.3–0.8s | ease, blur | push with dir up: the incoming scene pushes up from below. Lists, feeds, 9:16. |
 | `wipe` | 0.5s | 0.35–0.8s | ease, dir, angle, feather | The incoming scene wipes on with a moving edge (dir, default right). feather (8–20) softens it; angle (e.g. 120) runs it diagonally. A state revealed. |
+| `pixels` | 0.5s | 0.3–0.8s | ease, dir | Energetic register. A digital cut through the canvas: square cells (a 24th of the frame's long side) of the canvas colour dissolve over the outgoing scene in an ordered dither, then the incoming scene appears through the same dither, both sweeping in the direction of travel (dir, default right). No frame mixes two scenes' type. The product loads, a machine takes over. |
 | `depth` | 0.6s | 0.4–1s | ease, dir (dir: in/out) | Energetic register. The camera flies through the stack: the outgoing scene grows past the viewer as the next one comes forward from behind (dir in, default). dir out is the reverse — close a reel by flying back out of where it opened. |
 | `morph` | 0.6s | 0.3–1.2s | ease, pairs, squash, arc | A shared element carries the cut: each pair travels from its place in the outgoing scene to its place in the incoming one (position and size; shapes morph their outline) while the rest crossfades under it — the scenes flow instead of cutting. pairs: ["logo"] (same id) or [["title", "card"]]; squash 0..0.5 for mass; arc bends the path. |
 
@@ -108,11 +110,13 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `exit-slower-than-enter` — Exits should be quicker than entrances (attention has moved on).
 - `settle-interrupted` — A new tween on the same property starts before the previous one settled — motion never lands.
 - `read-time` — Text must stay long enough to read — ≈17 chars/s + 0.4s (min 0.83s) counted from when it starts appearing — and hold ≥ 0.6s once fully landed.
+- `retype-hold` — A retyped phrase (m.retype) must be readable before its first key is deleted: ≈17 chars/s + 0.4s from when it starts typing, and ≥ 0.6s complete.
+- `cycle-glance` — A word in a Cycle (m.cycle) is on show for under 0.25s between flips: it reads as flicker, not as a list. Fewer words, or more time between steps.
 - `hold-too-short` — Element exits almost as soon as it lands.
 - `ui-glance` — UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).
 - `scene-overrun` — Motion is still running after the scene has ended (it will be cut off).
 - `late-entrance` — Element enters in the last moments of the scene — it pops in and is gone.
-- `dead-air` — Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.
+- `dead-air` — Nothing moves for too long (2.5s; energetic register: 1.6s, a hold is about a second). Let the camera carry the hold (a push of 3% or less) or tighten the scene.
 - `crowded` — Too many independent elements animating at once — the eye can't follow (calm: 5, energetic: 7).
 - `unstaggered-group` — Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.
 - `slow-open` — The video's first motion starts late — the opening frame is dead.
@@ -135,8 +139,9 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `exit-bounce` — litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).
 - `expressive-budget` — litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive. Energetic register: up to three (a group counts once).
 - `material-motion` — litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.
-- `property-motion` — litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter). Tracking, weight, blur and filters perform.
+- `property-motion` — litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter, a cell's radius). Tracking, weight, blur and filters perform.
 - `travel-too-far` — litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.
+- `camera-edge` — The camera shows past the edge of the scene: a pan can be at most what the zoom adds (|x| ≤ (scale − 1) × half the width, the same for y), and the camera never zooms below 1.
 - `camera-drift` — The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).
 - `ambient-loop` — litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.
 - `text-fade` — Energetic register: copy never just fades in. It types on (m.type) or wipes on like a selection (wipeRight, or the selection-block recipe).

@@ -83,8 +83,15 @@ window.__ctMeasure = function (time, neutral) {
     var tr = range.getBoundingClientRect();
     if (tr.width < 1) tr = r;
     for (var q = el; q && q !== document.body; q = q.parentElement) {
-      if (q.classList.contains("ct-m") || q.classList.contains("ct-l") || q.classList.contains("ct-li")) continue;
       if (q.classList.contains("ct-scene") || q.classList.contains("ct-camera") || q.classList.contains("ct-stage")) break;
+      // Our own reveal masks (split parts, a Cycle's slot) clip on purpose: glyphs wholly outside
+      // one are not on screen yet (a word waiting below the slot), glyphs partly inside are revealing.
+      if (q.classList.contains("ct-m") || q.classList.contains("ct-l") || q.classList.contains("ct-li") || q.classList.contains("ct-slot")) {
+        if (q === el) continue;
+        var mk = q.getBoundingClientRect();
+        if (tr.left >= mk.right || tr.right <= mk.left || tr.top >= mk.bottom || tr.bottom <= mk.top) return;
+        continue;
+      }
       var qs = getComputedStyle(q);
       if (qs.overflowX !== "visible" || qs.overflowY !== "visible" || qs.clipPath !== "none") {
         var b = q.getBoundingClientRect();
@@ -109,6 +116,22 @@ window.__ctMeasure = function (time, neutral) {
       ui: Boolean(el.closest("[data-ct-ui]")),
       opacity: opacity
     });
+  });
+  cams.forEach(function (p) { p[0].style.transform = p[1]; });
+  return out;
+};
+// Device frames (Window, Browser, Phone: they carry data-ct-screen), camera moves removed.
+window.__ctFrames = function (time) {
+  window.__ct.seek(time);
+  var cams = [];
+  document.querySelectorAll(".ct-camera").forEach(function (c) { cams.push([c, c.style.transform]); c.style.transform = "none"; });
+  var out = [];
+  document.querySelectorAll("[data-ct-screen]").forEach(function (el) {
+    var r = el.getBoundingClientRect();
+    var o = 1;
+    for (var n = el; n && n !== document.body; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+    var id = el.getAttribute("data-ct");
+    if (id && o >= 0.5 && r.width > 1) out.push({ id: id, scene: id.slice(0, id.indexOf(".")), x: r.left, y: r.top, w: r.width, h: r.height });
   });
   cams.forEach(function (p) { p[0].style.transform = p[1]; });
   return out;
@@ -222,7 +245,9 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       await page.setViewport({ width, height, deviceScaleFactor: 1 });
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(String((e as Error).message ?? e)));
-      await page.goto(srv.url + "index.html", { waitUntil: "networkidle0", timeout: 30_000 });
+      // Not networkidle0: a long soundtrack's preload keeps the network busy past the timeout. The
+      // probe needs no audio; `load` waits for images and __ct.ready for the fonts.
+      await page.goto(srv.url + "index.html", { waitUntil: "load", timeout: 30_000 });
       await page.waitForFunction(() => Boolean((window as unknown as { __ct?: unknown }).__ct), { timeout: 15_000 });
       await page.evaluate(() => (window as unknown as { __ct: { ready: Promise<void> } }).__ct.ready);
 
@@ -274,6 +299,47 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
         });
       }
 
+      // Zooms, with measured moves resolved: the most the scale changes in one frame at the move's
+      // steepest. Past ~28% a frame (0.25 in log) the eye sees a lunge, not a camera.
+      const zooms = (await page.evaluate(
+        (fps: number) => {
+          const ct = (window as unknown as { __ct: { compiled: Map<string, { channels: Map<string, Map<string, Array<{ start: number; end: number; from: number; to: number; ease: (p: number) => number }>>> }> } }).__ct;
+          const out: Array<{ key: string; start: number; dur: number; ratio: number; perFrame: number }> = [];
+          ct.compiled.forEach((c) =>
+            c.channels.forEach((byProp, key) => {
+              if (!key.endsWith(".camera")) return;
+              for (const seg of byProp.get("scale") ?? []) {
+                const dur = seg.end - seg.start;
+                if (!(dur > 0 && seg.from > 0 && seg.to > 0)) continue;
+                const span = Math.abs(Math.log(seg.to / seg.from));
+                if (span < 0.05) continue;
+                let slope = 0;
+                for (let i = 0; i < 120; i++) slope = Math.max(slope, Math.abs(seg.ease((i + 1) / 120) - seg.ease(i / 120)) * 120);
+                out.push({ key, start: seg.start, dur, ratio: seg.to / seg.from, perFrame: (span * slope) / (dur * fps) });
+              }
+            }),
+          );
+          return out;
+        },
+        build.timeline!.fps,
+      )) as Array<{ key: string; start: number; dur: number; ratio: number; perFrame: number }>;
+      const ZOOM_LUNGE = 0.25;
+      for (const z of zooms) {
+        if (z.perFrame <= ZOOM_LUNGE) continue;
+        const scene = z.key.slice(0, z.key.indexOf("."));
+        const sc = build.timeline!.scenes.find((x) => x.scene === scene);
+        findings.push({
+          source: "probe",
+          rule: "zoom-lunge",
+          severity: "warning",
+          scene,
+          element: z.key,
+          time: r2((sc?.start ?? 0) + z.start),
+          message: `the camera zooms ${z.ratio >= 1 ? "in" : "out"} ×${r2(z.ratio >= 1 ? z.ratio : 1 / z.ratio)} in ${r2(z.dur)}s: at its steepest the frame scales ×${r2(Math.exp(z.perFrame))} in one frame`,
+          suggestion: `give it ${r2((z.dur * z.perFrame) / ZOOM_LUNGE)}s or more, or a gentler ease (inOut, not steep), or zoom less (a smaller fill)`,
+        });
+      }
+
       await page.evaluate(MEASURE_SCRIPT);
       const measure = (t: number, neutral = false): Promise<Measured[]> =>
         page.evaluate(
@@ -293,7 +359,34 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       const seenClip = new Set<string>();
       const action = { l: 0.035, r: 0.035, t: 0.035, b: 0.035 };
       const seenAction = new Set<string>();
+      const seenFrame = new Set<string>();
       for (const k of settled) {
+        // A device frame either sits inside the title-safe area or bleeds off the frame on purpose
+        // (a fifth of it or more): one that just grazes the edge reads as a layout mistake.
+        const frames = await page.evaluate((time: number) => (window as unknown as { __ctFrames: (t: number) => Array<{ id: string; scene: string; x: number; y: number; w: number; h: number }> }).__ctFrames(time), k.t);
+        for (const f of frames) {
+          if (f.scene !== k.scene || seenFrame.has(f.id)) continue;
+          const past = [
+            ["left", safe.l * width - f.x, -f.x, f.w],
+            ["right", f.x + f.w - (1 - safe.r) * width, f.x + f.w - width, f.w],
+            ["top", safe.t * height - f.y, -f.y, f.h],
+            ["bottom", f.y + f.h - (1 - safe.b) * height, f.y + f.h - height, f.h],
+          ] as const;
+          const grazed = past.filter(([, overSafe, offFrame, size]) => overSafe > 1 && offFrame < 0.2 * size);
+          if (!grazed.length) continue;
+          seenFrame.add(f.id);
+          findings.push({
+            source: "probe",
+            rule: "frame-edge",
+            severity: "warning",
+            scene: f.scene,
+            element: f.id,
+            time: k.t,
+            bbox: { x: r2(f.x), y: r2(f.y), width: r2(f.w), height: r2(f.h) },
+            message: `${f.id.slice(f.id.indexOf(".") + 1)} runs past the ${safe.name} on the ${grazed.map(([side]) => side).join("/")} without bleeding off the frame`,
+            suggestion: "make it smaller so it sits inside the safe area, or bleed it off the frame by a fifth or more",
+          });
+        }
         // Camera drift: even with the camera, copy must stay inside action-safe (landscape).
         if (!portrait) {
           for (const m of await measure(k.t)) {

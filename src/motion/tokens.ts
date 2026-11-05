@@ -114,6 +114,9 @@ export function readTime(chars: number): number {
   return Math.max(0.83, chars / 17 + 0.4);
 }
 
+/** A line of copy is seen complete for at least this long before it leaves or changes (read-time, retype-hold). */
+export const SETTLED_HOLD = 0.6;
+
 /** Durations are allowed within this fraction of a token before lint calls them "off-token". */
 export const TOKEN_TOLERANCE = 0.2;
 
@@ -158,3 +161,7 @@ export function resolveStagger(
 function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
 }
+
+/** DotGrid: a square cell's corner radius (% of its size), and the size a value gives its dot. */
+export const CELL_RADIUS = 18;
+export const dotScale = (v: number) => Math.round((0.3 + 0.7 * Math.min(1, Math.max(0, v))) * 1000) / 1000;

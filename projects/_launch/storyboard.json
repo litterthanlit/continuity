@@ -1,0 +1,303 @@
+{
+  "title": "Launch devices gallery",
+  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn), with a ring gauge (Ring, m.ring) as the third claim's proof, a contribution grid that fills and turns to dots (DotGrid, m.grid), the pixels transition, a match cut and a macro zoom-in (m.zoomTo), and a pull-back reveal from a screen to its browser (m.pullBack). Harbor is an invented product. Reference + lint fixture.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-light",
+  "type": "litt",
+  "register": "energetic",
+  "scenes": [
+    {
+      "id": "intro",
+      "duration": 3.2,
+      "intent": "SEO, run by [a word that flips]: the slot cycles three stand-ins and lands on the name, at the end of the line where its spare width is unseen.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.5
+        },
+        {
+          "id": "b2",
+          "at": 1.0
+        },
+        {
+          "id": "b3",
+          "at": 1.5
+        }
+      ],
+      "text": {
+        "lead": "SEO, run by",
+        "w0": "an agency",
+        "w1": "a freelancer",
+        "w2": "a spreadsheet",
+        "w3": "Harbor"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A3:F3",
+          "note": "One display line, left-aligned: lead in the grey, then the Cycle slot."
+        },
+        {
+          "id": "tool",
+          "role": "headline",
+          "anchor": "D3",
+          "note": "<Cycle> of w0\u2026w3; tool-0\u2026tool-3 are its words."
+        }
+      ],
+      "motion": "The line types on, then the slot flips on b1, b2, b3 (steep, snap) and holds on Harbor.",
+      "transition": {
+        "type": "match",
+        "pairs": [
+          [
+            "tool-3",
+            "brand"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "input",
+      "duration": 5.0,
+      "intent": "A match cut carries \"Harbor\" into the brand label; the domain types, the camera goes in on it as a macro, then pulls back.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.5
+        },
+        {
+          "id": "b2",
+          "at": 0.8
+        },
+        {
+          "id": "b3",
+          "at": 1.55
+        },
+        {
+          "id": "b4",
+          "at": 3.25
+        }
+      ],
+      "text": {
+        "brand": "Harbor",
+        "headline": "Just enter your website.",
+        "site": "harbor.dev"
+      },
+      "elements": [
+        {
+          "id": "brand",
+          "role": "label",
+          "anchor": "C2"
+        },
+        {
+          "id": "headline",
+          "role": "title",
+          "anchor": "B3:E3"
+        },
+        {
+          "id": "site",
+          "role": "ui",
+          "anchor": "B4:E4",
+          "note": "<Input> focused; site-text types, site-caret."
+        }
+      ],
+      "motion": "Match cut in (tool-3 to brand, 0.6s settle). b1 headline wipes, the field rises. b2 the domain types. b3 m.zoomTo the typed text, fill 1.4 (a macro, inOut over 1.4s). b4 the camera pulls back the same way.",
+      "transition": {
+        "type": "pixels"
+      }
+    },
+    {
+      "id": "value",
+      "duration": 6.2,
+      "intent": "One phrase, one UI: the ending is retyped three times and each claim's proof springs up beside it.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.3
+        },
+        {
+          "id": "b2",
+          "at": 2.3
+        },
+        {
+          "id": "b3",
+          "at": 4.3
+        }
+      ],
+      "text": {
+        "lead": "Your website is",
+        "e0": "ranking #1",
+        "e1": "booking demos",
+        "e2": "cited by AI"
+      },
+      "elements": [
+        {
+          "id": "line",
+          "role": "headline",
+          "anchor": "A3:D3",
+          "note": "Lead in the grey, the typed ending in fg."
+        },
+        {
+          "id": "end",
+          "role": "headline",
+          "anchor": "C3",
+          "note": "<Typed>: the retyped ending; end-caret is its caret."
+        },
+        {
+          "id": "rank",
+          "role": "ui",
+          "anchor": "E2:F4",
+          "note": "Card + Stat: average position #1."
+        },
+        {
+          "id": "demos",
+          "role": "ui",
+          "anchor": "E2:F4",
+          "note": "Card + Stat: demos booked this week, counts to 24."
+        },
+        {
+          "id": "cited",
+          "role": "ui",
+          "anchor": "E2:F4",
+          "note": "Card: a Ring that fills to 89 beside a Stat of AI answers citing you, counting to 412."
+        }
+      ],
+      "motion": "Each phrase types on its beat; its card snaps up as the phrase lands and leaves as the phrase is deleted.",
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "graph",
+      "duration": 3.6,
+      "intent": "Before and after in one grid: the weeks fill in on a wave, then every square turns into a dot sized by its day.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.4
+        },
+        {
+          "id": "b2",
+          "at": 1.7
+        }
+      ],
+      "text": {
+        "label": "Harbor, 26 weeks",
+        "headline": "Now your SEO looks like this."
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A2"
+        },
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A2:E2"
+        },
+        {
+          "id": "days",
+          "role": "ui",
+          "anchor": "A4:F5",
+          "note": "<DotGrid> 26 weeks x 7 days in teal; days-0... are its cells."
+        }
+      ],
+      "motion": "Label and headline wipe on; b1 the cells fill left to right (steep, snap, 0.8s span); b2 the squares become dots on the same wave. Hold."
+    },
+    {
+      "id": "product",
+      "duration": 3.6,
+      "intent": "The reveal that explains scale: the product's own screen, full frame, pulls back to a browser; the keywords load; the camera pushes in on the action.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.35
+        },
+        {
+          "id": "b2",
+          "at": 1.15
+        },
+        {
+          "id": "b3",
+          "at": 1.9
+        },
+        {
+          "id": "b4",
+          "at": 2.7
+        }
+      ],
+      "text": {
+        "title": "Keywords",
+        "cta": "Rank this keyword"
+      },
+      "elements": [
+        {
+          "id": "browser",
+          "role": "ui",
+          "anchor": "A1:F6",
+          "note": "<Browser> 1400x820 in the frame's centre: m.pullBack starts with its body covering the frame."
+        },
+        {
+          "id": "title",
+          "role": "ui",
+          "anchor": "A2"
+        },
+        {
+          "id": "cta",
+          "role": "ui",
+          "anchor": "E2"
+        },
+        {
+          "id": "rows",
+          "role": "ui",
+          "anchor": "A3:F5",
+          "note": "<List> of four keywords, rows-r0\u2026r3."
+        }
+      ],
+      "motion": "b1 m.pullBack (steep, slow); b2 rows rise on steep snap, a frame apart; b3 the camera pushes in toward the button (steep, slow); b4 the button is pressed. Hold."
+    },
+    {
+      "id": "alerts",
+      "duration": 3.4,
+      "intent": "The reward: notifications stack in on a lock screen.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.4
+        }
+      ],
+      "text": {
+        "label": "Harbor",
+        "headline": "Results, overnight."
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A2"
+        },
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A3:C3"
+        },
+        {
+          "id": "phone",
+          "role": "ui",
+          "anchor": "D1:E6"
+        },
+        {
+          "id": "alerts",
+          "role": "ui",
+          "anchor": "D2:E4",
+          "note": "<NotificationStack> of four; alerts-0 arrives first."
+        }
+      ],
+      "motion": "Label and headline wipe on; four notifications drop in, newest on top, the rest stepping down a row."
+    }
+  ]
+}

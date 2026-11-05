@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import { fxStyle } from "../src/motion/fx.js";
 import { peakSlope, sigmaFor } from "../src/motion/easing.js";
 import { eases } from "../src/motion/tokens.js";
-import { TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
+import { isCut, TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
 import { lintStoryboard } from "../src/lint/timeline.js";
+import type { FxSpec } from "../src/motion/types.js";
 import { parseStoryboard, type Storyboard } from "../src/spec/storyboard.js";
 
 /** v1 transitions litt kept unchanged (crossfade and dip moved to litt's eases; the rest are gone). */
@@ -52,9 +53,53 @@ describe("every transition", () => {
 });
 
 describe("litt's transition language", () => {
-  it("is cuts plus four accents, depth for the energetic register, and morph; nothing that performs", () => {
-    expect([...TRANSITIONS]).toEqual(["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth", "morph"]);
-    expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["depth"]);
+  it("is cuts and match cuts plus four accents, pixels and depth for the energetic register, and morph; nothing that performs", () => {
+    expect([...TRANSITIONS]).toEqual(["cut", "match", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"]);
+    expect(TRANSITIONS.filter((t) => isCut({ type: t }))).toEqual(["cut", "match"]);
+    expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["pixels", "depth"]);
+  });
+
+  it("match starts each paired element where its partner was, measured, and settles it after the cut", () => {
+    const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
+    expect(t.out).toEqual([]);
+    expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure])).toEqual([
+      ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }],
+      ["b.label", 0, 0.6, { kind: "match", from: "a.word" }],
+    ]);
+  });
+
+  it("pixels goes through the canvas: cells cover the outgoing scene, then uncover the incoming one", () => {
+    const t = run({ type: "pixels" });
+    const at = (target: string, prop: string) => t.in.concat(t.out).filter((tw) => tw.target === target && prop in tw.props).map((tw) => [tw.start, tw.duration, tw.props[prop as "fx"]]);
+    expect(at("b.fx", "fx")).toEqual([[0, 0.25, [0, 1]]]);
+    expect(at("b.fx", "opacity")).toEqual([[0, 0.25, [1, 0]]]);
+    expect(at("b.reveal", "fx")).toEqual([[0.25, 0.25, [0, 1]]]);
+    // A one-step ease: the outgoing scene goes at the midpoint (2.75), when the canvas covers it.
+    expect(at("a.scene", "opacity")).toEqual([[2.5, 0.25, [null, 0]]]);
+    expect(TRANSITION_DEFS.pixels.layers?.fx?.({ type: "pixels", duration: 0.5 }, { out: "a", into: "b", html: () => undefined }).style).toContain("var(--color-canvas)");
+  });
+
+  it("pixels lights square cells in a dither that sweeps the way it travels", () => {
+    const tw = run({ type: "pixels", dir: "left" }).in.find((x) => x.target === "b.reveal")!;
+    const spec = tw.fx as Extract<FxSpec, { kind: "pixels" }>;
+    expect(spec).toEqual({ kind: "pixels", angle: 270, cols: 24, rows: 13.5 });
+    const lit = (p: number) => {
+      const m = decodeURIComponent(fxStyle(spec, p).maskImage!);
+      return [...m.matchAll(/M(\d+) (\d+)h1/g)].map(([, c, r]) => [Number(c), Number(r)]);
+    };
+    expect(lit(0)).toEqual([]);
+    expect(fxStyle(spec, 1).maskImage).toBe("none");
+    const half = lit(0.5);
+    const share = half.length / (24 * 14);
+    expect(share).toBeGreaterThan(0.35);
+    expect(share).toBeLessThan(0.65);
+    // Travelling left: the right edge lights first.
+    const right = half.filter(([c]) => c >= 18).length;
+    const left = half.filter(([c]) => c < 6).length;
+    expect(right).toBeGreaterThan(left * 3);
+    // Every cell lit at 0.5 stays lit at 0.6: the reveal only grows.
+    const later = new Set(lit(0.6).map((x) => x.join()));
+    expect(half.every((x) => later.has(x.join()))).toBe(true);
   });
 
   it("morph hands each pair to a carrier: A leaves at the cut, B arrives when the carrier lands, the rest crossfades", () => {

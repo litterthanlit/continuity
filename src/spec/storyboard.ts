@@ -2,7 +2,7 @@ import { z } from "zod";
 import { musicAt, indexAt, onFrame, pointAt, type MusicGrid, type OnMusic } from "../audio/grid.js";
 import { REGISTERS } from "../motion/register.js";
 import { eases } from "../motion/tokens.js";
-import { DIRS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
+import { DIRS, isCut, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
 import { KIT_NAMES } from "../themes/kits.js";
 
 export const ASPECTS = {
@@ -45,6 +45,13 @@ export const MusicSchema = z.object({
   volume: z.number().min(0).max(1).default(1),
   fadeIn: z.number().min(0).max(10).optional(),
   fadeOut: z.number().min(0).max(10).optional(),
+  /**
+   * Where the music stops dead, so an end card can land in silence: a moment in a scene —
+   * `{ "scene": "end" }` (when the cut or transition into it has landed), `{ "scene": "end", "at":
+   * 0.5 }` (seconds from the scene's start), `{ "scene": "end", "at": { "beat": 2 } }` — or video seconds. A 10 ms fade takes the click off the cut; `fadeOut`
+   * replaces it with a longer one that ends there.
+   */
+  stop: z.union([z.number().min(0), z.object({ scene: id, at: z.union([z.number().min(0), OnMusicSchema]).optional() }).strict()]).optional(),
   /** Force the tempo when the analysis hears it wrong (half/double time). */
   bpm: z.number().min(40).max(240).optional(),
   /** Force the bar phase: a track time (s) that is a downbeat. */
@@ -78,8 +85,8 @@ export const TransitionSchema = z
         ctx.addIssue({ code: "custom", path: [p], message: `${t.type} has no "${p}" parameter (it takes: ${def.params.join(", ") || "none"})` });
       }
     }
-    if (t.type === "morph" && !t.pairs) {
-      ctx.addIssue({ code: "custom", path: ["pairs"], message: 'morph needs the elements that carry the cut: "pairs": ["logo"] or [["title", "card"]]' });
+    if ((t.type === "morph" || t.type === "match") && !t.pairs) {
+      ctx.addIssue({ code: "custom", path: ["pairs"], message: `${t.type} needs the elements that carry the cut: "pairs": ["logo"] or [["title", "card"]]` });
     }
     if (t.dir && def.dirs && !def.dirs.includes(t.dir)) {
       ctx.addIssue({ code: "custom", path: ["dir"], message: `${t.type} runs ${def.dirs.join(" or ")}, not ${t.dir}` });
@@ -170,12 +177,39 @@ export function sceneTimings(sb: Storyboard): { scenes: SceneTiming[]; duration:
   let t = 0;
   sb.scenes.forEach((s, i) => {
     const isLast = i === sb.scenes.length - 1;
-    const overlap = !isLast && s.transition && s.transition.type !== "cut" ? s.transition.duration : 0;
+    const overlap = !isLast && s.transition && !isCut(s.transition) ? s.transition.duration : 0;
     out.push({ id: s.id, start: round(t), duration: s.duration, overlapNext: overlap });
     t += s.duration - overlap;
   });
   const last = out[out.length - 1];
   return { scenes: out, duration: round(last.start + last.duration) };
+}
+
+/**
+ * The video time the music stops (`music.stop`), on the frame the cut is seen when it names a
+ * scene. `grid` resolves a stop written as a moment on the music.
+ */
+export function musicStop(sb: Storyboard, grid?: MusicGrid): { at: number } | { issue: string } | undefined {
+  const music = sb.music;
+  if (music?.stop === undefined) return undefined;
+  const { scenes, duration } = sceneTimings(sb);
+  const stop = music.stop;
+  let at: number;
+  if (typeof stop === "number") at = stop;
+  else {
+    const i = scenes.findIndex((s) => s.id === stop.scene);
+    if (i < 0) return { issue: `music.stop: there is no scene "${stop.scene}"` };
+    const sc = scenes[i];
+    // Without an `at`, the stop waits for the transition into the scene to land: the beat drops
+    // as the end card is fully on screen, not as the move into it begins.
+    const landed = sc.start + (i > 0 ? scenes[i - 1].overlapNext : 0);
+    let t: number | undefined = stop.at === undefined ? landed : sc.start + (typeof stop.at === "number" ? stop.at : 0);
+    if (stop.at !== undefined && typeof stop.at !== "number") t = grid ? musicAt(grid, stop.at, sc.start, 60 / grid.bpm) : undefined;
+    if (t === undefined) return { issue: `music.stop: ${JSON.stringify(stop.at)} — the music has no such moment in "${stop.scene}"` };
+    at = Math.ceil(t * sb.format.fps - 1e-6) / sb.format.fps;
+  }
+  if (at <= music.start || at > duration) return { issue: `music.stop: ${round(at)}s is not while the music plays (from ${music.start}s to the video's end at ${duration}s)` };
+  return { at: round(at) };
 }
 
 export function beatsOf(scene: SceneSpec): Record<string, number> {
@@ -197,7 +231,7 @@ function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | u
   let t = 0;
   const scenes = sb.scenes.map((s, i): SceneSpec => {
     const isLast = i === sb.scenes.length - 1;
-    const overlap = !isLast && s.transition && s.transition.type !== "cut" ? s.transition.duration : 0;
+    const overlap = !isLast && s.transition && !isCut(s.transition) ? s.transition.duration : 0;
     let duration: number;
     if (typeof s.duration === "number") duration = s.duration;
     else if (!grid) {
@@ -241,6 +275,8 @@ export function parseStoryboard(raw: unknown, opts: { grid?: MusicGrid } = {}): 
   }
   const issues: string[] = [];
   const r = { data: resolveTiming(parsed.data, opts.grid, issues) };
+  const stop = musicStop(r.data, opts.grid);
+  if (stop && "issue" in stop) issues.push(stop.issue);
   const ids = new Set<string>();
   r.data.scenes.forEach((s, i) => {
     if (ids.has(s.id)) issues.push(`scenes.${i}.id: duplicate scene id "${s.id}"`);
@@ -256,8 +292,8 @@ export function parseStoryboard(raw: unknown, opts: { grid?: MusicGrid } = {}): 
     }
     // A scene's incoming and outgoing transitions both drive its root: they must not overlap.
     const prev = i > 0 ? r.data.scenes[i - 1].transition : undefined;
-    const inD = prev && prev.type !== "cut" ? prev.duration : 0;
-    const outD = s.transition && s.transition.type !== "cut" && !isLast ? s.transition.duration : 0;
+    const inD = prev && !isCut(prev) ? prev.duration : 0;
+    const outD = s.transition && !isCut(s.transition) && !isLast ? s.transition.duration : 0;
     if (inD && outD && inD + outD > s.duration)
       issues.push(`scenes.${i}: its incoming (${inD}s) and outgoing (${outD}s) transitions overlap inside its ${s.duration}s — lengthen the scene or shorten a transition`);
   });

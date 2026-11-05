@@ -15,7 +15,7 @@ import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
  * hide the overlay) and `<id>.fx` (an overlay above it: a flash, a light band).
  * Research: docs/research/2026-10-transitions.md · decision: docs/decisions/0005.
  */
-export const TRANSITIONS = ["cut", "crossfade", "dip", "push", "pushUp", "wipe", "depth", "morph"] as const;
+export const TRANSITIONS = ["cut", "match", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"] as const;
 export type TransitionType = (typeof TRANSITIONS)[number];
 
 /** Planar directions (push, wipe). */
@@ -94,6 +94,8 @@ export interface TransitionDef {
   dirs?: readonly Dir[];
   /** Registers it belongs to (docs/decisions/0007); omitted = every register. */
   registers?: readonly Register[];
+  /** A hard cut: the scenes do not overlap; its tweens run inside the incoming scene, after the cut. */
+  cut?: boolean;
   /** Layers the incoming scene needs (none of litt's transitions do; the build still supports them). */
   layers?: { reveal?: boolean; fx?: (spec: TransitionSpec, ctx: LayerContext) => FxLayer };
   build(c: Ctx): { out: Tween[]; in: Tween[] };
@@ -117,6 +119,8 @@ const DIR_ANGLE: Record<PlanarDir, number> = { right: 90, left: 270, down: 180, 
 const DEPTH_NEAR = 1.8;
 const DEPTH_FAR = 0.6;
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
+/** pixels: cells across the frame's long side. Big enough to read as pixels, not as noise. */
+const PIXEL_CELLS = 24;
 
 /** Translate both scenes edge to edge in the direction of travel (+ an optional motion-blur bell). */
 function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undefined): { out: Tween[]; in: Tween[] } {
@@ -159,6 +163,21 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
     range: [0, 2],
     params: [],
     build: () => ({ out: [], in: [] }),
+  },
+  match: {
+    description:
+      "A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. pairs: [\"logo\"] (same id) or [[\"ring\", \"badge\"]]. A primary move, like a cut: it is not an accent.",
+    duration: 0.6,
+    range: [0.3, 1.2],
+    params: ["ease", "pairs"],
+    cut: true,
+    build: (c) => ({
+      out: [],
+      in: pairsOf(c.spec).map(([a, b]) => ({
+        ...tw(`${c.into}.${b}`, 0, c.d, { x: [0, 0], y: [0, 0], scale: [1, 1] }, c.ease("out")),
+        measure: { kind: "match" as const, from: `${c.out}.${a}` },
+      })),
+    }),
   },
   crossfade: {
     description: "The incoming scene fades over the outgoing one. The same surface in a new state.",
@@ -209,6 +228,31 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
       }
       const fx: FxSpec = { kind: "wipe", angle: angle ?? DIR_ANGLE[dir ?? "right"], feather: feather ?? 12 };
       return { out: [], in: [tw(i, 0, c.d, { fx: [0, 1] }, e, fx)] };
+    },
+  },
+  pixels: {
+    description:
+      "Energetic register. A digital cut through the canvas: square cells (a 24th of the frame's long side) of the canvas colour dissolve over the outgoing scene in an ordered dither, then the incoming scene appears through the same dither, both sweeping in the direction of travel (dir, default right). No frame mixes two scenes' type. The product loads, a machine takes over.",
+    duration: 0.5,
+    range: [0.3, 0.8],
+    params: ["ease", "dir"],
+    dirs: PLANAR_DIRS,
+    registers: ["energetic"],
+    layers: { reveal: true, fx: () => ({ style: "position:absolute;inset:0;background:var(--color-canvas)", inner: "" }) },
+    build: (c) => {
+      const cell = Math.max(c.frame.width, c.frame.height) / PIXEL_CELLS;
+      const fx: FxSpec = { kind: "pixels", angle: DIR_ANGLE[(c.spec.dir as PlanarDir | undefined) ?? "right"], cols: Math.round(c.frame.width / cell), rows: r3(c.frame.height / cell) };
+      const e = c.ease("linear");
+      const h = r3(c.d / 2);
+      return {
+        // At the midpoint the frame is all canvas: the outgoing scene and the covering cells step off together.
+        out: [tw(`${c.out}.scene`, c.os, h, { opacity: [null, 0] }, STEP)],
+        in: [
+          tw(`${c.into}.fx`, 0, h, { fx: [0, 1] }, e, fx),
+          tw(`${c.into}.fx`, 0, h, { opacity: [1, 0] }, STEP),
+          tw(`${c.into}.reveal`, h, h, { fx: [0, 1] }, e, fx),
+        ],
+      };
     },
   },
   depth: {
@@ -305,4 +349,9 @@ export function transitionTweens(
     frame,
     ease: (fallback) => override ?? (typeof fallback === "string" ? named(fallback) : { spec: fallback }),
   });
+}
+
+/** Whether a transition is a cut (plain or matched): the scenes it joins do not overlap. */
+export function isCut(t: { type: TransitionType }): boolean {
+  return t.type === "cut" || Boolean(TRANSITION_DEFS[t.type].cut);
 }
