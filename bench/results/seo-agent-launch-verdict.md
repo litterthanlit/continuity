@@ -39,3 +39,30 @@ end card begins (about 0.5s before the card is fully on screen), and the graph h
 with the grid on entrance (27.3s).
 
 Verdict: keep the change.
+
+## Round 3 (run 202611051152 against round 2's before film)
+
+The harness now had zoom-ins, match cuts, the dots-to-squares grid and the accent retype. The
+run's film was silent: the bench fence stopped its agent copying the track (the runner now stages
+a brief's input files). Inconclusive: 3.2 against 2.8 with the after film first; a 3.4 tie with the
+before film first, given to the before film for having sound. Both critics also found the caret
+waiting at the end of the whole string while a field typed (fixed: a field with a caret types by
+its content), and counted the match cut as an accent (the critique rubric now treats it as a cut).
+
+## Round 3b (run 202611051213 against round 2's before film)
+
+| Critic | After | Before |
+|---|---|---|
+| after shown first | **4.2** (I5 C4 Ty4 Te4 Cr4) | 2.8 (3 3 2 3 3) |
+| before shown first | **3.8** (4 4 4 4 3) | 2.8 (3 3 2 3 3) |
+
+The after film wins every axis in both orders, with every must-show present: the music stops on the
+beat (-13.3 dB before, -91 dB from 31.45s) and the CTA lands in the silence. Gate 0 errors, 0
+warnings, in 5 iterations, 569s, $2.05.
+
+Open in the after film: the CTA parked on the bottom safe line, far from its headline (a
+composition call: the probe measures it on the line); the macro zoom crops the domain at both
+ends; the claims type in the accent (a deliberate P1 exception both critics count); the agent's
+own `deleteCps: 200` clears each ending in two frames rather than a visible backspace.
+
+Verdict: keep the change.
