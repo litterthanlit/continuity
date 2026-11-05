@@ -92,8 +92,13 @@ like an interface, not like an object:
   `depth` into the scene hides it). The scene before it can cut
   straight in when it ends on the same flat surface as the screen. Then load the content and push
   in on the action with `m.camera` (a pan never wider than its zoom: `camera-edge`).
-- **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`)
-  and hold the last frame: the beat dropping out is the full stop the film has been driving to.
+- **End on silence.** Cut the music at the end card (`"music": { …, "stop": { "scene": "end" } }`;
+  it waits for the transition into the card to land). The silence is the full stop, but the frame
+  still breathes: a caret blinks on a typed URL (`m.blink`), or the camera pushes ≤ 3% over the
+  hold. An energetic hold past ~1.6s with nothing moving is `dead-air`.
+- **Devices fit or bleed.** A Window, Browser or Phone sits inside title-safe (a Phone in 16:9 is
+  at most ~470px wide) or bleeds off the frame by a fifth or more on purpose; one that grazes the
+  edge is `frame-edge`.
 - Surfaces sit on `bg="grid"`; screenshots of real product go in `Media` (`treat="none"` for
   your own UI, which is already in the palette).
 

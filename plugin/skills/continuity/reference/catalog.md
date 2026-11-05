@@ -115,7 +115,7 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `ui-glance` — UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).
 - `scene-overrun` — Motion is still running after the scene has ended (it will be cut off).
 - `late-entrance` — Element enters in the last moments of the scene — it pops in and is gone.
-- `dead-air` — Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.
+- `dead-air` — Nothing moves for too long (2.5s; energetic register: 1.6s, a hold is about a second). Let the camera carry the hold (a push of 3% or less) or tighten the scene.
 - `crowded` — Too many independent elements animating at once — the eye can't follow (calm: 5, energetic: 7).
 - `unstaggered-group` — Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.
 - `slow-open` — The video's first motion starts late — the opening frame is dead.
