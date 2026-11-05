@@ -17,9 +17,9 @@ export default scene({
           <Label ct="label">{text.label}</Label>
           <Headline ct="headline">{text.headline}</Headline>
         </div>
-        <Phone ct="phone" width={500}>
+        <Phone ct="phone" width={440}>
           <div class="flex h-full justify-center pt-[200px]">
-            <NotificationStack ct="alerts" items={ITEMS} width={424} rowHeight={120} gap={12} />
+            <NotificationStack ct="alerts" items={ITEMS} width={380} rowHeight={120} gap={12} />
           </div>
         </Phone>
       </Safe>

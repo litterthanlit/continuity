@@ -20,7 +20,7 @@ export default scene({
           <Terminal ct="sh" class="p-[32px]" lines={["$ pnpm ct check example-type", "◆ browser audit…", "✔ check: 0 errors, 0 warnings"]} />
         </Window>
       </div>
-      <div class="absolute right-[144px] top-[112px]">
+      <div class="absolute right-[144px] top-[80px]">
         <Phone ct="phone" width={448}>
           <div class="flex h-full flex-col gap-[32px] bg-surface-1 px-[32px] pt-[112px]">
             <Input ct="search" value="motion design" width={336} focus />

@@ -120,6 +120,22 @@ window.__ctMeasure = function (time, neutral) {
   cams.forEach(function (p) { p[0].style.transform = p[1]; });
   return out;
 };
+// Device frames (Window, Browser, Phone: they carry data-ct-screen), camera moves removed.
+window.__ctFrames = function (time) {
+  window.__ct.seek(time);
+  var cams = [];
+  document.querySelectorAll(".ct-camera").forEach(function (c) { cams.push([c, c.style.transform]); c.style.transform = "none"; });
+  var out = [];
+  document.querySelectorAll("[data-ct-screen]").forEach(function (el) {
+    var r = el.getBoundingClientRect();
+    var o = 1;
+    for (var n = el; n && n !== document.body; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+    var id = el.getAttribute("data-ct");
+    if (id && o >= 0.5 && r.width > 1) out.push({ id: id, scene: id.slice(0, id.indexOf(".")), x: r.left, y: r.top, w: r.width, h: r.height });
+  });
+  cams.forEach(function (p) { p[0].style.transform = p[1]; });
+  return out;
+};
 `;
 
 /** What every vendored family can actually draw: weight ranges, italics, widths, tabular figures. */
@@ -302,7 +318,34 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
       const seenClip = new Set<string>();
       const action = { l: 0.035, r: 0.035, t: 0.035, b: 0.035 };
       const seenAction = new Set<string>();
+      const seenFrame = new Set<string>();
       for (const k of settled) {
+        // A device frame either sits inside the title-safe area or bleeds off the frame on purpose
+        // (a fifth of it or more): one that just grazes the edge reads as a layout mistake.
+        const frames = await page.evaluate((time: number) => (window as unknown as { __ctFrames: (t: number) => Array<{ id: string; scene: string; x: number; y: number; w: number; h: number }> }).__ctFrames(time), k.t);
+        for (const f of frames) {
+          if (f.scene !== k.scene || seenFrame.has(f.id)) continue;
+          const past = [
+            ["left", safe.l * width - f.x, -f.x, f.w],
+            ["right", f.x + f.w - (1 - safe.r) * width, f.x + f.w - width, f.w],
+            ["top", safe.t * height - f.y, -f.y, f.h],
+            ["bottom", f.y + f.h - (1 - safe.b) * height, f.y + f.h - height, f.h],
+          ] as const;
+          const grazed = past.filter(([, overSafe, offFrame, size]) => overSafe > 1 && offFrame < 0.2 * size);
+          if (!grazed.length) continue;
+          seenFrame.add(f.id);
+          findings.push({
+            source: "probe",
+            rule: "frame-edge",
+            severity: "warning",
+            scene: f.scene,
+            element: f.id,
+            time: k.t,
+            bbox: { x: r2(f.x), y: r2(f.y), width: r2(f.w), height: r2(f.h) },
+            message: `${f.id.slice(f.id.indexOf(".") + 1)} runs past the ${safe.name} on the ${grazed.map(([side]) => side).join("/")} without bleeding off the frame`,
+            suggestion: "make it smaller so it sits inside the safe area, or bleed it off the frame by a fifth or more",
+          });
+        }
         // Camera drift: even with the camera, copy must stay inside action-safe (landscape).
         if (!portrait) {
           for (const m of await measure(k.t)) {
