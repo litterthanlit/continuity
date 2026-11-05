@@ -55,6 +55,7 @@ export const PROPS = [
   "blurY", // px, directional (motion) blur along y
   "match", // 0..1 progress of a shared-element carrier (the morph transition) from its outgoing to its incoming place
   "morph", // shape of a <Morph>: 0 its first shape, 1 the second … (fractional = in between)
+  "accent", // 0..1: live input in the accent's text tone (1) settling to the element's ink (0) — m.retype's accent
   "radius", // corner radius, % of the element's size: 0 square … 50 a circle (a cell becoming a dot)
 ] as const;
 export type PropName = (typeof PROPS)[number];
@@ -110,6 +111,7 @@ export const BASE_VALUES: Record<PropName, number> = {
   match: 1,
   morph: 0,
   radius: 0,
+  accent: 0,
 };
 
 /** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
@@ -178,6 +180,12 @@ export interface Tween {
   tape?: string[];
   /** Shape presentation the `fx` channel drives. */
   fx?: FxSpec;
+  /**
+   * Geometry the runtime measures once at prepare (layout is unknown to the build) and writes into
+   * this tween's values, as the morph carriers do: `focus` zooms the camera until `target` fills
+   * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end.
+   */
+  measure?: { kind: "focus"; target: string; fill: number } | { kind: "match"; from: string };
   /** Lint rule ids this tween deliberately breaks. */
   allow?: string[];
   /** Tweens declared together (one call on several targets) share a group — choreographed as one unit. */

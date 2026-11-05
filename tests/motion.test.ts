@@ -365,6 +365,17 @@ describe("retype", () => {
     expect(() => m.retype("end", ["ranking #1", { text: "booking", at: 0.2 }])).toThrow(/finishes typing|before the phrase before/);
   });
 
+  it("with accent, types each phrase in the accent and settles it to ink once typed", () => {
+    const m = new MotionBuilder("s", 6, {});
+    m.retype("end", tape, { at: 0.5, cps: 20, accent: true });
+    const c = compileScene(scene(m), {});
+    const color = (t: number) => styleOf(sampleScene(c, t).get("s.end")!).color;
+    expect(color(0.7)).toContain("var(--color-accent-text) 100%");
+    expect(color(1.9)).toContain("var(--color-accent-text) 0%");
+    const second = m.tweens.find((t) => t.props.typed && t.props.typed[0] === 20)!;
+    expect(color(second.start + 0.05)).toContain("var(--color-accent-text) 100%");
+  });
+
   it("shows the tape's text through the compiled scene", () => {
     const m = new MotionBuilder("s", 6, {});
     m.retype("end", tape, { at: 0, cps: 10 });
@@ -456,6 +467,18 @@ describe("dot grid", () => {
     const before = sampleScene(compileScene(scene(m), {}), 0.4);
     expect(before.get("s.g-0")).toBeUndefined();
     expect(before.get("s.g-0-to")!.opacity).toBe(0);
+  });
+
+  it("grows each cell from a dot into its square, the dot leading the swell", () => {
+    const m = grid().grid("g", "grow", { at: 0.5, span: 0.4 });
+    const c = compileScene(scene(m), {});
+    const at = (t: number) => sampleScene(c, t).get("s.g-0")!;
+    expect(at(0.62)).toMatchObject({ radius: 50, opacity: 1 });
+    expect(at(0.62).scale).toBeCloseTo(0.3, 2);
+    expect(at(2.9)).toMatchObject({ radius: 18, scale: 1 });
+    // The last column is still a dot when the first has finished swelling.
+    expect(at(1.0).scale).toBeGreaterThan(0.9);
+    expect(sampleScene(c, 1.0).get("s.g-5")!.scale).toBeLessThan(0.35);
   });
 
   it("turns each square into a circle sized by its value", () => {

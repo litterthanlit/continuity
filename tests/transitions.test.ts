@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { fxStyle } from "../src/motion/fx.js";
 import { peakSlope, sigmaFor } from "../src/motion/easing.js";
 import { eases } from "../src/motion/tokens.js";
-import { TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
+import { isCut, TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
 import { lintStoryboard } from "../src/lint/timeline.js";
 import type { FxSpec } from "../src/motion/types.js";
 import { parseStoryboard, type Storyboard } from "../src/spec/storyboard.js";
@@ -53,9 +53,19 @@ describe("every transition", () => {
 });
 
 describe("litt's transition language", () => {
-  it("is cuts plus four accents, pixels and depth for the energetic register, and morph; nothing that performs", () => {
-    expect([...TRANSITIONS]).toEqual(["cut", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"]);
+  it("is cuts and match cuts plus four accents, pixels and depth for the energetic register, and morph; nothing that performs", () => {
+    expect([...TRANSITIONS]).toEqual(["cut", "match", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"]);
+    expect(TRANSITIONS.filter((t) => isCut({ type: t }))).toEqual(["cut", "match"]);
     expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["pixels", "depth"]);
+  });
+
+  it("match starts each paired element where its partner was, measured, and settles it after the cut", () => {
+    const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
+    expect(t.out).toEqual([]);
+    expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure])).toEqual([
+      ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }],
+      ["b.label", 0, 0.6, { kind: "match", from: "a.word" }],
+    ]);
   });
 
   it("pixels goes through the canvas: cells cover the outgoing scene, then uncover the incoming one", () => {

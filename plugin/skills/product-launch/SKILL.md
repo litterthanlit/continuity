@@ -73,16 +73,21 @@ like an interface, not like an object:
   across the matched text (the selection-block recipe). Queries type on (`m.type`, linear).
 - `pop` only for what acts like an object over the UI — a sticker, a badge, a marker — never
   for windows, rows or chrome.
+- **Zoom in, cut on the match.** Go in on the one thing to read (`m.zoomTo(id, { fill })`; above 1 is
+  a macro) and back out; carry an element across a cut with a `match` transition instead of fading.
 - **One phrase, one UI.** The sentence narrates and the UI proves it: a fixed lead-in ("Your
   website is") stays still while `m.retype` deletes the ending and types the next claim, and each
   claim's UI lands with its last key and leaves as it is deleted. Give each phrase its beat
   (`{ text, at: "b2" }`); the `retype-hold` lint keeps every claim on screen long enough to read.
+  `accent: true` types each claim in the accent, like live input, and settles it to ink as it lands
+  (the accent is gone before the claim is read, so litt's no-accent-words rule holds).
   Three or four claims, never more.
 - A name reveal can flip a `<Cycle>` through stand-ins on the beats and land on the product
   (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
   `<Phone>` for a lock screen: the stack steps down as one, so cards never cross. A score is a
   `<Ring>` (`m.ring`): the arc and its number fill as one, so the figure never disagrees with it.
-  A before and after over time is one `<DotGrid values={after} from={before}>`: the sparse before
+  A grid can also build as dots that swell into squares on the wave (`m.grid(ct, "grow")`), the way
+  a contribution graph fills in. A before and after over time is one `<DotGrid values={after} from={before}>`: the sparse before
   is on screen, `m.grid(ct, "fill")` lights it up to the after on a wave, then `"dots"` turns the
   squares into dots sized by each day: one series, one data hue (never the accent).
 - **The reveal that explains scale.** Open a scene on the product's own screen, full frame, and

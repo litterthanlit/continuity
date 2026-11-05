@@ -357,6 +357,67 @@ function captureVariationBases() {
   });
 }
 
+/** An element's box in frame pixels. */
+function frameRect(el: Element): { x: number; y: number; w: number; h: number } {
+  const root = document.querySelector<HTMLElement>("[data-composition-id]") ?? document.body;
+  const rb = root.getBoundingClientRect();
+  const k = data.timeline.width / (rb.width || data.timeline.width);
+  const r = el.getBoundingClientRect();
+  return { x: (r.left - rb.left) * k, y: (r.top - rb.top) * k, w: r.width * k, h: r.height * k };
+}
+
+/**
+ * Tweens whose values depend on layout (`measure`): measured once here, with the scenes laid out,
+ * and written into the timeline, so every frame after is a pure function of time as usual.
+ * focus: the camera move that makes the target fill `fill` of the frame at the move's end, its pan
+ * clamped so the scene's edge never shows. match: the paired element starts at its partner's place
+ * and size on the outgoing scene's last frame.
+ */
+function resolveMeasured() {
+  const W = data.timeline.width;
+  const H = data.timeline.height;
+  const r4 = (n: number) => Math.round(n * 10000) / 10000;
+  const byScene = new Map(data.timeline.scenes.map((s) => [s.scene, s]));
+  for (const sc of data.timeline.scenes) {
+    let changed = false;
+    for (const t of sc.tweens) {
+      const m = t.measure;
+      if (!m) continue;
+      if (m.kind === "focus") {
+        const el = document.querySelector(`[data-ct="${m.target}"]`);
+        const cam = document.querySelector<HTMLElement>(`[data-ct="${sc.scene}.camera"]`);
+        if (!el || !cam) continue;
+        apply(sc.scene, t.start + t.duration);
+        const keep = cam.style.transform;
+        cam.style.transform = "none";
+        const r = frameRect(el);
+        cam.style.transform = keep;
+        const s = Math.max(1, m.fill * Math.min(W / Math.max(1, r.w), H / Math.max(1, r.h)));
+        const clamp = (v: number, lim: number) => Math.max(-lim, Math.min(lim, v));
+        const x = clamp(-s * (r.x + r.w / 2 - W / 2), ((s - 1) * W) / 2);
+        const y = clamp(-s * (r.y + r.h / 2 - H / 2), ((s - 1) * H) / 2);
+        t.props = { ...t.props, scale: [t.props.scale?.[0] ?? null, r4(s)], x: [t.props.x?.[0] ?? null, r4(x)], y: [t.props.y?.[0] ?? null, r4(y)] };
+        changed = true;
+      } else {
+        const outScene = byScene.get(m.from.slice(0, m.from.indexOf(".")));
+        const a = document.querySelector(`[data-ct="${m.from}"]`);
+        const b = document.querySelector<HTMLElement>(`[data-ct="${t.target}"]`);
+        if (!outScene || !a || !b) continue;
+        apply(outScene.scene, outScene.duration);
+        const A = frameRect(a);
+        apply(sc.scene, t.start);
+        const B = frameRect(b);
+        // B's box is drawn at the scale of everything above it (the camera too): offsets are in its own px.
+        const k = b.offsetWidth ? B.w / b.offsetWidth : 1;
+        const s = Math.sqrt((A.w * A.h) / Math.max(1, B.w * B.h));
+        t.props = { x: [r4((A.x + A.w / 2 - (B.x + B.w / 2)) / k), 0], y: [r4((A.y + A.h / 2 - (B.y + B.h / 2)) / k), 0], scale: [r4(s), 1] };
+        changed = true;
+      }
+    }
+    if (changed) compiled.set(sc.scene, compileScene(sc, partCounts));
+  }
+}
+
 async function prepare() {
   collect();
   await loadFonts();
@@ -369,6 +430,12 @@ async function prepare() {
     document.documentElement.classList.remove("ct-measuring");
   }
   for (const s of data.timeline.scenes) compiled.set(s.scene, compileScene(s, partCounts));
+  document.documentElement.classList.add("ct-measuring");
+  try {
+    resolveMeasured();
+  } finally {
+    document.documentElement.classList.remove("ct-measuring");
+  }
   captureVariationBases();
   createMotionBlurs();
   collectMorphs();

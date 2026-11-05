@@ -134,7 +134,7 @@ describe("launch devices (projects/_launch)", () => {
     const { b } = await rules("_launch");
     const scenes = b.timeline!.scenes.map((sc) => ({
       ...sc,
-      tweens: sc.tweens.map((t) => (t.kind === "camera" && t.start > 1 ? { ...t, props: { ...t.props, y: [0, 200] as [number, number] } } : t)),
+      tweens: sc.tweens.map((t) => (sc.scene === "product" && t.kind === "camera" && t.start > 1 ? { ...t, props: { ...t.props, y: [0, 200] as [number, number] } } : t)),
     }));
     const found = lintTimeline({ ...b, timeline: { ...b.timeline!, scenes } }).filter((f) => f.rule === "camera-edge");
     expect(found.map((f) => f.scene)).toEqual(["product"]);

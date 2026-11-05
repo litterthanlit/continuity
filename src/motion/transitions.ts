@@ -15,7 +15,7 @@ import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
  * hide the overlay) and `<id>.fx` (an overlay above it: a flash, a light band).
  * Research: docs/research/2026-10-transitions.md · decision: docs/decisions/0005.
  */
-export const TRANSITIONS = ["cut", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"] as const;
+export const TRANSITIONS = ["cut", "match", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"] as const;
 export type TransitionType = (typeof TRANSITIONS)[number];
 
 /** Planar directions (push, wipe). */
@@ -94,6 +94,8 @@ export interface TransitionDef {
   dirs?: readonly Dir[];
   /** Registers it belongs to (docs/decisions/0007); omitted = every register. */
   registers?: readonly Register[];
+  /** A hard cut: the scenes do not overlap; its tweens run inside the incoming scene, after the cut. */
+  cut?: boolean;
   /** Layers the incoming scene needs (none of litt's transitions do; the build still supports them). */
   layers?: { reveal?: boolean; fx?: (spec: TransitionSpec, ctx: LayerContext) => FxLayer };
   build(c: Ctx): { out: Tween[]; in: Tween[] };
@@ -161,6 +163,21 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
     range: [0, 2],
     params: [],
     build: () => ({ out: [], in: [] }),
+  },
+  match: {
+    description:
+      "A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. pairs: [\"logo\"] (same id) or [[\"ring\", \"badge\"]]. A primary move, like a cut: it is not an accent.",
+    duration: 0.6,
+    range: [0.3, 1.2],
+    params: ["ease", "pairs"],
+    cut: true,
+    build: (c) => ({
+      out: [],
+      in: pairsOf(c.spec).map(([a, b]) => ({
+        ...tw(`${c.into}.${b}`, 0, c.d, { x: [0, 0], y: [0, 0], scale: [1, 1] }, c.ease("out")),
+        measure: { kind: "match" as const, from: `${c.out}.${a}` },
+      })),
+    }),
   },
   crossfade: {
     description: "The incoming scene fades over the outgoing one. The same surface in a new state.",
@@ -332,4 +349,9 @@ export function transitionTweens(
     frame,
     ease: (fallback) => override ?? (typeof fallback === "string" ? named(fallback) : { spec: fallback }),
   });
+}
+
+/** Whether a transition is a cut (plain or matched): the scenes it joins do not overlap. */
+export function isCut(t: { type: TransitionType }): boolean {
+  return t.type === "cut" || Boolean(TRANSITION_DEFS[t.type].cut);
 }

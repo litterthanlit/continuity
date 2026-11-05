@@ -264,6 +264,20 @@ Scene A ends on the pixel globe at `GLOBE`; scene B opens on a grid of 1s and 0s
 same box, already settled, then the digits start to change. The storyboard transition is a plain
 cut — the rhyme is the geometry, not an effect.
 
+When the two elements sit in different places (a headline word becomes a small label), let the
+cut carry it: `"transition": { "type": "match", "pairs": [["tool-3", "brand"]] }`. It is still a
+hard cut, but the incoming element starts exactly where its partner was (place and size, measured
+by the runtime) and settles home over the duration. Give that element no entrance of its own.
+
+## A zoom-in (the macro)
+```ts
+m.type("site-text", { at: "b2", cps: 18 });
+m.zoomTo("site-text", { at: "b3", fill: 1.4, duration: "slow", ease: "steep" }); // bigger than the frame
+m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: "b4", duration: "slow", ease: "steep" });
+```
+The runtime measures where the element is, so it works on any layout; the pan stops before the
+scene's edge would show. The full scene is `projects/_launch/scenes/input.tsx`.
+
 ## The mirrored ending (close the loop)
 ```jsonc
 // first scene:  "transition": { "type": "depth" }                  — fly in

@@ -1,6 +1,6 @@
 {
   "title": "Launch devices gallery",
-  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn), with a ring gauge (Ring, m.ring) as the third claim's proof, a contribution grid that fills and turns to dots (DotGrid, m.grid), the pixels transition, and a pull-back reveal from a screen to its browser (m.pullBack). Harbor is an invented product. Reference + lint fixture.",
+  "logline": "The launch-film devices from the Conqueror study, in litt's energetic register: a word that cycles in place (Cycle, m.cycle), a sentence whose ending is deleted and retyped with its proof beside it (Typed, m.retype), and notifications that stack in on a lock screen (NotificationStack, m.stackIn), with a ring gauge (Ring, m.ring) as the third claim's proof, a contribution grid that fills and turns to dots (DotGrid, m.grid), the pixels transition, a match cut and a macro zoom-in (m.zoomTo), and a pull-back reveal from a screen to its browser (m.pullBack). Harbor is an invented product. Reference + lint fixture.",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -49,6 +49,62 @@
         }
       ],
       "motion": "The line types on, then the slot flips on b1, b2, b3 (steep, snap) and holds on Harbor.",
+      "transition": {
+        "type": "match",
+        "pairs": [
+          [
+            "tool-3",
+            "brand"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "input",
+      "duration": 3.6,
+      "intent": "A match cut carries \"Harbor\" into the brand label; the domain types, the camera goes in on it as a macro, then pulls back.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.5
+        },
+        {
+          "id": "b2",
+          "at": 0.8
+        },
+        {
+          "id": "b3",
+          "at": 1.55
+        },
+        {
+          "id": "b4",
+          "at": 2.75
+        }
+      ],
+      "text": {
+        "brand": "Harbor",
+        "headline": "Just enter your website.",
+        "site": "harbor.dev"
+      },
+      "elements": [
+        {
+          "id": "brand",
+          "role": "label",
+          "anchor": "C2"
+        },
+        {
+          "id": "headline",
+          "role": "title",
+          "anchor": "B3:E3"
+        },
+        {
+          "id": "site",
+          "role": "ui",
+          "anchor": "B4:E4",
+          "note": "<Input> focused; site-text types, site-caret."
+        }
+      ],
+      "motion": "Match cut in (tool-3 to brand, 0.6s settle). b1 headline wipes, the field rises. b2 the domain types. b3 m.zoomTo the typed text, fill 1.4 (a macro). b4 the camera pulls back. ",
       "transition": {
         "type": "pixels"
       }

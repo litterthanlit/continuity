@@ -104,6 +104,9 @@ export class MotionError extends Error {}
 
 /** m.retype: the pause between a cleared phrase and the next one's first key. */
 const RETYPE_GAP = 0.1;
+/** m.grid "grow": a cell's size as a dot, and how long it stays one before it swells into its square. */
+const GROW_DOT = 0.3;
+const GROW_LEAD = 0.2;
 /** m.cycle: how far (% of its own height) a word travels to clear the slot's clip. */
 const CYCLE_TRAVEL = 120;
 
@@ -344,12 +347,14 @@ export class MotionBuilder {
    * to read (≈17 chars/s, the `retype-hold` lint) unless `hold` says otherwise; a phrase with its
    * own `at` starts typing then, and the one before it is deleted just in time. The last phrase
    * stays unless `clear`. With `caret`, that element blinks while a phrase holds and stays solid
-   * while keys are pressed. Copy comes from the storyboard: `[text.e1, text.e2, …]`.
+   * while keys are pressed. With `accent`, each phrase types in the accent's text tone, like live
+   * input, and settles to its ink as it lands (litt keeps no accent word on screen: it is gone
+   * before the phrase is read). Copy comes from the storyboard: `[text.e1, text.e2, …]`.
    */
   retype(
     target: string,
     phrases: Array<string | { text: string; at?: At; hold?: number }>,
-    opts: { at?: At; snap?: Snap; cps?: number; deleteCps?: number; hold?: number; gap?: number; clear?: boolean; caret?: string; allow?: string[] } = {},
+    opts: { at?: At; snap?: Snap; cps?: number; deleteCps?: number; hold?: number; gap?: number; clear?: boolean; caret?: string; accent?: boolean; allow?: string[] } = {},
   ): this {
     if (!phrases.length) throw new MotionError(`[${this.scene}] m.retype("${target}") needs at least one phrase.`);
     const list = phrases.map((p) => (typeof p === "string" ? { text: p } : p));
@@ -369,6 +374,11 @@ export class MotionBuilder {
       push(key, n, start, typing);
       key += n;
       const typed = round(start + typing);
+      if (opts.accent) {
+        // Live input: the keys land in the accent, and the phrase settles to its ink once typed.
+        this.push({ target: id, kind: "emphasis", start, duration: 0, ease: eases.linear, easeName: "linear", props: { accent: [0, 1] }, preset: "retype" });
+        this.push({ target: id, kind: "emphasis", start: typed, duration: durations.snap, ease: eases.out, easeName: "out", props: { accent: [1, 0] }, preset: "retype" });
+      }
       const last = i === list.length - 1;
       if (last && !opts.clear) {
         if (opts.caret) this.blink(opts.caret, { at: typed });
@@ -449,12 +459,14 @@ export class MotionBuilder {
   /**
    * A `<DotGrid>` on a wave: `"fill"` brings the cells in (from 40% size, fading up) or, when the
    * grid has a before (`from`), lights each cell from its before ink up to its value; `"dots"`
-   * turns the squares into circles sized by their values. The wave crosses the grid in `span`
-   * seconds (default 0.8), column by column (`wave: "left"`) or corner to corner (`"diagonal"`).
+   * turns the squares into circles sized by their values; `"grow"` brings each cell in as a small
+   * dot ahead of the wave that then swells into its square (the leading edge reads as dots). The
+   * wave crosses the grid in `span` seconds (default 0.8), column by column (`wave: "left"`) or
+   * corner to corner (`"diagonal"`).
    */
   grid(
     target: string,
-    mode: "fill" | "dots",
+    mode: "fill" | "dots" | "grow",
     opts: { at?: At; snap?: Snap; span?: number; wave?: "left" | "diagonal"; ease?: EaseToken | EaseSpec; duration?: number | DurationToken; allow?: string[] } = {},
   ): this {
     const n = this.countOf(target, "DotGrid");
@@ -475,6 +487,11 @@ export class MotionBuilder {
       // With a before (`from`), the cells are there already: fill lights each one up to its value.
       if (mode === "fill" && before) this.flip(`${cell}-to`, "enter", "grid", { scale: [0.6, 1], opacity: [0, 1] }, timing, group);
       else if (mode === "fill") this.flip(cell, "enter", "grid", { scale: [0.4, 1], opacity: [0, 1] }, timing, group);
+      else if (mode === "grow") {
+        // The dot pops on the instant tier; the swell starts once it has landed.
+        this.flip(cell, "enter", "grid", { scale: [0, GROW_DOT], radius: [50, 50], opacity: [0, 1] }, { at: start, ease: "out", duration: "instant", allow: opts.allow }, group);
+        this.flip(cell, "move", "grid", { scale: [GROW_DOT, 1], radius: [50, CELL_RADIUS] }, { ...timing, at: round(start + GROW_LEAD) }, group);
+      }
       else this.flip(cell, "move", "grid", { radius: [CELL_RADIUS, 50], scale: [1, dotScale(Number(this.dataOf!(this.id(cell))?.v) || 0)] }, timing, group);
     }
     return this;
@@ -498,6 +515,20 @@ export class MotionBuilder {
       { scale: [s, 1], x: [round(-s * dx), 0], y: [round(-s * dy), 0] },
       { at: opts.at, snap: opts.snap, duration: opts.duration ?? "slow", ease: opts.ease ?? "steep", allow: [...(opts.allow ?? []), "camera-too-fast"] },
     );
+  }
+
+  /**
+   * Zoom the camera in on an element until it fills `fill` of the frame (default 0.6; above 1 is a
+   * macro, the element bigger than the frame), centred as far as the scene's edge allows. Where the
+   * element sits is measured by the runtime once, at the end of the move, so it works on any layout.
+   * Back out with m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }).
+   */
+  zoomTo(target: string, opts: { at?: At; snap?: Snap; fill?: number; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
+    const fill = opts.fill ?? 0.6;
+    if (!(fill > 0)) throw new MotionError(`[${this.scene}] m.zoomTo("${target}"): fill is the share of the frame the element fills, above 0.`);
+    this.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: opts.at, snap: opts.snap, duration: opts.duration ?? "slow", ease: opts.ease ?? "inOut", allow: opts.allow });
+    this.tweens[this.tweens.length - 1].measure = { kind: "focus", target: this.id(target), fill };
+    return this;
   }
 
   /** How many parts a kit component rendered (its `data-ct-count`). */

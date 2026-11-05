@@ -63,6 +63,7 @@
 | type | default | range | params | what it is |
 |---|---|---|---|---|
 | `cut` | — | — | — | Hard cut, on the beat. The primary: most of a litt edit is cuts. |
+| `match` | 0.6s | 0.3–1.2s | ease, pairs | A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. pairs: ["logo"] (same id) or [["ring", "badge"]]. A primary move, like a cut: it is not an accent. |
 | `crossfade` | 0.4s | 0.25–0.8s | ease | The incoming scene fades over the outgoing one. The same surface in a new state. |
 | `dip` | 0.5s | 0.3–1s | ease | Out fades to the canvas, then in fades up. A breath between chapters, before the end card. |
 | `push` | 0.5s | 0.3–0.8s | ease, dir, blur | The incoming scene pushes the outgoing one off in the direction of travel (dir, default left = reading order). Sequential steps. blur: true when it moves fast. |

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { musicAt, indexAt, onFrame, pointAt, type MusicGrid, type OnMusic } from "../audio/grid.js";
 import { REGISTERS } from "../motion/register.js";
 import { eases } from "../motion/tokens.js";
-import { DIRS, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
+import { DIRS, isCut, TRANSITION_DEFS, TRANSITIONS, type TransitionParam } from "../motion/transitions.js";
 import { KIT_NAMES } from "../themes/kits.js";
 
 export const ASPECTS = {
@@ -85,8 +85,8 @@ export const TransitionSchema = z
         ctx.addIssue({ code: "custom", path: [p], message: `${t.type} has no "${p}" parameter (it takes: ${def.params.join(", ") || "none"})` });
       }
     }
-    if (t.type === "morph" && !t.pairs) {
-      ctx.addIssue({ code: "custom", path: ["pairs"], message: 'morph needs the elements that carry the cut: "pairs": ["logo"] or [["title", "card"]]' });
+    if ((t.type === "morph" || t.type === "match") && !t.pairs) {
+      ctx.addIssue({ code: "custom", path: ["pairs"], message: `${t.type} needs the elements that carry the cut: "pairs": ["logo"] or [["title", "card"]]` });
     }
     if (t.dir && def.dirs && !def.dirs.includes(t.dir)) {
       ctx.addIssue({ code: "custom", path: ["dir"], message: `${t.type} runs ${def.dirs.join(" or ")}, not ${t.dir}` });
@@ -177,7 +177,7 @@ export function sceneTimings(sb: Storyboard): { scenes: SceneTiming[]; duration:
   let t = 0;
   sb.scenes.forEach((s, i) => {
     const isLast = i === sb.scenes.length - 1;
-    const overlap = !isLast && s.transition && s.transition.type !== "cut" ? s.transition.duration : 0;
+    const overlap = !isLast && s.transition && !isCut(s.transition) ? s.transition.duration : 0;
     out.push({ id: s.id, start: round(t), duration: s.duration, overlapNext: overlap });
     t += s.duration - overlap;
   });
@@ -231,7 +231,7 @@ function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | u
   let t = 0;
   const scenes = sb.scenes.map((s, i): SceneSpec => {
     const isLast = i === sb.scenes.length - 1;
-    const overlap = !isLast && s.transition && s.transition.type !== "cut" ? s.transition.duration : 0;
+    const overlap = !isLast && s.transition && !isCut(s.transition) ? s.transition.duration : 0;
     let duration: number;
     if (typeof s.duration === "number") duration = s.duration;
     else if (!grid) {
@@ -292,8 +292,8 @@ export function parseStoryboard(raw: unknown, opts: { grid?: MusicGrid } = {}): 
     }
     // A scene's incoming and outgoing transitions both drive its root: they must not overlap.
     const prev = i > 0 ? r.data.scenes[i - 1].transition : undefined;
-    const inD = prev && prev.type !== "cut" ? prev.duration : 0;
-    const outD = s.transition && s.transition.type !== "cut" && !isLast ? s.transition.duration : 0;
+    const inD = prev && !isCut(prev) ? prev.duration : 0;
+    const outD = s.transition && !isCut(s.transition) && !isLast ? s.transition.duration : 0;
     if (inD && outD && inD + outD > s.duration)
       issues.push(`scenes.${i}: its incoming (${inD}s) and outgoing (${outD}s) transitions overlap inside its ${s.duration}s — lengthen the scene or shorten a transition`);
   });

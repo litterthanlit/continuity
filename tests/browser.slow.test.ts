@@ -120,3 +120,52 @@ d("type kit cascade contract (tests/fixtures/kit-cascade)", () => {
     }
   });
 });
+
+d("measured geometry (projects/_launch: m.zoomTo, the match cut)", () => {
+  it("the runtime fills in the zoom and the match from the layout, and the frames show them", async () => {
+    const out = mkdtempSync(join(tmpdir(), "ct-measure-"));
+    const b = await buildProject("_launch", { outDir: out });
+    expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+    const srv = await serveDir(out);
+    try {
+      const got = await withBrowser(async (browser) => {
+        const page = await browser.newPage();
+        await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+        await page.goto(srv.url + "index.html", { waitUntil: "load" });
+        await page.waitForFunction("Boolean(window.__ct)");
+        await page.evaluate("window.__ct.ready");
+        return (await page.evaluate(`(function () {
+          var ct = window.__ct, tl = ct.timeline;
+          var intro = tl.scenes.find(function (s) { return s.scene === "intro"; });
+          var input = tl.scenes.find(function (s) { return s.scene === "input"; });
+          var zoom = input.tweens.find(function (t) { return t.measure && t.measure.kind === "focus"; });
+          var match = input.tweens.find(function (t) { return t.measure && t.measure.kind === "match"; });
+          function box(id) { var r = document.querySelector('[data-ct="' + id + '"]').getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width }; }
+          ct.seek(intro.start + intro.duration - 0.001);
+          var word = box("intro.tool-3");
+          ct.seek(input.start);
+          var landed = box("input.brand");
+          ct.seek(input.start + zoom.start + zoom.duration);
+          var text = box("input.site-text");
+          return { zoom: zoom.props, word: word, landed: landed, text: text, settle: match.props };
+        })()`)) as { zoom: Record<string, [number | null, number]>; word: Box; landed: Box; text: Box; settle: Record<string, [number, number]> };
+      });
+      // The zoom pushes in until the typed domain is bigger than the frame (fill 1.4), centred as the edge allows.
+      expect(got.zoom.scale[1]).toBeGreaterThan(2);
+      expect(got.text.w).toBeGreaterThan(1920);
+      // On the cut's first frame the label sits on the outgoing word: same centre, same width.
+      expect(Math.abs(got.landed.cx - got.word.cx)).toBeLessThan(4);
+      expect(Math.abs(got.landed.cy - got.word.cy)).toBeLessThan(4);
+      expect(got.landed.w / got.word.w).toBeGreaterThan(0.8);
+      expect(got.settle.x[1]).toBe(0);
+    } finally {
+      await srv.close();
+    }
+  });
+});
+
+interface Box {
+  cx: number;
+  cy: number;
+  w: number;
+}

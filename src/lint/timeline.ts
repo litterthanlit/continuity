@@ -5,7 +5,7 @@ import { resolveScene, tapeText } from "../motion/evaluate.js";
 import { REGISTER_BOUNDS, registerOf, type Register } from "../motion/register.js";
 import { EXIT_FACTOR, SETTLED_HOLD, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
 import { WEIGHTS } from "../themes/kits.js";
-import { TRANSITION_DEFS } from "../motion/transitions.js";
+import { isCut, TRANSITION_DEFS } from "../motion/transitions.js";
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
 import type { Finding, Severity } from "../spec/findings.js";
 import { ASPECTS, sceneTimings, type Storyboard } from "../spec/storyboard.js";
@@ -103,7 +103,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */
@@ -248,7 +248,8 @@ export function lintTimeline(build: BuildResult): Finding[] {
           add("travel-too-far", "warning", sc, `${localOf(t.target)} enters from ${far}px away${inRegister}`, { ...where, suggestion: `travel ${TRAVEL}px (the preset default)${register === "calm" ? "" : `, ≤ ${B.maxTravel}px for a piece that lands`}` });
         }
       }
-      if (t.kind === "camera") {
+      // A measured move (m.zoomTo) has its values only once the runtime has measured the layout; it clamps its own pan.
+      if (t.kind === "camera" && !t.measure) {
         const zoom = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1));
         if (t.duration >= sc.duration * 0.6 && zoom > B.maxDrift + 1e-6 && !allowed(t, "camera-drift")) {
           add("camera-drift", "warning", sc, `the ambient camera zooms ${r2(zoom * 100)}% over the scene${inRegister}`, { ...where, suggestion: `push 1 → ${r2(1 + B.maxDrift)} or less; a deliberate focus move is a short inOut tween` });
@@ -515,7 +516,8 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
   const accents = Math.max(...sb.scenes.map((s) => REGISTER_BOUNDS[registerOf(sb, s.id)].accents));
   sb.scenes.forEach((sc, i) => {
     const t = sc.transition;
-    if (!t || t.type === "cut" || i === sb.scenes.length - 1) return;
+    // Cuts and match cuts are the primary: not accents, no craft range to keep.
+    if (!t || isCut(t) || i === sb.scenes.length - 1) return;
     const def = TRANSITION_DEFS[t.type];
     const at = r2(timings[i].start + sc.duration - t.duration);
     const where = { source: "lint" as const, scene: sc.id, time: at };

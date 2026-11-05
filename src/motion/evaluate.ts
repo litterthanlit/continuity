@@ -342,6 +342,10 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: 
     const p = Math.round(Math.min(1, Math.max(0, g("ink"))) * 1000) / 10;
     s.color = "color-mix(in oklab, var(--color-fg) " + p + "%, var(--color-fg-muted))";
   }
+  if (has("accent")) {
+    const p = Math.round(Math.min(1, Math.max(0, g("accent"))) * 1000) / 10;
+    s.color = "color-mix(in oklab, var(--color-accent-text) " + p + "%, " + (s.color ?? "var(--color-fg)") + ")";
+  }
   if (has("radius")) s.borderRadius = f4(Math.min(50, Math.max(0, g("radius")))) + "%";
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });
