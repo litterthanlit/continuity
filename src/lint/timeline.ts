@@ -38,7 +38,7 @@ export const RULES = {
   "ui-glance": "UI mockup text should be fully landed for ≥ 0.8s so it registers (it is imagery, not copy — no full read time needed).",
   "scene-overrun": "Motion is still running after the scene has ended (it will be cut off).",
   "late-entrance": "Element enters in the last moments of the scene — it pops in and is gone.",
-  "dead-air": "Nothing moves for too long. Let the camera carry the hold (a push of 3% or less) or tighten the scene.",
+  "dead-air": "Nothing moves for too long (2.5s; energetic register: 1.6s, a hold is about a second). Let the camera carry the hold (a push of 3% or less) or tighten the scene.",
   "crowded": "Too many independent elements animating at once — the eye can't follow (calm: 5, energetic: 7).",
   "unstaggered-group": "Several elements enter with the same preset at the same instant. Stagger them to create hierarchy.",
   "slow-open": "The video's first motion starts late — the opening frame is dead.",
@@ -207,7 +207,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
         }
       }
       if (t.preset && (t.preset === "maskUp" || t.preset === "maskDown" || t.preset === "maskOut") && !t.split && !allowed(t, "mask-needs-split")) {
-        add("mask-needs-split", "info", sc, `${localOf(t.target)} uses ${t.preset} without split`, { ...where, suggestion: 'add split: "lines" (or wrap it in an overflow-hidden parent)' });
+        add("mask-needs-split", "warning", sc, `${localOf(t.target)} uses ${t.preset} without split: it travels ${t.preset === "maskOut" ? "up" : "in"} its own height with nothing to hide it`, { ...where, suggestion: 'add split: "lines" (or, inside an overflow-hidden parent, allow: ["mask-needs-split"])' });
       }
       if (t.kind !== "transition") {
         const bounce = bounceOf(t.ease);
@@ -420,7 +420,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
     if (cursor < sc.duration) gaps.push([cursor, sc.duration]);
     for (const [a, b] of gaps) {
       const len = b - a;
-      if (len > 2.5) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a), suggestion: "m.camera({ scale: [1, 1.03] }), or tighten the scene" });
+      if (len > B.maxStill) add("dead-air", "warning", sc, `nothing moves for ${r2(len)}s (${r2(a)}–${r2(b)}s)${inRegister}`, { time: at(a), suggestion: "m.camera({ scale: [1, 1.03] }) over the hold, a caret blink on an end card, or tighten the scene" });
       else if (len > 1.6) add("dead-air", "info", sc, `static for ${r2(len)}s (${r2(a)}–${r2(b)}s)`, { time: at(a) });
     }
 

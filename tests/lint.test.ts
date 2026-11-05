@@ -141,6 +141,16 @@ describe("launch devices (projects/_launch)", () => {
     expect(lintTimeline(b).filter((f) => f.rule === "camera-edge")).toEqual([]);
   });
 
+  it("dead-air: an energetic hold past 1.6s warns; the same hold judged calm is an info", async () => {
+    const { b } = await rules("_launch");
+    // Drop the last two notifications: the scene then stands still for about two seconds.
+    const scenes = b.timeline!.scenes.map((sc) => (sc.scene === "alerts" ? { ...sc, tweens: sc.tweens.filter((t) => t.start < 1.4), loops: [] } : sc));
+    const still = { ...b, timeline: { ...b.timeline!, scenes } };
+    const found = (bb: typeof b) => lintTimeline(bb).filter((f) => f.rule === "dead-air" && f.scene === "alerts").map((f) => f.severity);
+    expect(found(still)).toEqual(["warning"]);
+    expect(found({ ...still, storyboard: { ...still.storyboard!, register: "calm" } })).toEqual(["info"]);
+  });
+
   it("the stack's arrivals travel one row without tripping travel-too-far, even judged calm", async () => {
     const { b } = await rules("_launch");
     const calm = lintTimeline({ ...b, storyboard: { ...b.storyboard!, register: "calm" } });
