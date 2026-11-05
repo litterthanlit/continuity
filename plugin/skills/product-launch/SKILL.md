@@ -79,8 +79,9 @@ like an interface, not like an object:
   website is") stays still while `m.retype` deletes the ending and types the next claim, and each
   claim's UI lands with its last key and leaves as it is deleted. Give each phrase its beat
   (`{ text, at: "b2" }`); the `retype-hold` lint keeps every claim on screen long enough to read.
-  `accent: true` types each claim in the accent, like live input, and settles it to ink as it lands
-  (the accent is gone before the claim is read, so litt's no-accent-words rule holds).
+  `accent: true` types each claim in the accent, like live input, and settles it to ink as it lands.
+  It is a deliberate exception to P1 (no accent word in copy), and critics count it as one: use it
+  only when the brief asks for that look, and say so in the brief.
   Three or four claims, never more.
 - A name reveal can flip a `<Cycle>` through stand-ins on the beats and land on the product
   (`m.cycle`); end the line on the slot. A reward beat stacks notifications in (`m.stackIn`), in a
