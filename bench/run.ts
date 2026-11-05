@@ -11,7 +11,7 @@
  * deliberately (e.g. after a harness change), not in CI.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PKG_ROOT as ROOT, PROJECTS_DIR } from "../src/paths.js";
 import { readState } from "../src/cli/lib/store.js";
@@ -45,6 +45,10 @@ function flag(args: string[], name: string): string | undefined {
 
 function runBrief(brief: string, runId: string, model?: string): BriefResult {
   const project = `bench-${brief}-${runId}`;
+  // A brief's input files (bench/assets/<brief>/) are staged in the project, so every run gets the
+  // same input without copying anything (runs may not run cp, nor write outside projects/).
+  const assets = join(ROOT, "bench/assets", brief);
+  if (existsSync(assets)) cpSync(assets, join(PROJECTS_DIR, project, "assets"), { recursive: true });
   const prompt =
     `/make-video ${join("bench/briefs", `${brief}.md`)} --slug ${project}\n\n` +
     `This is an unattended benchmark run: never ask the user questions — make reasonable assumptions and record them in brief.md. ` +

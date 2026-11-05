@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { PKG_ROOT, PROJECTS_DIR, projectDir, rel } from "../../paths.js";
 import { ASPECTS, type Aspect } from "../../spec/storyboard.js";
@@ -34,7 +34,9 @@ export const newProject: Command = {
     const slug = requireSlug(a);
     if (!/^[a-z][a-z0-9-]*$/.test(slug)) throw new UsageError("project names are lowercase kebab-case");
     const dir = projectDir(slug);
-    if (existsSync(dir)) throw new UsageError(`${rel(dir)} already exists`);
+    // A folder holding only assets/ is staged input (a track dropped in first, or a bench brief's
+    // files): scaffold around it. Anything else is a project already.
+    if (existsSync(dir) && readdirSync(dir).some((f) => f !== "assets")) throw new UsageError(`${rel(dir)} already exists`);
     const aspect = (flagStr(a, "aspect") ?? "16:9") as Aspect;
     if (!(aspect in ASPECTS)) throw new UsageError(`--aspect must be one of ${Object.keys(ASPECTS).join(", ")}`);
     const theme = flagStr(a, "theme") ?? DEFAULT_THEME;

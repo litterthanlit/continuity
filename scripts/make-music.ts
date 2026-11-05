@@ -109,7 +109,7 @@ const beat: Song = {
 const pulse = (roots: string[]) => roots.flatMap((note, bar) => [0, 4, 8, 12].map((step) => ({ step: bar * 16 + step, len: 3, note })));
 
 /**
- * bench/assets/launch.wav: 128 bpm, 21 bars (~39s), for the launch-film bench brief — long enough
+ * bench/assets/seo-agent-launch/launch.wav: 128 bpm, 21 bars (~39s), for the launch-film bench brief — long enough
  * that a ~35s film can cut its music on the end card (music.stop) instead of running out. An intro,
  * an 8-bar groove, a riser, a 6-bar drop and a half-time outro.
  */
@@ -152,7 +152,7 @@ const launch: Song = {
 };
 
 const TRACKS: Array<{ file: string; song: Song }> = [
-  { file: "bench/assets/launch.wav", song: launch },
+  { file: "bench/assets/seo-agent-launch/launch.wav", song: launch },
   { file: "projects/example-logo/assets/music.wav", song: logo },
   { file: "projects/example-beat/assets/music.wav", song: beat },
 ];
