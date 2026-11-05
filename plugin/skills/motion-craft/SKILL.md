@@ -166,7 +166,10 @@ or the text drifts and every hard cut snaps it back. A
 deliberate focus move — zoom to the part of the UI that matters, hold, then act — is a short
 `inOut` tween (`slow` or a little longer, ≤ 15% zoom/s, `camera-too-fast`). When the camera
 moves, the content holds still. The energetic camera travels: pans across a collage on `steep`
-(≤ 480px/s, ≤ 50% zoom/s), an ambient push up to 8% — §12.
+(≤ 480px/s, ≤ 50% zoom/s), an ambient push up to 8% — §12. A zoom (a scale change) runs about its
+fixed point at a proportional rate, so its ease is its feel: `inOut`, with time for its size (a
+15× macro wants ~1.4s). `steep` on a zoom doubles the frame in one frame (`zoom-lunge`).
+Fast moves carry the shutter's motion blur by themselves; nothing to add.
 
 ## 10. Emphasis: by ink
 

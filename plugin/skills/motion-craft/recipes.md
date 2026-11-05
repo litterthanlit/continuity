@@ -272,11 +272,14 @@ by the runtime) and settles home over the duration. Give that element no entranc
 ## A zoom-in (the macro)
 ```ts
 m.type("site-text", { at: "b2", cps: 18 });
-m.zoomTo("site-text", { at: "b3", fill: 1.4, duration: "slow", ease: "steep" }); // bigger than the frame
-m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: "b4", duration: "slow", ease: "steep" });
+m.zoomTo("site-text", { at: "b3", fill: 1.4 }); // inOut over 1.4s: a dive, not a lunge
+m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: "b4", duration: "linger", ease: "inOut" });
 ```
 The runtime measures where the element is, so it works on any layout; the pan stops before the
-scene's edge would show. The full scene is `projects/_launch/scenes/input.tsx`.
+scene's edge would show. The zoom runs about its fixed point at a steady proportional rate, so the
+ease shapes it; a big zoom needs time (a 15× macro wants ~1.4s on inOut). Never `steep` for a zoom:
+it doubles the frame's scale in a single frame (`zoom-lunge` reports it, with the time it needs).
+The full scene is `projects/_launch/scenes/input.tsx`.
 
 ## The mirrored ending (close the loop)
 ```jsonc

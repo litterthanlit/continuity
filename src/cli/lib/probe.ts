@@ -299,6 +299,47 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
         });
       }
 
+      // Zooms, with measured moves resolved: the most the scale changes in one frame at the move's
+      // steepest. Past ~28% a frame (0.25 in log) the eye sees a lunge, not a camera.
+      const zooms = (await page.evaluate(
+        (fps: number) => {
+          const ct = (window as unknown as { __ct: { compiled: Map<string, { channels: Map<string, Map<string, Array<{ start: number; end: number; from: number; to: number; ease: (p: number) => number }>>> }> } }).__ct;
+          const out: Array<{ key: string; start: number; dur: number; ratio: number; perFrame: number }> = [];
+          ct.compiled.forEach((c) =>
+            c.channels.forEach((byProp, key) => {
+              if (!key.endsWith(".camera")) return;
+              for (const seg of byProp.get("scale") ?? []) {
+                const dur = seg.end - seg.start;
+                if (!(dur > 0 && seg.from > 0 && seg.to > 0)) continue;
+                const span = Math.abs(Math.log(seg.to / seg.from));
+                if (span < 0.05) continue;
+                let slope = 0;
+                for (let i = 0; i < 120; i++) slope = Math.max(slope, Math.abs(seg.ease((i + 1) / 120) - seg.ease(i / 120)) * 120);
+                out.push({ key, start: seg.start, dur, ratio: seg.to / seg.from, perFrame: (span * slope) / (dur * fps) });
+              }
+            }),
+          );
+          return out;
+        },
+        build.timeline!.fps,
+      )) as Array<{ key: string; start: number; dur: number; ratio: number; perFrame: number }>;
+      const ZOOM_LUNGE = 0.25;
+      for (const z of zooms) {
+        if (z.perFrame <= ZOOM_LUNGE) continue;
+        const scene = z.key.slice(0, z.key.indexOf("."));
+        const sc = build.timeline!.scenes.find((x) => x.scene === scene);
+        findings.push({
+          source: "probe",
+          rule: "zoom-lunge",
+          severity: "warning",
+          scene,
+          element: z.key,
+          time: r2((sc?.start ?? 0) + z.start),
+          message: `the camera zooms ${z.ratio >= 1 ? "in" : "out"} ×${r2(z.ratio >= 1 ? z.ratio : 1 / z.ratio)} in ${r2(z.dur)}s: at its steepest the frame scales ×${r2(Math.exp(z.perFrame))} in one frame`,
+          suggestion: `give it ${r2((z.dur * z.perFrame) / ZOOM_LUNGE)}s or more, or a gentler ease (inOut, not steep), or zoom less (a smaller fill)`,
+        });
+      }
+
       await page.evaluate(MEASURE_SCRIPT);
       const measure = (t: number, neutral = false): Promise<Measured[]> =>
         page.evaluate(

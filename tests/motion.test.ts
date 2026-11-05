@@ -334,30 +334,53 @@ describe("retype", () => {
     expect(tapeText(tape, 99)).toBe("");
   });
 
+  // A phrase types as a run of one-key tweens; its deletion is the tween that starts at the phrase's last key.
+  const keysOf = (m: MotionBuilder, from: number, to: number) =>
+    m.tweens.filter((t) => {
+      const [a, b] = t.props.typed ?? [null, 0];
+      return a !== null && a >= from && b <= to && b - a === 1;
+    });
+  const deletion = (m: MotionBuilder, at: number) => m.tweens.find((t) => t.props.typed && t.props.typed[0] === at && t.props.typed[1] - t.props.typed[0] > 1)!;
+
   it("holds each phrase long enough to read before deleting it, and keeps the last", () => {
     const m = new MotionBuilder("s", 6, {});
     m.retype("end", tape, { at: 0.5, cps: 20, caret: "caret" });
-    const [type0, del0, type1] = m.tweens;
-    expect(m.tweens).toHaveLength(3);
-    expect(type0).toMatchObject({ target: "s.end", start: 0.5, duration: 0.5, props: { typed: [0, 10] }, tape });
-    const reading = del0.start - (type0.start + 0.3 * type0.duration);
-    expect(reading).toBeGreaterThanOrEqual(readTime(10) - 1e-9);
-    expect(del0.start - (type0.start + type0.duration)).toBeGreaterThanOrEqual(0.6);
+    const keys = keysOf(m, 0, 10);
+    expect(keys).toHaveLength(10);
+    expect(keys[0]).toMatchObject({ target: "s.end", start: 0.5, tape });
+    const typed = keys[9].start + keys[9].duration;
+    expect(typed).toBeCloseTo(1, 3);
+    const del0 = deletion(m, 10);
+    expect(del0.start - (0.5 + 0.3 * (typed - 0.5))).toBeGreaterThanOrEqual(readTime(10) - 1e-9);
+    expect(del0.start - typed).toBeGreaterThanOrEqual(0.6);
     expect(del0.props.typed).toEqual([10, 20]);
     expect(del0.duration).toBe(0.2);
-    expect(type1.start).toBeCloseTo(del0.start + del0.duration + 0.1, 6);
+    const second = keysOf(m, 20, 33);
+    expect(second[0].start).toBeCloseTo(del0.start + del0.duration + 0.1, 6);
+    const last = second[second.length - 1];
     expect(m.loops.map((l) => [l.start, l.end])).toEqual([
-      [1, del0.start],
-      [type1.start + type1.duration, null],
+      [round(typed), del0.start],
+      [round(last.start + last.duration), null],
     ]);
   });
 
   it("lands a phrase with its own at and deletes the one before just in time", () => {
     const m = new MotionBuilder("s", 6, { b2: 3 });
     m.retype("end", ["ranking #1", { text: "booking demos", at: "b2" }], { cps: 20 });
-    const del0 = m.tweens[1];
+    const del0 = deletion(m, 10);
     expect(round(del0.start + del0.duration + 0.1)).toBe(3);
-    expect(m.tweens[2].start).toBe(3);
+    expect(keysOf(m, 20, 33)[0].start).toBe(3);
+  });
+
+  it("types with a person's cadence: uneven keys, a beat before each word, the phrase on time", () => {
+    const m = new MotionBuilder("s", 6, {});
+    m.retype("end", ["booking demos"], { at: 0, cps: 13 });
+    const keys = keysOf(m, 0, 13).map((t) => t.duration);
+    expect(new Set(keys).size).toBeGreaterThan(5);
+    // "booking demos": the space is key 7, the "d" after it key 8.
+    const mean = keys.reduce((a, b) => a + b, 0) / keys.length;
+    expect(keys[8]).toBeGreaterThan(mean);
+    expect(keys.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 2);
   });
 
   it("refuses a phrase that would start before the one before it is typed", () => {
@@ -382,9 +405,13 @@ describe("retype", () => {
     const c = compileScene(scene(m), {});
     const text = (t: number) => styleOf(sampleScene(c, t).get("s.site-text")!, undefined, undefined, c.tapes.get("s.site-text")).text;
     expect(text(0.4)).toBe("");
-    expect(text(0.71)).toBe("harb");
+    const mid = text(0.75)!;
+    expect(mid.length).toBeGreaterThan(1);
+    expect(mid.length).toBeLessThan(10);
+    expect("harbor.dev".startsWith(mid)).toBe(true);
     expect(text(2.9)).toBe("harbor.dev");
-    expect(m.loops.map((l) => [l.target, l.start])).toEqual([["s.site-caret", 1]]);
+    expect(m.loops.map((l) => l.target)).toEqual(["s.site-caret"]);
+    expect(m.loops[0].start).toBeCloseTo(1, 3);
     // A line with no caret still types by opacity, character by character.
     const plain = new MotionBuilder("s", 3, {}).type("l0", { at: 0 });
     expect(plain.tweens[0]).toMatchObject({ preset: "typeOn", split: "chars" });
@@ -528,5 +555,61 @@ describe("pullBack", () => {
 
   it("names the frames it can pull back from", () => {
     expect(() => m().pullBack("card")).toThrow(/Window>, <Browser> or <Phone/);
+  });
+});
+
+describe("zoom path", () => {
+  // The bench film's macro: 1 → 15.43× with the pan that centres its target, over 1.4s on inOut.
+  const zoom = () => {
+    const m = new MotionBuilder("s", 3, {});
+    m.camera({ scale: [1, 15.4303], x: [0, 3285.0788], y: [0, -1327.0026] }, { at: 0.2, duration: 1.4, ease: "inOut" });
+    return compileScene(scene(m), {});
+  };
+
+  it("zooms as the ease says: perceived progress (log scale) follows the ease", () => {
+    const c = zoom();
+    const ease = easeFn(eases.inOut);
+    for (const p of [0.2, 1 / 3, 0.5, 0.8]) {
+      const v = sampleScene(c, 0.2 + 1.4 * p).get("s.camera")!.scale!;
+      expect(Math.log(v) / Math.log(15.4303)).toBeCloseTo(ease(p), 3);
+    }
+    // Interpolating scale linearly front-loads it: 42% of the zoom in the first third, where the ease asks for 15%.
+    const linear = 1 + 14.4303 * ease(1 / 3);
+    expect(Math.log(linear) / Math.log(15.4303)).toBeGreaterThan(0.4);
+    expect(sampleScene(c, 1.6).get("s.camera")!.scale).toBeCloseTo(15.4303, 4);
+  });
+
+  it("carries the target straight to the centre", () => {
+    const c = zoom();
+    // The target sits where the end framing centres it: d = -T1 / s1 from the origin.
+    const d = [-3285.0788 / 15.4303, 1327.0026 / 15.4303];
+    const at = (t: number) => {
+      const v = sampleScene(c, t).get("s.camera")!;
+      return [v.x! + v.scale! * d[0], v.y! + v.scale! * d[1]];
+    };
+    for (const t of [0.5, 0.9, 1.3]) {
+      const [x, y] = at(t);
+      // On the line from its start (d) to the centre (0, 0): the cross product vanishes.
+      expect(Math.abs(x * d[1] - y * d[0]) / Math.hypot(...d)).toBeLessThan(0.5);
+    }
+    const end = at(1.6);
+    expect(Math.hypot(end[0], end[1])).toBeLessThan(0.5);
+  });
+});
+
+describe("shutter blur", () => {
+  it("smears a fast move along its path and leaves it sharp at rest; a calm rise is never blurred", () => {
+    const m = new MotionBuilder("s", 3, {});
+    m.tween("card", { x: [-160, 0], opacity: [0, 1] }, { at: 0.5, duration: "snap", ease: "steep", kind: "enter" });
+    m.enter("title", "rise", { at: 0.5 });
+    const c = compileScene(scene(m), {});
+    expect([...c.shutter]).toEqual(["s.card"]);
+    const card = (t: number) => sampleScene(c, t).get("s.card")!;
+    const mid = card(0.65);
+    expect(mid.blurX!).toBeGreaterThan(5);
+    expect(mid.blurY).toBe(0);
+    expect(card(0.4).blurX).toBe(0);
+    expect(card(1.5).blurX).toBe(0);
+    expect(styleOf(mid).motionBlur![0]).toBeGreaterThan(5);
   });
 });

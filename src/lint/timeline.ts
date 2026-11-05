@@ -367,13 +367,23 @@ export function lintTimeline(build: BuildResult): Finding[] {
     for (const t of sc.tweens) if (t.tape && t.props.typed) tapes.set(t.target, [...(tapes.get(t.target) ?? []), t]);
     for (const [id, list] of tapes) {
       list.sort((a, b) => a.start - b.start);
-      list.forEach((t, i) => {
+      const grows = (t: Tween) => {
         const [from, to] = t.props.typed as [number, number];
-        const phrase = tapeText(t.tape!, to);
-        if (phrase.length <= tapeText(t.tape!, from ?? 0).length) return;
+        return tapeText(t.tape!, to).length > tapeText(t.tape!, from ?? 0).length;
+      };
+      // A phrase types as a run of keys: judge the run, from its first key to the key that completes it.
+      let runStart: Tween | undefined;
+      list.forEach((t, i) => {
+        if (!grows(t)) return void (runStart = undefined);
+        runStart ??= t;
+        if (list[i + 1] && grows(list[i + 1])) return;
+        const first = runStart;
+        runStart = undefined;
+        const phrase = tapeText(t.tape!, (t.props.typed as [number, number])[1]);
         const until = list[i + 1]?.start ?? sc.duration;
         const typed = t.start + t.duration;
-        const window = until - (t.start + 0.3 * t.duration);
+        const typing = typed - first.start;
+        const window = until - (first.start + 0.3 * typing);
         const need = readTime(phrase.length);
         if ((window < need || until - typed < SETTLED_HOLD) && !allowed(t, "retype-hold")) {
           add("retype-hold", "error", sc, `"${phrase}" holds ${r2(Math.max(0, until - typed))}s once typed (${r2(Math.max(0, window))}s of reading, needs ~${r2(need)}s)`, {

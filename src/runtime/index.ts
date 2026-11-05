@@ -312,7 +312,8 @@ function createMotionBlurs() {
   const NS = "http://www.w3.org/2000/svg";
   compiled.forEach((c) => {
     c.channels.forEach((byProp, key) => {
-      if (!byProp.has("blurX") && !byProp.has("blurY")) return;
+      const shutter = c.shutter.has(key);
+      if (!byProp.has("blurX") && !byProp.has("blurY") && !shutter) return;
       const el = resolveKey(key);
       if (!el || motionBlurs.has(el)) return;
       if (!svg) {
@@ -330,8 +331,8 @@ function createMotionBlurs() {
       // A full-frame scene smears its own edge pixels (no transparent fringe showing the
       // other scene); any other element gets room for the streak on its blurred axis.
       const frame = el.classList.contains("ct-scene");
-      const x = byProp.has("blurX") && !frame;
-      const y = byProp.has("blurY") && !frame;
+      const x = (byProp.has("blurX") || shutter) && !frame;
+      const y = (byProp.has("blurY") || shutter) && !frame;
       filter.setAttribute("x", x ? "-15%" : "0%");
       filter.setAttribute("width", x ? "130%" : "100%");
       filter.setAttribute("y", y ? "-15%" : "0%");
@@ -414,7 +415,7 @@ function resolveMeasured() {
         changed = true;
       }
     }
-    if (changed) compiled.set(sc.scene, compileScene(sc, partCounts));
+    if (changed) compiled.set(sc.scene, compileScene(sc, partCounts, data.timeline.fps));
   }
 }
 
@@ -429,7 +430,7 @@ async function prepare() {
   } finally {
     document.documentElement.classList.remove("ct-measuring");
   }
-  for (const s of data.timeline.scenes) compiled.set(s.scene, compileScene(s, partCounts));
+  for (const s of data.timeline.scenes) compiled.set(s.scene, compileScene(s, partCounts, data.timeline.fps));
   document.documentElement.classList.add("ct-measuring");
   try {
     resolveMeasured();

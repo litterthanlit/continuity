@@ -19,7 +19,7 @@ export default scene({
     m.enter("headline", "wipeRight", { at: "b1", duration: "snap", ease: "steep" });
     m.enter("site", "rise", { at: "b1+0.1", duration: "snap", ease: "steep" });
     m.type("site-text", { at: "b2", cps: 18 });
-    m.zoomTo("site-text", { at: "b3", fill: 1.4, duration: "slow", ease: "steep" });
-    m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: "b4", duration: "slow", ease: "steep" });
+    m.zoomTo("site-text", { at: "b3", fill: 1.4 });
+    m.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: "b4", duration: "linger", ease: "inOut" });
   },
 });

@@ -61,7 +61,7 @@
     },
     {
       "id": "input",
-      "duration": 3.6,
+      "duration": 5.0,
       "intent": "A match cut carries \"Harbor\" into the brand label; the domain types, the camera goes in on it as a macro, then pulls back.",
       "beats": [
         {
@@ -78,7 +78,7 @@
         },
         {
           "id": "b4",
-          "at": 2.75
+          "at": 3.25
         }
       ],
       "text": {
@@ -104,7 +104,7 @@
           "note": "<Input> focused; site-text types, site-caret."
         }
       ],
-      "motion": "Match cut in (tool-3 to brand, 0.6s settle). b1 headline wipes, the field rises. b2 the domain types. b3 m.zoomTo the typed text, fill 1.4 (a macro). b4 the camera pulls back. ",
+      "motion": "Match cut in (tool-3 to brand, 0.6s settle). b1 headline wipes, the field rises. b2 the domain types. b3 m.zoomTo the typed text, fill 1.4 (a macro, inOut over 1.4s). b4 the camera pulls back the same way.",
       "transition": {
         "type": "pixels"
       }

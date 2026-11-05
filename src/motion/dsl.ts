@@ -373,16 +373,30 @@ export class MotionBuilder {
     const id = this.id(target);
     const push = (from: number, n: number, start: number, duration: number) =>
       this.push({ target: id, kind: "emphasis", start, duration, ease: eases.linear, easeName: "linear", props: { typed: [from, from + n] }, preset: "retype", tape, allow: opts.allow });
+    // A person's cadence, not a metronome: the phrase takes its time (n / cps), spent unevenly —
+    // a beat before each word, a little more on a space, each key ±20% (seeded by the phrase, so
+    // every render types it the same way). One tween per key; returns when the last one lands.
+    const typeKeys = (from: number, text: string, start: number, total: number) => {
+      const chars = [...text];
+      const seed = chars.reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+      const w = chars.map((ch, i) => (ch === " " ? 1.3 : 1) * (i > 0 && chars[i - 1] === " " ? 1.5 : 1) * (0.8 + 0.4 * ((((i + 1) * 2654435761 + seed) >>> 0) % 1000) / 1000));
+      const sum = w.reduce((a, b) => a + b, 0);
+      let t = start;
+      chars.forEach((_, i) => {
+        const d = round((total * w[i]) / sum);
+        push(from + i, 1, t, d);
+        t = round(t + d);
+      });
+      return t;
+    };
     let key = 0;
     let free = this.startOf(opts);
     list.forEach((p, i) => {
       const n = [...p.text].length;
       const start = p.at !== undefined ? this.time(p.at) : free;
       if (start < free - 1e-6) throw new MotionError(`[${this.scene}] m.retype("${target}"): phrase ${i} ("${p.text}") starts at ${start}s, before the phrase before it is deleted (${round(free)}s).`);
-      const typing = round(n / cps);
-      push(key, n, start, typing);
+      const typed = typeKeys(key, p.text, start, round(n / cps));
       key += n;
-      const typed = round(start + typing);
       if (opts.accent) {
         // Live input: the keys land in the accent, and the phrase settles to its ink once typed.
         this.push({ target: id, kind: "emphasis", start, duration: 0, ease: eases.linear, easeName: "linear", props: { accent: [0, 1] }, preset: "retype" });
@@ -395,7 +409,7 @@ export class MotionBuilder {
       }
       const deleting = round(n / deleteCps);
       const next = last ? undefined : list[i + 1].at;
-      const hold = p.hold ?? opts.hold ?? Math.ceil(Math.max(SETTLED_HOLD, readTime(n) - 0.7 * typing) * 100) / 100;
+      const hold = p.hold ?? opts.hold ?? Math.ceil(Math.max(SETTLED_HOLD, readTime(n) - 0.7 * (typed - start)) * 100) / 100;
       const del = next !== undefined ? round(this.time(next) - (opts.gap ?? RETYPE_GAP) - deleting) : round(typed + hold);
       if (del < typed) throw new MotionError(`[${this.scene}] m.retype("${target}"): phrase ${i + 1} starts before "${p.text}" finishes typing — move its "at" later.`);
       if (opts.caret && del > typed) this.blink(opts.caret, { at: typed, until: del });
@@ -535,7 +549,8 @@ export class MotionBuilder {
   zoomTo(target: string, opts: { at?: At; snap?: Snap; fill?: number; duration?: number | DurationToken; ease?: EaseToken | EaseSpec; allow?: string[] } = {}): this {
     const fill = opts.fill ?? 0.6;
     if (!(fill > 0)) throw new MotionError(`[${this.scene}] m.zoomTo("${target}"): fill is the share of the frame the element fills, above 0.`);
-    this.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: opts.at, snap: opts.snap, duration: opts.duration ?? "slow", ease: opts.ease ?? "inOut", allow: opts.allow });
+    // A zoom reads as a camera when it eases in and out over time enough for its size (zoom-lunge).
+    this.camera({ scale: [null, 1], x: [null, 0], y: [null, 0] }, { at: opts.at, snap: opts.snap, duration: opts.duration ?? "linger", ease: opts.ease ?? "inOut", allow: opts.allow });
     this.tweens[this.tweens.length - 1].measure = { kind: "focus", target: this.id(target), fill };
     return this;
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildProject } from "../src/build/build.js";
 import { join } from "node:path";
 import { lintTimeline } from "../src/lint/timeline.js";
+import type { Tween } from "../src/motion/types.js";
 import { PKG_ROOT } from "../src/paths.js";
 
 /** Projects that live outside projects/ (shipped with the package). */
@@ -110,18 +111,21 @@ describe("registers (docs/decisions/0007)", () => {
 });
 
 describe("launch devices (projects/_launch)", () => {
-  /** The gallery with every tween on `target` from the `nth` one on moved earlier by `by` seconds. */
-  async function rushed(target: string, nth: number, by: number) {
+  /** The gallery with every tween on `target` from the first that `from` picks (in time order) moved earlier by `by` seconds. */
+  async function rushed(target: string, from: number | ((t: Tween) => boolean), by: number) {
     const { b } = await rules("_launch");
     const scenes = b.timeline!.scenes.map((sc) => {
-      let seen = 0;
-      return { ...sc, tweens: sc.tweens.map((t) => (t.target === target && seen++ >= nth ? { ...t, start: Math.max(0, t.start - by) } : t)) };
+      const mine = sc.tweens.filter((t) => t.target === target).sort((x, y) => x.start - y.start);
+      const first = typeof from === "number" ? mine[from] : mine.find(from);
+      const cut = first ? first.start : Infinity;
+      return { ...sc, tweens: sc.tweens.map((t) => (t.target === target && t.start >= cut ? { ...t, start: Math.max(0, t.start - by) } : t)) };
     });
     return lintTimeline({ ...b, timeline: { ...b.timeline!, scenes } });
   }
 
   it("retype-hold fires when a claim is deleted before it can be read", async () => {
-    const found = (await rushed("value.end", 1, 0.9)).filter((f) => f.rule === "retype-hold");
+    // From the deletion of "ranking #1" (keys 10 → 20) on, everything comes 0.9s early.
+    const found = (await rushed("value.end", (t) => t.props.typed?.[0] === 10 && t.props.typed?.[1] === 20, 0.9)).filter((f) => f.rule === "retype-hold");
     expect(found.map((f) => f.message)).toEqual([expect.stringContaining('"ranking #1"')]);
   });
 
