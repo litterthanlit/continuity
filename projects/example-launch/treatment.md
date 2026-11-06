@@ -67,21 +67,25 @@ viewer always knows where they are. "Ship" is the end card.
 - **Nothing material moves.** No loops, no glow, no sheen. Ambient life is the camera's slow push
   (1 → 1.03 per scene, anchored on the left edge on the hook and the turn so the cut between them is still); in `check` it is a quiet 1% drift and then a short `inOut` focus move on
   the red that holds through the fix.
-- **Transitions (cuts + 2 accents) — every join carries the eye** (docs/decisions/0010).
+- **Transitions (cuts + 1 accent) — every join carries the eye** (docs/decisions/0010).
   hook → studio: a hard cut on the beat that lands on the turn's entrance (label and headline
-  start on frame 0). studio → plan: a `portal` (0.9s) through the focused Plan tile — the field
-  flies past and the tile opens onto chapter 01. plan → check → measure → critic: `carry` left
-  (12%, 0.5s), cuts on movement: on each side the lockup leaves left first, the camera carries
-  the product through the cut, the next product arrives along the travel with a lag (nearer than
-  the camera) and the copy follows it in. critic → end: a `dip` (0.5s), the chapter break before
-  the end card. Accents: portal + dip.
+  start on frame 0). studio → plan: a `portal` (0.9s) through the focused Plan tile — its word
+  steps out first, the field flies past and the tile opens onto chapter 01. plan → check: a
+  layered `carry` left (12%), copy-led: the lockup rides the cut and leads the wave, the board
+  follows; the sheet (frames on it) and the terminal land in a wave, and the command types as it
+  settles. check → measure: a layered `carry` (10%), product-led: the lockup exits first, the
+  sheet and the gate carry the cut; measure's lockup rides in on the wave with the chart, whose
+  playhead starts as it lands. measure → critic: a `match` (0.9s) — the chart window slides left
+  into the cut (t²) and the score card leaves the cut at its speed and settles on the left, the
+  split frame turned round. critic → end: a `match` (0.6s) — "Ships" becomes the "Open source"
+  button where it sits. Accents: portal only.
 
 ## Rhythm
 The hook is the shortest scene (3.6s: two word cascades and one ink step). The turn breathes
 (4.4s) while the rail draws. The chapters build: plan (5.0s), then check, the longest scene
-(7.0s), whose red-to-green flip at ~16.7s is the loudest moment of the film. Measure (5.0s)
-and critic (5.1s) sit back into calm data reveals, and the dip gives one clean breath before
-the end card holds for more than 2s.
+(7.0s), whose red-to-green flip at ~16.7s is the loudest moment of the film. Measure (4.6s)
+and critic (5.0s) sit back into calm data reveals; the verdict holds, then becomes the end
+card's button, and the end card holds for more than 2s.
 
 ## References
 1. **Linear launch films:** hairline UI on near-black, UI as the hero, restrained cascades.

@@ -1,5 +1,5 @@
 import { scene, El, Card, Meter, Counter, Stat, Tag, Caption } from "continuity";
-import { Chapter, SPLIT, arriveLeft } from "../lib/chapter.js";
+import { Chapter, SPLIT } from "../lib/chapter.js";
 
 // 04 · Critique — the five-axis scorecard of this film's third iteration, beside the
 // lockup. litt: a flat card, meters filled with fg (no hue: the axes are not
@@ -24,7 +24,7 @@ const round = (t: number) => Math.round(t * 100) / 100;
 
 export default scene({
   view: ({ text }) => (
-    <Chapter label={text.label} headline={text.headline} sub={text.sub} height={CARD_H}>
+    <Chapter label={text.label} headline={text.headline} sub={text.sub} layout="mirror" height={CARD_H}>
       {/* One flat card: the five axes over a 2px hairline, then the mean and the verdict. */}
       <Card ct="card" class="flex flex-col" style={{ width: `${SPLIT.width}px`, height: `${CARD_H}px`, padding: "48px" }}>
         <El ct="axes" class="flex h-[312px] flex-col justify-between">
@@ -52,12 +52,15 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // In: the carry from measure. Measure's lockup left before the cut, so the eye is on
-    // the chart window when the cut lands, and this card is the next thing along the bench:
-    // it is on screen from the cut (labels, empty meters, 0.0), still travelling left a
-    // little ahead of the camera; the copy follows it in.
-    arriveLeft(m, ["card"], { lag: 64 });
+    // In: a match from measure's chart window (storyboard). The card starts where the window
+    // was, at its speed, and decelerates across the frame to the safe left edge: no entrance of
+    // its own, its meters wait for it to land. Then the copy, in the column the window left.
+    m.enter("label", "slideLeft", { at: "b1-0.15" });
     m.enter("headline", "maskUp", { at: "b1", split: "lines" });
+    // The card crosses this column on its way left, before the copy is in: the masked lines are
+    // hidden, and the block is held out of the layout until its mask opens (an instant step
+    // under the mask, never seen), so the gate does not read it as text under the card.
+    m.tween("headline", { opacity: [0, 1] }, { at: "b1", duration: "instant", ease: "out", kind: "enter" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
 
     // b2 · the meters fill and their scores count with them (a chart drawing: slow, inOut).
@@ -72,5 +75,7 @@ export default scene({
     m.enter("best", "fade", { at: "b3+0.1" });
 
     m.camera({ scale: [1, 1.03] });
+
+    // Out: a match — the "Ships" tag becomes the end card's "Open source" button where it sits.
   },
 });

@@ -71,7 +71,13 @@ export default scene({
                       scene opens in is the tile's own edge at every frame (other shapes open as
                       a crop whose edge drifts inside the tile's border — at 19× it shows). */}
                   <Tag ct={id} class={id === "plan" ? "w-[100px] justify-center" : undefined}>
-                    {text[id]}
+                    {id === "plan" ? (
+                      <El as="span" ct="plan-word">
+                        {text[id]}
+                      </El>
+                    ) : (
+                      text[id]
+                    )}
                   </Tag>
                 </div>
               ))}
@@ -97,6 +103,9 @@ export default scene({
     // The ring has pointed: it clears as the camera starts into the tile, so the tile
     // (not a 19× focus ring) is the window the next scene opens in.
     m.exit("plan-focus", "fadeOut", { at: `end-${PORTAL_S}` });
+    // Its word steps out just before, at the instant tier: the tile the camera goes through is
+    // a clean window onto chapter 01, not "Plan" ghosted over it.
+    m.exit("plan-word", "fadeOut", { at: `end-${PORTAL_S + 0.1}`, duration: "instant" });
     // Anchored on the lockup's left edge, like the hook's, so the cut between them is still.
     // It lands as the portal starts: the portal is the scene's move (the tile is measured at
     // that instant, so a camera still moving under it would slide the window off the tile).

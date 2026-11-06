@@ -12,6 +12,9 @@ import { Stage, Safe, Label, Headline, Body } from "continuity";
  *   (columns 1–5), a 96px region of air, the product at 1024px wide (~53% of
  *   the frame) on the right, both vertically centred. The display line breaks
  *   into ≤ 2 lines by meaning.
+ * - `mirror` — the split frame turned round: the product on the left, the lockup on the
+ *   right. For critic, whose card is measure's chart window carried left across the frame
+ *   (the match), so the copy fills the column the window left.
  * - `stacked` — for the one surface that needs the full width (check: a contact
  *   sheet beside a terminal): the lockup above, the product 96px below at the
  *   full title-safe width.
@@ -30,13 +33,13 @@ export function Chapter({
   label: string;
   headline: string;
   sub: string;
-  layout?: "split" | "stacked";
+  layout?: "split" | "mirror" | "stacked";
   /** Height of the product surface, px. */
   height: number;
   children: ComponentChildren;
 }) {
   const lockup = (
-    <div class="flex flex-col" style={layout === "split" ? { width: `${SPLIT.copy}px` } : undefined}>
+    <div class="flex flex-col" style={layout === "stacked" ? undefined : { width: `${SPLIT.copy}px` }}>
       <Label ct="label">{label}</Label>
       <Headline ct="headline" as="h2" class="mt-[8px]">
         {headline}
@@ -47,7 +50,7 @@ export function Chapter({
     </div>
   );
   const surface = (
-    <div class="relative shrink-0" style={{ width: `${layout === "split" ? SPLIT.width : STACKED.width}px`, height: `${height}px` }}>
+    <div class="relative shrink-0" style={{ width: `${layout === "stacked" ? STACKED.width : SPLIT.width}px`, height: `${height}px` }}>
       {children}
     </div>
   );
@@ -58,6 +61,11 @@ export function Chapter({
           <div class="absolute inset-0 flex items-center justify-between">
             {lockup}
             {surface}
+          </div>
+        ) : layout === "mirror" ? (
+          <div class="absolute inset-0 flex items-center justify-between">
+            {surface}
+            {lockup}
           </div>
         ) : (
           <div class="absolute inset-0 flex flex-col justify-center gap-[96px]">
@@ -71,23 +79,15 @@ export function Chapter({
 }
 
 /**
- * The carries between chapters (docs/decisions/0010): the cut lands on movement, so both
- * sides move the way the camera travels (left).
- *
- * Out — the lockup leaves first, travelling left, just before the carry picks the scene up
- * (the carry's lead starts 0.2s before the end): copy, then the camera.
+ * Out — the lockup leaves first, travelling left (an exit into the cut), so only the product
+ * rides the join: check → measure's carry, measure → critic's match.
  */
 export function leaveLeft(m: MotionBuilder) {
   m.tween(["label", "headline", "sub"], { x: [0, -24], opacity: [1, 0] }, { at: "end-0.5", duration: "exit", ease: "out", stagger: "list", kind: "exit" });
 }
 
 /**
- * In — the carry lands the scene still travelling left; `lead` (the product) arrives along
- * the travel with a lag (it travels further than the camera, so it reads as nearer), the
- * label slides in the same way, and the headline waits for the carry to land.
+ * t² into the cut (the carry's own lead-in): accelerating, at its fastest on the last frame, so
+ * a match has a speed to hand over (motion-craft §8, match v2).
  */
-export function arriveLeft(m: MotionBuilder, lead: string[], opts: { lag?: number } = {}) {
-  const lag = opts.lag ?? 48;
-  m.tween(lead, { x: [lag, 0] }, { at: 0, duration: "slow", ease: "out", stagger: "list", kind: "enter" });
-  m.enter("label", "slideLeft", { at: 0.15 });
-}
+export const INTO_CUT = { type: "bezier" as const, p: [1 / 3, 0, 2 / 3, 1 / 3] as [number, number, number, number] };

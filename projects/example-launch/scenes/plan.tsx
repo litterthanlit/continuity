@@ -1,5 +1,5 @@
 import { scene, El, Window } from "continuity";
-import { Chapter, SPLIT, leaveLeft } from "../lib/chapter.js";
+import { Chapter, SPLIT } from "../lib/chapter.js";
 import { SCENES as ALL, FILM_S, FORMAT, fmtS } from "../lib/film.js";
 
 // 01 · Plan — the storyboard of this very film: scenes on the left, their beat
@@ -171,9 +171,9 @@ export default scene({
     m.enter("current", "fade", { at: "b3" });
     m.emphasize(`title${CURRENT}`, "ink", { at: "b3" });
 
-    // Out: the lockup leaves first, travelling left (the carry's direction); then the carry
-    // takes the board left through the cut into check.
-    leaveLeft(m);
+    // Out: the lockup stays and rides the layered carry (storyboard `layers`): copy leads the
+    // wave left and travels furthest, the board follows, so the frame peels off from its left
+    // edge into check.
 
     // After the portal: the portal is the scene's move, no push under it.
     m.camera({ scale: [1, 1.03] }, { at: "b1" });
