@@ -562,7 +562,7 @@
           "id": "tagline",
           "role": "body",
           "anchor": "B4:E4",
-          "note": "<Body> (36, the grey), 32px under the wordmark."
+          "note": "<Body> (36, fg: the grey falls under 3:1 on the field), 32px under the wordmark."
         },
         {
           "id": "cta",

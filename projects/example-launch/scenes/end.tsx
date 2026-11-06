@@ -1,15 +1,17 @@
 import { scene, Stage, Safe, Center, Headline, Body, Button } from "continuity";
 
-// End card — the film's only centred frame, in the light again. The wordmark
-// (the display line) 32px over the tagline in the grey, then the one accent
-// fill of the film: the primary "Open source" button (the "Ship" station).
+// End card — the film's only centred frame, on the field. The wordmark (the display
+// line) 32px over the tagline, then the one accent fill of the film: the primary
+// "Open source" button (the "Ship" station). One ink on the field: the grey falls under
+// 3:1 somewhere on accent, fg clears all of it (docs/decisions/0011); the tagline stays
+// second by size and weight.
 export default scene({
   view: ({ text }) => (
     <Stage bg="gradient" gradient="accent">
       <Safe>
         <Center>
           <Headline ct="wordmark">{text.wordmark}</Headline>
-          <Body ct="tagline" class="mt-[32px]">
+          <Body ct="tagline" class="mt-[32px] text-fg">
             {text.tagline}
           </Body>
           <Button ct="cta" variant="primary" class="mt-[64px]">

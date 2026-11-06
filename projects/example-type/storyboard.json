@@ -110,7 +110,7 @@
         { "id": "wordmark", "role": "logo", "anchor": "B3:E3" },
         { "id": "tagline", "role": "body", "anchor": "B4:E4" }
       ],
-      "motion": "Lit from above again; the piece's one centered statement. The label fades in, the wordmark settles (rises 32px from 0.98 on the expressive spring), the tagline rises in the grey. A 3% camera push holds it."
+      "motion": "On the field again; the piece's one centered statement. The label fades in, the wordmark settles (rises 32px from 0.98 on the expressive spring), the tagline rises (fg: the grey falls under 3:1 on the field). A 3% camera push holds it."
     }
   ]
 }
