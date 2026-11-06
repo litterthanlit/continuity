@@ -149,6 +149,7 @@ describe("lint on the music", () => {
       dir: "",
       elements: [],
       partsEstimate: {},
+      fields: [],
       findings: [],
       hash: "",
       music: { grid } as BuildResult["music"],

@@ -307,6 +307,18 @@ const TRANSFORM_PROPS: PropName[] = ["x", "y", "xPct", "yPct", "z", "scale", "sc
 const FILTER_PROPS: PropName[] = ["blur", "brightness", "saturate"];
 const CLIP_PROPS: PropName[] = ["clipTop", "clipRight", "clipBottom", "clipLeft"];
 
+/**
+ * `a` over `b` at weight `w` (0..1). The settled ends are the plain colours, not a 0%/100% mix: the
+ * contrast audit reads `color` and skips any it cannot parse, and Chrome computes a color-mix as
+ * `oklab(...)`, so a dimmed line would never be checked.
+ */
+function inkMix(a: string, w: number, b: string): string {
+  const p = Math.round(Math.min(1, Math.max(0, w)) * 1000) / 10;
+  if (p >= 100) return a;
+  if (p <= 0) return b;
+  return "color-mix(in oklab, " + a + " " + p + "%, " + b + ")";
+}
+
 export interface StyleOut {
   transform?: string;
   opacity?: string;
@@ -418,14 +430,8 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: 
   }
   if (has("blurX") || has("blurY")) s.motionBlur = [Math.max(0, g("blurX")), Math.max(0, g("blurY"))];
   if (has("tracking")) s.letterSpacing = f4(g("tracking")) + "em";
-  if (has("ink")) {
-    const p = Math.round(Math.min(1, Math.max(0, g("ink"))) * 1000) / 10;
-    s.color = "color-mix(in oklab, var(--color-fg) " + p + "%, var(--color-fg-muted))";
-  }
-  if (has("accent")) {
-    const p = Math.round(Math.min(1, Math.max(0, g("accent"))) * 1000) / 10;
-    s.color = "color-mix(in oklab, var(--color-accent-text) " + p + "%, " + (s.color ?? "var(--color-fg)") + ")";
-  }
+  if (has("ink")) s.color = inkMix("var(--color-fg)", g("ink"), "var(--color-fg-muted)");
+  if (has("accent")) s.color = inkMix("var(--color-accent-text)", g("accent"), s.color ?? "var(--color-fg)");
   if (has("radius")) s.borderRadius = f4(Math.min(50, Math.max(0, g("radius")))) + "%";
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });

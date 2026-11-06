@@ -2,7 +2,8 @@ import type { BuildResult } from "../../build/build.js";
 import type { Finding } from "../../spec/findings.js";
 import { fonts, hasTabularFigures, symbolFonts } from "../../themes/fonts.js";
 import { serveDir, withBrowser } from "./browser.js";
-import { keyTimes } from "./times.js";
+import { fieldContrast } from "./field-contrast.js";
+import { fieldTimes, keyTimes } from "./times.js";
 
 interface Measured {
   id: string;
@@ -493,6 +494,8 @@ export async function probeProject(build: BuildResult, opts: { scene?: string } 
           }
         }
       }
+      // Contrast over a moving field, sampled through each field scene (HyperFrames' pass takes five frames a film).
+      findings.push(...(await fieldContrast(page, build, fieldTimes(build).filter(inWin))));
       await page.close();
     });
   } finally {

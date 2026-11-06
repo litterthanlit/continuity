@@ -56,6 +56,8 @@ export interface BuildResult {
   timeline?: Timeline;
   elements: ElementInfo[];
   partsEstimate: PartCounts;
+  /** Scenes whose stage paints a moving gradient field: the contrast audit samples them through time. */
+  fields: string[];
   findings: Finding[];
   hash: string;
 }
@@ -162,7 +164,7 @@ export async function buildProject(
   const dir = opts.outDir ?? buildDir(slug);
   const findings: Finding[] = [];
   const hash = sourceHash(slug, src).combined;
-  const empty = { ok: false, slug, dir, elements: [], partsEstimate: {}, hash };
+  const empty = { ok: false, slug, dir, elements: [], partsEstimate: {}, fields: [], hash };
   if (!existsSync(src)) {
     return { ...empty, findings: [{ source: "build", rule: "project-missing", severity: "error", message: `${rel(src)} does not exist (try: npx ct new ${slug})` }] };
   }
@@ -422,10 +424,13 @@ export async function buildProject(
   }
   // Each GL shot and each gradient field holds a WebGL context; Chrome drops the oldest past its cap.
   const shots = document.querySelectorAll("canvas[data-ct-gl]").length;
-  const fields = document.querySelectorAll("canvas[data-ct-gradient]").length;
-  if (shots + fields > MAX_WEBGL_CONTEXTS) {
-    findings.push({ source: "build", rule: "webgl-contexts", severity: "error", message: webglContextsMessage(shots, fields), suggestion: 'keep the field for the hero and the end card; give the other scenes bg="solid"' });
+  const fieldCount = document.querySelectorAll("canvas[data-ct-gradient]").length;
+  if (shots + fieldCount > MAX_WEBGL_CONTEXTS) {
+    findings.push({ source: "build", rule: "webgl-contexts", severity: "error", message: webglContextsMessage(shots, fieldCount), suggestion: 'keep the field for the hero and the end card; give the other scenes bg="solid"' });
   }
+  const fields = (Array.from(document.querySelectorAll("[data-ct-scene]")) as unknown as HTMLElement[])
+    .filter((sec) => sec.querySelector("canvas[data-ct-gradient]"))
+    .map((sec) => sec.getAttribute("data-ct-scene")!);
   for (const [id, n] of seen) {
     if (n > 1) findings.push({ source: "build", rule: "duplicate-ct", severity: "error", element: id, message: `${n} elements share ct="${id}" — ids must be unique within a scene` });
   }
@@ -488,7 +493,7 @@ export async function buildProject(
 
   const body = document.querySelector("#root")!.outerHTML;
   const ok = !findings.some((f) => f.severity === "error");
-  const result: BuildResult = { ok, slug, dir, storyboard: sb, music, theme, typeKit: kit, timeline, elements, partsEstimate, findings, hash };
+  const result: BuildResult = { ok, slug, dir, storyboard: sb, music, theme, typeKit: kit, timeline, elements, partsEstimate, fields, findings, hash };
   if (!write) return result;
 
   // ---- Emit the HyperFrames project.

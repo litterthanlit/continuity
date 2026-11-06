@@ -6,18 +6,18 @@
  *   change; a missing golden is written on first run)
  * - the type kit cascade contract
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { buildProject } from "../src/build/build.js";
 import { hfCheck } from "../src/cli/lib/check.js";
 import { captureFrames } from "../src/cli/lib/frames.js";
 import { probeProject } from "../src/cli/lib/probe.js";
 import { serveDir, withBrowser } from "../src/cli/lib/browser.js";
 import { PKG_ROOT as ROOT } from "../src/paths.js";
-import { fieldScenes } from "./fixtures/field-scenes.js";
+import { fieldScenes, greyOnFieldFilm, removeFixtureProjects } from "./fixtures/field-scenes.js";
 
 const slow = process.env.CT_SLOW === "1";
 const d = slow ? describe : describe.skip;
@@ -42,6 +42,25 @@ d("seeded layout defects (projects/_defects-layout)", () => {
     }
     // Text over a moving field: the contrast audit samples the rendered frame, canvas included (0011)
     expect(found.some((f) => f.rule === "contrast_aa_failure" && f.element?.endsWith("over-field"))).toBe(true);
+  });
+});
+
+d("contrast over a moving field (docs/decisions/0011)", () => {
+  afterAll(removeFixtureProjects);
+
+  // HyperFrames audits contrast on five frames a film: in a long film a field scene gets one or none,
+  // so a grey headline on `accent` passed the full check and failed only under --scene.
+  it("the full check catches grey type on a field in a long film", async () => {
+    const out = mkdtempSync(join(tmpdir(), "ct-grey-field-"));
+    try {
+      const b = await buildProject("grey-field", { srcDir: greyOnFieldFilm(30), outDir: out });
+      expect(b.ok).toBe(true);
+      const [hf, probe] = await Promise.all([hfCheck(b), probeProject(b)]);
+      const grey = [...hf.findings, ...probe].filter((f) => f.rule === "contrast_aa_failure" && f.element === "field.grey");
+      expect(grey.map((f) => f.severity)).toContain("error");
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
   });
 });
 
@@ -191,6 +210,7 @@ async function inBackgrounds<T>(script: string): Promise<T> {
     });
   } finally {
     await srv.close();
+    rmSync(out, { recursive: true, force: true });
   }
 }
 
@@ -213,6 +233,8 @@ const FIELD_HELPERS = `
 `;
 
 d("gradient fields (projects/_backgrounds)", () => {
+  afterAll(removeFixtureProjects);
+
   it("is a pure function of time: same t, same pixels; later t, different pixels", async () => {
     const got = await inBackgrounds<{ first: string; later: string; again: string; alpha: number[] }>(`(function () {
       ${FIELD_HELPERS}
@@ -261,6 +283,7 @@ d("gradient fields (projects/_backgrounds)", () => {
       expect(got).toMatch(/17 WebGL canvases \(0 GL shots, 17 gradient fields\)/);
     } finally {
       await srv.close();
+      rmSync(out, { recursive: true, force: true });
     }
   });
 

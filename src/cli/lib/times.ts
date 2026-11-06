@@ -91,6 +91,30 @@ export function auditTimes(build: BuildResult, max = 40): number[] {
   return list;
 }
 
+/** How often contrast is sampled through a scene over a moving field (docs/decisions/0011). */
+export const FIELD_EVERY = 0.5;
+
+/**
+ * Contrast sample times for scenes over a moving field: every `FIELD_EVERY` seconds through each,
+ * however long the film. The colour behind the type changes every frame, so the film-wide contrast
+ * pass (five frames) cannot prove it legible. Scene joins are left out: two scenes overlap there
+ * and the check does not count contrast mid-transition.
+ */
+export function fieldTimes(build: BuildResult): number[] {
+  const tl = build.timeline!;
+  const fields = new Set(build.fields);
+  const joins = tl.scenes.slice(1).map((s, i) => [s.start, tl.scenes[i].start + tl.scenes[i].duration] as const).filter(([a, b]) => b > a);
+  const out: number[] = [];
+  for (const sc of tl.scenes) {
+    if (!fields.has(sc.scene)) continue;
+    for (let t = FIELD_EVERY / 2; t < sc.duration - 1e-6; t += FIELD_EVERY) {
+      const g = r3(sc.start + t);
+      if (!joins.some(([a, b]) => g >= a - 0.02 && g <= b + 0.02)) out.push(g);
+    }
+  }
+  return out;
+}
+
 export function fmtTime(t: number): string {
   const m = Math.floor(t / 60);
   const s = t - m * 60;
