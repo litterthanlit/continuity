@@ -89,13 +89,6 @@ export const eases = {
 } as const satisfies Record<string, EaseSpec>;
 export type EaseToken = keyof typeof eases;
 
-/**
- * A match cut carries its partner's speed through the cut (match v2) from this speed up, in the
- * incoming element's own px per second: 2 px a frame at 30fps. Below it the partner reads as at
- * rest, and the match settles from rest as it always did.
- */
-export const MATCH_SPEED = 60;
-
 /** Seconds between consecutive parts in a group (litt's 40ms between siblings). */
 export const staggers = {
   char: 0.02,

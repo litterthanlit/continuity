@@ -213,24 +213,30 @@ d("match cuts v2 (projects/_flow: chip → card)", () => {
     function tweens(target, kind) { return B.tweens.filter(function (t) { return t.target === target && t.measure && t.measure.kind === kind; }); }
   `;
 
-  it("the incoming element leaves the cut at its partner's speed", async () => {
-    const got = await inProject<{ vA: number[]; vB: number[]; ease: string; shift: number[]; off: number[] }>("_flow", `(function () {
+  it("the incoming element leaves the cut at its partner's speed, only slows, and lands at rest", async () => {
+    const got = await inProject<{ vA: number[]; steps: number[][]; frames: number; off: number[] }>("_flow", `(function () {
       ${HELPERS}
       ct.seek(A.start + A.duration - 1 / fps - 0.0001); var a0 = box("chip.chip");
       ct.seek(B.start - 0.0001); var a1 = box("chip.chip");
-      ct.seek(B.start); var b0 = box("card.card");
-      ct.seek(B.start + 2 / fps); var b2 = box("card.card");
-      var vel = tweens("card.card", "matchVelocity")[0], place = tweens("card.card", "match")[0];
-      // Settled: back on its own layout, the shift given back (the impulse ends at rest).
-      ct.seek(B.start + vel.duration + 3 / fps); var settled = box("card.card");
+      var d = tweens("card.card", "match")[0].duration, n = Math.round(d * fps), pts = [];
+      for (var f = 0; f <= n + 3; f++) { ct.seek(B.start + f / fps); pts.push(box("card.card")); }
+      var steps = pts.slice(1).map(function (p, i) { return [p.cx - pts[i].cx, p.cy - pts[i].cy]; });
+      // Settled: on its own layout, nothing left over from the travel.
       var e = el("card.card"), keep = e.style.transform; e.style.transform = "none"; var home = box("card.card"); e.style.transform = keep;
-      return { vA: [a1.cx - a0.cx, a1.cy - a0.cy], vB: [(b2.cx - b0.cx) / 2, (b2.cy - b0.cy) / 2], ease: place.easeName, shift: [vel.props.shiftX[1], vel.props.shiftY[1]], off: [settled.cx - home.cx, settled.cy - home.cy] };
+      var last = pts[pts.length - 1];
+      return { vA: [a1.cx - a0.cx, a1.cy - a0.cy], steps: steps, frames: n, off: [last.cx - home.cx, last.cy - home.cy] };
     })()`);
+    const v = Math.hypot(got.vA[0], got.vA[1]);
+    const speed = got.steps.map(([x, y]) => Math.hypot(x, y));
+    const profile = `chip ${v.toFixed(1)} px/frame | card ${speed.map((n) => n.toFixed(1)).join(" ")}`;
     // The chip is moving right at the cut, fast enough to carry (≥ 60 px/s is 2 px a frame).
     expect(got.vA[0]).toBeGreaterThan(10);
-    expect(Math.abs(got.vB[0] - got.vA[0]) / got.vA[0], `chip ${got.vA[0].toFixed(1)} px/frame, card ${got.vB[0].toFixed(1)}`).toBeLessThanOrEqual(0.15);
-    expect(got.ease).toBe("inOut");
-    expect(got.shift[0]).toBeGreaterThan(0);
+    // The first frame after the cut is the chip's last step, as a vector.
+    expect(Math.hypot(got.steps[0][0] - got.vA[0], got.steps[0][1] - got.vA[1]) / v, profile).toBeLessThanOrEqual(0.15);
+    // Then it only slows: no coast-and-swoop, no faster than the chip, at rest by d.
+    for (let k = 1; k < speed.length; k++) expect(speed[k], `frame ${k}: ${profile}`).toBeLessThanOrEqual(speed[k - 1] + 0.5);
+    expect(Math.max(...speed), profile).toBeLessThanOrEqual(1.1 * v);
+    expect(speed[got.frames], profile).toBeLessThan(0.5);
     expect(Math.hypot(got.off[0], got.off[1])).toBeLessThan(0.5);
   });
 

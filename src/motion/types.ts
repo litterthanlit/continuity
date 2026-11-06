@@ -200,8 +200,8 @@ export interface Tween {
    * Geometry the runtime measures once at prepare (layout is unknown to the build) and writes into
    * this tween's values, as the morph carriers do: `focus` zooms the camera until `target` fills
    * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end,
-   * `matchVelocity` carries `from`'s last-frame velocity through the cut (shiftX/shiftY on the
-   * impulse ease) and `matchShape` turns `from`'s fill and corner into this element's own;
+   * `matchVelocity` carries `from`'s last-frame velocity through the cut on one axis (shiftX or
+   * shiftY: the whole travel when `from` is moving, match.ts) and `matchShape` turns `from`'s fill and corner into this element's own;
    * `portal` maps this scene root onto `via`'s rect (the portal transition: `inner` is the scene
    * seen through the element, `outer` the scene that holds it; `at` is when `via` is measured, in
    * its own scene's seconds).
@@ -209,7 +209,7 @@ export interface Tween {
   measure?:
     | { kind: "focus"; target: string; fill: number }
     | { kind: "match"; from: string }
-    | { kind: "matchVelocity"; from: string }
+    | { kind: "matchVelocity"; from: string; axis: "x" | "y" }
     | { kind: "matchShape"; from: string }
     | { kind: "portal"; via: string; at: number; role: "inner" | "outer"; dir: "in" | "out" };
   /** Lint rule ids this tween deliberately breaks. */

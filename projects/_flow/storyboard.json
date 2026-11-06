@@ -249,7 +249,7 @@
           "label",
           "title"
         ],
-        "duration": 0.7
+        "duration": 0.8
       }
     },
     {
@@ -259,7 +259,7 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.7
+          "at": 0.8
         }
       ],
       "text": {

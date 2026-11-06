@@ -6,6 +6,7 @@ import { eases } from "../src/motion/tokens.js";
 import { compileScene, sampleScene } from "../src/motion/evaluate.js";
 import type { Tween } from "../src/motion/types.js";
 import { LAYER_DEPTH, LAYER_TRAVEL, layerPlan } from "../src/motion/layers.js";
+import { matchTravel } from "../src/motion/match.js";
 import { isCut, TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
 import { lintStoryboard } from "../src/lint/timeline.js";
 import type { FxSpec } from "../src/motion/types.js";
@@ -71,26 +72,29 @@ describe("litt's transition language", () => {
     ]);
   });
 
-  it("match emits place, velocity and shape tweens per pair, all over [0, d]", () => {
+  it("match emits place, velocity (one per axis) and shape tweens per pair, all over [0, d]", () => {
     const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
     expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure, Object.keys(tw.props).sort()])).toEqual([
       ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }, ["scale", "x", "y"]],
-      ["b.logo", 0, 0.6, { kind: "matchVelocity", from: "a.logo" }, ["shiftX", "shiftY"]],
+      ["b.logo", 0, 0.6, { kind: "matchVelocity", from: "a.logo", axis: "x" }, ["shiftX"]],
+      ["b.logo", 0, 0.6, { kind: "matchVelocity", from: "a.logo", axis: "y" }, ["shiftY"]],
       ["b.logo", 0, 0.6, { kind: "matchShape", from: "a.logo" }, ["corner", "paint"]],
       ["b.label", 0, 0.6, { kind: "match", from: "a.word" }, ["scale", "x", "y"]],
-      ["b.label", 0, 0.6, { kind: "matchVelocity", from: "a.word" }, ["shiftX", "shiftY"]],
+      ["b.label", 0, 0.6, { kind: "matchVelocity", from: "a.word", axis: "x" }, ["shiftX"]],
+      ["b.label", 0, 0.6, { kind: "matchVelocity", from: "a.word", axis: "y" }, ["shiftY"]],
       ["b.label", 0, 0.6, { kind: "matchShape", from: "a.word" }, ["corner", "paint"]],
     ]);
   });
 
-  it("a match from rest is today's match: the place settles on out, the velocity tween is still", () => {
+  it("a match from rest is today's match: the place settles on out, the velocity tweens are still", () => {
     const t = run({ type: "match", pairs: ["logo"] });
-    const [place, vel, shape] = t.in;
+    const [place, vx, vy, shape] = t.in;
     expect(place).toMatchObject({ easeName: "out", props: { x: [0, 0], y: [0, 0], scale: [1, 1] } });
-    expect(vel).toMatchObject({ ease: { type: "impulse" }, props: { shiftX: [0, 0], shiftY: [0, 0] } });
+    expect(vx).toMatchObject({ ease: { type: "impulse" }, props: { shiftX: [0, 0] } });
+    expect(vy).toMatchObject({ ease: { type: "impulse" }, props: { shiftY: [0, 0] } });
     expect(shape.props).toEqual({ paint: [0, 1], corner: [0, 0] });
     // Placeholders sample to nothing: no shift at any time, the place at rest.
-    const c = compileScene({ scene: "b", start: 0, duration: 3, beats: {}, tweens: [place, vel], loops: [] }, {});
+    const c = compileScene({ scene: "b", start: 0, duration: 3, beats: {}, tweens: [place, vx, vy], loops: [] }, {});
     for (const s of [0, 0.1, 0.3, 0.6]) expect(sampleScene(c, s).get("b.logo")).toMatchObject({ shiftX: 0, shiftY: 0, x: 0, y: 0 });
   });
 
@@ -470,6 +474,57 @@ describe("layered handoffs: copy leads, UI follows, decor trails", () => {
       ],
     });
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("a match from a moving partner travels on one curve per axis (sampled, px per frame)", () => {
+  const fps = 30;
+  const d = 0.7;
+  /** The incoming element's centre, frame by frame from the cut: the place (a zoom about its centre, no pan) plus the travel. */
+  const path = (v: [number, number], delta: [number, number]) => {
+    const [tx, ty] = [matchTravel(v[0], delta[0], d), matchTravel(v[1], delta[1], d)];
+    const tweens: Tween[] = [
+      { target: "b.el", kind: "transition", start: 0, duration: d, ease: eases.inOut, easeName: "inOut", props: { x: [0, 0], y: [0, 0], scale: [0.18, 1] } },
+      { target: "b.el", kind: "transition", start: 0, duration: d, ease: tx.ease, props: { shiftX: tx.range } },
+      { target: "b.el", kind: "transition", start: 0, duration: d, ease: ty.ease, props: { shiftY: ty.range } },
+    ];
+    const c = compileScene({ scene: "b", start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
+    const at = (f: number) => {
+      const s = sampleScene(c, f / fps).get("b.el")!;
+      return [(s.x ?? 0) + (s.shiftX ?? 0), (s.y ?? 0) + (s.shiftY ?? 0)];
+    };
+    const pts = Array.from({ length: Math.round(d * fps) + 4 }, (_, f) => at(f));
+    return { start: pts[0], end: pts[pts.length - 1], steps: pts.slice(1).map((p, i) => [p[0] - pts[i][0], p[1] - pts[i][1]]) };
+  };
+  const V = 1000 / fps; // the partner's speed, px per frame
+
+  it("in reach (½·v·d along the travel, a little across it): leaves at v, only slows, lands at rest", () => {
+    const { start, end, steps } = path([1000, 0], [-350, -120]);
+    expect(start).toEqual([-350, -120]);
+    expect(end).toEqual([0, 0]);
+    const speed = steps.map(([x, y]) => Math.hypot(x, y));
+    expect(Math.abs(steps[0][0] - V) / V).toBeLessThanOrEqual(0.15);
+    for (let k = 1; k < speed.length; k++) expect(speed[k], `frame ${k}: ${speed.map((n) => n.toFixed(1)).join(" ")}`).toBeLessThanOrEqual(speed[k - 1] + 0.5);
+    expect(Math.max(...speed)).toBeLessThanOrEqual(1.1 * V);
+    // At rest by d: the step after the tween ends is nothing.
+    expect(speed[Math.round(d * fps)]).toBeLessThan(0.5);
+  });
+
+  it("against the travel: leaves the partner's way, turns once, never jerks, lands at rest", () => {
+    const { end, steps } = path([1000, 0], [300, 0]);
+    const vx = steps.map(([x]) => x);
+    expect(Math.abs(vx[0] - V) / V).toBeLessThanOrEqual(0.2);
+    const signs = vx.filter((x) => Math.abs(x) > 0.05).map(Math.sign);
+    expect(signs.filter((sg, i) => i > 0 && sg !== signs[i - 1]), vx.map((n) => n.toFixed(1)).join(" ")).toHaveLength(1);
+    for (let k = 1; k < vx.length; k++) expect(Math.abs(vx[k] - vx[k - 1]), `frame ${k}`).toBeLessThanOrEqual(V / 3);
+    expect(end).toEqual([0, 0]);
+  });
+
+  it("with nowhere to travel on an axis, the speed is an impulse there: out at v and back to rest", () => {
+    expect(matchTravel(1000, 0.2, d)).toEqual({ range: [0, Math.round((4 * 1000 * d * 10000) / 27) / 10000], ease: { type: "impulse" } });
+    const { end, steps } = path([0, 1000], [0, 0]);
+    expect(Math.abs(steps[0][1] - V) / V).toBeLessThanOrEqual(0.15);
+    expect(end).toEqual([0, 0]);
   });
 });
 

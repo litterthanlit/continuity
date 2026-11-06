@@ -3,7 +3,7 @@ import { CARD } from "./card.js";
 
 // The accent chip under the title. It is already moving right when the cut lands: the match
 // carries its speed into the card it becomes (motion-craft §8, match v2).
-export const CHIP_TRAVEL = 320;
+export const CHIP_TRAVEL = 480;
 
 export default scene({
   view: ({ text }) => (
@@ -16,7 +16,7 @@ export default scene({
         <El
           ct="chip"
           class="absolute left-0 inline-flex h-[88px] items-center rounded-full bg-accent px-[40px] font-sans text-[32px] font-title text-accent-fg"
-          style={{ top: `${CARD.top + 320}px` }}
+          style={{ top: `${CARD.top + 456}px` }}
         >
           {text.chip}
         </El>

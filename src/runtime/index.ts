@@ -17,7 +17,8 @@ import { morphAt, toPathD, type MorphData } from "../motion/morph.js";
 import type { PartCounts, PropName, PropRange, SplitMode, Timeline } from "../motion/types.js";
 import type { GlHandle } from "../gl/runtime.js";
 import type { GlSpec } from "../gl/spec.js";
-import { eases, MATCH_SPEED } from "../motion/tokens.js";
+import { MATCH_SPEED, matchTravel } from "../motion/match.js";
+import { eases } from "../motion/tokens.js";
 import { prepareCarriers, renderCarrier, rgba, type Carrier } from "./carriers.js";
 import { checkWebglContexts, drawGradients, mountGradients } from "./gradient.js";
 
@@ -386,7 +387,7 @@ function radiusOf(el: HTMLElement, css: string): number {
  * focus: the camera move that makes the target fill `fill` of the frame at the move's end, its pan
  * clamped so the scene's edge never shows. match: the paired element starts at its partner's place
  * and size on the outgoing scene's last frame; matchVelocity carries the partner's last-frame speed
- * through the cut (from MATCH_SPEED up); matchShape turns its fill (two solid fills only) and corner
+ * through the cut (from MATCH_SPEED up: the travel moves onto the shifts, motion/match.ts); matchShape turns its fill (two solid fills only) and corner
  * into the element's own.
  */
 function resolveMeasured() {
@@ -481,15 +482,21 @@ function resolveMeasured() {
           const vx = ((A.x + A.w / 2 - (A0.x + A0.w / 2)) * fps) / k;
           const vy = ((A.y + A.h / 2 - (A0.y + A0.h / 2)) * fps) / k;
           if (Math.hypot(vx, vy) < MATCH_SPEED) continue;
-          // The impulse leaves 0 at slope 27/4: a reach of 4·v·d/27 starts B at exactly v, on top of a
-          // place that now eases in from rest (inOut), and gives the speed back by the end.
-          t.props = { shiftX: [0, r4((4 * vx * t.duration) / 27)], shiftY: [0, r4((4 * vy * t.duration) / 27)] };
+          // Moving: the travel leaves the place (which stays a zoom about B's centre) and rides this
+          // axis's shift, one curve that leaves the cut at A's speed and lands at rest. The place
+          // tween comes first in the scene (the build's order), so its offsets are already written.
+          const x = m.axis === "x";
+          const delta = x ? (A.x + A.w / 2 - (B.x + B.w / 2)) / k : (A.y + A.h / 2 - (B.y + B.h / 2)) / k;
+          const travel = matchTravel(x ? vx : vy, delta, t.duration);
+          t.props = x ? { shiftX: travel.range } : { shiftY: travel.range };
+          t.ease = travel.ease;
           for (const o of sc.tweens) {
             const om = o.measure;
-            if (o.target === t.target && om && (om.kind === "match" || om.kind === "matchShape") && om.from === m.from) {
-              o.ease = eases.inOut;
-              o.easeName = "inOut";
-            }
+            if (o.target !== t.target || !om || om.kind === "matchVelocity" || !("from" in om) || om.from !== m.from) continue;
+            if (om.kind === "match") o.props = { ...o.props, x: [0, 0], y: [0, 0] };
+            // The size, fill and corner turn on one ease, symmetric under a travel that starts at speed.
+            o.ease = eases.inOut;
+            o.easeName = "inOut";
           }
         } else {
           // Fill and corner as A shows them at the cut, turning into B's own.

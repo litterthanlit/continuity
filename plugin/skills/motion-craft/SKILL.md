@@ -191,17 +191,24 @@ types per video (`transition-language`; three once a scene is energetic):
 Each pair is measured at prepare: the incoming element starts where its partner was on the
 outgoing scene's last frame, the same place and size, and settles into its own over the duration.
 - **Speed carries through the cut.** If the partner is moving at the cut (≥ 60 px/s), the element
-  leaves the cut at that velocity: an impulse adds the speed and gives it back over the duration,
-  and the place eases `inOut` from rest underneath it, so frame 0 moves exactly as the partner's
-  last frame did. From rest it is the plain match: the place settles on `out` (or the `ease` you
-  set; a moving partner overrides it with `inOut`).
+  leaves the cut at exactly the partner's last-frame velocity and travels to its place on one
+  curve per axis (a cubic Hermite: starts at that velocity, ends at rest), while its size grows
+  about its centre on `inOut`. Where an axis has nowhere to travel, the speed there is an impulse:
+  out at that speed and back. From rest it is the plain match: the place settles on `out` (or the
+  `ease` you set; a moving partner uses `inOut` for the size, fill and corner).
+- **The reach rule.** Place the incoming element about ⅓–⅔ of `v·d` along the travel from where
+  the partner is at the cut (`v` the partner's speed, `d` the match's duration). In that window
+  the move only slows after the cut. Further, and it must speed up after the cut to get there (a
+  surge); nearer, and it overshoots and comes back. Example: a chip at 1600 px/s into a 0.8s match
+  reaches 430–850 px; `_flow` puts the card 720 px along and 128 px across.
 - **Fill and corner turn into its own.** The first frame has the partner's corner radius as seen
   (a pill stays a pill) and, between two opaque solid fills, its fill; both turn into the
   element's own on the place's ease (the fill mixes in oklab). A gradient, image or transparent
   side gets no fill change, only the corner.
 - **Recipe:** give the outgoing element its own move into the cut, still accelerating on the last
   frame (t², `{ type: "bezier", p: [1/3, 0, 2/3, 1/3] }` ending at `end`), and put the incoming
-  element further along that travel, so the move carries on instead of reversing. Pair the copy
+  element within reach along that travel (above), so the move carries on and slows into place
+  instead of reversing or surging. Pair the copy
   that stays (`"label"`, `"title"`) too, so only the element that changes moves. Bring the
   incoming element's own content in after it lands (`at` ≈ the match's duration). `_flow`'s
   `chip` → `card` is the reference.
