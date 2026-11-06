@@ -147,7 +147,7 @@ function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undef
   const o = `${c.out}.scene`;
   const i = `${c.into}.scene`;
   const res = { out: [tw(o, c.os, c.d, { [axis]: [0, sign * 100] }, ease)], in: [tw(i, 0, c.d, { [axis]: [-sign * 100, 0] }, ease)] };
-  const l = layered(c, dir, { start: c.os, duration: c.d, ease }, c.d);
+  const l = layered(c, dir, { start: c.os, duration: c.d, ease, inDuration: c.d, inEase: ease, cut: false });
   if (blur) {
     const distance = axis === "xPct" ? c.frame.width : c.frame.height;
     const sigma = typeof blur === "number" ? blur : sigmaFor(ease.spec, distance, c.d, c.frame.fps);
@@ -166,25 +166,54 @@ function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undef
 
 /**
  * Layered handoff (`layers: true`): on top of the planes, each top-level element shifts a little
- * further along the travel — LAYER_TRAVEL of the frame × its role's depth — in a wave that starts
- * at the leading edge (layerPlan). Outgoing, it leaves from the plane's start + its delay and
- * lands with the plane, on the plane's ease; incoming, it arrives from behind over the plane's
- * in-duration, starting at its delay, easing out. Shift channels add to x/y, so each element's
- * own entrance runs through it unchanged.
+ * further along the travel, in a wave that starts at the leading edge (layerPlan: depth by role,
+ * delay by anchor). Shift channels add to x/y, so each element's own entrance runs through it.
+ *
+ * Every layer moves like its plane, so none jumps:
+ * - push (both scenes on screen, at rest at both ends): outgoing, a layer leaves at the plane's
+ *   start + its delay and lands with it; incoming, it leaves with the plane at 0 and takes its
+ *   delay longer to land — both on the plane's ease, depth × LAYER_TRAVEL of the frame each.
+ * - carry (a cut at peak speed): each layer is a t² move of its own, split at the cut like the
+ *   plane's. With M the largest delay, a layer leaves M − delay before the plane (the leader
+ *   first, never later than the plane) and lands delay after it: L_o = lead + M − delay before the
+ *   cut, T_i = tail + delay after. Its travel, 2 × depth × LAYER_TRAVEL, splits in proportion
+ *   (S_o = v·L_o/2, S_i = v·T_i/2 with v = 4·depth·travel/(d + M)), so it crosses the cut at
+ *   the speed v on both sides — the same for every layer of a depth, whatever its delay.
  */
-function layered(c: Ctx, dir: PlanarDir, plane: { start: number; duration: number; ease: Ease }, inDuration: number): { out: Tween[]; in: Tween[] } {
+function layered(
+  c: Ctx,
+  dir: PlanarDir,
+  plane: { start: number; duration: number; ease: Ease; inDuration: number; inEase: Ease; cut: boolean },
+): { out: Tween[]; in: Tween[] } {
   if (!c.spec.layers) return { out: [], in: [] };
   const horizontal = dir === "left" || dir === "right";
   const ch: PropName = horizontal ? "shiftX" : "shiftY";
   const sign = dir === "left" || dir === "up" ? -1 : 1;
   const travel = LAYER_TRAVEL * (horizontal ? c.frame.width : c.frame.height);
   const end = plane.start + plane.duration;
+  const outPlan = layerPlan(c.elements.out, dir, c.d);
+  const inPlan = layerPlan(c.elements.in, dir, c.d);
+  const out = (id: string, start: number, shift: number) =>
+    tw(`${c.out}.${id}`, start, r3(end - start), { [ch]: [0, r3(sign * shift)] }, plane.ease);
+  const into = (id: string, duration: number, shift: number) =>
+    tw(`${c.into}.${id}`, 0, duration, { [ch]: [r3(-sign * shift), 0] }, plane.inEase);
+  if (!plane.cut) {
+    return {
+      out: outPlan.map((s) => out(s.id, r3(plane.start + s.delay), s.depth * travel)),
+      in: inPlan.map((s) => into(s.id, r3(plane.inDuration + s.delay), s.depth * travel)),
+    };
+  }
+  const M = Math.max(0, ...outPlan.map((s) => s.delay), ...inPlan.map((s) => s.delay));
+  const speed = (depth: number) => (4 * depth * travel) / (c.d + M);
   return {
-    out: layerPlan(c.elements.out, dir, c.d).map((s) => {
-      const start = r3(plane.start + s.delay);
-      return tw(`${c.out}.${s.id}`, start, r3(end - start), { [ch]: [0, r3(sign * s.depth * travel)] }, plane.ease);
+    out: outPlan.map((s) => {
+      const start = r3(Math.max(0, plane.start - (M - s.delay)));
+      return out(s.id, start, (speed(s.depth) * (end - start)) / 2);
     }),
-    in: layerPlan(c.elements.in, dir, c.d).map((s) => tw(`${c.into}.${s.id}`, s.delay, inDuration, { [ch]: [r3(-sign * s.depth * travel), 0] }, named("out"))),
+    in: inPlan.map((s) => {
+      const duration = r3(plane.inDuration + s.delay);
+      return into(s.id, duration, (speed(s.depth) * duration) / 2);
+    }),
   };
 }
 
@@ -233,7 +262,7 @@ function carry(c: Ctx): { out: Tween[]; in: Tween[] } {
     out: [tw(o, start, lead, { [axis]: [0, r3(sign * outX)], scale: [1, r3(1 + (2 * outX) / 100)] }, QUAD_IN)],
     in: [tw(i, 0, tail, { [axis]: [r3(-sign * inX), 0], scale: [r3(1 + (2 * inX) / 100), 1] }, QUAD_OUT)],
   };
-  const l = layered(c, dir, { start, duration: lead, ease: QUAD_IN }, tail);
+  const l = layered(c, dir, { start, duration: lead, ease: QUAD_IN, inDuration: tail, inEase: QUAD_OUT, cut: true });
   const frame = axis === "xPct" ? c.frame.width : c.frame.height;
   const peak = (2 * (D / 100) * frame * CARRY_LEAD) / Math.max(1e-3, lead * c.frame.fps);
   const blur = c.spec.blur ?? peak >= CARRY_BLUR_FROM;

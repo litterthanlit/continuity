@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { fxStyle } from "../src/motion/fx.js";
 import { peakSlope, sigmaFor } from "../src/motion/easing.js";
 import { eases } from "../src/motion/tokens.js";
+import { compileScene, sampleScene } from "../src/motion/evaluate.js";
+import type { Tween } from "../src/motion/types.js";
 import { LAYER_DEPTH, LAYER_TRAVEL, layerPlan } from "../src/motion/layers.js";
 import { isCut, TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
 import { lintStoryboard } from "../src/lint/timeline.js";
@@ -386,34 +388,38 @@ describe("layered handoffs: copy leads, UI follows, decor trails", () => {
     expect(on(t.in, "b.scene")).toEqual(plain.in);
     const plane = plain.out[0];
     const tail = plain.in[0].duration;
-    // Outgoing: from the plane's start + delay, ending with it, on the plane's ease, along the travel.
-    const [ot] = on(t.out, "a.title");
-    expect(ot.props).toEqual({ shiftX: [0, -LAYER_TRAVEL * 1920] });
-    expect(ot.start).toBeCloseTo(plane.start, 6);
-    expect(ot.start + ot.duration).toBeCloseTo(3, 6);
-    expect(ot.ease).toEqual(plane.ease);
-    const [ob] = on(t.out, "a.bars");
-    expect(ob.props.shiftX![1]).toBeCloseTo(-LAYER_TRAVEL * 1920 * 0.6, 6);
-    expect(ob.start).toBeCloseTo(plane.start + 0.04, 6);
-    expect(ob.start + ob.duration).toBeCloseTo(3, 6);
-    // Incoming: from behind, starting at its delay, for the plane's in-duration, easing out.
-    const [it_] = on(t.in, "b.title");
-    expect(it_.props).toEqual({ shiftX: [LAYER_TRAVEL * 1920, 0] });
-    expect(it_.start).toBe(0);
+    const [ot, ob] = [on(t.out, "a.title")[0], on(t.out, "a.bars")[0]];
+    const [it_, ib] = [on(t.in, "b.title")[0], on(t.in, "b.bars")[0]];
+    // Outgoing: every layer lands with the plane on its ease; the leader leaves first (by the last delay).
+    for (const tw of [ot, ob]) {
+      expect(tw.start + tw.duration).toBeCloseTo(3, 6);
+      expect(tw.ease).toEqual(plane.ease);
+    }
+    expect(ot.start).toBeCloseTo(plane.start - 0.04, 6);
+    expect(ob.start).toBeCloseTo(plane.start, 6);
+    // Incoming: every layer leaves the cut with the plane on its ease; the trailer lands last (by its delay).
+    for (const tw of [it_, ib]) {
+      expect(tw.start).toBe(0);
+      expect(tw.ease).toEqual(plain.in[0].ease);
+    }
     expect(it_.duration).toBeCloseTo(tail, 6);
-    expect(it_.easeName).toBe("out");
-    const [ib] = on(t.in, "b.bars");
-    expect(ib.props.shiftX![0]).toBeCloseTo(LAYER_TRAVEL * 1920 * 0.6, 6);
-    expect(ib.start).toBeCloseTo(0.04, 6);
-    expect(ib.duration).toBeCloseTo(tail, 6);
+    expect(ib.duration).toBeCloseTo(tail + 0.04, 6);
+    // Across the cut each layer travels 2 × depth × LAYER_TRAVEL of the frame, behind on both sides.
+    const total = (o: typeof ot, i: typeof ot) => (o.props.shiftX as number[])[1] - (i.props.shiftX as number[])[0];
+    expect(total(ot, it_)).toBeCloseTo(-2 * LAYER_TRAVEL * 1920, 1);
+    expect(total(ob, ib)).toBeCloseTo(-2 * LAYER_TRAVEL * 1920 * 0.6, 1);
+    expect((it_.props.shiftX as number[])[1]).toBe(0);
     for (const tw of [...t.out, ...t.in]) expect(tw.kind).toBe("transition");
   });
 
-  it("a layered push uses the push's ease; pushUp shifts along y by the frame's height", () => {
+  it("a layered push moves its layers on the push's ease; pushUp shifts along y by the frame's height", () => {
     const p = layered({ type: "push", layers: true });
-    const [ot] = on(p.out, "a.title");
-    expect(ot.ease).toEqual(on(p.out, "a.scene")[0].ease);
-    expect(ot.start).toBeCloseTo(3 - 0.5, 6);
+    for (const id of ["title", "bars"]) {
+      expect(on(p.out, "a." + id)[0].ease).toEqual(on(p.out, "a.scene")[0].ease);
+      expect(on(p.in, "b." + id)[0].ease).toEqual(on(p.in, "b.scene")[0].ease);
+      expect(on(p.in, "b." + id)[0].start).toBe(0);
+    }
+    expect(on(p.out, "a.title")[0].start).toBeCloseTo(3 - 0.5, 6);
     const up = layered({ type: "pushUp", layers: true }, { out: [{ id: "title", role: "headline", anchor: "A3" }], in: [{ id: "title", role: "headline", anchor: "A3" }] });
     expect(on(up.out, "a.title")[0].props).toEqual({ shiftY: [0, -LAYER_TRAVEL * 1080] });
     expect(on(up.in, "b.title")[0].props).toEqual({ shiftY: [LAYER_TRAVEL * 1080, 0] });
@@ -442,4 +448,74 @@ describe("layered handoffs: copy leads, UI follows, decor trails", () => {
     });
     expect(r.ok).toBe(false);
   });
+});
+
+describe("layered handoffs move continuously (sampled, px per frame)", () => {
+  const fps = 30;
+  const frame = { width: 1920, height: 1080, fps };
+  /** _flow's next scene: label, title and sub down column A, the chart across D–F. */
+  const flow = [
+    { id: "label", role: "label" as const, anchor: "A2" },
+    { id: "title", role: "headline" as const, anchor: "A3" },
+    { id: "sub", role: "body" as const, anchor: "A4" },
+    { id: "bars", role: "ui" as const, anchor: "D2:F5" },
+  ];
+  /** Six layers: the stagger compresses to the 0.3·d cap. */
+  const six = ["A1", "A2", "B3", "C4", "D2:F5", "F6"].map((anchor, i) => ({ id: "e" + i, role: (i === 4 ? "ui" : i === 5 ? "decor" : "body") as "ui" | "decor" | "body", anchor }));
+  const sampler = (scene: string, tweens: Tween[]) => {
+    const c = compileScene({ scene, start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
+    // Where the element is on screen along x: its scene plane plus its own shift (the overscan scale aside).
+    return (id: string, t: number) => {
+      const v = sampleScene(c, t);
+      return (v.get(`${scene}.scene`)?.xPct ?? 0) * 19.2 + (v.get(`${scene}.${id}`)?.shiftX ?? 0);
+    };
+  };
+  const cases = [
+    { d: 0.5, distance: 12, els: flow },
+    { d: 0.3, distance: 12, els: six },
+    { d: 0.8, distance: 8, els: six },
+  ];
+
+  for (const { d, distance, els } of cases) {
+    it(`carry (d ${d}, ${els.length} layers): each layer crosses the cut at one speed and decelerates to rest`, () => {
+      const t = transitionTweens({ type: "carry", dir: "left", distance, duration: d, layers: true }, { id: "a", duration: 3 }, { id: "b" }, frame, { out: els, in: els });
+      const out = sampler("a", t.out);
+      const into = sampler("b", t.in);
+      const lead = t.out.find((tw) => tw.target === "a.scene")!.duration;
+      for (const tw of t.out.filter((tw) => tw.props.shiftX)) expect(tw.duration, tw.target).toBeGreaterThanOrEqual(lead - 1e-9);
+      for (const id of ["plane", ...els.map((e) => e.id)]) {
+        const f = 1 / fps;
+        const vOut = Math.abs(out(id, 3) - out(id, 3 - f));
+        const vIn = Math.abs(into(id, f) - into(id, 0));
+        expect(Math.abs(vOut - vIn) / Math.max(vOut, vIn), `${id}: ${vOut.toFixed(1)} | ${vIn.toFixed(1)}`).toBeLessThanOrEqual(0.15);
+        let prev = Infinity;
+        for (let k = 0; k * f < d * 1.5; k++) {
+          const step = Math.abs(into(id, (k + 1) * f) - into(id, k * f));
+          expect(step, `${id} frame ${k}`).toBeLessThanOrEqual(prev + 1e-6);
+          prev = step;
+        }
+      }
+    });
+  }
+
+  for (const els of [flow, six]) {
+    it(`push (${els.length} layers): no layer jumps while the plane rests; speed changes smoothly`, () => {
+      const d = 0.5;
+      const t = transitionTweens({ type: "push", dir: "left", duration: d, layers: true }, { id: "a", duration: 3 }, { id: "b" }, frame, { out: els, in: els });
+      const out = sampler("a", t.out);
+      const into = sampler("b", t.in);
+      const f = 1 / fps;
+      const plane0 = Math.abs(into("plane", f) - into("plane", 0));
+      for (const id of els.map((e) => e.id)) {
+        const first = Math.abs(into(id, f) - into(id, 0));
+        expect(Math.abs(first - plane0) / plane0, `${id} first frame ${first.toFixed(1)} vs plane ${plane0.toFixed(1)}`).toBeLessThanOrEqual(0.15);
+        for (const [name, at, from, to] of [["in", into, 0, d * 1.4], ["out", out, 3 - d, 3]] as const) {
+          const steps: number[] = [];
+          for (let s = from; s < to - 1e-9; s += f) steps.push(Math.abs(at(id, Math.min(to, s + f)) - at(id, s)));
+          const peak = Math.max(...steps);
+          for (let k = 1; k < steps.length; k++) expect(Math.abs(steps[k] - steps[k - 1]) / peak, `${id} ${name} frame ${k}`).toBeLessThanOrEqual(0.3);
+        }
+      }
+    });
+  }
 });

@@ -203,10 +203,15 @@ further than its scene (8% of the frame along the axis × its depth), in order a
 - **When:** between two scenes that share a layout (copy + a surface), the steps of a chapter —
   where a plain carry would read as a carousel. Not for a statement frame with one element (there
   is nothing to layer), and not when an element carries the cut on its own (`match`, `morph`).
-- **What it does:** outgoing, each element leaves from the plane's start + its delay and lands with
-  the plane, on the plane's ease; incoming, it arrives from behind, starting at its delay, over the
-  plane's in-duration, easing out. The shift is additive, so the element's own entrance (a `rise`
-  on frame 0) runs through it — no need to remove it.
+- **What it does:** every layer moves like its plane, so nothing jumps.
+  - In a **carry**, each layer makes its own t² move and splits it at the cut the way the plane does.
+    - The leader leaves the earliest, before the plane starts. Later layers leave nearer the plane's own start, and none leaves after it.
+    - Each layer lands its own delay after the plane does.
+    - Each layer's travel, 2 × depth × 8% of the frame, is split in proportion to its time before and after the cut. So each layer crosses the cut at one speed on both sides, and decelerates to rest.
+  - In a **push**, on the push's ease:
+    - Outgoing, a layer starts at the plane's start + its delay and lands with the plane.
+    - Incoming, it starts with the plane and takes its delay longer to land.
+  - The shift is additive, so the element's own entrance (a `rise` on frame 0) runs through it. You don't need to remove it.
 - **Depth by role:**
 
   | Role | Depth | Reads as |
