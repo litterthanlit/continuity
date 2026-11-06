@@ -132,25 +132,25 @@ the cut, and the spec ("keeps moving through the cut") ranked above the formula.
     shutter speed takes the faster one-sided difference at a move's ends (the central one halved the
     blur on a move's first frame), and a finished impulse holds its rest, not its peak.
 
-### 4. The benchmark: `example-launch` B0 → B1 → B2
+### 4. The benchmark: `example-launch` B0 → B1 → B2 → B3
 
-All three were scored by an independent critic agent, never by the implementer. Each new version
+All four were scored by an independent critic agent, never by the implementer. Each new version
 was judged pairwise against the last in both orders (`ct compare`, then `ct verdict`). Gate:
-0 errors on all three.
+0 errors on all four.
 
-| | B0 (it. 8) | B1 (it. 12; 13 is the same film, notes-only) | B2 (it. 15) |
-|---|---|---|---|
-| Joins | cut + 4 blurred `push` + dip | portal + 3 `carry` + dip + cut | portal + 2 layered `carry` + 2 `match` v2 + cut |
-| Intent | 4 | 4 | 4 |
-| Composition | 4 | 4 | 4 |
-| Typography | 5 | 5 | 5 |
-| Temporal | 4 | 4 | 4 |
-| Craft | 3 | 4 | 4 (stronger) |
-| Mean | 4.0 | 4.2 | 4.2 |
-| Pairwise verdict | — | B1 over B0 (both orders) | B2 over B1 (both orders) |
-| `ct motion` | 69% active, 0 dead zones, 0 jolts, mean energy 0.66 | 68% active, 0 dead zones, 0 jolts, mean energy 0.68 | 68% active, 0 dead zones, 0 jolts, mean energy 0.76 |
-| Dead zones at the joins | 0 | 0 | 0 |
-| What the joins carry (element · place+speed · direction · action · punctuation) | 0 · 0 · 4 · 0 · 2 | 1 · 0 · 3 · 1 · 1 | 2 · 1 · 2 (layered) · 1 · 0 |
+| | B0 (it. 8) | B1 (it. 12; 13 is the same film, notes-only) | B2 (it. 15) | B3 (it. 18) |
+|---|---|---|---|---|
+| Joins | cut + 4 blurred `push` + dip | portal + 3 `carry` + dip + cut | portal + 2 layered `carry` + 2 `match` v2 + cut | portal + 2 layered `carry` (translate only) + `match` v2 + portal |
+| Intent | 4 | 4 | 4 | 4 |
+| Composition | 4 | 4 | 4 | 4 |
+| Typography | 5 | 5 | 5 | 5 |
+| Temporal | 4 | 4 | 4 | 4 |
+| Craft | 3 | 4 | 4 (stronger) | 4 (high) |
+| Mean | 4.0 | 4.2 | 4.2 | 4.2 |
+| Pairwise verdict | — | B1 over B0 (both orders) | B2 over B1 (both orders) | B3 over B2 (both orders) |
+| `ct motion` | 69% active, 0 dead zones, 0 jolts, mean energy 0.66 | 68% active, 0 dead zones, 0 jolts, mean energy 0.68 | 68% active, 0 dead zones, 0 jolts, mean energy 0.76 | 68% active, 0 dead zones, 0 jolts, mean energy 0.90 |
+| Dead zones at the joins | 0 | 0 | 0 | 0 |
+| What the joins carry (element · place+speed · direction · action · punctuation) | 0 · 0 · 4 · 0 · 2 | 1 · 0 · 3 · 1 · 1 | 2 · 1 · 2 (layered) · 1 · 0 | 2 · 1 · 2 (layered) · 1 · 0 |
 
 Notes on the table:
 - **Motion shape.** B1's chart showed the same trough → pre-cut spike → post-cut spike at all three
@@ -217,8 +217,9 @@ was found afterwards. The join is now `{ "type": "portal", "via": "ships", "dura
   scene's move); critic is 0.4 s longer (5.4 s) to keep about 1.2 s of settled hold on the verdict,
   and the end card's wordmark and tagline move to 0.85 and 1.4 s, after the landing.
 - The portal is already the film's accent type, so the transition language stays at one accent.
-- B3 (iteration 18) is the film with §5 and §6; gate 0 errors, 0 warnings, 0 info. Its independent
-  score is pending.
+- B3 (iteration 18) is the film with §5 and §6: gate 0 errors, 0 warnings, 0 info (and `--deep`),
+  scored 4 · 4 · 5 · 4 · 4 (mean 4.2) by an independent critic, and preferred over B2 in both orders
+  (§4).
 
 ## Consequences
 
@@ -245,3 +246,15 @@ was found afterwards. The join is now `{ "type": "portal", "via": "ships", "dura
   3. **The reach rule is documented, not linted.** A match whose incoming element is out of reach
      (a surge) or behind the partner (a reversal) still passes the gate. The prepare step knows
      `v`, `d` and `Δ` and could warn.
+  4. **What B3's critic still found**, in its order:
+     - J6 shows "Ships" ghosted for two frames (28.333–28.367): `ships-word` steps out on the
+       portal's first frame and its instant fade overlaps the window's fade-up. Step it out 0.1 s
+       before the portal, as `plan-word` does at J2.
+     - Portal pacing: J2 and J6 each grow about 19× in 0.8–0.9 s, fast for the calm register.
+     - J3's landing: the eye lands on an empty "$" terminal, and the copy comes in only after the
+       carry (item 1).
+     - J1 has a frame of empty field on the cut (3.600) before the label arrives.
+     - J5 still runs 0.9 s without readable copy (item 1).
+     - `matchShape` reads A's fill and corner one frame before the cut: the velocity read applies
+       the outgoing scene at `duration − 1/fps` and nothing re-applies `duration` after it. Re-apply
+       it after reading A0.
