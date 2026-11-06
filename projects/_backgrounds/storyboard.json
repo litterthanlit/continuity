@@ -1,0 +1,26 @@
+{
+  "title": "Backgrounds gallery",
+  "logline": "Moving gradient fields: two scenes on the same field, joined by a plain cut, so the field can be judged flowing straight through it. Reference fixture.",
+  "format": { "aspect": "16:9", "fps": 30 },
+  "theme": "litt-dark",
+  "type": "litt",
+  "scenes": [
+    {
+      "id": "a",
+      "duration": 2,
+      "intent": "The aurora field, moving on its own under a quiet label.",
+      "beats": [{ "id": "b1", "at": 0.2 }],
+      "text": { "label": "Aurora" },
+      "elements": [{ "id": "label", "role": "label", "anchor": "A1" }],
+      "transition": { "type": "cut" }
+    },
+    {
+      "id": "b",
+      "duration": 2,
+      "intent": "The same field after a plain cut: it keeps flowing, unbroken.",
+      "beats": [{ "id": "b1", "at": 0.2 }],
+      "text": { "label": "Through the cut" },
+      "elements": [{ "id": "label", "role": "label", "anchor": "A1" }]
+    }
+  ]
+}

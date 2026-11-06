@@ -18,6 +18,7 @@ import type { PartCounts, PropRange, SplitMode, Timeline } from "../motion/types
 import type { GlHandle } from "../gl/runtime.js";
 import type { GlSpec } from "../gl/spec.js";
 import { prepareCarriers, renderCarrier, type Carrier } from "./carriers.js";
+import { drawGradients, mountGradients } from "./gradient.js";
 
 interface CtData {
   timeline: Timeline;
@@ -64,6 +65,8 @@ let carriers = new Map<HTMLElement, Carrier>();
 /** GL shots (continuity-gl.js): which shot answers each GL target id, and each scene's shots. */
 const glTargets = new Map<string, GlHandle>();
 const glScenes = new Map<string, GlHandle[]>();
+/** Each scene's global start: gradient fields are drawn at global time (docs/decisions/0011). */
+const sceneStarts = new Map(data.timeline.scenes.map((s) => [s.scene, s.start]));
 /** `<Morph>` shapes: their outlines, aligned at build time. */
 const morphs = new Map<Element, { path: SVGPathElement; data: MorphData }>();
 
@@ -284,6 +287,7 @@ function apply(sceneId: string, t: number) {
     }
   });
   glScenes.get(sceneId)?.forEach((h) => h.render());
+  drawGradients(sceneId, (sceneStarts.get(sceneId) ?? 0) + t);
 }
 
 /** Mount every GL shot (fonts are loaded: plane textures draw type). */
@@ -477,6 +481,7 @@ async function prepare() {
   createMotionBlurs();
   collectMorphs();
   mountGl();
+  mountGradients();
   const root = document.querySelector<HTMLElement>("[data-composition-id]");
   if (root && root.querySelector("[data-ct-match]")) {
     document.documentElement.classList.add("ct-measuring");
