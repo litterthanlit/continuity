@@ -404,10 +404,12 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: 
     if (has("saturate")) parts.push("saturate(" + f4(g("saturate")) + ")");
     s.filter = parts.join(" ");
   }
-  if (CLIP_PROPS.some(has)) {
+  if (CLIP_PROPS.some(has) || has("clipRound")) {
     const insets = CLIP_PROPS.map((p) => Math.min(100, Math.max(0, g(p))));
+    const round = Math.max(0, g("clipRound"));
     // Fully open is no clip: inset(0) would keep cutting ink that leaves the box (a descender under tight leading).
-    s.clipPath = insets.every((v) => v === 0) ? "none" : "inset(" + insets.map((v) => f4(v) + "%").join(" ") + ")";
+    s.clipPath =
+      insets.every((v) => v === 0) && round < 0.01 ? "none" : "inset(" + insets.map((v) => f4(v) + "%").join(" ") + (round >= 0.01 ? " round " + f4(round) + "px" : "") + ")";
   }
   if (has("fx") && fx) {
     const shape = fxStyle(fx, g("fx"));

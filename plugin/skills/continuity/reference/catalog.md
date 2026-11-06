@@ -64,6 +64,7 @@
 |---|---|---|---|---|
 | `cut` | — | — | — | Hard cut, on the beat. The primary: most of a litt edit is cuts. |
 | `match` | 0.6s | 0.3–1.2s | ease, pairs | A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. pairs: ["logo"] (same id) or [["ring", "badge"]]. A primary move, like a cut: it is not an accent. |
+| `carry` | 0.5s | 0.3–1s | dir, distance, blur | A cut on movement: the camera is already travelling when the cut lands. The outgoing scene accelerates in the direction of travel (dir, default left), the cut swaps the scenes at peak speed, and the incoming one decelerates from that same speed to rest — two shots, one move. distance: % of the frame (default 8, a drift; 30–60 in the energetic register is a whip pan); blur follows the speed; each scene overscans with its travel, so no edge shows. A primary move, like a cut. |
 | `crossfade` | 0.4s | 0.25–0.8s | ease | The incoming scene fades over the outgoing one. The same surface in a new state. |
 | `dip` | 0.5s | 0.3–1s | ease | Out fades to the canvas, then in fades up. A breath between chapters, before the end card. |
 | `push` | 0.5s | 0.3–0.8s | ease, dir, blur | The incoming scene pushes the outgoing one off in the direction of travel (dir, default left = reading order). Sequential steps. blur: true when it moves fast. |
@@ -72,6 +73,7 @@
 | `pixels` | 0.5s | 0.3–0.8s | ease, dir | Energetic register. A digital cut through the canvas: square cells (a 24th of the frame's long side) of the canvas colour dissolve over the outgoing scene in an ordered dither, then the incoming scene appears through the same dither, both sweeping in the direction of travel (dir, default right). No frame mixes two scenes' type. The product loads, a machine takes over. |
 | `depth` | 0.6s | 0.4–1s | ease, dir (dir: in/out) | Energetic register. The camera flies through the stack: the outgoing scene grows past the viewer as the next one comes forward from behind (dir in, default). dir out is the reverse — close a reel by flying back out of where it opened. |
 | `morph` | 0.6s | 0.3–1.2s | ease, pairs, squash, arc | A shared element carries the cut: each pair travels from its place in the outgoing scene to its place in the incoming one (position and size; shapes morph their outline) while the rest crossfades under it — the scenes flow instead of cutting. pairs: ["logo"] (same id) or [["title", "card"]]; squash 0..0.5 for mass; arc bends the path. |
+| `portal` | 0.8s | 0.5–1.4s | ease, dir, via (dir: in/out) | The camera goes through an element. dir in (default): the outgoing scene grows until via (one of its elements: a card, a screen, a button) fills the frame, and the incoming scene is what was inside it, opening from the element's rounded rect. dir out: the outgoing scene shrinks into via, an element of the incoming scene (a pull-back to the screen it was playing on). The two scenes move as one rig, measured, so the window stays locked to the element. |
 
 One transition language per video: cuts on the beat, and at most two accent types (three once a scene is energetic) — see motion-craft §8.
 
@@ -123,6 +125,8 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `split-too-busy` — Character split on long copy is slow and noisy. Split by words or lines instead.
 - `stagger-too-long` — The stagger cascade takes too long to complete.
 - `camera-too-fast` — Camera moves faster than ~15% zoom/s or 160px/s feel jarring (energetic register: 50% zoom/s, 480px/s).
+- `dead-cut` — A plain cut between two rests: the outgoing scene has settled and the incoming one starts still, so the eye stops at the join. Cut on movement (an exit into the cut, an entrance on it, or a carry), match it, or go through an element (portal, morph).
+- `static-edit` — Most of the film's joins carry nothing (dead cuts, crossfades, dips): it reads as a slideshow. Let the joins flow — carry, match, portal, morph, push — and keep the still cuts as punctuation.
 - `transition-too-long` — A transition longer than its type's craft range stalls the edit (a 1s push is no longer a step).
 - `transition-too-short` — A transition shorter than its type's range reads as a glitch, not a move.
 - `transition-language` — More than two accent transition types in one video reads as a template (three once any scene is energetic). Pick one primary (most cuts) and few accents; hard cuts are free.

@@ -129,15 +129,34 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   bg loops (`ambient-loop`, `material-motion`). A caret may blink (`m.blink`). Dead air > 2.5s
   warns; tighten the scene or let the camera carry it.
 
-## 8. Transitions: one language
+## 8. Transitions: one language, and the eye never stops
 
-litt's edit is **cuts on the beat**. A cut is the most premium transition and the primary;
-accents are rare and quiet. Pick at most two accent types per video (`transition-language`;
-three once a scene is energetic):
+litt's edit is **cuts on the beat** — but a cut is only premium when something carries the eye
+across it. Plan every join as a handoff (docs/decisions/0010): what does the eye ride from this
+shot into the next?
+
+| The eye rides… | Move | Example |
+|---|---|---|
+| a **direction** | `carry` (a cut on movement) | the camera is travelling left when the cut lands; the next shot decelerates from that speed |
+| a **place** | `match` (a cut) | the logo is exactly where the ring was, then settles |
+| an **element** | `portal`, `morph` | the camera goes *into* the tile and the tile becomes the next scene; the card flies to become the stat |
+| an **action** | a plain `cut` with an exit into it or an entrance on it | the row slides off as the cut lands; the headline whips in on frame 0 |
+| **nothing** (punctuation) | a plain `cut` between two rests, `dip` | after a statement's hold; before the end card |
+
+A film whose joins mostly carry nothing reads as a slideshow: `dead-cut` (info) marks each cut
+between two rests and `static-edit` warns when they are most of the film. A still cut is
+punctuation — use it two or three times a film, on purpose.
+
+Cuts, match cuts and carries are the primary. Accents are rare and quiet: pick at most two accent
+types per video (`transition-language`; three once a scene is energetic):
 
 | Type | Default | Params | Use for |
 |---|---|---|---|
-| `cut` | — | | the primary: on the beat |
+| `cut` | — | | on the beat; with motion on one side of it |
+| `match` | 0.6 | pairs, ease | **primary**: an element starts where its partner was and settles |
+| `carry` | 0.5 | dir, distance, blur | **primary**: a cut on movement — 40% of the travel before the cut (accelerating), 60% after (decelerating, same speed at the cut). `distance` 6–12 calm (a drift); 30–60 energetic (a whip pan, blur on its own) |
+| `portal` | 0.8 | via, dir (`in`/`out`), ease | the camera goes through an element: `in` — the outgoing scene grows until `via` fills the frame and the next scene is what was inside it; `out` — the scene shrinks into `via` in the next one (a pull-back to the screen it played on) |
+| `morph` | 0.6 | pairs, squash, arc, ease | one element carries the cut and becomes its partner (below, §13) |
 | `crossfade` | 0.4 | ease | the same surface in a new state (not between unrelated type frames) |
 | `dip` | 0.5 | ease | a chapter break, before the end card |
 | `push` | 0.5 | dir, blur, ease | sequential steps, in reading direction; `blur: true` when fast |
@@ -147,15 +166,40 @@ three once a scene is energetic):
 | `depth` | 0.6 | dir (`in`/`out`), ease | **energetic only** (`transition-register`): fly through stacked scenes; `out` reverses it to close the loop |
 
 ```json
-"transition": { "type": "dip" }
+"transition": { "type": "carry", "dir": "left", "distance": 10 }
+"transition": { "type": "portal", "via": "tile-2", "duration": 0.9 }
+"transition": { "type": "portal", "dir": "out", "via": "screen-body", "duration": 1 }
 "transition": { "type": "push", "dir": "left", "blur": true }
-"transition": { "type": "wipe", "angle": 120, "feather": 14 }
 ```
-Rules: keep one direction of travel; never a spring on a full-frame move
-(`transition-bounce`); fast pushes need motion blur (`transition-strobe`); a scene's incoming
-and outgoing transitions must not overlap. Whips, punch cuts, irises, strips, light sweeps,
-and defocus blurs are gone — each one performs. The zoom came back once, as `depth`, in the
-energetic register: a camera move through space, not an effect.
+
+### Cut on movement (`carry`)
+- The move must already be there: drift the outgoing scene's camera or its last exit the same way
+  (`dir`), and let the incoming scene's first entrance travel that way too. One direction of travel
+  per chapter; reverse it only at a chapter break.
+- Put the cut (the scene's end) on the beat: the fastest frame lands on the hit.
+- Calm keeps `distance` ≤ 15 (`transition-register` warns above). A whip pan (30–60) is energetic.
+- Each scene overscans in step with its travel, so no edge shows; nothing to do in the scene.
+
+### Through an element (`portal`)
+- `via` is the element that *stands for* the next scene: a tile, a thumbnail, a window's body, a
+  phone screen, a button. A 16:9 element (9:16 in portrait) opens without a crop; other shapes
+  open as a crop of the next scene.
+- In: what is inside `via` should look like the next scene's first frame (a thumbnail of it, or
+  the same headline), so the window fades from the element into the live scene. The outgoing
+  scene's other elements need no exit: they fly past the camera. Start the next scene's own
+  entrances after the portal lands (its duration).
+- Out (the pull-back): `via` is in the incoming scene and holds a still of the outgoing shot's
+  last frame (draw it without ct ids), so the handoff is invisible. "It was on a screen all along."
+- The portal is the scene's move: no camera push of its own in either scene during it.
+
+The gallery `projects/_flow` chains portal in → carry → portal out; judge them mid-flight with
+`npx ct stills _flow --at …`.
+
+Rules: never a spring on a full-frame move (`transition-bounce`); fast pushes need motion blur
+(`transition-strobe`); a scene's incoming and outgoing transitions must not overlap. Irises,
+strips, light sweeps and defocus blurs are gone — each one performs. The zoom came back as `depth`
+(energetic) and `portal` (both registers), and the whip as `carry`: each a camera move through
+space, not an effect.
 
 ## 9. Camera
 

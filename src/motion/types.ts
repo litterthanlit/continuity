@@ -57,6 +57,7 @@ export const PROPS = [
   "morph", // shape of a <Morph>: 0 its first shape, 1 the second … (fractional = in between)
   "accent", // 0..1: live input in the accent's text tone (1) settling to the element's ink (0) — m.retype's accent
   "radius", // corner radius, % of the element's size: 0 square … 50 a circle (a cell becoming a dot)
+  "clipRound", // px: corner radius of the clip insets (a rounded window — the portal transition)
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
@@ -112,6 +113,7 @@ export const BASE_VALUES: Record<PropName, number> = {
   morph: 0,
   radius: 0,
   accent: 0,
+  clipRound: 0,
 };
 
 /** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
@@ -183,9 +185,15 @@ export interface Tween {
   /**
    * Geometry the runtime measures once at prepare (layout is unknown to the build) and writes into
    * this tween's values, as the morph carriers do: `focus` zooms the camera until `target` fills
-   * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end.
+   * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end;
+   * `portal` maps this scene root onto `via`'s rect (the portal transition: `inner` is the scene
+   * seen through the element, `outer` the scene that holds it; `at` is when `via` is measured, in
+   * its own scene's seconds).
    */
-  measure?: { kind: "focus"; target: string; fill: number } | { kind: "match"; from: string };
+  measure?:
+    | { kind: "focus"; target: string; fill: number }
+    | { kind: "match"; from: string }
+    | { kind: "portal"; via: string; at: number; role: "inner" | "outer"; dir: "in" | "out" };
   /** Lint rule ids this tween deliberately breaks. */
   allow?: string[];
   /** Tweens declared together (one call on several targets) share a group — choreographed as one unit. */

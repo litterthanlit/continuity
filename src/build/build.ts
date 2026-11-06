@@ -304,6 +304,8 @@ export async function buildProject(
     // Layers the incoming transition needs: a reveal wrapper (mask) and/or an overlay above the scene.
     const incoming = index > 0 ? transitionOf(index - 1) : undefined;
     const layers = incoming ? TRANSITION_DEFS[incoming.type].layers : undefined;
+    // Scenes stack in order (two steps apart); one that comes in `under` sits just below the one before it.
+    const z = layers?.under?.(incoming!) ? 2 * index - 1 : 2 * (index + 1);
     let body = `<div class="ct-camera" data-ct="${sc.id}.camera" data-layout-allow-overflow>${inner}</div>`;
     if (layers?.reveal) body = `<div class="ct-reveal" data-ct="${sc.id}.reveal" data-layout-allow-overflow style="position:absolute;inset:0">${body}</div>`;
     if (incoming && layers?.fx) {
@@ -322,7 +324,7 @@ export async function buildProject(
     sections.push(
       `<section id="sc-${sc.id}" class="clip ct-scene" data-ct-scene="${sc.id}" data-ct="${sc.id}.scene" ` +
         (sceneKit.has(sc.id) ? `data-ct-type="${sceneKit.get(sc.id)!.name}" ` : "") +
-        `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${index + 1}">` +
+        `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${z}">` +
         `${body}</section>`,
     );
   }

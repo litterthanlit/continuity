@@ -60,7 +60,7 @@ export const MusicSchema = z.object({
 });
 export type MusicSpec = z.infer<typeof MusicSchema>;
 
-const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur", "pairs", "squash", "arc"];
+const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur", "pairs", "squash", "arc", "via", "distance"];
 
 /** Transition into the next scene. Parameters are validated per type (TRANSITION_DEFS); duration defaults per type. */
 export const TransitionSchema = z
@@ -77,6 +77,8 @@ export const TransitionSchema = z
     pairs: z.array(z.union([z.string().regex(/^[a-z][\w-]*$/i), z.tuple([z.string().regex(/^[a-z][\w-]*$/i), z.string().regex(/^[a-z][\w-]*$/i)])])).min(1).max(4).optional(),
     squash: z.number().min(0).max(0.5).optional(),
     arc: z.number().min(-0.5).max(0.5).optional(),
+    via: z.string().regex(/^[a-z][\w-]*$/i).optional(),
+    distance: z.number().min(1).max(100).optional(),
   })
   .superRefine((t, ctx) => {
     const def = TRANSITION_DEFS[t.type];
@@ -87,6 +89,9 @@ export const TransitionSchema = z
     }
     if ((t.type === "morph" || t.type === "match") && !t.pairs) {
       ctx.addIssue({ code: "custom", path: ["pairs"], message: `${t.type} needs the elements that carry the cut: "pairs": ["logo"] or [["title", "card"]]` });
+    }
+    if (t.type === "portal" && !t.via) {
+      ctx.addIssue({ code: "custom", path: ["via"], message: 'portal needs the element the camera goes through: "via": "card" (the outgoing scene\'s; with dir out, the incoming scene\'s)' });
     }
     if (t.dir && def.dirs && !def.dirs.includes(t.dir)) {
       ctx.addIssue({ code: "custom", path: ["dir"], message: `${t.type} runs ${def.dirs.join(" or ")}, not ${t.dir}` });

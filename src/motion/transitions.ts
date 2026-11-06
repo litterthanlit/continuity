@@ -15,7 +15,7 @@ import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
  * hide the overlay) and `<id>.fx` (an overlay above it: a flash, a light band).
  * Research: docs/research/2026-10-transitions.md · decision: docs/decisions/0005.
  */
-export const TRANSITIONS = ["cut", "match", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"] as const;
+export const TRANSITIONS = ["cut", "match", "carry", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph", "portal"] as const;
 export type TransitionType = (typeof TRANSITIONS)[number];
 
 /** Planar directions (push, wipe). */
@@ -24,7 +24,7 @@ export type PlanarDir = (typeof PLANAR_DIRS)[number];
 /** Every direction a transition can take: planar, plus depth's in (forward through the stack) and out (back). */
 export const DIRS = [...PLANAR_DIRS, "in", "out"] as const;
 export type Dir = (typeof DIRS)[number];
-export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "blur" | "pairs" | "squash" | "arc";
+export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "blur" | "pairs" | "squash" | "arc" | "via" | "distance";
 
 /** A shared element: the same id in both scenes, or [outgoing id, incoming id]. */
 export type MorphPair = string | [string, string];
@@ -49,6 +49,10 @@ export interface TransitionSpec {
   squash?: number;
   /** morph: bend of the travel path, as a share of its length (−0.5..0.5; 0 = straight). */
   arc?: number;
+  /** portal: the element the camera goes through — the outgoing scene's (dir in) or the incoming scene's (dir out). */
+  via?: string;
+  /** carry: how far the camera travels through the cut, % of the frame along dir. */
+  distance?: number;
 }
 
 export interface TransitionFrame {
@@ -96,8 +100,11 @@ export interface TransitionDef {
   registers?: readonly Register[];
   /** A hard cut: the scenes do not overlap; its tweens run inside the incoming scene, after the cut. */
   cut?: boolean;
-  /** Layers the incoming scene needs (none of litt's transitions do; the build still supports them). */
-  layers?: { reveal?: boolean; fx?: (spec: TransitionSpec, ctx: LayerContext) => FxLayer };
+  /**
+   * Layers the incoming scene needs. `under`: the incoming scene is stacked below the outgoing one
+   * for the transition (the outgoing scene shrinks away on top of it).
+   */
+  layers?: { reveal?: boolean; fx?: (spec: TransitionSpec, ctx: LayerContext) => FxLayer; under?: (spec: TransitionSpec) => boolean };
   build(c: Ctx): { out: Tween[]; in: Tween[] };
 }
 
@@ -156,6 +163,84 @@ function carrierClone(html: string): string {
 
 const STEP: Ease = { spec: { type: "steps", n: 1 } };
 
+/** carry: t² and its mirror, exactly — the velocity at the end of one equals the start of the other. */
+const QUAD_IN: Ease = { spec: { type: "bezier", p: [1 / 3, 0, 2 / 3, 1 / 3] } };
+const QUAD_OUT: Ease = { spec: { type: "bezier", p: [1 / 3, 2 / 3, 2 / 3, 1] } };
+/** carry: the share of the move before the cut (the rest decelerates after it). */
+const CARRY_LEAD = 0.4;
+/** carry: default travel through the cut, % of the frame — a drift, not a whip. */
+export const CARRY_DISTANCE = 8;
+/** carry: auto motion blur from this peak speed up, px per frame. */
+const CARRY_BLUR_FROM = 40;
+/** portal: how much of the move the incoming scene takes to fade up inside the window. */
+const PORTAL_FADE = 0.3;
+
+/**
+ * A cut on movement: the camera is already travelling when the cut lands. The outgoing scene
+ * accelerates (t²) for the lead, the cut swaps scenes at peak speed, and the incoming one
+ * decelerates (mirrored) from exactly that speed to rest — one continuous move across two shots.
+ */
+function carry(c: Ctx): { out: Tween[]; in: Tween[] } {
+  const dir = (c.spec.dir as PlanarDir | undefined) ?? "left";
+  const axis: PropName = dir === "left" || dir === "right" ? "xPct" : "yPct";
+  const sign = dir === "left" || dir === "up" ? -1 : 1;
+  const D = c.spec.distance ?? CARRY_DISTANCE;
+  const lead = r3(c.d * CARRY_LEAD);
+  const tail = r3(c.d - lead);
+  const o = `${c.out}.scene`;
+  const i = `${c.into}.scene`;
+  const start = r3(c.os + c.d - lead);
+  // Each scene overscans in step with its travel (same ease), so its trailing edge never shows.
+  const outX = D * CARRY_LEAD;
+  const inX = D * (1 - CARRY_LEAD);
+  const res = {
+    out: [tw(o, start, lead, { [axis]: [0, r3(sign * outX)], scale: [1, r3(1 + (2 * outX) / 100)] }, QUAD_IN)],
+    in: [tw(i, 0, tail, { [axis]: [r3(-sign * inX), 0], scale: [r3(1 + (2 * inX) / 100), 1] }, QUAD_OUT)],
+  };
+  const frame = axis === "xPct" ? c.frame.width : c.frame.height;
+  const peak = (2 * (D / 100) * frame * CARRY_LEAD) / Math.max(1e-3, lead * c.frame.fps);
+  const blur = c.spec.blur ?? peak >= CARRY_BLUR_FROM;
+  if (blur) {
+    const sigma = typeof blur === "number" ? blur : sigmaFor(QUAD_OUT.spec, (D / 100) * frame * (1 - CARRY_LEAD), tail, c.frame.fps);
+    const ch: PropName = axis === "xPct" ? "blurX" : "blurY";
+    if (sigma > 0) {
+      res.out.push(tw(o, start, lead, { [ch]: [0, sigma] }, named("linear")));
+      res.in.push(tw(i, 0, tail, { [ch]: [sigma, 0] }, named("linear")));
+    }
+  }
+  return res;
+}
+
+/**
+ * The camera goes through an element: dir in, the outgoing scene grows until `via` fills the frame
+ * and the incoming scene is what was inside it, opening from its rounded rect; dir out, the
+ * outgoing scene shrinks into `via` in the incoming one (a pull-back to the screen it was on).
+ * Both scene roots move as one rig, so the window stays locked to the element; the geometry is
+ * measured at prepare (placeholders here are the identity).
+ */
+function portal(c: Ctx): { out: Tween[]; in: Tween[] } {
+  const e = c.ease("inOut");
+  const back = c.spec.dir === "out";
+  const via = back ? `${c.into}.${c.spec.via}` : `${c.out}.${c.spec.via}`;
+  const at = back ? c.d : c.os;
+  const rig: Props = { scale: [1, 1], x: [0, 0], y: [0, 0] };
+  const win: Props = { ...rig, clipTop: [0, 0], clipRight: [0, 0], clipBottom: [0, 0], clipLeft: [0, 0], clipRound: [0, 0] };
+  const o = `${c.out}.scene`;
+  const i = `${c.into}.scene`;
+  const measured = (t: Tween, role: "inner" | "outer"): Tween => ({ ...t, measure: { kind: "portal", via, at, role, dir: back ? "out" : "in" } });
+  const fade = r3(c.d * PORTAL_FADE);
+  if (back) {
+    return {
+      out: [measured(tw(o, c.os, c.d, win, e), "inner"), tw(o, r3(c.os + c.d - fade), fade, { opacity: [null, 0] }, named("out"))],
+      in: [measured(tw(i, 0, c.d, rig, e), "outer")],
+    };
+  }
+  return {
+    out: [measured(tw(o, c.os, c.d, rig, e), "outer")],
+    in: [measured(tw(i, 0, c.d, win, e), "inner"), tw(i, 0, fade, { opacity: [0, 1] }, named("out"))],
+  };
+}
+
 export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
   cut: {
     description: "Hard cut, on the beat. The primary: most of a litt edit is cuts.",
@@ -178,6 +263,16 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
         measure: { kind: "match" as const, from: `${c.out}.${a}` },
       })),
     }),
+  },
+  carry: {
+    description:
+      "A cut on movement: the camera is already travelling when the cut lands. The outgoing scene accelerates in the direction of travel (dir, default left), the cut swaps the scenes at peak speed, and the incoming one decelerates from that same speed to rest — two shots, one move. distance: % of the frame (default 8, a drift; 30–60 in the energetic register is a whip pan); blur follows the speed; each scene overscans with its travel, so no edge shows. A primary move, like a cut.",
+    duration: 0.5,
+    range: [0.3, 1],
+    params: ["dir", "distance", "blur"],
+    dirs: PLANAR_DIRS,
+    cut: true,
+    build: carry,
   },
   crossfade: {
     description: "The incoming scene fades over the outgoing one. The same surface in a new state.",
@@ -318,6 +413,16 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
         ],
       };
     },
+  },
+  portal: {
+    description:
+      "The camera goes through an element. dir in (default): the outgoing scene grows until via (one of its elements: a card, a screen, a button) fills the frame, and the incoming scene is what was inside it, opening from the element's rounded rect. dir out: the outgoing scene shrinks into via, an element of the incoming scene (a pull-back to the screen it was playing on). The two scenes move as one rig, measured, so the window stays locked to the element.",
+    duration: 0.8,
+    range: [0.5, 1.4],
+    params: ["ease", "dir", "via"],
+    dirs: ["in", "out"],
+    layers: { under: (spec) => spec.dir === "out" },
+    build: portal,
   },
 };
 

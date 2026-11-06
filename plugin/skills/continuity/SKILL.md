@@ -52,9 +52,16 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
   put story beats on it (`{ "beat": 2 }`), and run `npx ct beats <slug>` to see the grid against the
   edit before building scenes. Motion lands on it with `at: "beat:N"` / `snap: "beat"`; the render
   mixes the track in and proves sync (`av-sync`). Craft: motion-craft §13.
+- **flow**: plan every join as a handoff — what carries the eye into the next shot? A direction
+  (`carry`, a cut on movement), a place (`match`), an element (`portal` goes through it; `morph`
+  turns it into its partner), or an action (an exit into the cut, an entrance on it). A cut
+  between two rests is punctuation; a film of them is a slideshow (`dead-cut`, `static-edit`).
 - **transition** into the next scene, from litt's ONE language (motion-craft §8):
   `cut` on the beat is the primary; accents `crossfade`, `dip`, `push`, `pushUp`,
-  `wipe` — at most two types, with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
+  `wipe`, `portal` — at most two types, with parameters, e.g. `{ "type": "push", "dir": "left", "blur": true }`.
+  `carry` (`{ "type": "carry", "dir": "left", "distance": 10 }`) and `match` are cuts, not accents.
+  `portal` (`{ "type": "portal", "via": "tile" }`; `"dir": "out"` pulls back into an element of the
+  next scene) zooms the camera through an element into the next scene.
   Energetic: up to three, and `depth` (`dir: "in"` / `"out"`) joins the language. `morph`
   (`"pairs": [["card", "tile"]]`) carries an element across the cut instead of cutting — the
   incoming element must have no entrance of its own during it.

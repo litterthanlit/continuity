@@ -1,0 +1,207 @@
+{
+  "title": "Flow gallery",
+  "logline": "Portal, carry and pull-back chained once, so each move that flows through a cut can be judged mid-flight. Reference fixture.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "scenes": [
+    {
+      "id": "grid",
+      "duration": 3,
+      "intent": "Three tiles; the camera goes into the middle one.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Flow",
+        "title": "Through the cut",
+        "t1": "Plan",
+        "t2": "Check",
+        "t3": "Render"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        },
+        {
+          "id": "title",
+          "role": "headline",
+          "anchor": "A2:D2"
+        },
+        {
+          "id": "tiles",
+          "role": "ui",
+          "anchor": "A4:F5"
+        },
+        {
+          "id": "c1",
+          "role": "ui",
+          "anchor": "A4:B5"
+        },
+        {
+          "id": "c2",
+          "role": "ui",
+          "anchor": "C4:D5"
+        },
+        {
+          "id": "c3",
+          "role": "ui",
+          "anchor": "E4:F5"
+        },
+        {
+          "id": "t1",
+          "role": "label",
+          "anchor": "A5"
+        },
+        {
+          "id": "t2",
+          "role": "label",
+          "anchor": "C5"
+        },
+        {
+          "id": "t3",
+          "role": "label",
+          "anchor": "E5"
+        }
+      ],
+      "transition": {
+        "type": "portal",
+        "via": "c2",
+        "duration": 0.9
+      }
+    },
+    {
+      "id": "detail",
+      "duration": 3.5,
+      "intent": "What was inside the tile: the check, full frame.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.9
+        }
+      ],
+      "text": {
+        "label": "Portal",
+        "title": "Check",
+        "sub": "The tile opens into its scene"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A2"
+        },
+        {
+          "id": "title",
+          "role": "headline",
+          "anchor": "A3"
+        },
+        {
+          "id": "sub",
+          "role": "body",
+          "anchor": "A4"
+        },
+        {
+          "id": "bars",
+          "role": "ui",
+          "anchor": "D2:F5"
+        }
+      ],
+      "transition": {
+        "type": "carry",
+        "dir": "left",
+        "distance": 12,
+        "duration": 0.5
+      }
+    },
+    {
+      "id": "next",
+      "duration": 3,
+      "intent": "A cut on movement: the camera keeps travelling into the next shot.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.3
+        }
+      ],
+      "text": {
+        "label": "Carry",
+        "title": "Render",
+        "sub": "Two shots, one move"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A2"
+        },
+        {
+          "id": "title",
+          "role": "headline",
+          "anchor": "A3"
+        },
+        {
+          "id": "sub",
+          "role": "body",
+          "anchor": "A4"
+        },
+        {
+          "id": "bars",
+          "role": "ui",
+          "anchor": "D2:F5"
+        }
+      ],
+      "transition": {
+        "type": "portal",
+        "dir": "out",
+        "via": "screen-body",
+        "duration": 1
+      }
+    },
+    {
+      "id": "device",
+      "duration": 3.5,
+      "intent": "Pull back: it was playing in a window all along.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 1.1
+        }
+      ],
+      "text": {
+        "label": "Portal out",
+        "title": "A pull-back to the screen"
+      },
+      "elements": [
+        {
+          "id": "screen",
+          "role": "ui",
+          "anchor": "B2:E5"
+        },
+        {
+          "id": "screen-body",
+          "role": "ui",
+          "anchor": "B2:E5"
+        },
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "B6"
+        },
+        {
+          "id": "title",
+          "role": "title",
+          "anchor": "C6:E6"
+        }
+      ]
+    }
+  ]
+}

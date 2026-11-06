@@ -14,7 +14,7 @@
  */
 import { compileScene, mergeVariationSettings, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
 import { morphAt, toPathD, type MorphData } from "../motion/morph.js";
-import type { PartCounts, SplitMode, Timeline } from "../motion/types.js";
+import type { PartCounts, PropRange, SplitMode, Timeline } from "../motion/types.js";
 import type { GlHandle } from "../gl/runtime.js";
 import type { GlSpec } from "../gl/spec.js";
 import { prepareCarriers, renderCarrier, type Carrier } from "./carriers.js";
@@ -398,6 +398,42 @@ function resolveMeasured() {
         const x = clamp(-s * (r.x + r.w / 2 - W / 2), ((s - 1) * W) / 2);
         const y = clamp(-s * (r.y + r.h / 2 - H / 2), ((s - 1) * H) / 2);
         t.props = { ...t.props, scale: [t.props.scale?.[0] ?? null, r4(s)], x: [t.props.x?.[0] ?? null, r4(x)], y: [t.props.y?.[0] ?? null, r4(y)] };
+        changed = true;
+      } else if (m.kind === "portal") {
+        const via = document.querySelector<HTMLElement>(`[data-ct="${m.via}"]`);
+        const viaScene = byScene.get(m.via.slice(0, m.via.indexOf(".")));
+        if (!via || !viaScene) continue;
+        apply(viaScene.scene, m.at);
+        const A = frameRect(via);
+        if (A.w < 1 || A.h < 1) continue;
+        // Corner radius in frame px (the element is drawn at the scale of everything above it).
+        const k = via.offsetWidth ? A.w / via.offsetWidth : 1;
+        const radius = (parseFloat(getComputedStyle(via).borderTopLeftRadius) || 0) * k;
+        const cx = A.x + A.w / 2 - W / 2;
+        const cy = A.y + A.h / 2 - H / 2;
+        // outer: the scale at which via covers the frame; inner: the scale at which the frame covers via.
+        const grow = Math.max(W / A.w, H / A.h);
+        const fit = Math.max(A.w / W, A.h / H);
+        // The rig moves between the identity and the measured pose: inner starts measured going in, outer ends there.
+        const fromPose = (m.role === "inner") === (m.dir === "in");
+        const span = (v: number, rest: number): PropRange => (fromPose ? [r4(v), rest] : [rest, r4(v)]);
+        if (m.role === "outer") {
+          t.props = { ...t.props, scale: span(grow, 1), x: span(-grow * cx, 0), y: span(-grow * cy, 0) };
+        } else {
+          const ix = ((1 - A.w / (fit * W)) / 2) * 100;
+          const iy = ((1 - A.h / (fit * H)) / 2) * 100;
+          t.props = {
+            ...t.props,
+            scale: span(fit, 1),
+            x: span(cx, 0),
+            y: span(cy, 0),
+            clipTop: span(iy, 0),
+            clipBottom: span(iy, 0),
+            clipLeft: span(ix, 0),
+            clipRight: span(ix, 0),
+            clipRound: span(radius / fit, 0),
+          };
+        }
         changed = true;
       } else {
         const outScene = byScene.get(m.from.slice(0, m.from.indexOf(".")));

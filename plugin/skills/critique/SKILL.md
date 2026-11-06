@@ -39,7 +39,7 @@ brand reel that never gets off the ground.
 | **Composition** — the settled frames | One focal point; hierarchy from weight, ink and space, then the one display step; asymmetric, left-aligned, airy (≤ 60% of the safe area); on the 16px grid; one light from the top, used once or twice; colour only as light (≤ 1 accent fill) or data | Centered everything, competing display lines, crowded, accent words, glow blobs, decorative gradients |
 | **Typography** | Geist only, 400/500/600 by role, two inks, display once per scene and ≤ 2 lines, tight lockups (label 8px over its title) and wide gaps, sentence-case labels, mono only for data, tabular figures, meaningful breaks | Bold/light weights, uppercase eyebrows, a serif or italic accent, mixed sizes, shrunk-to-fit, mono paragraphs |
 | **Temporal** — timing, easing, rhythm | Calm: responsive springs by default, exactly one expressive moment per scene, exits at 0.75× without bounce, 32px travel, 40ms staggers, lead → follow, holds that match reading, cuts on the beat. Energetic: easing by role (steep UI and camera, pop objects, linear machines), small moves 5–15 frames, every group staggered 1–3 frames, bursts answered by ~1s holds | Linear, bouncy, simultaneous, interrupted, dead air, too fast to read, two moments competing; energetic: one uniform ease on everything, no holds |
-| **Craft** — finish & consistency | Material static, ambient life only from a ≤ 3% camera push (energetic: ≤ 8%, plus tile drift), one transition language (cuts + ≤ 2 accents; energetic ≤ 3, depth among them; a `match` cut is a cut, not an accent), consistent direction, motion blur on fast pushes, flat cards and zero-offset floats, both themes designed | Loops, sweeps and pulses, a different transition per cut, offset shadows, off-scale radii, strobing pushes, glitches |
+| **Craft** — finish & consistency | Material static, ambient life only from a ≤ 3% camera push (energetic: ≤ 8%, plus tile drift), one transition language (cuts + ≤ 2 accents; energetic ≤ 3, depth among them; `match` and `carry` are cuts, not accents), joins that carry the eye (a direction, a place, an element or an action — still cuts only as punctuation), consistent direction, motion blur on fast pushes, flat cards and zero-offset floats, both themes designed | Loops, sweeps and pulses, a different transition per cut, a slideshow edit (both sides at rest at most joins: `dead-cut`, `static-edit`), offset shadows, off-scale radii, strobing pushes, glitches |
 
 Score **Temporal** from timeline/lint evidence first, the sheet second.
 
@@ -62,7 +62,7 @@ Mark each ✅ / ❌ / n/a; every ❌ names an element and goes into the fixes.
 - **E1 Easing by role** — UI and camera on `steep`, objects on `pop`, machines `linear`; no single ease on everything.
 - **E2 Stagger** — every group lands 1–3 frames apart; nothing appears all at once.
 - **E3 Rhythm** — every 2–4s burst is followed by a ~1s hold on one composition.
-- **E4 Depth** — scenes connect through space (depth, blurred pushes, match cuts), not crossfades.
+- **E4 Depth** — scenes connect through space (depth, portals, carries, blurred pushes, match cuts), not crossfades.
 - **E5 Type** — copy types or wipes; nothing fades.
 - **E6 Containers** — imagery in `Media`/cards/2×2 grids on the grid; one treatment per formula; the palette holds.
 - **E7 Formula** — at least one scene formula used twice with new content.
