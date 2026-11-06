@@ -116,6 +116,12 @@ export interface TransitionDef {
    * for the transition (the outgoing scene shrinks away on top of it).
    */
   layers?: { reveal?: boolean; fx?: (spec: TransitionSpec, ctx: LayerContext) => FxLayer; under?: (spec: TransitionSpec) => boolean };
+  /**
+   * A scene root that travels without scaling (carry) exposes the frame behind its trailing edge.
+   * Its backdrop and grain bleed past the root by this share of the frame along `axis` — `out` for
+   * the outgoing scene, `in` for the incoming one — while its root moves (SceneTimeline.bleed).
+   */
+  bleed?: (spec: TransitionSpec) => { axis: "x" | "y"; out: number; in: number };
   build(c: Ctx): { out: Tween[]; in: Tween[] };
 }
 
@@ -240,6 +246,11 @@ const CARRY_BLUR_FROM = 40;
 /** portal: how much of the move the incoming scene takes to fade up inside the window. */
 const PORTAL_FADE = 0.3;
 
+/** carry: how far (% of the frame) each scene travels — the outgoing one before the cut, the incoming one after. */
+function carryTravel(distance: number): { out: number; in: number } {
+  return { out: distance * CARRY_LEAD, in: distance * (1 - CARRY_LEAD) };
+}
+
 /**
  * A cut on movement: the camera is already travelling when the cut lands. The outgoing scene
  * accelerates (t²) for the lead, the cut swaps scenes at peak speed, and the incoming one
@@ -255,12 +266,13 @@ function carry(c: Ctx): { out: Tween[]; in: Tween[] } {
   const o = `${c.out}.scene`;
   const i = `${c.into}.scene`;
   const start = r3(c.os + c.d - lead);
-  // Each scene overscans in step with its travel (same ease), so its trailing edge never shows.
-  const outX = D * CARRY_LEAD;
-  const inX = D * (1 - CARRY_LEAD);
+  // Translation only: a scale about the frame centre would add a radial velocity that flips sign at
+  // the cut (one side of the frame slows, the other surges). The trailing edge is covered by the
+  // backdrop, which bleeds past the root by the travel while the scene moves (carryBleed).
+  const { out: outX, in: inX } = carryTravel(D);
   const res = {
-    out: [tw(o, start, lead, { [axis]: [0, r3(sign * outX)], scale: [1, r3(1 + (2 * outX) / 100)] }, QUAD_IN)],
-    in: [tw(i, 0, tail, { [axis]: [r3(-sign * inX), 0], scale: [r3(1 + (2 * inX) / 100), 1] }, QUAD_OUT)],
+    out: [tw(o, start, lead, { [axis]: [0, r3(sign * outX)] }, QUAD_IN)],
+    in: [tw(i, 0, tail, { [axis]: [r3(-sign * inX), 0] }, QUAD_OUT)],
   };
   const l = layered(c, dir, { start, duration: lead, ease: QUAD_IN, inDuration: tail, inEase: QUAD_OUT, cut: true });
   const frame = axis === "xPct" ? c.frame.width : c.frame.height;
@@ -343,12 +355,16 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
   },
   carry: {
     description:
-      "A cut on movement: the camera is already travelling when the cut lands. The outgoing scene accelerates in the direction of travel (dir, default left), the cut swaps the scenes at peak speed, and the incoming one decelerates from that same speed to rest — two shots, one move. distance: % of the frame (default 8, a drift; 30–60 in the energetic register is a whip pan); blur follows the speed; each scene overscans with its travel, so no edge shows. A primary move, like a cut.",
+      "A cut on movement: the camera is already travelling when the cut lands. The outgoing scene accelerates in the direction of travel (dir, default left), the cut swaps the scenes at peak speed, and the incoming one decelerates from that same speed to rest — two shots, one move. distance: % of the frame (default 8, a drift; 30–60 in the energetic register is a whip pan); blur follows the speed. Each scene only translates (no zoom), so every point of the frame keeps one speed through the cut; while it travels its backdrop bleeds past the edge, so no edge shows. A primary move, like a cut.",
     duration: 0.5,
     range: [0.3, 1],
     params: ["dir", "distance", "blur", "layers"],
     dirs: PLANAR_DIRS,
     cut: true,
+    bleed: (spec) => {
+      const t = carryTravel(spec.distance ?? CARRY_DISTANCE);
+      return { axis: spec.dir === "up" || spec.dir === "down" ? "y" : "x", out: t.out / 100, in: t.in / 100 };
+    },
     build: carry,
   },
   crossfade: {

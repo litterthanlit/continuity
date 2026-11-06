@@ -117,6 +117,19 @@ html, body { margin: 0; padding: 0; background: var(--color-canvas); }
 h1, h2, h3, h4, h5, h6, b, strong { font-weight: ${WEIGHTS.title}; }
 ${materialCss(theme)}`;
 
+/**
+ * A carried scene's root travels without scaling (carry, docs/decisions/0010): its backdrop and grain
+ * extend past the root by the travel (the section's --ct-bleed-x/y), clipped at the frame as usual,
+ * and while the root travels (`ct-bleeding`, set by the runtime) the root clips only its content, so
+ * the trailing edge shows the backdrop instead of the frame behind it. Unlayered: it beats the
+ * utilities the Stage sets.
+ */
+const BLEED_CSS = `.ct-scene[data-ct-bleed] .ct-stage > .ct-backdrop, .ct-scene[data-ct-bleed] .ct-stage > .ct-grain {
+  inset: calc(-1 * var(--ct-bleed-y)) calc(-1 * var(--ct-bleed-x)); }
+.ct-scene.ct-bleeding, .ct-scene.ct-bleeding .ct-stage { overflow: visible; }
+.ct-scene.ct-bleeding .ct-content { overflow: hidden; }
+`;
+
 const ROLES = ["display", "sans", "mono"] as const;
 
 function roleDecl(role: RoleStyle, reset: boolean): string {
@@ -176,7 +189,7 @@ ${themeCss(theme, kit, portrait)}
 @layer components {
 ${components}
 }
-`;
+${BLEED_CSS}`;
   const compiler = await compile(input, { base, onDependency: () => {} });
   return sanitizeFontStacks(compiler.build([...new Set(candidates)]));
 }

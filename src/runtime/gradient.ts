@@ -6,6 +6,7 @@
  */
 import type { GradientUniforms } from "../themes/gradients.js";
 import { MAX_WEBGL_CONTEXTS, webglContextsMessage } from "../gl/spec.js";
+import type { Timeline } from "../motion/types.js";
 import { FIELD_FRAG, FIELD_VERT } from "./gradient-shader.js";
 
 interface Field {
@@ -27,9 +28,14 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLSh
   return s;
 }
 
-function mount(canvas: HTMLCanvasElement, width: number, height: number): Field {
-  canvas.width = Math.round(width / 2);
-  canvas.height = Math.round(height / 2);
+/**
+ * `bleed`: the share of the frame the backdrop extends past the scene root on each side (a carried
+ * scene, SceneTimeline.bleed). The canvas grows with it and the field is laid out on the frame, so
+ * the frame shows the same field either way and the bleed is more of it.
+ */
+function mount(canvas: HTMLCanvasElement, width: number, height: number, bleed = { x: 0, y: 0 }): Field {
+  canvas.width = Math.round((width * (1 + 2 * bleed.x)) / 2);
+  canvas.height = Math.round((height * (1 + 2 * bleed.y)) / 2);
   const gl = canvas.getContext("webgl2", {
     alpha: false,
     antialias: false,
@@ -47,6 +53,7 @@ function mount(canvas: HTMLCanvasElement, width: number, height: number): Field 
   gl.useProgram(prog);
   const u = JSON.parse(canvas.getAttribute("data-ct-gradient") as string) as GradientUniforms;
   gl.uniform2f(gl.getUniformLocation(prog, "u_res"), canvas.width, canvas.height);
+  gl.uniform1f(gl.getUniformLocation(prog, "u_frame"), height / 2);
   gl.uniform1f(gl.getUniformLocation(prog, "u_seed"), u.seed);
   gl.uniform3fv(gl.getUniformLocation(prog, "u_colors"), u.colors);
   gl.uniform3fv(gl.getUniformLocation(prog, "u_base"), u.base);
@@ -68,11 +75,14 @@ export function checkWebglContexts(): void {
 
 /** Mount every gradient canvas in the composition (once, at prepare). */
 export function mountGradients(): void {
-  const { width, height } = (window.__CT__ as { timeline: { width: number; height: number } }).timeline;
+  const { width, height, scenes } = (window.__CT__ as { timeline: Timeline }).timeline;
   document.querySelectorAll<HTMLCanvasElement>("canvas[data-ct-gradient]").forEach((canvas) => {
     const scene = canvas.closest("[data-ct-scene]")?.getAttribute("data-ct-scene");
     if (!scene) throw new Error("a gradient canvas outside any scene");
-    fields.set(scene, [...(fields.get(scene) ?? []), mount(canvas, width, height)]);
+    // Only the Stage's own backdrop bleeds (the build's CSS); a field drawn elsewhere keeps its box.
+    const backdrop = canvas.closest(".ct-stage > .ct-backdrop");
+    const bleed = backdrop ? scenes.find((s) => s.scene === scene)?.bleed : undefined;
+    fields.set(scene, [...(fields.get(scene) ?? []), mount(canvas, width, height, bleed)]);
   });
 }
 

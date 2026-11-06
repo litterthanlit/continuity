@@ -1,6 +1,6 @@
 # 0012 — Layered handoffs and the physical match cut
 
-**Status:** accepted · 2026-11-07 · extends 0010 (flow through the cut), 0008 (morphs)
+**Status:** accepted · 2026-11-06 · extends 0010 (flow through the cut), 0008 (morphs)
 
 ## Context
 
@@ -47,11 +47,14 @@ element that has a role shifts a little further than its scene, in order along t
   Ties go by the other axis, then by storyboard order, and elements without an anchor go last.
   Steps are the list stagger (40 ms), compressed so the last layer starts by `0.3·d`
   (`LAYER_SPREAD`). A label anchored above its headline therefore leads it.
-- **Scope.** Only top-level elements move. A child of a listed element rides its parent, and an
-  element without a role rides the plane. The shift is its own additive channel (`shiftX`/`shiftY`,
-  from Task 2), so an element's own entrance (a `rise` on frame 0) runs straight through it.
+- **Scope.** Only top-level elements move. A child of an element that takes the handoff (one with
+  a role) rides its parent. An element without a role rides the plane, and does not hold back the
+  elements with a role inside it. The shift is its own additive channel (`shiftX`/`shiftY`), so an
+  element's own entrance (a `rise` on frame 0) runs straight through it.
 
-**Speed pairing.** Every layer moves like its plane, so nothing jumps.
+**Speed pairing.** Each layer keeps its own speed through the cut, so no layer jumps. Layers do not
+move like their plane (the wave is their difference), but each one's speed on screen is the same on
+both sides of the cut.
 
 - **Push** (both scenes on screen, at rest at both ends):
   - outgoing, a layer starts at `plane start + delay` and lands with the plane;
@@ -84,7 +87,9 @@ place, size, fill and corner (`src/motion/match.ts`, `resolveMeasured` in the ru
   impulse: out at `v`, back to 0, peaking at `4·v·d/27`.
 - **The reach rule.** Place the incoming element ⅓–⅔ of `v·d` along the travel from where the
   partner is at the cut. Inside that window the move only slows after the cut. Further out it has
-  to speed up after the cut (a surge); nearer, it overshoots and comes back.
+  to speed up after the cut (a surge); nearer, it overshoots and comes back. Across the travel the
+  offset stays under about 0.47·v·d (with the along offset at ⅓–½ of v·d; 0.24·v·d at ⅔), or the
+  speed dips and rises again after the cut.
 - **Shape.** The first frame takes the partner's corner radius as seen (a pill stays a pill). The
   fill also starts as the partner's, but only when both fills are opaque and solid. Both turn into
   the element's own on the place's ease, and the fill mixes in oklab. A gradient, image or
@@ -107,8 +112,11 @@ the cut, and the spec ("keeps moving through the cut") ranked above the formula.
       incoming one;
     - a carry's incoming per-frame displacement never increases after the cut;
     - no layer leaves in less time than the plane's lead.
-  - The pairing above was the result. After the fix, every layer was within 4% across the cut, the
-    incoming side was monotone, and push layers were within 7% of the plane on the first frame.
+  - The pairing above was the result. Sampled then at the frame centre, every layer was within 4%
+    across the cut and push layers within 7% of the plane on the first frame. That sample hid the
+    carry's zoom (§5): at ±⅓ of the frame the plane itself stepped 83%. Measured on screen with the
+    root's transform after §5, every layer of a carry keeps its speed across the cut at the centre
+    and at ±⅓ (within 4% frame to frame, at distance 12 and 45) and only slows after it.
 - **R3, match v2: a Hermite off the zoom path.**
   - The plan put the place on `inOut` and added an impulse for the speed. The `inOut` place barely
     moves in its first third while the impulse decays, and the zoom path back-loads the travel.
@@ -118,6 +126,11 @@ the cut, and the spec ("keeps moving through the cut") ranked above the formula.
     fixture within reach, and added the reach rule to motion-craft §8.
   - After the fix the card went 51.3 → 0 px/frame, strictly decreasing, with a peak ≤ 1.1 v, and
     landed 0.00 px off.
+
+  - Three evaluator fixes came with R3, and they change every film with shutter blur or an impulse:
+    the shutter σ is divided by the element's own scale (the filter draws in its scaled space), the
+    shutter speed takes the faster one-sided difference at a move's ends (the central one halved the
+    blur on a move's first frame), and a finished impulse holds its rest, not its peak.
 
 ### 4. The benchmark: `example-launch` B0 → B1 → B2
 
@@ -159,6 +172,54 @@ Notes on the table:
 - **Delivery.** B2 was delivered as is (R4). Changing the last join would need a fresh score, and
   the carry fix is engine work.
 
+### 5. A carry translates; its backdrop bleeds
+
+The B2 critic found a "breath" on the cut frame of every carry, and the final review measured it.
+Each carried root overscanned by *scaling about the frame centre* in step with its travel, the
+outgoing one up into the cut and the incoming one down from about 1.15. So the on-screen speed of a
+point `u` px from the centre is `tx′ + s′·u`, and the radial term flipped sign at the cut. At
+distance 12 (d 0.5), plane only, the instantaneous speed at the cut went −52.1 → −8.8 px/frame at
+`u` = −640 and −9.3 → −52.6 at +640: one side of the frame slowed 6×, the other surged. On the film
+it split J3's incoming surfaces about 2× (sheet 26 px/frame, terminal 55). A smoothstep scale does
+not fix it (the radial term only changes shape).
+
+- **Translate only.** The roots move on `xPct`/`yPct` and nothing else, so every point of the frame
+  has the plane's speed: after the fix the step at the cut is 0% instantaneous and within 4% frame
+  to frame at the centre and at ±⅓ of the frame, plain and layered, at distance 12 and 45, left and up
+  (`tests/transitions.test.ts`, "carry on screen").
+- **The backdrop bleeds, not the content.** A travelling root exposes the frame behind its trailing
+  edge. `TRANSITION_DEFS.carry.bleed` gives each side's travel; the build writes it (+1% margin) on
+  the scene root (`--ct-bleed-x/y`) and on its timeline (`bleed.windows`). The Stage's backdrop and
+  grain always extend past the root by that much (clipped at rest as before), a field's canvas grows
+  with them and is laid out on the frame (`u_frame`), so the frame shows the same field. While the
+  root travels, the runtime sets `ct-bleeding` and the root clips only its content, so the trailing
+  edge shows canvas, grain or more of the field. A scene-root motion blur's filter region grows by the
+  bleed too. The bleed is limited to the carry's own window, so a push or a portal on the scene's
+  other side is untouched.
+- **Checked on the frames.** A browser test screenshots a carried pair mid-carry (solid 12, field
+  12, field 45 left, field 45 up) and finds no seam at either root's trailing edge; without the bleed
+  every case fails (a 3.5-level step on a solid canvas, 18–62 on a field). On `example-launch` J3 the
+  sheet and the terminal now leave the cut together at −47, −42, −37 px/frame (B2: 26 → 22 → 21
+  against 55 → 48 → 41), after the board's −30, −39 into it.
+
+### 6. The last join: a portal through the "Ships" tag
+
+At critic → end, B2's `match ships → cta` carried a 110×56 px tag (0.3% of the frame) across a
+full-frame cut from near-black to the aurora field, so the cut read as a colour flash and the pill
+was found afterwards. The join is now `{ "type": "portal", "via": "ships", "duration": 0.8 }`:
+
+- The colour arrives through the verdict: the field and the "Open source" button fade up inside the
+  tag in its first quarter, and the tag grows until it is the frame. The eye is on the one thing that
+  moves, so the full-frame change is never a cut.
+- The tag is drawn at 16:9 (100 × 56), like studio's Plan tile, so the window opens without a crop,
+  and its word steps out as the portal starts, so the gate sees no ghosted text over the end card.
+- critic's camera lands as the portal starts and the end card's starts as it lands (the portal is the
+  scene's move); critic is 0.4 s longer (5.4 s) to keep about 1.2 s of settled hold on the verdict,
+  and the end card's wordmark and tagline move to 0.85 and 1.4 s, after the landing.
+- The portal is already the film's accent type, so the transition language stays at one accent.
+- B3 (iteration 18) is the film with §5 and §6; gate 0 errors, 0 warnings, 0 info. Its independent
+  score is pending.
+
 ## Consequences
 
 - `layers` is a parameter of `push`, `pushUp` and `carry`. The galleries show both moves:
@@ -168,36 +229,19 @@ Notes on the table:
   shape, recipe). The critique skill counts speed-continuous joins, layered handoffs and physical
   match cuts as signs of flow. Speed steps, a carousel envelope and a shared layout thrown away
   across a cut count against it.
+- The carry's zoom pump and the last join's carrier, the benchmark's first two findings, are fixed
+  (§5, §6).
 - **Not done yet**, in order of what the benchmark showed:
-  1. **Carry's zoom pump.**
-     - The cause: each carried scene overscans by *scaling about the frame centre*. The outgoing
-       scene grows about 7% into the cut. The incoming one starts about 15% oversize (at distance
-       12) and shrinks at about 50% zoom/s, far past the 15%/s camera bound.
-     - The radial velocity flips sign on the cut frame. Elements left of centre slow and elements
-       right of centre speed up.
-     - On the film this split J3's incoming surfaces about 2× (sheet 15–26 px/frame, terminal
-       30–55 px/frame) and gave J4 a small surge (34 → 44 px/frame). Layers cannot cancel it, and
-       the ratio does not depend on `distance`.
-     - Fix in `carry()`: translate only. A solid stage needs no overscan; paint the stage colour
-       behind the travelling plane. A field needs the overscan held constant through the move,
-       not ramped in opposite directions across the cut.
-  2. **The last join's carrier is too small.**
-     - The "Ships" tag is about 0.3% of the frame, but it has to carry a full-frame change from
-       black to the aurora field. The cut is read as a colour flash, and the pill is found
-       afterwards.
-     - Options: a `portal` through the tag, which holds a still of the end card's first frame, so
-       the colour arrives through the verdict; or press or ink the tag just before the cut, so the
-       eye is on it when the cut lands.
-  3. **Plan → check's mass jump and measure → critic's copy-free transit.**
+  1. **Plan → check's mass jump and measure → critic's copy-free transit.**
      - At plan → check, the eye leaves one window at the upper right and lands on two windows
        across the bottom. The terminal shows only "$" for half a second.
      - At measure → critic, nothing on screen can be read for 0.9 s (23.54 → 24.45).
      - Both are project fixes: type the command on the cut frame, and bring the critic's copy in
        as the card slows.
-  4. **A continuous world camera, and velocity hand-off on plain cuts.** Both remain from 0010:
+  2. **A continuous world camera, and velocity hand-off on plain cuts.** Both remain from 0010:
      - scenes on one plane with a travelling camera, instead of joined roots;
      - a plain cut that carries its last exit's speed into its first entrance without the author
        matching `dir`.
-  5. **The reach rule is documented, not linted.** A match whose incoming element is out of reach
+  3. **The reach rule is documented, not linted.** A match whose incoming element is out of reach
      (a surge) or behind the partner (a reversal) still passes the gate. The prepare step knows
      `v`, `d` and `Δ` and could warn.

@@ -82,22 +82,39 @@ export function greyOnFieldFilm(n: number): string {
 
 /**
  * Two scenes joined by a layered carry (left). Each has a headline `h` (A3) and a `panel` (ui,
- * D2:F5) with a `stat` inside it — a storyboard element whose parent is one too, so it rides its
- * parent instead of taking the handoff itself. The incoming headline rises in at 0.
+ * D2:F5) with a `stat` inside it — a storyboard element whose parent takes the handoff too, so it
+ * rides its parent instead of taking the handoff itself — and a role-less `group` wrapping a `note`
+ * (caption), which takes the handoff on its own. The incoming headline rises in at 0.
  */
 export function layeredFilm(): string {
   const view =
     '<Stage bg="solid"><Safe><Headline ct="h">{text.h}</Headline>' +
-    '<Stack ct="panel" class="absolute right-0 top-[200px]"><Label ct="stat">{text.stat}</Label></Stack></Safe></Stage>';
+    '<Stack ct="panel" class="absolute right-0 top-[200px]"><Label ct="stat">{text.stat}</Label></Stack>' +
+    '<Stack ct="group" class="absolute left-0 top-[700px]"><Label ct="note">{text.note}</Label></Stack></Safe></Stage>';
   const elements = [
     { id: "h", role: "headline", anchor: "A3" },
     { id: "panel", role: "ui", anchor: "D2:F5" },
     { id: "stat", role: "stat", anchor: "E3" },
+    { id: "group", anchor: "A5" },
+    { id: "note", role: "caption", anchor: "A5" },
   ];
-  const text = { h: "Layered", stat: "42" };
+  const text = { h: "Layered", stat: "42", note: "Note" };
   return fixtureProject([
     { id: "a", duration: 2, text, view, elements, transition: { type: "carry", dir: "left", distance: 12, layers: true } },
     { id: "b", duration: 2, text, view, elements, motion: 'm.enter("h", "rise", { at: 0 });' },
+  ]);
+}
+
+/**
+ * Two scenes joined by a plain carry on `bg` ("solid" or "gradient"), each with one headline on
+ * the safe left edge, so the backdrop near either frame edge is bare: what shows behind a root's
+ * trailing edge mid-carry is the backdrop, or the frame behind it.
+ */
+export function carriedFilm(bg: "solid" | "gradient", carry: { dir: string; distance: number }): string {
+  const view = `<Stage bg="${bg}"${bg === "gradient" ? ' gradient="aurora"' : ""}><Safe><Headline ct="h">{text.h}</Headline></Safe></Stage>`;
+  return fixtureProject([
+    { id: "a", duration: 2, text: { h: "Carried" }, view, transition: { type: "carry", duration: 0.5, ...carry } },
+    { id: "b", duration: 2, text: { h: "Landed" }, view },
   ]);
 }
 

@@ -293,6 +293,87 @@ describe("registers and transitions (docs/decisions/0007)", () => {
   });
 });
 
+describe("carry on screen: every point of the frame keeps one speed through the cut (sampled at ±⅓ of the frame)", () => {
+  const fps = 30;
+  const f = 1 / fps;
+  const frame = { width: 1920, height: 1080, fps };
+  const els = [
+    { id: "label", role: "label" as const, anchor: "A2" },
+    { id: "title", role: "headline" as const, anchor: "A3" },
+    { id: "bars", role: "ui" as const, anchor: "D2:F5" },
+  ];
+  /**
+   * Where a point `u` px from the frame centre, inside element `id`, is on screen along the travel:
+   * the root's whole transform (translate, plus any scale about the frame centre) applied to the
+   * point and the element's own shift.
+   */
+  const screen = (scene: string, tweens: Tween[], axis: "x" | "y") => {
+    const c = compileScene({ scene, start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
+    const F = axis === "x" ? frame.width : frame.height;
+    return (id: string, t: number, u: number) => {
+      const v = sampleScene(c, t);
+      const r = v.get(`${scene}.scene`) ?? {};
+      const e = v.get(`${scene}.${id}`) ?? {};
+      const s = (r.scale ?? 1) * ((axis === "x" ? r.scaleX : r.scaleY) ?? 1);
+      const move = (((axis === "x" ? r.xPct : r.yPct) ?? 0) / 100) * F + ((axis === "x" ? r.x : r.y) ?? 0);
+      return move + s * (u + ((axis === "x" ? e.shiftX : e.shiftY) ?? 0));
+    };
+  };
+
+  for (const dir of ["left", "up"] as const)
+    for (const distance of [12, 45])
+      for (const layers of [false, true]) {
+        it(`${dir}, distance ${distance}${layers ? ", layered" : ""}: no step at the cut at −⅓, centre or +⅓, then it only slows`, () => {
+          const axis = dir === "left" ? "x" : "y";
+          const F = axis === "x" ? frame.width : frame.height;
+          const t = transitionTweens({ type: "carry", dir, distance, duration: 0.5, layers }, { id: "a", duration: 3 }, { id: "b" }, frame, layers ? { out: els, in: els } : { out: [], in: [] });
+          const out = screen("a", t.out, axis);
+          const into = screen("b", t.in, axis);
+          const lead = t.out.find((tw) => tw.target === "a.scene")!.duration;
+          for (const id of ["plane", ...(layers ? els.map((e) => e.id) : [])])
+            for (const u of [-F / 3, 0, F / 3]) {
+              const at = `${id} at u=${Math.round(u)}`;
+              // Instantaneous speed on each side of the cut.
+              const eps = 1e-4;
+              const vOut = (out(id, 3, u) - out(id, 3 - eps, u)) / eps;
+              const vIn = (into(id, eps, u) - into(id, 0, u)) / eps;
+              expect(Math.abs(vIn - vOut) / Math.max(Math.abs(vIn), Math.abs(vOut)), `${at}: ${(vOut * f).toFixed(1)} → ${(vIn * f).toFixed(1)} px/frame`).toBeLessThanOrEqual(0.15);
+              // Per frame: the step the cut replaces (the outgoing scene's last frame to where it would be) against the first shown after it.
+              const replaced = out(id, 3, u) - out(id, 3 - f, u);
+              const first = into(id, f, u) - into(id, 0, u);
+              expect(Math.abs(first - replaced) / Math.abs(replaced), `${at}: ${replaced.toFixed(1)} → ${first.toFixed(1)} px/frame`).toBeLessThanOrEqual(0.15);
+              // Accelerates into the cut, then only slows to rest, all one way.
+              let prev = 0;
+              for (let k = Math.ceil(lead / f) + 1; k >= 1; k--) {
+                const step = Math.abs(out(id, 3 - (k - 1) * f, u) - out(id, 3 - k * f, u));
+                expect(step, `${at} out frame −${k}`).toBeGreaterThanOrEqual(prev - 1e-6);
+                prev = step;
+              }
+              prev = Infinity;
+              for (let k = 0; k * f < 0.5 * 1.5; k++) {
+                const step = into(id, (k + 1) * f, u) - into(id, k * f, u);
+                expect(Math.sign(step) * Math.sign(vIn) >= 0, `${at} in frame ${k} reverses`).toBe(true);
+                expect(Math.abs(step), `${at} in frame ${k}`).toBeLessThanOrEqual(prev + 1e-6);
+                prev = Math.abs(step);
+              }
+            }
+        });
+      }
+
+  it("the roots never scale; the backdrop bleeds by each side's travel instead", () => {
+    const spec: TransitionSpec = { type: "carry", dir: "up", distance: 45, duration: 0.5 };
+    const t = transitionTweens(spec, { id: "a", duration: 3 }, { id: "b" }, frame);
+    for (const tw of [...t.out, ...t.in]) expect(Object.keys(tw.props)).not.toContain("scale");
+    const bleed = TRANSITION_DEFS.carry.bleed!(spec);
+    expect(bleed).toEqual({ axis: "y", out: 0.18, in: 0.27 });
+    // Each side's bleed covers its root's travel along the axis.
+    const travel = (tw: Tween) => Math.abs((tw.props.yPct as number[])[1] - (tw.props.yPct as number[])[0]) / 100;
+    expect(bleed.out).toBeGreaterThanOrEqual(travel(t.out.find((tw) => tw.props.yPct)!) - 1e-9);
+    expect(bleed.in).toBeGreaterThanOrEqual(travel(t.in.find((tw) => tw.props.yPct)!) - 1e-9);
+    expect(TRANSITION_DEFS.carry.bleed!({ type: "carry", duration: 0.5 })).toEqual({ axis: "x", out: 0.032, in: 0.048 });
+  });
+});
+
 describe("carry: a cut on movement", () => {
   const frame = { width: 1920, height: 1080, fps: 30 };
   const speed = (tw: ReturnType<typeof run>["out"][number], at: "start" | "end") => {
@@ -542,7 +623,7 @@ describe("layered handoffs move continuously (sampled, px per frame)", () => {
   const six = ["A1", "A2", "B3", "C4", "D2:F5", "F6"].map((anchor, i) => ({ id: "e" + i, role: (i === 4 ? "ui" : i === 5 ? "decor" : "body") as "ui" | "decor" | "body", anchor }));
   const sampler = (scene: string, tweens: Tween[]) => {
     const c = compileScene({ scene, start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
-    // Where the element is on screen along x: its scene plane plus its own shift (the overscan scale aside).
+    // Where the element is on screen along x: its scene plane plus its own shift (a carry's root only translates).
     return (id: string, t: number) => {
       const v = sampleScene(c, t);
       return (v.get(`${scene}.scene`)?.xPct ?? 0) * 19.2 + (v.get(`${scene}.${id}`)?.shiftX ?? 0);

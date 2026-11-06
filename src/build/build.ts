@@ -66,6 +66,11 @@ export interface BuildResult {
 /** Element ids the build itself owns: the scene root, its camera and transition layers. */
 const RESERVED = new Set(["scene", "camera", "reveal", "fx"]);
 const OWN_LAYER = /\b(ct-scene|ct-camera|ct-reveal|ct-fx)\b/;
+/** A share of the frame as a CSS percentage. */
+const pct = (f: number) => `${Math.round(f * 1e6) / 1e4}%`;
+const r4 = (n: number) => Math.round(n * 1e4) / 1e4;
+/** A carried scene's backdrop bleeds this share of the frame past its travel (TransitionDef.bleed). */
+const BLEED_MARGIN = 0.01;
 
 export async function loadStoryboard(slug: string, srcDir = projectDir(slug)): Promise<{ storyboard?: Storyboard; music?: Music; findings: Finding[] }> {
   const file = join(srcDir, "storyboard.json");
@@ -216,18 +221,32 @@ export async function buildProject(
   };
   /**
    * A scene's elements for a layered handoff: storyboard elements with a role that are in its
-   * rendered view and not inside another storyboard element (a child rides its parent).
+   * rendered view and not inside another one that takes the handoff (a child rides its parent). A
+   * role-less wrapper rides the plane and does not hold back the elements inside it.
    */
   const layerElements = (i: number): LayerElement[] => {
     const sc = sb.scenes[i];
     const doc = parseHTML(`<!doctype html><html><body>${views.get(sc.id) ?? ""}</body></html>`).document;
-    const listed = new Set(sc.elements.map((e) => `${sc.id}.${e.id}`));
+    const listed = new Set(sc.elements.filter((e) => e.role).map((e) => `${sc.id}.${e.id}`));
     return sc.elements.flatMap((e) => {
       const node = doc.querySelector(`[data-ct="${sc.id}.${e.id}"]`) as unknown as HTMLElement | null;
       if (!e.role || !node) return [];
       for (let p = node.parentElement; p; p = p.parentElement) if (listed.has(p.getAttribute?.("data-ct") ?? "")) return [];
       return [{ id: e.id, role: e.role, ...(e.anchor ? { anchor: e.anchor } : {}) }];
     });
+  };
+
+  /** How far scene i's backdrop bleeds past its root for the travelling joins on either side of it (TransitionDef.bleed). */
+  const bleedOf = (i: number): { x: number; y: number } | undefined => {
+    const b = { x: 0, y: 0 };
+    for (const [k, side] of [[i - 1, "in"], [i, "out"]] as const) {
+      const spec = k >= 0 && k < sb.scenes.length - 1 ? transitionOf(k) : undefined;
+      const def = spec && TRANSITION_DEFS[spec.type].bleed?.(spec);
+      if (def) b[def.axis] = Math.max(b[def.axis], def[side]);
+    }
+    if (!b.x && !b.y) return undefined;
+    // A little past the travel, so the bleed's own edge never lands on the frame's at the extreme frame.
+    return { x: b.x && r4(b.x + BLEED_MARGIN), y: b.y && r4(b.y + BLEED_MARGIN) };
   };
 
   for (const [index, sc] of sb.scenes.entries()) {
@@ -343,10 +362,13 @@ export async function buildProject(
       });
       body += `<div class="ct-fx" data-ct="${sc.id}.fx" data-layout-ignore aria-hidden="true" style="${fx.style}">${fx.inner}</div>`;
     }
+    const bleed = bleedOf(index);
+    const bleedStyle = bleed ? `;--ct-bleed-x:${pct(bleed.x)};--ct-bleed-y:${pct(bleed.y)}` : "";
     sections.push(
       `<section id="sc-${sc.id}" class="clip ct-scene" data-ct-scene="${sc.id}" data-ct="${sc.id}.scene" ` +
         (sceneKit.has(sc.id) ? `data-ct-type="${sceneKit.get(sc.id)!.name}" ` : "") +
-        `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${z}">` +
+        (bleed ? "data-ct-bleed " : "") +
+        `data-start="${timing.start}" data-duration="${sc.duration}" data-layout-allow-overflow style="z-index:${z}${bleedStyle}">` +
         `${body}</section>`,
     );
   }
@@ -355,6 +377,11 @@ export async function buildProject(
     findings.push({ source: "build", rule: "scene-unknown", severity: "error", message: `no scene "${opts.only}" in the storyboard` });
   }
 
+  const addBleed = (i: number, window: [number, number]) => {
+    const tl = scenes.get(sb.scenes[i].id)!;
+    const b = bleedOf(i)!;
+    tl.bleed = { x: b.x, y: b.y, windows: [...(tl.bleed?.windows ?? []), window] };
+  };
   // Scene transitions become tweens on the scene roots.
   sb.scenes.forEach((sc, i) => {
     const spec = transitionOf(i);
@@ -364,6 +391,14 @@ export async function buildProject(
     const t = transitionTweens(spec, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps }, elements);
     scenes.get(sc.id)!.tweens.push(...t.out);
     scenes.get(next.id)!.tweens.unshift(...t.in);
+    // A travelling root lets its backdrop bleed while it moves: the outgoing one into the cut, the incoming one after it.
+    if (TRANSITION_DEFS[spec.type].bleed) {
+      const roots = (list: Tween[], id: string) => list.filter((tw) => tw.target === `${id}.scene`);
+      const outRoots = roots(t.out, sc.id);
+      const inRoots = roots(t.in, next.id);
+      if (outRoots.length) addBleed(i, [Math.min(...outRoots.map((tw) => tw.start)), sc.duration]);
+      if (inRoots.length) addBleed(i + 1, [0, Math.max(...inRoots.map((tw) => tw.start + tw.duration))]);
+    }
   });
 
   for (const key of drainMissingText()) {

@@ -34,6 +34,8 @@ split makes the speeds equal at the cut (tested). It reads as one camera move ac
 
 - Each scene overscans with its own travel, using the same ease (scale 1 + 2·travel), so the
   trailing edge never shows. The first gallery render showed a dark strip at the edge without this.
+  *Superseded by 0012 §5:* the zoom flipped its radial speed at the cut (one side of the frame
+  slowed, the other surged), so the roots now only translate and the backdrop bleeds by the travel.
 - Motion blur turns on by itself from 40 px a frame (the speed-matched σ), so a 50% whip pan is
   smeared and a 10% drift is sharp.
 - `distance` above 15 is a whip pan. That belongs to the energetic register: in a calm scene it

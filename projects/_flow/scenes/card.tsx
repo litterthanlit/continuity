@@ -1,7 +1,8 @@
 import { scene, Body, Card, Headline, Label, Safe, Stack, Stage, Title } from "continuity";
 
-// The card the chip becomes: a raised surface on the right, further along the chip's travel, so
-// the move carries on through the cut and settles here. Copy stays where it was (matched too).
+// The card the chip becomes: a raised surface on the right, within reach along the chip's travel
+// (⅓–⅔ of its speed × the match's duration: the reach rule, motion-craft §8), so the move carries
+// on through the cut and only slows into place here. Copy stays where it was (matched too).
 export const CARD = { top: 64, width: 880, height: 560 };
 
 export default scene({

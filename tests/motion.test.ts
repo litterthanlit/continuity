@@ -617,8 +617,6 @@ describe("shutter blur", () => {
 });
 
 describe("additive offsets, impulse, paint", () => {
-  const lin = easeFn({ type: "linear" });
-  void lin;
   const tl = (tweens: Array<{ target: string; props: Record<string, [number, number]>; duration: number }>): SceneTimeline => ({
     scene: "a",
     start: 0,

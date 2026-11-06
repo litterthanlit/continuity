@@ -199,8 +199,10 @@ outgoing scene's last frame, the same place and size, and settles into its own o
 - **The reach rule.** Place the incoming element about ⅓–⅔ of `v·d` along the travel from where
   the partner is at the cut (`v` the partner's speed, `d` the match's duration). In that window
   the move only slows after the cut. Further, and it must speed up after the cut to get there (a
-  surge); nearer, and it overshoots and comes back. Example: a chip at 1600 px/s into a 0.8s match
-  reaches 430–850 px; `_flow` puts the card 720 px along and 128 px across.
+  surge); nearer, and it overshoots and comes back. Across the travel, keep the offset under about
+  0.47·`v·d` (with the along offset at ⅓–½ of `v·d`; about 0.24·`v·d` at ⅔): further across, the
+  speed dips and rises again after the cut (a bump). Example: a chip at 1600 px/s into a 0.8s match
+  reaches 430–850 px along and up to 600 px across; `_flow` puts the card 720 px along and 128 px across.
 - **Fill and corner turn into its own.** The first frame has the partner's corner radius as seen
   (a pill stays a pill) and, between two opaque solid fills, its fill; both turn into the
   element's own on the place's ease (the fill mixes in oklab). A gradient, image or transparent
@@ -220,7 +222,12 @@ outgoing scene's last frame, the same place and size, and settles into its own o
   per chapter; reverse it only at a chapter break.
 - Put the cut (the scene's end) on the beat: the fastest frame lands on the hit.
 - Calm keeps `distance` ≤ 15 (`transition-register` warns above). A whip pan (30–60) is energetic.
-- Each scene overscans in step with its travel, so no edge shows; nothing to do in the scene.
+- The scene roots only translate, never zoom, so every point of the frame crosses the cut at one
+  speed: at the centre and at ±⅓ of the frame, the speed after the cut is the speed before it
+  (within 4% frame to frame, measured on screen at distance 12 and 45). While a root travels, its Stage's backdrop and grain bleed past its edge by
+  the travel, so the trailing edge shows the canvas, the grain or more of the field, never the frame
+  behind. Nothing to do in the scene, as long as the background is the Stage's own `bg`: a colour
+  painted on the content (`bg="none"` and a filled layer) does not bleed.
 
 ### Layered handoffs (`layers: true` on `carry`, `push`, `pushUp`)
 A planar join moves each scene as one flat plane; real motion design hands over in layers —
@@ -230,7 +237,10 @@ further than its scene (8% of the frame along the axis × its depth), in order a
 - **When:** between two scenes that share a layout (copy + a surface), the steps of a chapter —
   where a plain carry would read as a carousel. Not for a statement frame with one element (there
   is nothing to layer), and not when an element carries the cut on its own (`match`, `morph`).
-- **What it does:** every layer moves like its plane, so nothing jumps.
+- **What it does:** each layer keeps one speed through the cut, so no layer jumps. Layers do not
+  move like their plane — the copy outruns the product, which outruns the decor; that difference is
+  the wave — but each one's speed on screen is the same on both sides of the cut (within 4% frame
+  to frame at the centre and at ±⅓ of the frame, measured with the root's transform) and then only falls.
   - In a **carry**, each layer makes its own t² move and splits it at the cut the way the plane does.
     - The leader leaves the earliest, before the plane starts. Later layers leave nearer the plane's own start, and none leaves after it.
     - Each layer lands its own delay after the plane does.
@@ -251,9 +261,10 @@ further than its scene (8% of the frame along the axis × its depth), in order a
   A first (by the element's leftmost column), `right` F first, `up` row 1 first, `down` row 6 first;
   ties by the other axis. Steps are the list stagger (40ms), compressed so the last starts by 0.3·d;
   elements without an anchor go last. Give every element a true anchor or the wave lies.
-- Only top-level elements take the handoff: an element inside another listed element rides its
-  parent. Elements without a role ride the plane. Built alone (`ct check --scene`), the join is the
-  plain move.
+- Only top-level elements take the handoff: an element inside another storyboard element *with a
+  role* rides that parent. Elements without a role ride the plane, and a role-less wrapper does not
+  hold back the elements inside it (each with a role takes the handoff on its own). Built alone
+  (`ct check --scene`), the join is the plain move.
 
 ### Through an element (`portal`)
 - `via` is the element that *stands for* the next scene: a tile, a thumbnail, a window's body, a

@@ -234,11 +234,12 @@ describe("layered handoffs (build)", () => {
   const shifts = (b: Awaited<ReturnType<typeof buildProject>>) =>
     b.timeline!.scenes.flatMap((s) => s.tweens).filter((tw) => "props" in tw && (tw.props.shiftX || tw.props.shiftY)) as Tween[];
 
-  it("only top-level elements take the handoff", async () => {
+  it("only top-level elements take the handoff: a child rides a parent that takes it, not a role-less wrapper", async () => {
     const b = await buildProject("layered", { write: false, srcDir: layeredFilm() });
     expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
     const targets = new Set(shifts(b).map((tw) => tw.target));
-    expect(targets).toEqual(new Set(["a.h", "a.panel", "b.h", "b.panel"]));
+    // stat rides panel (it has a role); note takes it although it sits in group (no role: it rides the plane).
+    expect(targets).toEqual(new Set(["a.h", "a.panel", "a.note", "b.h", "b.panel", "b.note"]));
     // _flow's carry from detail to next is layered: the copy and the chart both ride it.
     const flow = await buildProject("_flow", { write: false });
     const flowTargets = new Set(shifts(flow).map((tw) => tw.target));
@@ -254,6 +255,32 @@ describe("layered handoffs (build)", () => {
     const m = /translate3d\(([-\d.]+)px,([-\d.]+)px/.exec(styleOf(v).transform!)!;
     expect(Number(m[1])).toBeCloseTo((v.x ?? 0) + v.shiftX!, 3);
     expect(Number(m[2])).toBeCloseTo(v.y!, 3);
+  });
+
+  it("a carried scene's backdrop bleeds past its root by its travel, while the root travels", async () => {
+    const b = await buildProject("layered", { write: false, srcDir: layeredFilm() });
+    const bleed = (id: string) => b.timeline!.scenes.find((s) => s.scene === id)!.bleed;
+    // distance 12: the outgoing root travels 4.8% before the cut, the incoming one 7.2% after it (+1% margin).
+    expect(bleed("a")).toEqual({ x: 0.058, y: 0, windows: [[1.8, 2]] });
+    expect(bleed("b")).toEqual({ x: 0.082, y: 0, windows: [[0, 0.3]] });
+    const flow = await buildProject("_flow", { write: false });
+    expect(flow.timeline!.scenes.filter((s) => s.bleed).map((s) => s.scene)).toEqual(["detail", "next"]);
+  });
+
+  it("the travel and camera bounds read the shifts: they move on screen like x and y", async () => {
+    const b = await buildProject("layered", { write: false, srcDir: layeredFilm() });
+    const found = (extra: Tween[]) => {
+      const scenes = b.timeline!.scenes.map((sc) => (sc.scene === "b" ? { ...sc, tweens: [...sc.tweens, ...extra] } : sc));
+      return lintTimeline({ ...b, timeline: { ...b.timeline!, scenes } }).map((f) => f.rule);
+    };
+    const ease = { type: "bezier" as const, p: [0.2, 0, 0, 1] as [number, number, number, number] };
+    // The layered handoff's own shifts (kind "transition") are the transition's business.
+    expect(found([])).not.toContain("travel-too-far");
+    expect(found([{ target: "b.panel", kind: "enter", start: 1, duration: 0.5, ease, props: { shiftX: [240, 0] } }])).toContain("travel-too-far");
+    // Split across x and the shift, the travel is still their sum.
+    expect(found([{ target: "b.panel", kind: "enter", start: 1, duration: 0.5, ease, props: { x: [40, 0], shiftX: [40, 0] } }])).toContain("travel-too-far");
+    expect(found([{ target: "b.panel", kind: "enter", start: 1, duration: 0.5, ease, props: { x: [32, 0], shiftX: [16, 0] } }])).not.toContain("travel-too-far");
+    expect(found([{ target: "b.camera", kind: "camera", start: 1, duration: 0.5, ease, props: { scale: [1.2, 1.2], shiftX: [0, 400] } }])).toContain("camera-too-fast");
   });
 
   it("built alone, a layered join degrades to the plain move", async () => {

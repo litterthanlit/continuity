@@ -252,6 +252,12 @@ export interface SceneTimeline {
    * classes): what `from: null` and loops start from, instead of BASE_VALUES.
    */
   bases?: Record<string, Partial<Record<PropName, number>>>;
+  /**
+   * A carried scene's backdrop bleed (TransitionDef.bleed): the backdrop and grain extend past the
+   * root by `x`/`y` of the frame on each side, and during `windows` (scene-local [from, to] seconds,
+   * while the root travels) the root stops clipping them, so its trailing edge shows backdrop.
+   */
+  bleed?: { x: number; y: number; windows: Array<[number, number]> };
 }
 
 export interface Timeline {

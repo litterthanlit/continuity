@@ -18,7 +18,10 @@ export interface LayerStep {
   id: string;
   /** Share of LAYER_TRAVEL this element takes (by role). */
   depth: number;
-  /** Seconds after the plane starts. */
+  /**
+   * Its place in the wave, seconds: it leaves this long after the leader (outgoing) and lands this
+   * long after the plane (incoming). A carry also starts the leader early, so none leaves after the plane.
+   */
   delay: number;
 }
 
