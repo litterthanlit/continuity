@@ -5,7 +5,7 @@ import { scene, Stage, Center, Label, Headline, Body } from "continuity";
 // lockup is centered in the social safe zone (12% top, 20% bottom), not the frame.
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <Center class="pb-[154px]">
         <Label ct="label">{text.label}</Label>
         <Headline ct="wordmark" class="mt-[8px]">

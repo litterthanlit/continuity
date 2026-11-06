@@ -57,8 +57,8 @@ the first target; hide it when it has nothing to do.
 ## Framing
 - The window at 70–85% of the frame width when it's the hero; 50–60% beside a title (title
   left on the safe edge, UI right — columns 1–5 and 7–12).
-- The light (`bg="lit"`) falls on the reveal and maybe the end card; the feature scenes sit on
-  the solid canvas so the UI reads.
+- The moving gradient field (`bg="gradient"`) sits behind the reveal and maybe the end card; the
+  feature scenes sit on the solid canvas so the UI reads. A `<Card glass>` floats over the field.
 - No 3D tilts or perspective flourishes; depth is surfaces stepping and the zero-offset float.
 - Ambient life is the camera's ≤ 3% push; never floating cards or breathing glows.
 

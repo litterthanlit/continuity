@@ -50,8 +50,6 @@ describe("the litt themes", () => {
   it("are both first-class (P8): every token in both, material tuned per theme, never inverted", () => {
     expect(Object.keys(themes).sort()).toEqual(["litt-dark", "litt-light"]);
     expect(Object.keys(littDark.colors).sort()).toEqual(Object.keys(littLight.colors).sort());
-    expect(littDark.material.light).toBe(22);
-    expect(littLight.material.light).toBe(12);
     expect(littDark.material.grain).toBe(0.04);
     expect(littLight.material.grain).toBe(0.02);
     for (const h of DATA_HUES) expect(littDark.colors[`data-${h}-text`]).toMatch(/^#/);
@@ -101,7 +99,7 @@ describe("kit CSS", () => {
     expect(css).toContain("--radius-control: 8px");
     expect(css).toContain("--font-weight-label: 600");
     expect(css).toContain("color-mix(in oklab, var(--color-data-blue) 18%, var(--color-surface-1))");
-    expect(css).toContain(".ct-lit");
+    expect(css).not.toContain(".ct-lit");
     expect(css).not.toMatch(/"ss01"|aurora|accent-2/);
     const portrait = await compileCss(littDark, littKit, [], ["text-label"], PKG_ROOT, true);
     expect(portrait).toContain("--text-label: 34px");

@@ -94,6 +94,13 @@ describe("source lint: litt's rules a class list can break (docs/decisions/0006)
     expect(lintSources(dir).every((x) => x.severity === "warning")).toBe(true);
   });
 
+  it("a hand-made backdrop gradient is litt-gradient", () => {
+    const rulesIn = (body: string) => lintSources(project({ "scenes/b.tsx": body })).map((x) => x.rule);
+    expect(rulesIn(`<div class="absolute inset-0 bg-radial-[at_50%_0%] from-accent/20" />`)).toContain("litt-gradient");
+    expect(rulesIn(`<div style={{ background: "linear-gradient(#000, #111)" }} />`)).toContain("litt-gradient");
+    expect(rulesIn(`<div style={{ background: "radial-gradient(at 50% 0%, #000, #111)" }} />`)).toContain("litt-gradient");
+  });
+
   it("passes litt's own vocabulary, and a deliberate litt-allow with its reason", () => {
     const dir = project({
       "scenes/ok.tsx": [

@@ -1,7 +1,7 @@
 import { scene, Stage, Safe, El, Label, Headline, Emph, Tag, Path } from "continuity";
 
 /**
- * The turn. litt's one light arrives from the top (bg="lit"). The statement
+ * The turn. a moving colour field fills the frame (bg="gradient"). The statement
  * rises in the grey and its answer, "eyes.", steps up to fg — the hook ended
  * with only "see" in fg, so the two words rhyme by ink. Below, the studio
  * pipeline: a hairline rail with five stations; "Plan" takes focus (the accent
@@ -26,7 +26,7 @@ export default scene({
     const line1 = text.headline.slice(0, cut);
     const line2 = text.headline.slice(cut + 1);
     return (
-      <Stage bg="lit">
+      <Stage bg="gradient" gradient="accent">
         <Safe>
           <div class="absolute left-0 top-[240px] flex flex-col">
             <Label ct="label">{text.label}</Label>

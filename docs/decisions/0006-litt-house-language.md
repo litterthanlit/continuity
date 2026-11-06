@@ -42,6 +42,8 @@ is litt's own names, so a class reads the same in both systems: `bg-canvas`, `bg
 A brand `theme.ts` overrides the accent through `defineTheme` (litt: one accent per project).
 
 ### 2. Material: solid, lit, grain (P1–P5)
+> Superseded in part by `0011`: `lit` and the top light are removed; a backdrop is one colour (`solid`) or a moving field (`gradient`).
+
 `Stage bg`: `solid` (default) or `lit` — litt's one light source, an accent-tinted elliptical
 radial anchored above the top edge, fading out by 65%. Use it once or twice per video, on the
 hero and maybe the end card. Grain is litt's static noise at plain opacity (no blend mode). The

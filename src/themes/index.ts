@@ -38,15 +38,13 @@ export const DATA_HUES = ["blue", "amber", "teal", "violet", "rose"] as const;
 export type DataHue = (typeof DATA_HUES)[number];
 
 /**
- * Stage backgrounds: the solid canvas, litt's one light source from the top, or
- * a static technical grid of hairlines (96px cells, centred) for the energetic
- * register's collage and UI scenes (docs/decisions/0007). All of them are still.
+ * Stage backgrounds: a still colour, hairlines, or a field that keeps moving. `solid` is the canvas;
+ * `grid` a static technical grid (96px cells, centred) for the energetic register's collage and UI
+ * scenes (docs/decisions/0007); `gradient` a WebGL colour field that drifts on its own (docs/decisions/0011).
  */
-export type StageBackground = "solid" | "lit" | "grid";
+export type StageBackground = "solid" | "grid" | "gradient";
 
 export interface Material {
-  /** Accent share of the top light (`lit`), %. */
-  light: number;
   /** Accent share of the primary action's glow, %. */
   glow: number;
   /** Grain opacity (static noise, plain opacity). */
@@ -130,7 +128,6 @@ export const littDark: Theme = {
     "data-rose-text": "#eb81a7",
   },
   material: {
-    light: 22,
     glow: 40,
     grain: 0.04,
     tint: 18,
@@ -180,7 +177,6 @@ export const littLight: Theme = {
     "data-rose-text": "#bb3c72",
   },
   material: {
-    light: 12,
     glow: 28,
     grain: 0.02,
     tint: 12,

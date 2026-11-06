@@ -5,7 +5,7 @@ import { scene, Stage, Safe, Center, Headline, Body, Button } from "continuity";
 // fill of the film: the primary "Open source" button (the "Ship" station).
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <Safe>
         <Center>
           <Headline ct="wordmark">{text.wordmark}</Headline>

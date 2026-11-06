@@ -6,7 +6,7 @@ travel 32px, the camera as the only ambient life.
 
 ## Statement (the workhorse)
 ```tsx
-<Stage bg="lit">
+<Stage bg="gradient">
   <Safe>
     <Headline ct="headline" class="absolute bottom-[96px] left-[96px] max-w-[1200px]">{text.headline}</Headline>
   </Safe>
@@ -90,7 +90,7 @@ m.enter("trend-dot", "fade", { at: "after:trend-line" });
 
 ## End card (the one centered statement)
 ```tsx
-<Stage bg="lit">
+<Stage bg="gradient">
   <Center>
     <Stack gap={8} class="items-center">
       <Headline ct="name">{text.name}</Headline>

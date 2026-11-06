@@ -5,7 +5,7 @@ import { push, TypeStack } from "../lib/layout.js";
 // Rank by ink — once "a craft." is placed, the setup line steps to the grey.
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <TypeStack>
         <Headline ct="l1">{text.l1}</Headline>
         <Headline ct="l2">{text.l2}</Headline>

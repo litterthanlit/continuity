@@ -9,7 +9,7 @@ const K = BODY_W / 1920;
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="solid">
       <Safe>
         <div class="absolute top-[24px] left-1/2 -translate-x-1/2">
           <Window ct="screen" title="render.mp4" width={BODY_W} height={64 + 1080 * K}>

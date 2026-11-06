@@ -45,11 +45,11 @@ Score **Temporal** from timeline/lint evidence first, the sheet second.
 
 ## litt signature checklist
 Mark each ✅ / ❌ / n/a; every ❌ names an element and goes into the fixes.
-- **P1** At most one accent fill per frame, on the primary action; the accent otherwise only as light (the top light, focus, caret, a click ring). No accent word in copy.
-- **P2** One light source, from the top; `lit` on the hero (and maybe the end card) only.
+- **P1** At most one accent fill per frame, on the primary action; the accent otherwise only as light (focus, caret, a click ring). No accent word in copy.
+- **P2** The backdrop is one colour or a moving field; a faint gradient is a defect. The field (`bg="gradient"`) on the hero (and maybe the end card) only.
 - **P3** Glass only on floating UI with content behind it.
 - **P4** No offset shadow; cards flat (hairline + highlight); floats zero-offset glow + ring.
-- **P5** Nothing material moves (light, grain, glow, backdrop).
+- **P5** Nothing material moves (grain, glow, a solid backdrop); only a gradient field drifts, by itself.
 - **P6** 16px grid (8 inside components), 2px hairlines, tracking tightening with size.
 - **P7** One idea per scene; asymmetric and left-aligned; centered once at most.
 - **P9** Weight by role: 400 text, 500 titles, 600 labels — nothing else.

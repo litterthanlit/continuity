@@ -10,7 +10,7 @@ import { MARK } from "../lib/mark.js";
 const MATCH = { x: 272, scale: 3.84 };
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <Center>
         <Row gap={48}>
           <Shape ct="mark" d={MARK} viewBox="0 0 240 240" width={176} />

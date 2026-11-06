@@ -15,7 +15,7 @@ import { scene, Stage, Safe, Stack, Label, Headline, Body } from "continuity";
 export default scene({
   // Static layout, rendered ONCE to HTML at build time. No state, no effects.
   view: ({ text, portrait }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient">
       <Safe zone={portrait ? "social" : "title"}>
         <Stack gap={32} class="absolute bottom-[96px] left-[96px] max-w-[1120px]">
           <Stack gap={8}>
@@ -56,7 +56,7 @@ Tailwind layer):
   `shadow-tooltip` (floating: raised + zero-offset glow + ring) `shadow-lift` (the glow alone)
   `shadow-glow` (the one primary action) `shadow-hairline` `shadow-control` `shadow-field`
   `shadow-focus` — never an offset or ad-hoc shadow (`litt-shadow`).
-- material classes `ct-lit` (the top light; prefer `<Stage bg="lit">`), `ct-grid` (the technical grid; prefer `<Stage bg="grid">`) and `ct-glass` (floating UI only).
+- material classes `ct-grid` (the technical grid; prefer `<Stage bg="grid">`) and `ct-glass` (floating UI, or `<Card glass>` over a gradient field).
 - CSS vars inline: `var(--color-fg)` etc. No hex values in scene code (`litt-hex`).
 
 **Rule:** motion owns `transform`, `opacity`, `color` (the ink channel), `filter`, `clip-path`,
@@ -67,9 +67,11 @@ Tailwind layer):
 ## Kit components
 
 Layout
-- `<Stage bg? grain?>` — every view's root. `bg`: `solid` (default) · `lit` (litt's one light,
-  from the top — the hero, maybe the end card) · `grid` (a static 2px hairline grid, 96px cells,
-  centred — collage and UI scenes in the energetic register) · `none`. Static: the backdrop never animates.
+- `<Stage bg? gradient? grain?>` — every view's root. `bg`: `solid` (default) · `gradient` (a
+  moving colour field — the hero, maybe the end card; `gradient`: `accent` (default) · `aurora` ·
+  `ember` or a spec; `bg="lit"` was removed, `docs/decisions/0011`) · `grid` (a static 2px hairline
+  grid, 96px cells, centred — collage and UI scenes in the energetic register) · `none`. A tween
+  never touches the backdrop; a gradient field moves by itself.
 - `<Safe zone="title|action|social|none">` — inset content area.
 - `<Center>` (one short statement, once per video), `<Stack gap>`, `<Row gap>` — flex helpers
   (gap defaults to 32, litt's block gap; use 8 for a lockup).

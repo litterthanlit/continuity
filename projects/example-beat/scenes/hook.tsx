@@ -7,7 +7,7 @@ import { LEFT, push } from "../lib/layout.js";
 // the setup line steps to the grey: rank by ink, on the beat.
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="aurora">
       <Safe>
         <Stack gap={0} class="absolute top-[300px]" style={`left:${LEFT - 96}px`}>
           <Headline ct="l1" class="whitespace-nowrap">{text.l1}</Headline>

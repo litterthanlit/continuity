@@ -58,7 +58,7 @@ Rules of thumb:
   `pushUp` (with `blur: true`) for a turn in a 9:16 feed, or a `dip` into the end card.
 - Ambient motion during holds: `m.camera({ scale: [1, 1.03] }, { origin: { x, y } })` with the
   origin on the statement's left edge, so the edge holds still from cut to cut — never a loop.
-- The light (`bg="lit"`) on the hook and maybe the end card; solid canvas between.
+- The moving gradient field (`bg="gradient"`) on the hook and maybe the end card; solid canvas between.
 - With music (`bpm` in the storyboard): put beats on the grid (`60/bpm` s) and land key words
   on downbeats.
 

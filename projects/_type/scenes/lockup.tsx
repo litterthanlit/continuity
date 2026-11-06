@@ -2,7 +2,7 @@ import { scene, Stage, Safe, Stack, Headline, Body, Label } from "continuity";
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="solid">
       <Safe>
         <Stack gap={32} class="absolute bottom-[96px] left-[96px] max-w-[1120px]">
           <Stack gap={8}>

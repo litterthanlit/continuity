@@ -21,7 +21,7 @@ const SHAPES = [
 
 export default scene({
   view: ({ text, width, height }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="aurora">
       <div class="absolute" style={`left:${(width - W) / 2}px;top:${(height - H) / 2}px;width:${W}px;height:${H}px`}>
         <Morph ct="mark" shapes={SHAPES} samples={1200} collapse="in-place" viewBox={`0 0 ${W} ${H}`} width={W} height={H} class="absolute left-0 top-0" />
         <div class="absolute flex flex-col gap-[16px]" style={`left:${WORD_X}px;top:0;height:${H}px;justify-content:center`}>

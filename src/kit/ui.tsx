@@ -126,10 +126,13 @@ export function Phone({ ct, width = 460, class: cls, children }: Box & { width?:
   );
 }
 
-/** A card in the flow: flat (P4), surface-1 with the hairline and the top highlight. Never glass, never a rail. */
-export function Card({ ct, class: cls, style, children }: Box) {
+/**
+ * A card in the flow: flat (P4), surface-1 with the hairline and the top highlight. Never a rail.
+ * `glass`: a floating surface over a gradient field (blur, the glass fill, the float shadow).
+ */
+export function Card({ ct, glass, class: cls, style, children }: Box & { glass?: boolean }) {
   return (
-    <div data-ct={id(ct)} data-ct-ui class={cx("relative rounded-surface bg-surface-1 p-[48px] shadow-raised", cls)} style={style}>
+    <div data-ct={id(ct)} data-ct-ui class={cx("relative rounded-surface p-[48px]", glass ? "ct-glass" : "bg-surface-1 shadow-raised", cls)} style={style}>
       {children}
     </div>
   );

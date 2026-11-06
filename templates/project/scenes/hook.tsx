@@ -4,7 +4,7 @@ import { scene, Stage, Safe, Stack, Label, Headline } from "continuity";
 // lit from the top. Rank comes from weight, two inks and space.
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <Safe>
         <Stack gap={8} class="absolute bottom-[96px] left-[96px] max-w-[1200px]">
           <Label ct="label">{text.label}</Label>

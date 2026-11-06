@@ -47,7 +47,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 - **Never edit `build/`** — it is generated. Edit `projects/<slug>/…`.
 - **One look: litt** (`docs/decisions/0006`). Themes `litt-dark` / `litt-light`, type kit
   `litt` (Geist in three weights by role, two inks — the `typography` skill), litt's motion
-  tiers with one expressive moment per scene, material static, and one transition language
+  tiers with one expressive moment per scene, material static (a backdrop is one colour or a moving gradient field, `docs/decisions/0011`), and one transition language
   (cuts + ≤ 2 accents, motion-craft §8), and joins that carry the eye (`carry`, `match`, `portal`,
   `morph` — `docs/decisions/0010`). The `litt-*` and motion lint rules gate it; a
   deliberate exception is `allow: [...]` / `litt-allow: <rule> (reason)`.

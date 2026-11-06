@@ -44,18 +44,20 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
 
 ## 2. Material and light (P1–P5)
 
-- **One light source, from the top** (`<Stage bg="lit">`): an accent-tinted falloff anchored
-  above the frame. Once or twice per video — the hero, maybe the end card. Every other scene is
-  `solid`. Never a second coloured light, never a light from the side, no aurora, mesh or glow
-  blobs.
-- **Material is static (P5).** The light, the grain, glows and the backdrop never animate,
-  loop, pulse or sweep (`material-motion` is an error). The camera may push; the light stays put.
+- **A backdrop is one colour or a moving field** — never a faint gradient. `<Stage bg="solid">`
+  is the canvas (the default); `<Stage bg="gradient" gradient="accent|aurora|ember">` is a bold
+  WebGL colour field that drifts on its own (`docs/decisions/0011`). Use the field on the hero
+  and the end card; every other scene is `solid`. Hand-made gradients, radial glows and glow
+  blobs are `litt-gradient`.
+- **Material is static (P5), except the field.** Grain, glows and the solid backdrop never
+  animate, loop, pulse or sweep, and a tween never touches the backdrop (`material-motion` is an
+  error): a gradient field moves by itself. The camera may push.
 - **Depth without drop shadows (P4).** Cards in the flow are flat: surface-1, the 2px hairline
   and the top highlight (`shadow-raised`). Floating UI (a window over the stage, a toast, a
   menu) gets a zero-offset glow plus a ring (`shadow-float`, `shadow-lift`, `shadow-modal`).
   Nothing has an offset shadow (`litt-shadow`).
-- **Glass is earned (P3)** — only on floating UI with content behind it (`Toast`, `ct-glass`).
-  Never on cards, never glass on glass.
+- **Glass is earned (P3)** — only on floating UI with content behind it (`Toast`, `ct-glass`,
+  or `<Card glass>` floating over a gradient field). Never on cards in the flow, never glass on glass.
 - **Radius:** controls and tags 8 (`rounded-control`), surfaces 16 (`rounded-surface`), pills
   only for avatars, icon buttons and switches (`litt-radius`). A phone bezel is the device's own.
 - Grain is static noise at 2% (light) / 4% (dark); it also dithers the light's banding.
@@ -66,7 +68,7 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   Pick one per video; never invert one into the other.
 - **The accent is light (P1).** At most one accent fill per frame, on the primary action (a
   `Button variant="primary"`, which carries the glow). Elsewhere the accent appears only as the
-  top light, a focus ring, a caret, a cursor's click ring. Never an accent word in a headline,
+  focus ring, a caret, a cursor's click ring. Never an accent word in a headline,
   never an accent fill behind copy, never a decorative gradient.
 - **Colour carries data (P11).** Beyond the accent, colour only says something: a series, a
   category, an identity — the five data hues in a fixed order (blue, amber, teal, violet, rose).

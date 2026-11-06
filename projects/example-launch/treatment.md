@@ -23,8 +23,8 @@ viewer always knows where they are. "Ship" is the end card.
 ## Visual language (litt)
 - **Theme `litt-dark`.** Warm near-black canvas, stone surfaces, fg type and one grey, litt's
   cobalt as light, focus and a single fill.
-- **Light tells the story.** The hook is on the solid canvas with no light (the world before
-  eyes). The turn and the end card are lit from above (`Stage bg="lit"`): light arrives, and
+- **Colour tells the story.** The hook is on the solid canvas (the world before eyes). The turn
+  and the end card sit on a moving gradient field (`Stage bg="gradient"`): colour arrives, and
   returns for the brand. The four chapters are solid: the product is the subject, and the
   identical geometry makes the pushes read as one long bench.
 - **Composition.** Asymmetric and left-aligned on the safe edge. The hook is a display couplet,
