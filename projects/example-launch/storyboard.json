@@ -59,7 +59,7 @@
           "note": "Inline span inside l2, pinned to text-fg so it keeps its ink when the rest of l2 dims. Emphasis by ink, never a colour or italic."
         }
       ],
-      "motion": "Solid canvas, no light (the world before eyes). b1: l1 maskUp by words (responsive, word stagger 40ms); the caret fades in with it and blinks until b2-0.08, then fades out. b2: l1 `dim` (instant) as l2 maskUp by words on the expressive spring — the scene's one moment. b3: l2 `dim` (instant); 'see' keeps fg. Camera 1 → 1.03 anchored on the safe left edge (origin x 96), so the type never drifts and the cut into the turn doesn't snap. Nothing exits; hard cut on the beat onto the field."
+      "motion": "Solid canvas, no light (the world before eyes). b1: l1 maskUp by words (responsive, word stagger 40ms); the caret fades in with it and blinks until b2-0.08, then fades out. b2: l1 `dim` (instant) as l2 maskUp by words on the expressive spring — the scene's one moment. b3: l2 `dim` (instant); 'see' keeps fg. Camera 1 → 1.03 anchored on the safe left edge (origin x 96), so the type never drifts and the cut into the turn doesn't snap. Nothing exits; hard cut on the beat onto the field, and the cut lands on the turn's entrance: studio's label and headline start moving on its frame 0, so the eye goes from the held 'see' straight to the rising answer."
     },
     {
       "id": "studio",
@@ -68,8 +68,8 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.15,
-          "note": "label + headline rise onto the field, in fg, without 'eyes.'"
+          "at": 0.0,
+          "note": "label + headline start rising on the cut's first frame (the cut lands on an entrance), in fg, without 'eyes.'"
         },
         {
           "id": "b2",
@@ -84,7 +84,7 @@
         {
           "id": "b4",
           "at": 2.9,
-          "note": "'Plan' takes focus: the process starts and the push carries us into it"
+          "note": "'Plan' takes focus: the process starts; its word steps out and the camera goes into the tile"
         }
       ],
       "text": {
@@ -125,7 +125,13 @@
           "id": "plan",
           "role": "ui",
           "anchor": "A5",
-          "note": "<Tag> 'Plan' at the left end of the rail. A focus ring `plan-focus` (shadow-focus, opacity 0) sits around it for b4."
+          "note": "<Tag> 'Plan' at the left end of the rail. A focus ring `plan-focus` (shadow-focus, opacity 0) sits around it for b4. The portal's `via`: the camera goes through this tile into chapter 01."
+        },
+        {
+          "id": "plan-word",
+          "role": "label",
+          "anchor": "A5",
+          "note": "The word inside the Plan tag. It steps out at the instant tier just before the portal, so the tile the camera goes through is a clean window, not ghosted letters over the next scene."
         },
         {
           "id": "plan-focus",
@@ -158,31 +164,31 @@
           "note": "<Tag> 'Ship', at the right end: the destination (the end card)."
         }
       ],
-      "motion": "Stage bg `gradient` on `accent`: the first colour of the film, a moving cobalt field (the hero). b1: label `fade`; headline maskUp by lines on the expressive spring (the moment), 'eyes.' held back. b2: `eyes` `fade` (responsive). b3: rail `draw` (slow, inOut); the five tags `rise` in reading order (list stagger 40ms) as it passes. b4: plan `ink` + plan-focus `fade` at the instant tier. Camera 1 → 1.03 anchored on the safe left edge, like the hook. Push into the first chapter.",
+      "motion": "Stage bg `gradient` on `accent`: the first colour of the film, a moving cobalt field (the hero). b1 (frame 0, on the cut): label `fade`; headline maskUp by lines on the expressive spring (the moment), 'eyes.' held back. b2: `eyes` `fade` (responsive). b3: rail `draw` (slow, inOut); the five tags `rise` in reading order (list stagger 40ms) as it passes. b4: plan `ink` + plan-focus `fade` at the instant tier; the ring clears as the portal starts. The Plan tile is drawn at 16:9 (100 × 56) so the window keeps the tile's edge. Camera 1 → 1.03 anchored on the safe left edge, like the hook, and it lands when the portal starts (the portal is the scene's move). Out: a portal through the focused Plan tile — the field and the other stations fly past the camera, the tile fills the frame and opens onto chapter 01.",
       "transition": {
-        "type": "push",
-        "duration": 0.5,
-        "blur": true
+        "type": "portal",
+        "via": "plan",
+        "duration": 0.9
       }
     },
     {
       "id": "plan",
-      "duration": 4.8,
+      "duration": 5.0,
       "intent": "Plan before pixels: the director writes a storyboard of scenes, copy and timed beats before any code.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.2,
-          "note": "headline masks up; the storyboard window came with the push"
+          "at": 0.95,
+          "note": "the portal lands: the storyboard window and '01 · Plan' were inside the tile; the headline masks up"
         },
         {
           "id": "b2",
-          "at": 2.0,
+          "at": 2.5,
           "note": "rows, lanes and beat keyframes have landed"
         },
         {
           "id": "b3",
-          "at": 2.4,
+          "at": 2.9,
           "note": "this scene's row takes the raised segment and steps up to fg"
         }
       ],
@@ -196,7 +202,7 @@
           "id": "label",
           "role": "label",
           "anchor": "A3",
-          "note": "<Label> '01 · Plan' (repeats the station's word), 8px above the headline."
+          "note": "<Label> '01 · Plan' (repeats the station's word), 8px above the headline. On screen from frame 0: it is what the Plan tile opens onto."
         },
         {
           "id": "headline",
@@ -235,11 +241,13 @@
           "note": "5 beat lanes (lane0…lane4) on a shared seconds axis: 8px rails at fg 12%, width ∝ duration; beat keyframes (tick0…) at the storyboard's real beat times, fg 55%, this scene's in fg (BarChart's rule)."
         }
       ],
-      "motion": "Solid canvas. The push brings the board in with its scene rows (the bench is never empty). b1: headline maskUp lines on the expressive spring (the moment); sub `rise` as it lands. Lanes `wipeRight` from 0.6 (list 40ms), keyframes `fade` from 0.9 (40ms), all landed by b2. b3: `current` fades in and title2 `ink`s to fg. Camera 1 → 1.03.",
+      "motion": "Solid canvas. In: the portal from studio's Plan tile — the scene opens from the tile's rounded rect, with '01 · Plan' and the storyboard window already on it (the bench is never empty); nothing else moves until the portal lands (0.9s). b1: headline maskUp lines on the expressive spring (the moment); sub `rise` as it lands. Lanes `wipeRight` from 1.2 (list 40ms), keyframes `fade` from 1.5 (40ms), all landed by b2. b3: `current` fades in and title2 `ink`s to fg. Camera 1 → 1.03 after the portal. Out: a layered carry, copy-led — the lockup stays and rides the cut: label, headline and sub lead the wave left (copy travels furthest), the board follows a beat later, so the frame peels off from the left edge into check.",
       "transition": {
-        "type": "push",
+        "type": "carry",
+        "dir": "left",
+        "distance": 12,
         "duration": 0.5,
-        "blur": true
+        "layers": true
       }
     },
     {
@@ -249,13 +257,13 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.2,
-          "note": "headline; frames fade on from the centre at b1+0.3"
+          "at": 0.3,
+          "note": "the carry lands the sheet (frames on it) and the terminal in a wave, the sheet first; label slides in, headline masks up"
         },
         {
           "id": "b2",
-          "at": 1.2,
-          "note": "`pnpm ct check launch` types"
+          "at": 0.5,
+          "note": "`pnpm ct check launch` types as the terminal settles"
         },
         {
           "id": "b3",
@@ -347,32 +355,39 @@
           "note": "<Terminal> '✔ 0 errors · 0 warnings' (success). Line done-l0."
         }
       ],
-      "motion": "Solid canvas. The push brings both surfaces in. b1: headline maskUp lines (responsive), sub rise; frames `fade` from the centre (grid 40ms). b2: the command types (24 cps); the scan line fades in. b3: report + findings `rise` (list); ring fades in at the instant tier; the other frames recede to 40% (slow, inOut); the camera focus-pushes 1.01 → 1.03 (slow, inOut). b4: f5b lifts 22px (responsive), f5c to full opacity, ring `fadeOut`; err → ok swap at the instant tier, titles `dim`; done-l0 `settle` — the scene's one moment; frames return. Push on.",
+      "motion": "Solid canvas. In: plan's layered carry lands the sheet (its frames already on it) and the terminal still travelling left, the sheet first and the terminal a step behind (the wave), the label slides in the same way. b1: headline maskUp lines (responsive), sub rise. b2: the command types (24 cps) as the terminal settles; the scan line fades in. b3: report + findings `rise` (list); ring fades in at the instant tier; the other frames recede to 40% (slow, inOut); the camera focus-pushes 1.01 → 1.03 (slow, inOut). b4: f5b lifts 22px (responsive), f5c to full opacity, ring `fadeOut`; err → ok swap at the instant tier, titles `dim`; done-l0 `settle` — the scene's one moment; frames return. Out: product-led — the lockup leaves left first (an exit into the cut), then a layered carry takes the sheet and the gate left, the sheet leading, the terminal trailing, into measure.",
       "transition": {
-        "type": "push",
+        "type": "carry",
+        "dir": "left",
+        "distance": 10,
         "duration": 0.5,
-        "blur": true
+        "layers": true
       }
     },
     {
       "id": "measure",
-      "duration": 5.0,
+      "duration": 4.6,
       "intent": "Motion, measured: rhythm, easing and dead air are numbers the agent checks, not vibes.",
       "beats": [
         {
           "id": "b1",
           "at": 0.0,
-          "note": "the push carries the chart window in; headline masks up at b1+0.2"
+          "note": "the layered carry lands the lockup and the chart still travelling: the copy leads in from further right, the chart follows"
         },
         {
           "id": "b2",
-          "at": 0.9,
-          "note": "the energy curve wipes on under the playhead"
+          "at": 0.3,
+          "note": "the energy curve wipes on under the playhead, which is already running as the carry settles"
         },
         {
           "id": "b3",
-          "at": 2.35,
+          "at": 1.75,
           "note": "three verdict tags are placed as the playhead lands"
+        },
+        {
+          "id": "b4",
+          "at": 4.1,
+          "note": "the lockup steps off left and the chart window slides left into the cut, accelerating: it becomes the score card"
         }
       ],
       "text": {
@@ -436,31 +451,36 @@
           "note": "<Tag tone=\"success\">0 jolts</Tag>"
         }
       ],
-      "motion": "Solid canvas. The push brings the window in. b1: headline maskUp lines (responsive), sub rise. b2: plot `wipeRight` and the playhead x tween share start, duration (linger) and ease (inOut). b3: the three tags `settle` in reading order (list 40ms) — the scene's one moment. Camera 1 → 1.03.",
+      "motion": "Solid canvas. In: check's layered carry, copy-led on this side — label, headline and sub are on screen from the cut and ride in on the wave (copy travels furthest, leads), the chart window follows. b2: plot `wipeRight` and the playhead x tween share start, duration (linger) and ease (inOut). b3: the three tags `settle` in reading order (list 40ms) — the scene's one moment. Camera 1 → 1.03. b4 / Out: the lockup leaves left (exit), and the chart window slides left into the space it left, 236px on t² (accelerating, ≈ 31 px a frame on the last frame): the match hands that speed to critic's card.",
       "transition": {
-        "type": "push",
-        "duration": 0.5,
-        "blur": true
+        "type": "match",
+        "pairs": [
+          [
+            "chart",
+            "card"
+          ]
+        ],
+        "duration": 0.9
       }
     },
     {
       "id": "critic",
-      "duration": 5.1,
+      "duration": 5.4,
       "intent": "A critic scores every cut on five axes, and only the best version ships.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.2,
-          "note": "headline in; the scorecard came with the push (labels, empty meters, 0.0)"
+          "at": 0.9,
+          "note": "the match lands: the score card has carried the chart window's speed across the frame and settled on the left; label slides in, headline masks up in the right column"
         },
         {
           "id": "b2",
-          "at": 0.6,
+          "at": 1.15,
           "note": "meters fill and scores count"
         },
         {
           "id": "b3",
-          "at": 2.6,
+          "at": 3.0,
           "note": "verdict: 'Ships', best of 3"
         }
       ],
@@ -473,56 +493,63 @@
         {
           "id": "label",
           "role": "label",
-          "anchor": "A3",
+          "anchor": "D3",
           "note": "<Label> '04 · Critique'."
         },
         {
           "id": "headline",
           "role": "headline",
-          "anchor": "A3:B4",
-          "note": "<Headline> display (112), fg, in the 608px lockup column on the safe edge: ≤ 2 lines, broken by meaning. The product sits 96px to its right (litt's split frame)."
+          "anchor": "D3:F4",
+          "note": "<Headline> display (112), fg, in the 608px lockup column on the safe RIGHT edge: the mirrored split frame. The card took the left when it carried the chart's travel across."
         },
         {
           "id": "sub",
           "role": "body",
-          "anchor": "A5:B5",
+          "anchor": "D5:F5",
           "note": "<Body>, the grey."
         },
         {
           "id": "card",
           "role": "ui",
-          "anchor": "D2:F5",
-          "note": "<Card> (flat) 1024×600 on the right: the five axes, a 2px hairline, then the mean (left) and the verdict (right)."
+          "anchor": "A2:C5",
+          "note": "<Card> (flat) 1024×600 on the LEFT (the mirrored split): the five axes, a 2px hairline, then the mean (left) and the verdict (right). It is the chart window, carried: same size, same fill, it continues the window's slide left and settles on the safe left edge."
         },
         {
           "id": "axes",
           "role": "ui",
-          "anchor": "D2:F4",
+          "anchor": "A2:C4",
           "note": "5 rows ax0…ax4: label (small, the grey) 'Intent' 'Composition' 'Typography' 'Temporal' 'Craft'; <Meter ct=bar0…bar4 width=552> filled with fg, 0.92/0.88/0.96/0.90/0.94; mono counters v0…v4 → 4.6 / 4.4 / 4.8 / 4.5 / 4.7."
         },
         {
           "id": "mean",
           "role": "stat",
-          "anchor": "D5",
+          "anchor": "A5",
           "note": "<Stat value={4.6} decimals={1} label=\"v3 · mean score\" unit=\"/ 5\">, title size: label above value, tabular."
         },
         {
           "id": "ships",
           "role": "ui",
-          "anchor": "F5",
-          "note": "<Tag tone=\"success\">Ships</Tag>: the verdict as a word."
+          "anchor": "C5",
+          "note": "<Tag tone=\"success\">Ships</Tag>, drawn at 16:9 (100 × 56) so the window keeps the tag's edge: the verdict as a word, and the portal's `via`: the camera goes through it into the end card."
+        },
+        {
+          "id": "ships-word",
+          "role": "label",
+          "anchor": "C5",
+          "note": "The word inside the Ships tag. It steps out at the instant tier as the portal starts, so the window opens from a clean tag, not ghosted letters over the end card."
         },
         {
           "id": "best",
           "role": "caption",
-          "anchor": "E5",
+          "anchor": "B5",
           "note": "<Caption> 'best of 3 versions', just before the tag."
         }
       ],
-      "motion": "Solid canvas. The push brings the scorecard in. b1: headline maskUp lines (responsive), sub rise. b2: meter fills scaleX 0 → 1 and the five counters run together (slow, inOut, list 40ms); the mean counts over linger. b3: `ships` `settle` — the scene's one moment — and `best` fades in. ≥ 1s of settled hold before the dip. Camera 1 → 1.03.",
+      "motion": "Solid canvas. In: a match from measure's chart window (match v2): the card starts where the window was, at the window's speed (≈ 940 px/s, left), and decelerates on one curve to the safe left edge, 468px along — the chart becomes the score card on its way across. The card makes no entrance of its own; its meters and counters wait for it to land. b1: label slides in, headline masks up, sub rises — in the right column the window left. b2: meter fills scaleX 0 → 1 and the five counters run together (slow, inOut, list 40ms); the mean counts over linger. b3: `ships` `settle` — the scene's one moment — and `best` fades in. `ships-word` steps out at the instant tier as the portal starts. ≈ 1.2s of settled hold before the portal. Camera 1 → 1.03, landing as the portal starts (the portal is the scene's move). Out: a portal through the 'Ships' tag — the card and the copy fly past the camera, the tag fills the frame and opens onto the end card, so the field's colour arrives through the verdict instead of on a full-frame cut.",
       "transition": {
-        "type": "dip",
-        "duration": 0.5
+        "type": "portal",
+        "via": "ships",
+        "duration": 0.8
       }
     },
     {
@@ -532,18 +559,18 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.35,
-          "note": "wordmark is placed"
+          "at": 0.0,
+          "note": "the portal from critic's 'Ships' tag: the end card opens from the tag's rounded rect, the field and the 'Open source' button already on it"
         },
         {
           "id": "b2",
-          "at": 0.95,
-          "note": "tagline rises"
+          "at": 0.85,
+          "note": "wordmark is placed as the portal lands (the moment)"
         },
         {
           "id": "b3",
-          "at": 1.5,
-          "note": "'Open source' button rises; hold ≥ 2s"
+          "at": 1.4,
+          "note": "tagline rises; hold ≥ 2s"
         }
       ],
       "text": {
@@ -568,10 +595,10 @@
           "id": "cta",
           "role": "cta",
           "anchor": "C5:D5",
-          "note": "<Button variant=\"primary\">Open source</Button> (md, 88): the film's one accent fill, with the zero-offset glow. 'Ship', the last station."
+          "note": "<Button variant=\"primary\">Open source</Button> (md, 88): the film's one accent fill, with the zero-offset glow. 'Ship', the last station: it is on the end card from its first frame, inside the 'Ships' tag the camera goes through."
         }
       ],
-      "motion": "Stage bg `gradient` on `aurora` (colour returns for the brand; not `accent`, where the cobalt button would sink into the cobalt field). b1: wordmark `settle` (expressive) — the moment. b2: tagline `rise`. b3: cta `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame. Last scene: the film ends on the held card."
+      "motion": "Stage bg `gradient` on `aurora` (colour returns for the brand; not `accent`, where the cobalt button would sink into the cobalt field). In: the portal through critic's 'Ships' tag — the card opens from the tag's rounded rect with the field and the button already on it; nothing else moves until it lands (0.8s). b2: wordmark `settle` (expressive) — the moment. b3: tagline `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame, from the portal's landing. Last scene: the film ends on the held card."
     }
   ]
 }

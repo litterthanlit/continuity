@@ -9,7 +9,7 @@ import { CARRY_DISTANCE, isCut, TRANSITION_DEFS } from "../motion/transitions.js
 
 /** carry: the farthest a calm cut on movement travels (% of the frame); beyond it, a whip pan. */
 const CARRY_CALM_MAX = 15;
-import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
+import { SPATIAL_PROPS, type PropName, type PropRange, type SceneTimeline, type Tween } from "../motion/types.js";
 import type { Finding, Severity } from "../spec/findings.js";
 import { ASPECTS, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 
@@ -47,7 +47,7 @@ export const RULES = {
   "slow-open": "The video's first motion starts late — the opening frame is dead.",
   "split-too-busy": "Character split on long copy is slow and noisy. Split by words or lines instead.",
   "stagger-too-long": "The stagger cascade takes too long to complete.",
-  "camera-too-fast": "Camera moves faster than ~15% zoom/s or 160px/s feel jarring (energetic register: 50% zoom/s, 480px/s).",
+  "camera-too-fast": "Camera moves faster than ~15% zoom/s or 160px/s feel jarring (energetic register: 50% zoom/s, 480px/s). A pan is x and y with their shifts.",
   "dead-cut": "A plain cut between two rests: the outgoing scene has settled and the incoming one starts still, so the eye stops at the join. Cut on movement (an exit into the cut, an entrance on it, or a carry), match it, or go through an element (portal, morph).",
   "static-edit": "Most of the film's joins carry nothing (dead cuts, crossfades, dips): it reads as a slideshow. Let the joins flow — carry, match, portal, morph, push — and keep the still cuts as punctuation.",
   "transition-too-long": "A transition longer than its type's craft range stalls the edit (a 1s push is no longer a step).",
@@ -67,7 +67,7 @@ export const RULES = {
   "expressive-budget": "litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive. Energetic register: up to three (a group counts once).",
   "material-motion": "litt P5: material is static. Tween the backdrop never; a gradient field moves by itself. The light, glow and grain never animate, loop or sweep.",
   "property-motion": "litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter, a cell's radius). Tracking, weight, blur and filters perform.",
-  "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.",
+  "travel-too-far": "litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px. The distance is x and y with their shifts (shiftX, shiftY).",
   "camera-edge": "The camera shows past the edge of the scene: a pan can be at most what the zoom adds (|x| ≤ (scale − 1) × half the width, the same for y), and the camera never zooms below 1.",
   "camera-drift": "The ambient camera push stays within 3% over its scene: it is the only ambient life, and it must not be noticed (energetic register: 8%).",
   "ambient-loop": "litt: motion that is not a response never performs. No loops (floating cards, breathing glows); the camera's slow push is the ambient life. A caret blink is fine (m.blink). Energetic register: an info — an object may spin or swing (a ring, a keychain), never copy.",
@@ -108,7 +108,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent", "clipRound"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent", "clipRound", "shiftX", "shiftY", "paint", "corner"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */
@@ -124,6 +124,10 @@ const isCopy = (e: ElementInfo | undefined) => !!e && !e.ui && !e.decor && e.rol
 const CYCLE_GLANCE = 0.25;
 const localOf = (id: string) => id.slice(id.indexOf(".") + 1);
 const r2 = (n: number) => Math.round(n * 100) / 100;
+/** The additive shift on each axis: on screen it moves with x/y, so travel bounds read both. */
+const SHIFT = { x: "shiftX", y: "shiftY" } as const;
+/** How far a range moves, from → to (a `null` from is the settled value: no travel). */
+const span = (r: PropRange | undefined) => (r && r[0] !== null ? r[0] - r[1] : 0);
 
 export function lintTimeline(build: BuildResult): Finding[] {
   const out: Finding[] = [];
@@ -248,7 +252,8 @@ export function lintTimeline(build: BuildResult): Finding[] {
       }
       if (t.kind === "enter") {
         // The distance travelled: an entrance may land somewhere other than its layout place (a stacked notification).
-        const far = Math.max(...(["x", "y"] as const).map((p) => { const r = t.props[p]; return r && r[0] !== null ? Math.abs(r[0] - r[1]) : 0; }));
+        // The shifts add to x and y on screen, so they count too.
+        const far = Math.max(...(["x", "y"] as const).map((p) => Math.abs(span(t.props[p]) + span(t.props[SHIFT[p]]))));
         if (far > B.maxTravel && !allowed(t, "travel-too-far")) {
           add("travel-too-far", "warning", sc, `${localOf(t.target)} enters from ${far}px away${inRegister}`, { ...where, suggestion: `travel ${TRAVEL}px (the preset default)${register === "calm" ? "" : `, ≤ ${B.maxTravel}px for a piece that lands`}` });
         }
@@ -259,13 +264,13 @@ export function lintTimeline(build: BuildResult): Finding[] {
         if (t.duration >= sc.duration * 0.6 && zoom > B.maxDrift + 1e-6 && !allowed(t, "camera-drift")) {
           add("camera-drift", "warning", sc, `the ambient camera zooms ${r2(zoom * 100)}% over the scene${inRegister}`, { ...where, suggestion: `push 1 → ${r2(1 + B.maxDrift)} or less; a deliberate focus move is a short inOut tween` });
         }
-        const ends = [0, 1].map((k) => ({ s: t.props.scale?.[k] ?? 1, x: t.props.x?.[k] ?? 0, y: t.props.y?.[k] ?? 0 }));
+        const ends = [0, 1].map((k) => ({ s: t.props.scale?.[k] ?? 1, x: (t.props.x?.[k] ?? 0) + (t.props.shiftX?.[k] ?? 0), y: (t.props.y?.[k] ?? 0) + (t.props.shiftY?.[k] ?? 0) }));
         const bare = ends.find((e) => e.s < 1 - 1e-6 || Math.abs(e.x) > (tl.width / 2) * (e.s - 1) + 0.5 || Math.abs(e.y) > (tl.height / 2) * (e.s - 1) + 0.5);
         if (bare && !allowed(t, "camera-edge")) {
           add("camera-edge", "warning", sc, `the camera at scale ${r2(bare.s)} pans ${Math.round(bare.x)}px, ${Math.round(bare.y)}px: the scene's edge shows`, { ...where, suggestion: `pan at most ${Math.round((tl.width / 2) * (bare.s - 1))}px across and ${Math.round((tl.height / 2) * (bare.s - 1))}px down at that scale, or zoom further` });
         }
         const ds = Math.abs((t.props.scale?.[1] ?? 1) - (t.props.scale?.[0] ?? 1)) / Math.max(0.01, t.duration);
-        const dx = Math.max(Math.abs((t.props.x?.[1] ?? 0) - (t.props.x?.[0] ?? 0)), Math.abs((t.props.y?.[1] ?? 0) - (t.props.y?.[0] ?? 0))) / Math.max(0.01, t.duration);
+        const dx = Math.max(...(["x", "y"] as const).map((p) => Math.abs(span(t.props[p]) + span(t.props[SHIFT[p]])))) / Math.max(0.01, t.duration);
         if ((ds > B.cameraZoomRate || dx > B.cameraPan) && !allowed(t, "camera-too-fast")) {
           add("camera-too-fast", "warning", sc, `camera moves ${ds > B.cameraZoomRate ? r2(ds * 100) + "% zoom/s" : Math.round(dx) + "px/s"}${inRegister}`, { ...where, suggestion: register === "calm" ? "slow it down or make it a deliberate cut" : "slow it down, or make it a depth transition" });
         }

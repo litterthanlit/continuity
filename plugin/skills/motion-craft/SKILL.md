@@ -152,7 +152,7 @@ shot into the next?
 | The eye rides… | Move | Example |
 |---|---|---|
 | a **direction** | `carry` (a cut on movement) | the camera is travelling left when the cut lands; the next shot decelerates from that speed |
-| a **place** | `match` (a cut) | the logo is exactly where the ring was, then settles |
+| a **place** | `match` (a cut) | the logo is exactly where the ring was, then settles; the chip sliding right keeps going and becomes the card |
 | an **element** | `portal`, `morph` | the camera goes *into* the tile and the tile becomes the next scene; the card flies to become the stat |
 | an **action** | a plain `cut` with an exit into it or an entrance on it | the row slides off as the cut lands; the headline whips in on frame 0 |
 | **nothing** (punctuation) | a plain `cut` between two rests, `dip` | after a statement's hold; before the end card |
@@ -167,24 +167,54 @@ types per video (`transition-language`; three once a scene is energetic):
 | Type | Default | Params | Use for |
 |---|---|---|---|
 | `cut` | — | | on the beat; with motion on one side of it |
-| `match` | 0.6 | pairs, ease | **primary**: an element starts where its partner was and settles |
-| `carry` | 0.5 | dir, distance, blur | **primary**: a cut on movement — 40% of the travel before the cut (accelerating), 60% after (decelerating, same speed at the cut). `distance` 6–12 calm (a drift); 30–60 energetic (a whip pan, blur on its own) |
+| `match` | 0.6 | pairs, ease | **primary**: an element starts where its partner was — place, size, speed, fill and corner — and settles into its own (below) |
+| `carry` | 0.5 | dir, distance, blur, layers | **primary**: a cut on movement — 40% of the travel before the cut (accelerating), 60% after (decelerating, same speed at the cut). `distance` 6–12 calm (a drift); 30–60 energetic (a whip pan, blur on its own) |
 | `portal` | 0.8 | via, dir (`in`/`out`), ease | the camera goes through an element: `in` — the outgoing scene grows until `via` fills the frame and the next scene is what was inside it; `out` — the scene shrinks into `via` in the next one (a pull-back to the screen it played on) |
 | `morph` | 0.6 | pairs, squash, arc, ease | one element carries the cut and becomes its partner (below, §13) |
 | `crossfade` | 0.4 | ease | the same surface in a new state (not between unrelated type frames) |
 | `dip` | 0.5 | ease | a chapter break, before the end card |
-| `push` | 0.5 | dir, blur, ease | sequential steps, in reading direction; `blur: true` when fast |
-| `pushUp` | 0.5 | blur, ease | lists, feeds, 9:16 |
+| `push` | 0.5 | dir, blur, layers, ease | sequential steps, in reading direction; `blur: true` when fast |
+| `pushUp` | 0.5 | blur, layers, ease | lists, feeds, 9:16 |
 | `wipe` | 0.5 | dir, angle, feather, ease | a state revealed; `feather: 8–20`, `angle: 120` for a soft diagonal |
 | `pixels` | 0.5 | dir, ease | **energetic only**: a digital cut through the canvas — cells dissolve the outgoing scene to the canvas, then reveal the next, an ordered dither sweeping the way it travels. Once a film, as an accent |
 | `depth` | 0.6 | dir (`in`/`out`), ease | **energetic only** (`transition-register`): fly through stacked scenes; `out` reverses it to close the loop |
 
 ```json
 "transition": { "type": "carry", "dir": "left", "distance": 10 }
+"transition": { "type": "carry", "dir": "left", "distance": 12, "layers": true }
 "transition": { "type": "portal", "via": "tile-2", "duration": 0.9 }
 "transition": { "type": "portal", "dir": "out", "via": "screen-body", "duration": 1 }
 "transition": { "type": "push", "dir": "left", "blur": true }
 ```
+
+### Match cut (`match`)
+Each pair is measured at prepare: the incoming element starts where its partner was on the
+outgoing scene's last frame, the same place and size, and settles into its own over the duration.
+- **Speed carries through the cut.** If the partner is moving at the cut (≥ 60 px/s), the element
+  leaves the cut at exactly the partner's last-frame velocity and travels to its place on one
+  curve per axis (a cubic Hermite: starts at that velocity, ends at rest), while its size grows
+  about its centre on `inOut`. Where an axis has nowhere to travel, the speed there is an impulse:
+  out at that speed and back. From rest it is the plain match: the place settles on `out` (or the
+  `ease` you set; a moving partner uses `inOut` for the size, fill and corner).
+- **The reach rule.** Place the incoming element about ⅓–⅔ of `v·d` along the travel from where
+  the partner is at the cut (`v` the partner's speed, `d` the match's duration). In that window
+  the move only slows after the cut. Further, and it must speed up after the cut to get there (a
+  surge); nearer, and it overshoots and comes back. Across the travel, keep the offset under about
+  0.47·`v·d` (with the along offset at ⅓–½ of `v·d`; about 0.24·`v·d` at ⅔): further across, the
+  speed dips and rises again after the cut (a bump). Example: a chip at 1600 px/s into a 0.8s match
+  reaches 430–850 px along and up to 600 px across; `_flow` puts the card 720 px along and 128 px across.
+- **Fill and corner turn into its own.** The first frame has the partner's corner radius as seen
+  (a pill stays a pill) and, between two opaque solid fills, its fill; both turn into the
+  element's own on the place's ease (the fill mixes in oklab). A gradient, image or transparent
+  side gets no fill change, only the corner.
+- **Recipe:** give the outgoing element its own move into the cut, still accelerating on the last
+  frame (t², `{ type: "bezier", p: [1/3, 0, 2/3, 1/3] }` ending at `end`), and put the incoming
+  element within reach along that travel (above), so the move carries on and slows into place
+  instead of reversing or surging. Pair the copy
+  that stays (`"label"`, `"title"`) too, so only the element that changes moves. Bring the
+  incoming element's own content in after it lands (`at` ≈ the match's duration). `_flow`'s
+  `chip` → `card` is the reference.
+- Built alone (`--scene`), a neighbour is a placeholder: the match has no pairs and is a plain cut.
 
 ### Cut on movement (`carry`)
 - The move must already be there: drift the outgoing scene's camera or its last exit the same way
@@ -192,7 +222,49 @@ types per video (`transition-language`; three once a scene is energetic):
   per chapter; reverse it only at a chapter break.
 - Put the cut (the scene's end) on the beat: the fastest frame lands on the hit.
 - Calm keeps `distance` ≤ 15 (`transition-register` warns above). A whip pan (30–60) is energetic.
-- Each scene overscans in step with its travel, so no edge shows; nothing to do in the scene.
+- The scene roots only translate, never zoom, so every point of the frame crosses the cut at one
+  speed: at the centre and at ±⅓ of the frame, the speed after the cut is the speed before it
+  (within 4% frame to frame, measured on screen at distance 12 and 45). While a root travels, its Stage's backdrop and grain bleed past its edge by
+  the travel, so the trailing edge shows the canvas, the grain or more of the field, never the frame
+  behind. Nothing to do in the scene, as long as the background is the Stage's own `bg`: a colour
+  painted on the content (`bg="none"` and a filled layer) does not bleed.
+
+### Layered handoffs (`layers: true` on `carry`, `push`, `pushUp`)
+A planar join moves each scene as one flat plane; real motion design hands over in layers —
+the copy leads, the UI follows, the decor trails, a wave in the direction of travel. `layers: true`
+adds that on top of the plane: each **top-level** storyboard element with a role shifts a little
+further than its scene (8% of the frame along the axis × its depth), in order along the travel.
+- **When:** between two scenes that share a layout (copy + a surface), the steps of a chapter —
+  where a plain carry would read as a carousel. Not for a statement frame with one element (there
+  is nothing to layer), and not when an element carries the cut on its own (`match`, `morph`).
+- **What it does:** each layer keeps one speed through the cut, so no layer jumps. Layers do not
+  move like their plane — the copy outruns the product, which outruns the decor; that difference is
+  the wave — but each one's speed on screen is the same on both sides of the cut (within 4% frame
+  to frame at the centre and at ±⅓ of the frame, measured with the root's transform) and then only falls.
+  - In a **carry**, each layer makes its own t² move and splits it at the cut the way the plane does.
+    - The leader leaves the earliest, before the plane starts. Later layers leave nearer the plane's own start, and none leaves after it.
+    - Each layer lands its own delay after the plane does.
+    - Each layer's travel, 2 × depth × 8% of the frame, is split in proportion to its time before and after the cut. So each layer crosses the cut at one speed on both sides, and decelerates to rest.
+  - In a **push**, on the push's ease:
+    - Outgoing, a layer starts at the plane's start + its delay and lands with the plane.
+    - Incoming, it starts with the plane and takes its delay longer to land.
+  - The shift is additive, so the element's own entrance (a `rise` on frame 0) runs through it. You don't need to remove it.
+- **Depth by role:**
+
+  | Role | Depth | Reads as |
+  |---|---|---|
+  | `headline` `title` `body` `label` `caption` `stat` `cta` `logo` | 1.0 | copy: leads, moves most |
+  | `ui` | 0.6 | the product surface follows |
+  | `decor` `media` | 0.35 | trails, nearly with the plane |
+
+- **Anchors order the wave.** The storyboard `anchor` sets who goes first: for `dir: "left"` column
+  A first (by the element's leftmost column), `right` F first, `up` row 1 first, `down` row 6 first;
+  ties by the other axis. Steps are the list stagger (40ms), compressed so the last starts by 0.3·d;
+  elements without an anchor go last. Give every element a true anchor or the wave lies.
+- Only top-level elements take the handoff: an element inside another storyboard element *with a
+  role* rides that parent. Elements without a role ride the plane, and a role-less wrapper does not
+  hold back the elements inside it (each with a role takes the handoff on its own). Built alone
+  (`ct check --scene`), the join is the plain move.
 
 ### Through an element (`portal`)
 - `via` is the element that *stands for* the next scene: a tile, a thumbnail, a window's body, a
@@ -206,7 +278,7 @@ types per video (`transition-language`; three once a scene is energetic):
   last frame (draw it without ct ids), so the handoff is invisible. "It was on a screen all along."
 - The portal is the scene's move: no camera push of its own in either scene during it.
 
-The gallery `projects/_flow` chains portal in → carry → portal out; judge them mid-flight with
+The gallery `projects/_flow` chains portal in → layered carry → portal out; judge them mid-flight with
 `npx ct stills _flow --at …`.
 
 Rules: never a spring on a full-frame move (`transition-bounce`); fast pushes need motion blur

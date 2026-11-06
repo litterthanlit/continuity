@@ -8,6 +8,10 @@ The moves that carry the eye *through* a cut instead of stopping at it (docs/dec
    the cut lands and the next shot decelerates from that speed.
 3. **portal out** — `next` → `device`: a pull-back. The scene shrinks into the window it was
    playing on.
+4. **match** — `chip` → `card`: the accent chip is accelerating right when the cut lands; the card
+   leaves the cut at the chip's speed and slows into its place (within reach: ½·v·d along the
+   travel), growing while the chip's fill and pill
+   corner turn into the card's own. The label and title are paired too, so they stay put.
 
 Judge each at its mid-point: `npx ct stills _flow --at <times>` and `npx ct strip _flow --scene <id>`.
 This is a reference reel, not a film.

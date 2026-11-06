@@ -16,8 +16,9 @@ import { hfCheck } from "../src/cli/lib/check.js";
 import { captureFrames } from "../src/cli/lib/frames.js";
 import { probeProject } from "../src/cli/lib/probe.js";
 import { serveDir, withBrowser } from "../src/cli/lib/browser.js";
+import type { Timeline, Tween } from "../src/motion/types.js";
 import { PKG_ROOT as ROOT } from "../src/paths.js";
-import { fieldScenes, greyOnFieldFilm, removeFixtureProjects } from "./fixtures/field-scenes.js";
+import { carriedFilm, fieldScenes, greyOnFieldFilm, removeFixtureProjects } from "./fixtures/field-scenes.js";
 
 const slow = process.env.CT_SLOW === "1";
 const d = slow ? describe : describe.skip;
@@ -187,6 +188,211 @@ d("measured geometry (projects/_launch: m.zoomTo, the match cut)", () => {
   });
 });
 
+d("match cuts v2 (projects/_flow: chip → card)", () => {
+  // The outgoing chip is accelerating right when the cut lands; the incoming card is a different
+  // fill and corner. The label pair is text on no fill: it gets no paint.
+  const HELPERS = `
+    var ct = window.__ct, tl = ct.timeline, fps = tl.fps;
+    function sc(id) { return tl.scenes.find(function (s) { return s.scene === id; }); }
+    function el(id) { return document.querySelector('[data-ct="' + id + '"]'); }
+    function box(id) { var r = el(id).getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; }
+    // Fill and corner as seen: the corner radius in frame px (the element's own px × its drawn scale).
+    function look(id) {
+      var e = el(id), cs = getComputedStyle(e), r = e.getBoundingClientRect(), k = r.width / e.offsetWidth;
+      var rad = Math.min(parseFloat(cs.borderTopLeftRadius) || 0, e.offsetWidth / 2, e.offsetHeight / 2);
+      return { bg: cs.backgroundColor, radius: rad * k };
+    }
+    // The element's own fill and corner, without anything the timeline writes.
+    function own(id) {
+      var e = el(id), keep = e.style.cssText;
+      e.style.backgroundColor = ""; e.style.borderRadius = ""; e.style.transform = "none";
+      var o = look(id);
+      e.style.cssText = keep;
+      return o;
+    }
+    var A = sc("chip"), B = sc("card");
+    function tweens(target, kind) { return B.tweens.filter(function (t) { return t.target === target && t.measure && t.measure.kind === kind; }); }
+  `;
+
+  it("the incoming element leaves the cut at its partner's speed, only slows, and lands at rest", async () => {
+    const got = await inProject<{ vA: number[]; steps: number[][]; frames: number; off: number[] }>("_flow", `(function () {
+      ${HELPERS}
+      ct.seek(A.start + A.duration - 1 / fps - 0.0001); var a0 = box("chip.chip");
+      ct.seek(B.start - 0.0001); var a1 = box("chip.chip");
+      var d = tweens("card.card", "match")[0].duration, n = Math.round(d * fps), pts = [];
+      for (var f = 0; f <= n + 3; f++) { ct.seek(B.start + f / fps); pts.push(box("card.card")); }
+      var steps = pts.slice(1).map(function (p, i) { return [p.cx - pts[i].cx, p.cy - pts[i].cy]; });
+      // Settled: on its own layout, nothing left over from the travel.
+      var e = el("card.card"), keep = e.style.transform; e.style.transform = "none"; var home = box("card.card"); e.style.transform = keep;
+      var last = pts[pts.length - 1];
+      return { vA: [a1.cx - a0.cx, a1.cy - a0.cy], steps: steps, frames: n, off: [last.cx - home.cx, last.cy - home.cy] };
+    })()`);
+    const v = Math.hypot(got.vA[0], got.vA[1]);
+    const speed = got.steps.map(([x, y]) => Math.hypot(x, y));
+    const profile = `chip ${v.toFixed(1)} px/frame | card ${speed.map((n) => n.toFixed(1)).join(" ")}`;
+    // The chip is moving right at the cut, fast enough to carry (≥ 60 px/s is 2 px a frame).
+    expect(got.vA[0]).toBeGreaterThan(10);
+    // The first frame after the cut is the chip's last step, as a vector.
+    expect(Math.hypot(got.steps[0][0] - got.vA[0], got.steps[0][1] - got.vA[1]) / v, profile).toBeLessThanOrEqual(0.15);
+    // Then it only slows: no coast-and-swoop, no faster than the chip, at rest by d.
+    for (let k = 1; k < speed.length; k++) expect(speed[k], `frame ${k}: ${profile}`).toBeLessThanOrEqual(speed[k - 1] + 0.5);
+    expect(Math.max(...speed), profile).toBeLessThanOrEqual(1.1 * v);
+    expect(speed[got.frames], profile).toBeLessThan(0.5);
+    expect(Math.hypot(got.off[0], got.off[1])).toBeLessThan(0.5);
+  });
+
+  it("the shape is matched: the first frame has the partner's fill and corner, then settles to its own", async () => {
+    const got = await inProject<{ a: Look; b0: Look; bd: Look; ownB: Look }>("_flow", `(function () {
+      ${HELPERS}
+      ct.seek(B.start - 0.0001); var a = look("chip.chip");
+      ct.seek(B.start); var b0 = look("card.card");
+      var d = tweens("card.card", "matchShape")[0].duration;
+      ct.seek(B.start + d + 0.05); var bd = look("card.card");
+      return { a: a, b0: b0, bd: bd, ownB: own("card.card") };
+    })()`);
+    expect(got.a.bg).not.toBe(got.ownB.bg);
+    expect(Math.abs(got.a.radius - got.ownB.radius)).toBeGreaterThan(4);
+    expect(got.b0.bg).toBe(got.a.bg);
+    expect(Math.abs(got.b0.radius - got.a.radius), `card ${got.b0.radius} vs chip ${got.a.radius}`).toBeLessThan(1.5);
+    expect(got.bd.bg).toBe(got.ownB.bg);
+    expect(Math.abs(got.bd.radius - got.ownB.radius)).toBeLessThan(0.5);
+  });
+
+  it("fill matches only between two solid fills: text on no fill gets no paint, and no error", async () => {
+    const got = await inProject<{ shape: Array<{ props: Record<string, unknown>; paint?: unknown }>; bg: string }>("_flow", `(function () {
+      ${HELPERS}
+      ct.seek(B.start);
+      return { shape: tweens("card.label", "matchShape").map(function (t) { return { props: t.props, paint: t.paint }; }), bg: getComputedStyle(el("card.label")).backgroundColor };
+    })()`);
+    expect(got.shape).toHaveLength(1);
+    expect(got.shape[0].props).not.toHaveProperty("paint");
+    expect(got.shape[0].paint).toBeUndefined();
+    expect(got.bg).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  it("resolves the same whatever order the build wrote the pair's tweens in", async () => {
+    const read = `(function () {
+      ${HELPERS}
+      return ["match", "matchVelocity", "matchShape"].map(function (kind) {
+        return tweens("card.card", kind)
+          .map(function (t) { return { axis: t.measure.axis || "", props: t.props, ease: t.ease, easeName: t.easeName || "", paint: t.paint || null }; })
+          .sort(function (p, q) { return p.axis < q.axis ? -1 : 1; });
+      });
+    })()`;
+    const built = await inProject<unknown>("_flow", read);
+    const reversed = await inProject<unknown>("_flow", read, (tl) => {
+      const card = tl.scenes.find((s) => s.scene === "card")!;
+      const at = card.tweens.flatMap((t, i) => (t.target === "card.card" && t.measure ? [i] : []));
+      const pair = at.map((i) => card.tweens[i]).reverse();
+      at.forEach((i, k) => (card.tweens[i] = pair[k]));
+    });
+    expect(reversed).toEqual(built);
+    // The chip moves at the cut: the travel rides the shifts and the place keeps only the size.
+    const [[place]] = built as Array<Array<{ props: Record<string, number[]> }>>;
+    expect(place.props.x).toEqual([0, 0]);
+  });
+
+  it("leaves a corner the channel cannot draw alone: mixed corners, or a corner the scene animates", async () => {
+    const shape = `(function () { ${HELPERS} return tweens("card.card", "matchShape")[0].props; })()`;
+    const built = await inProject<Record<string, unknown>>("_flow", shape);
+    expect(built).toHaveProperty("corner");
+    // A card rounded on three corners (a stylesheet rule, so the shape read still sees it).
+    const mixed = await inProject<Record<string, unknown>>("_flow", shape, (_tl, dir) => {
+      const page = join(dir, "index.html");
+      writeFileSync(page, readFileSync(page, "utf8").replace("</head>", '<style>[data-ct="card.card"] { border-top-left-radius: 0 }</style></head>'));
+    });
+    expect(mixed).not.toHaveProperty("corner");
+    expect(mixed).toHaveProperty("paint");
+    // The card's own corner tween, later in the scene: the match must not hold the channel over it.
+    const animated = await inProject<Record<string, unknown>>("_flow", shape, (tl) => {
+      const own: Tween = { target: "card.card", kind: "emphasis", start: 2, duration: 0.3, ease: { type: "linear" }, props: { corner: [24, 48] } };
+      tl.scenes.find((sc) => sc.scene === "card")!.tweens.push(own);
+    });
+    expect(animated).not.toHaveProperty("corner");
+  });
+
+  it("built alone, a match v2 join degrades to today's match", async () => {
+    for (const only of ["chip", "card"]) {
+      const b = await buildProject("_flow", { write: false, only });
+      expect(b.findings.filter((f) => f.severity === "error"), only).toEqual([]);
+    }
+  });
+});
+
+d("carry: the trailing edge shows the backdrop, never the frame behind it", () => {
+  afterAll(removeFixtureProjects);
+  // Mid-carry (the outgoing root 3 frames before the cut, the incoming one on the cut's first frame),
+  // the strip of frame past the root's trailing edge against the strip just inside it.
+  const cases = [
+    { bg: "solid" as const, dir: "left", distance: 12 },
+    { bg: "gradient" as const, dir: "left", distance: 12 },
+    { bg: "gradient" as const, dir: "left", distance: 45 },
+    { bg: "gradient" as const, dir: "up", distance: 45 },
+  ];
+  for (const c of cases) {
+    it(`${c.bg}, ${c.dir} ${c.distance}`, async () => {
+      const out = mkdtempSync(join(tmpdir(), "ct-carried-"));
+      const b = await buildProject("carried", { srcDir: carriedFilm(c.bg, c), outDir: out });
+      expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+      const srv = await serveDir(out);
+      try {
+        const shots = await withBrowser(async (browser) => {
+          const page = await browser.newPage();
+          await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+          await page.goto(srv.url + "index.html", { waitUntil: "load" });
+          await page.waitForFunction("Boolean(window.__ct)");
+          await page.evaluate("window.__ct.ready");
+          const at = async (t: number) => {
+            // The root's offset along the travel, as drawn.
+            const off = (await page.evaluate(`(function () {
+              window.__ct.seek(${t});
+              var s = window.__ct.timeline.scenes.find(function (x) { return x.start <= ${t} + 1e-6 && ${t} < x.start + x.duration; });
+              var r = document.querySelector('[data-ct-scene="' + s.scene + '"]').getBoundingClientRect();
+              return ${c.dir === "up" ? "r.top" : "r.left"};
+            })()`)) as number;
+            return { off, png: (await page.screenshot({ type: "png" })) as Uint8Array };
+          };
+          return [await at(2 - 3 / 30), await at(2)];
+        });
+        for (const [k, shot] of shots.entries()) {
+          const { data, info } = await sharp(shot.png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+          const vertical = c.dir === "up";
+          const len = vertical ? info.height : info.width;
+          // The root's trailing edge: the far side for the outgoing root (it left that way), the near side for the incoming one.
+          const edge = Math.round(k === 0 ? shot.off + len : shot.off);
+          expect(edge > 8 && edge < len - 8, `edge at ${edge}`).toBe(true);
+          const strip = (from: number, to: number) => {
+            let sum = 0;
+            let n = 0;
+            for (let a = Math.max(0, from); a < Math.min(len, to); a++)
+              for (let o = 0; o < (vertical ? info.width : info.height); o += 4) {
+                const [x, y] = vertical ? [o, a] : [a, o];
+                const i = (y * info.width + x) * 3;
+                sum += data[i] + data[i + 1] + data[i + 2];
+                n += 3;
+              }
+            return sum / n;
+          };
+          // A field has its own slope: the seam is what the strips on either side of the edge
+          // differ by beyond the slope the strips further out show.
+          const [far0, near0, near1, far1] = [strip(edge - 15, edge - 9), strip(edge - 9, edge - 3), strip(edge + 3, edge + 9), strip(edge + 9, edge + 15)];
+          const slope = (near0 - far0 + (far1 - near1)) / 2;
+          const seam = Math.abs(near1 - near0 - 2 * slope);
+          expect(seam, `${k === 0 ? "outgoing" : "incoming"} edge at ${edge}: ${[far0, near0, near1, far1].map((v) => v.toFixed(1)).join(" | ")}`).toBeLessThan(1);
+        }
+      } finally {
+        await srv.close();
+        rmSync(out, { recursive: true, force: true });
+      }
+    });
+  }
+});
+
+interface Look {
+  bg: string;
+  radius: number;
+}
+
 interface Box {
   cx: number;
   cy: number;
@@ -194,10 +400,24 @@ interface Box {
 }
 
 /** Build `_backgrounds`, open it in a browser and run `script` (an expression) once the runtime is ready. */
-async function inBackgrounds<T>(script: string): Promise<T> {
-  const out = mkdtempSync(join(tmpdir(), "ct-gradient-"));
-  const b = await buildProject("_backgrounds", { outDir: out });
+const inBackgrounds = <T>(script: string): Promise<T> => inProject<T>("_backgrounds", script);
+
+/**
+ * Build a project, open it in a browser and run `script` (an expression) once the runtime is ready.
+ * `edit` may rewrite the built timeline (or the page in `dir`) first.
+ */
+async function inProject<T>(slug: string, script: string, edit?: (timeline: Timeline, dir: string) => void): Promise<T> {
+  const out = mkdtempSync(join(tmpdir(), "ct-project-"));
+  const b = await buildProject(slug, { outDir: out });
   expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+  if (edit) {
+    const file = join(out, "ct-data.js");
+    const src = readFileSync(file, "utf8");
+    const prefix = "window.__CT__ = ";
+    const data = JSON.parse(src.slice(prefix.length, src.lastIndexOf(";"))) as { timeline: Timeline };
+    edit(data.timeline, out);
+    writeFileSync(file, prefix + JSON.stringify(data) + ";\n");
+  }
   const srv = await serveDir(out);
   try {
     return await withBrowser(async (browser) => {

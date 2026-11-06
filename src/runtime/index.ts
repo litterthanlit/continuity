@@ -14,10 +14,12 @@
  */
 import { compileScene, mergeVariationSettings, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
 import { morphAt, toPathD, type MorphData } from "../motion/morph.js";
-import type { PartCounts, PropRange, SplitMode, Timeline } from "../motion/types.js";
+import type { PartCounts, PropName, PropRange, SplitMode, Timeline } from "../motion/types.js";
 import type { GlHandle } from "../gl/runtime.js";
 import type { GlSpec } from "../gl/spec.js";
-import { prepareCarriers, renderCarrier, type Carrier } from "./carriers.js";
+import { MATCH_SPEED, matchTravel } from "../motion/match.js";
+import { eases } from "../motion/tokens.js";
+import { prepareCarriers, renderCarrier, rgba, type Carrier } from "./carriers.js";
 import { checkWebglContexts, drawGradients, mountGradients } from "./gradient.js";
 
 interface CtData {
@@ -240,9 +242,14 @@ function resolveKey(key: string): HTMLElement | undefined {
   return list ? list[Number(key.slice(i + 2))] : undefined;
 }
 
+/** Each carried scene's bleed windows (scene-local seconds): while one is open its root clips only its content. */
+const bleedWindows = new Map(data.timeline.scenes.filter((s) => s.bleed).map((s) => [s.scene, s.bleed!.windows]));
+
 function apply(sceneId: string, t: number) {
   const c = compiled.get(sceneId);
   if (!c) return;
+  const windows = bleedWindows.get(sceneId);
+  if (windows) sceneEls.get(sceneId)?.classList.toggle("ct-bleeding", windows.some(([a, b]) => t >= a - 1e-6 && t <= b + 1e-6));
   sampleScene(c, t).forEach((v, key) => {
     const gl = glTargets.get(key);
     if (gl) {
@@ -251,7 +258,7 @@ function apply(sceneId: string, t: number) {
     }
     const el = resolveKey(key);
     if (!el) return;
-    const s = styleOf(v, c.counters.get(key), c.fx.get(key), c.tapes.get(key));
+    const s = styleOf(v, c.counters.get(key), c.fx.get(key), c.tapes.get(key), c.paints.get(key));
     const st = el.style;
     if (s.transform !== undefined) st.transform = s.transform;
     if (s.opacity !== undefined) st.opacity = s.opacity;
@@ -273,6 +280,7 @@ function apply(sceneId: string, t: number) {
     if (s.color !== undefined) st.color = s.color;
     if (s.strokeDashoffset !== undefined) st.strokeDashoffset = s.strokeDashoffset;
     if (s.borderRadius !== undefined) st.borderRadius = s.borderRadius;
+    if (s.backgroundColor !== undefined) st.backgroundColor = s.backgroundColor;
     if (s.text !== undefined && el.textContent !== s.text) el.textContent = s.text;
     if (s.fontWeight !== undefined) st.fontWeight = s.fontWeight;
     if (s.fontStretch !== undefined) st.fontStretch = s.fontStretch;
@@ -333,14 +341,18 @@ function createMotionBlurs() {
       filter.setAttribute("id", id);
       filter.setAttribute("color-interpolation-filters", "sRGB");
       // A full-frame scene smears its own edge pixels (no transparent fringe showing the
-      // other scene); any other element gets room for the streak on its blurred axis.
+      // other scene) — past its backdrop's bleed when it has one; any other element gets room for
+      // the streak on its blurred axis.
       const frame = el.classList.contains("ct-scene");
       const x = (byProp.has("blurX") || shutter) && !frame;
       const y = (byProp.has("blurY") || shutter) && !frame;
-      filter.setAttribute("x", x ? "-15%" : "0%");
-      filter.setAttribute("width", x ? "130%" : "100%");
-      filter.setAttribute("y", y ? "-15%" : "0%");
-      filter.setAttribute("height", y ? "130%" : "100%");
+      const bleed = frame ? data.timeline.scenes.find((s) => s.scene === el.getAttribute("data-ct-scene"))?.bleed : undefined;
+      const bx = (bleed?.x ?? 0) * 100;
+      const by = (bleed?.y ?? 0) * 100;
+      filter.setAttribute("x", x ? "-15%" : -bx + "%");
+      filter.setAttribute("width", x ? "130%" : 100 + 2 * bx + "%");
+      filter.setAttribute("y", y ? "-15%" : -by + "%");
+      filter.setAttribute("height", y ? "130%" : 100 + 2 * by + "%");
       const node = document.createElementNS(NS, "feGaussianBlur");
       node.setAttribute("stdDeviation", "0 0");
       node.setAttribute("edgeMode", frame ? "duplicate" : "none");
@@ -371,12 +383,21 @@ function frameRect(el: Element): { x: number; y: number; w: number; h: number } 
   return { x: (r.left - rb.left) * k, y: (r.top - rb.top) * k, w: r.width * k, h: r.height * k };
 }
 
+/** An element's corner radius in its own px, as drawn: a % of its size resolved, a pill clamped to half its short side. */
+function radiusOf(el: HTMLElement, css: string): number {
+  const n = parseFloat(css) || 0;
+  const px = css.trim().endsWith("%") ? (n / 100) * Math.min(el.offsetWidth, el.offsetHeight) : n;
+  return Math.max(0, Math.min(px, el.offsetWidth / 2, el.offsetHeight / 2));
+}
+
 /**
  * Tweens whose values depend on layout (`measure`): measured once here, with the scenes laid out,
  * and written into the timeline, so every frame after is a pure function of time as usual.
  * focus: the camera move that makes the target fill `fill` of the frame at the move's end, its pan
  * clamped so the scene's edge never shows. match: the paired element starts at its partner's place
- * and size on the outgoing scene's last frame.
+ * and size on the outgoing scene's last frame; matchVelocity carries the partner's last-frame speed
+ * through the cut (from MATCH_SPEED up: the travel moves onto the shifts, motion/match.ts); matchShape turns its fill (two solid fills only) and corner
+ * into the element's own.
  */
 function resolveMeasured() {
   const W = data.timeline.width;
@@ -440,10 +461,19 @@ function resolveMeasured() {
         }
         changed = true;
       } else {
+        // The match cut: B (this tween's target) against its partner A on the outgoing scene's last frame.
         const outScene = byScene.get(m.from.slice(0, m.from.indexOf(".")));
-        const a = document.querySelector(`[data-ct="${m.from}"]`);
+        const a = document.querySelector<HTMLElement>(`[data-ct="${m.from}"]`);
         const b = document.querySelector<HTMLElement>(`[data-ct="${t.target}"]`);
-        if (!outScene || !a || !b) continue;
+        if (!outScene || !a || !b) {
+          // No partner to read: the shape's placeholders must not square B's corners.
+          if (m.kind === "matchShape") {
+            t.props = {};
+            delete t.paint;
+            changed = true;
+          }
+          continue;
+        }
         apply(outScene.scene, outScene.duration);
         const A = frameRect(a);
         apply(sc.scene, t.start);
@@ -451,7 +481,64 @@ function resolveMeasured() {
         // B's box is drawn at the scale of everything above it (the camera too): offsets are in its own px.
         const k = b.offsetWidth ? B.w / b.offsetWidth : 1;
         const s = Math.sqrt((A.w * A.h) / Math.max(1, B.w * B.h));
-        t.props = { x: [r4((A.x + A.w / 2 - (B.x + B.w / 2)) / k), 0], y: [r4((A.y + A.h / 2 - (B.y + B.h / 2)) / k), 0], scale: [r4(s), 1] };
+        const dx = (A.x + A.w / 2 - (B.x + B.w / 2)) / k;
+        const dy = (A.y + A.h / 2 - (B.y + B.h / 2)) / k;
+        // A's velocity over its last frame, in B's own px/s. Every tween of the pair reads it, so the
+        // place, the velocity and the shape resolve the same whatever order the build wrote them in.
+        const fps = data.timeline.fps;
+        apply(outScene.scene, outScene.duration - 1 / fps);
+        const A0 = frameRect(a);
+        const vx = ((A.x + A.w / 2 - (A0.x + A0.w / 2)) * fps) / k;
+        const vy = ((A.y + A.h / 2 - (A0.y + A0.h / 2)) * fps) / k;
+        const moving = Math.hypot(vx, vy) >= MATCH_SPEED;
+        // Moving: the travel leaves the place (which stays a zoom about B's centre) and rides the
+        // shifts, one curve per axis that leaves the cut at A's speed and lands at rest; the size,
+        // fill and corner turn on one ease, symmetric under a travel that starts at speed.
+        const onInOut = () => {
+          t.ease = eases.inOut;
+          t.easeName = "inOut";
+        };
+        if (m.kind === "match") {
+          t.props = moving ? { x: [0, 0], y: [0, 0], scale: [r4(s), 1] } : { x: [r4(dx), 0], y: [r4(dy), 0], scale: [r4(s), 1] };
+          if (moving) onInOut();
+        } else if (m.kind === "matchVelocity") {
+          // From rest the match stays as it was.
+          if (!moving) continue;
+          const x = m.axis === "x";
+          const travel = matchTravel(x ? vx : vy, x ? dx : dy, t.duration);
+          t.props = x ? { shiftX: travel.range } : { shiftY: travel.range };
+          t.ease = travel.ease;
+        } else {
+          // Fill and corner as A shows them at the cut, turning into B's own.
+          const sa = getComputedStyle(a);
+          const own = { bg: b.style.backgroundColor, radius: b.style.borderRadius };
+          b.style.backgroundColor = "";
+          b.style.borderRadius = "";
+          const sb = getComputedStyle(b);
+          const bBg = sb.backgroundColor;
+          const bImage = sb.backgroundImage;
+          const rB = radiusOf(b, sb.borderTopLeftRadius);
+          // One radius per element is all the corner channel can draw: a shape with mixed corners
+          // (a tab, a sheet rounded on top) keeps its own, and so does a B whose corner the scene animates.
+          const even = (cs: CSSStyleDeclaration) =>
+            [cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius].every((r) => r === cs.borderTopLeftRadius);
+          const ownCorner = sc.tweens.some((o) => o !== t && o.target === t.target && o.props && ("corner" in o.props || "radius" in o.props));
+          const cornered = even(sa) && even(sb) && !ownCorner;
+          b.style.backgroundColor = own.bg;
+          b.style.borderRadius = own.radius;
+          // A's corner in frame px, then in B's own px at the scale B starts at (the place's s).
+          const kA = a.offsetWidth ? A.w / a.offsetWidth : 1;
+          const rA = radiusOf(a, sa.borderTopLeftRadius) * kA;
+          const props: Partial<Record<PropName, PropRange>> = {};
+          if (cornered && (rA > 0 || rB > 0)) props.corner = [r4(rA / (k * s)), r4(rB)];
+          const solid = (bg: string, image: string) => image === "none" && rgba(bg)[3] >= 0.99;
+          if (solid(sa.backgroundColor, sa.backgroundImage) && solid(bBg, bImage)) {
+            props.paint = [0, 1];
+            t.paint = [sa.backgroundColor, bBg];
+          } else delete t.paint;
+          t.props = props;
+          if (moving) onInOut();
+        }
         changed = true;
       }
     }

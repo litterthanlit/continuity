@@ -31,6 +31,7 @@ export function resolveScene(scene: SceneTimeline, parts: PartCounts): ResolvedT
       preset: tw.preset,
       counter: tw.counter,
       tape: tw.tape,
+      paint: tw.paint,
       fx: tw.fx,
       allow: tw.allow,
       mask: tw.mask,
@@ -96,6 +97,7 @@ export interface CompiledScene {
   loops: Map<string, Loop[]>;
   counters: Map<string, CounterFormat>;
   tapes: Map<string, string[]>;
+  paints: Map<string, [string, string]>;
   fx: Map<string, FxSpec>;
   /** key → squash-and-stretch amount (the largest any of its tweens asks for). */
   squash: Map<string, number>;
@@ -127,6 +129,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts, fps = 30):
   const channels = new Map<string, Map<PropName, Segment[]>>();
   const counters = new Map<string, CounterFormat>();
   const tapes = new Map<string, string[]>();
+  const paints = new Map<string, [string, string]>();
   const fx = new Map<string, FxSpec>();
   const squash = new Map<string, number>();
   for (const rt of resolved) {
@@ -139,6 +142,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts, fps = 30):
     }
     if (rt.counter) counters.set(rt.key, rt.counter);
     if (rt.tape) tapes.set(rt.key, rt.tape);
+    if (rt.paint) paints.set(rt.key, rt.paint);
     if (rt.fx) fx.set(rt.key, rt.fx);
     if (rt.squash) squash.set(rt.key, Math.max(squash.get(rt.key) ?? 0, Math.min(0.5, rt.squash)));
   }
@@ -155,7 +159,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts, fps = 30):
   for (const [key, byProp] of channels) {
     if (OWN_LAYER_KEY.test(key) || byProp.has("blurX") || byProp.has("blurY")) continue;
     let peak = 0;
-    for (const prop of ["x", "y"] as const) {
+    for (const prop of ["x", "y", "shiftX", "shiftY"] as const) {
       for (const seg of byProp.get(prop) ?? []) {
         const dur = seg.end - seg.start;
         if (!(dur > 0) || seg.from === seg.to) continue;
@@ -166,7 +170,7 @@ export function compileScene(scene: SceneTimeline, parts: PartCounts, fps = 30):
     }
     if (SHUTTER * peak >= SHUTTER_MIN) shutter.add(key);
   }
-  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, tapes, fx, squash, fps, shutter, resolved, bases: scene.bases };
+  return { scene: scene.scene, duration: scene.duration, channels, loops, counters, tapes, paints, fx, squash, fps, shutter, resolved, bases: scene.bases };
 }
 
 export type Values = Partial<Record<PropName, number>> & {
@@ -221,7 +225,8 @@ function channelValue(segs: Segment[], t: number): number {
     if (s.start <= t) active = s;
     else break;
   }
-  if (t >= active.end) return active.to;
+  // A finished tween holds where its ease ends: `to`, except for an impulse, which comes back to `from`.
+  if (t >= active.end) return active.ease(1) === 0 ? active.from : active.to;
   const span = active.end - active.start;
   const p = span <= 0 ? 1 : (t - active.start) / span;
   return active.from + (active.to - active.from) * active.ease(p);
@@ -286,9 +291,22 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
     if (c.shutter.has(key)) {
       const xs = byProp.get("x");
       const ys = byProp.get("y");
-      const speed = (segs: Segment[] | undefined) => (segs ? Math.abs(channelValue(segs, t + H) - channelValue(segs, t - H)) / (2 * H) : 0);
-      const bx = (SHUTTER * speed(xs)) / c.fps;
-      const by = (SHUTTER * speed(ys)) / c.fps;
+      const sxs = byProp.get("shiftX");
+      const sys = byProp.get("shiftY");
+      // The faster side: at a move's first or last frame the other side holds still.
+      const speed = (segs: Segment[] | undefined) => {
+        if (!segs) return 0;
+        const now = channelValue(segs, t);
+        const back = (now - channelValue(segs, t - H)) / H;
+        const fwd = (channelValue(segs, t + H) - now) / H;
+        return Math.abs(back) > Math.abs(fwd) ? back : fwd;
+      };
+      // The speed is on screen (the translate is in the parent's px); the filter is drawn at the
+      // element's own scale, so its σ is that blur in the element's px.
+      const kx = Math.max(0.05, Math.abs((v.scale ?? 1) * (v.scaleX ?? 1)));
+      const ky = Math.max(0.05, Math.abs((v.scale ?? 1) * (v.scaleY ?? 1)));
+      const bx = (SHUTTER * Math.abs(speed(xs) + speed(sxs))) / c.fps / kx;
+      const by = (SHUTTER * Math.abs(speed(ys) + speed(sys))) / c.fps / ky;
       v.blurX = bx >= 0.5 ? bx : 0;
       v.blurY = by >= 0.5 ? by : 0;
     }
@@ -303,7 +321,7 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
   return out;
 }
 
-const TRANSFORM_PROPS: PropName[] = ["x", "y", "xPct", "yPct", "z", "scale", "scaleX", "scaleY", "rotate", "rotateX", "rotateY", "skewX"];
+const TRANSFORM_PROPS: PropName[] = ["x", "y", "shiftX", "shiftY", "xPct", "yPct", "z", "scale", "scaleX", "scaleY", "rotate", "rotateX", "rotateY", "skewX"];
 const FILTER_PROPS: PropName[] = ["blur", "brightness", "saturate"];
 const CLIP_PROPS: PropName[] = ["clipTop", "clipRight", "clipBottom", "clipLeft"];
 
@@ -329,6 +347,8 @@ export interface StyleOut {
   color?: string;
   strokeDashoffset?: string;
   borderRadius?: string;
+  /** The paint channel: a mix of Tween.paint's two colours. */
+  backgroundColor?: string;
   text?: string;
   fontWeight?: string;
   fontStretch?: string;
@@ -387,12 +407,12 @@ export function formatCounter(value: number, fmt: CounterFormat): string {
 }
 
 /** Turn channel values into CSS. Only channels that are animated are emitted. */
-export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: string[]): StyleOut {
+export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: string[], paint?: [string, string]): StyleOut {
   const s: StyleOut = {};
   const has = (p: PropName) => v[p] !== undefined;
   const g = (p: PropName) => v[p] ?? BASE_VALUES[p];
   if (TRANSFORM_PROPS.some(has) || v.deform) {
-    let tr = "translate3d(" + f4(g("x")) + "px," + f4(g("y")) + "px," + f4(g("z")) + "px)";
+    let tr = "translate3d(" + f4(g("x") + g("shiftX")) + "px," + f4(g("y") + g("shiftY")) + "px," + f4(g("z")) + "px)";
     // In the parent's frame, before the element's own rotation: it stretches along its path on screen.
     const m = v.deform;
     if (m && (Math.abs(m[0] - 1) > 1e-4 || Math.abs(m[1]) > 1e-4 || Math.abs(m[2]) > 1e-4 || Math.abs(m[3] - 1) > 1e-4)) {
@@ -433,6 +453,11 @@ export function styleOf(v: Values, counter?: CounterFormat, fx?: FxSpec, tape?: 
   if (has("ink")) s.color = inkMix("var(--color-fg)", g("ink"), "var(--color-fg-muted)");
   if (has("accent")) s.color = inkMix("var(--color-accent-text)", g("accent"), s.color ?? "var(--color-fg)");
   if (has("radius")) s.borderRadius = f4(Math.min(50, Math.max(0, g("radius")))) + "%";
+  if (has("corner")) s.borderRadius = f4(Math.max(0, g("corner"))) + "px";
+  if (has("paint") && paint) {
+    const p = Math.round(Math.min(1, Math.max(0, g("paint"))) * 1000) / 10;
+    s.backgroundColor = p >= 100 ? paint[1] : p <= 0 ? paint[0] : "color-mix(in oklab, " + paint[1] + " " + p + "%, " + paint[0] + ")";
+  }
   if (has("draw")) s.strokeDashoffset = f4(1 - Math.min(1, Math.max(0, g("draw"))));
   if (has("counter")) s.text = formatCounter(g("counter"), counter ?? { decimals: 0 });
   if (has("typed") && tape) s.text = tapeText(tape, g("typed"));

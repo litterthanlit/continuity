@@ -1,5 +1,5 @@
 import { scene, El, Window, Tag } from "continuity";
-import { Chapter, SPLIT } from "../lib/chapter.js";
+import { Chapter, INTO_CUT, SPLIT, leaveLeft } from "../lib/chapter.js";
 import { FILM_S, STARTS } from "../lib/film.js";
 
 // 03 · Measure — the motion-energy curve of THIS film wipes on under a playhead,
@@ -33,6 +33,13 @@ ENERGY.push([FILM, 0.12]);
 for (let i = 1; i < ENERGY.length; i++) {
   if (!(ENERGY[i][0] > ENERGY[i - 1][0])) throw new Error(`measure: energy keyframes out of order at ${ENERGY[i][0]}s`);
 }
+
+/**
+ * Into the match: the window slides this far left on t² over the last 0.5s (≈ 944 px/s on the
+ * last frame). Critic's card rests 704px left of the window's place, 468px further on: ≈ 0.55
+ * of speed × the match's 0.9s, inside the reach rule's ⅓–⅔, so it only slows after the cut.
+ */
+const WINDOW_SLIDE = 236;
 
 // The product beside the lockup (litt's split frame).
 const WIN_W = SPLIT.width; // 1024
@@ -141,13 +148,11 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // b1 (0.0) — the push carries the chart window in (no entrance of its own); copy leads.
-    m.enter("headline", "maskUp", { at: "b1+0.2", split: "lines" });
-    m.enter("sub", "rise", { at: "after:headline-0.2" });
-
-    // b2 — the playhead pulls the line: same start, duration and ease; it travels the plot width.
-    // A left→right wipe (not `draw`, which advances by arc length and lags the head) keeps the
-    // tip exactly under the playhead.
+    // In: check's layered carry lands this scene copy-first — label, headline and sub are on
+    // screen from the cut and ride in on the wave, the chart window a step behind. b2 — the
+    // playhead is already running as the carry settles: same start, duration and ease as the
+    // wipe; it travels the plot width. A left→right wipe (not `draw`, which advances by arc
+    // length and lags the head) keeps the tip exactly under the playhead.
     m.enter("plot", "wipeRight", { at: "b2", duration: "linger", ease: "inOut" });
     m.tween("head", { x: [0, CHART_W] }, { at: "b2", duration: "linger", ease: "inOut" });
 
@@ -155,5 +160,11 @@ export default scene({
     m.enter(["eased", "dead", "jolts"], "settle", { at: "b3", stagger: "list" });
 
     m.camera({ scale: [1, 1.03] });
+
+    // b4 / Out: the lockup steps off left, and the chart window slides left into the space it
+    // left, accelerating into the cut (t²): the match hands that speed to critic's score card,
+    // which carries on across the frame and settles on the left (WINDOW_SLIDE).
+    leaveLeft(m);
+    m.tween("chart", { x: [0, -WINDOW_SLIDE] }, { at: "b4", duration: m.time("end") - m.time("b4"), ease: INTO_CUT });
   },
 });

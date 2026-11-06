@@ -1,4 +1,8 @@
 import { scene, Stage, Safe, Center, Headline, Body, Button } from "continuity";
+import { SCENES } from "../lib/film.js";
+
+/** The portal in from critic's "Ships" tag: critic's storyboard transition. */
+const PORTAL_S = SCENES.find((s) => s.id === "critic")!.transition!.duration!;
 
 // End card — the film's only centred frame, on the field. The wordmark (the display
 // line) 32px over the tagline, then the one accent fill of the film: the primary
@@ -24,12 +28,13 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    // b1 — the name is placed (the moment), b2 the promise, b3 the call to action.
-    m.enter("wordmark", "settle", { at: "b1" });
-    m.enter("tagline", "rise", { at: "b2" });
-    m.enter("cta", "rise", { at: "b3" });
-    // The film's last frame: the push eases in out of the dip and cruises into the
+    // b1 — the card opens from critic's "Ships" tag (the portal), the button already on it: the
+    // verdict is the call to action. b2 the name is placed as the portal lands (the moment), b3
+    // the promise.
+    m.enter("wordmark", "settle", { at: "b2" });
+    m.enter("tagline", "rise", { at: "b3" });
+    // The film's last frame: from the portal's landing the push eases in and cruises into the
     // final frame (end slope 1) rather than braking to a dead stop.
-    m.camera({ scale: [1, 1.03] }, { ease: { type: "bezier", p: [0.33, 0, 0.67, 0.67] } });
+    m.camera({ scale: [1, 1.03] }, { at: PORTAL_S, duration: m.time("end") - PORTAL_S, ease: { type: "bezier", p: [0.33, 0, 0.67, 0.67] } });
   },
 });

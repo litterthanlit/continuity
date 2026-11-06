@@ -39,6 +39,8 @@ export const FIELD_FRAG = [
   "#version 300 es",
   "precision highp float;",
   "uniform vec2 u_res;",
+  // The frame's height in canvas px: the field is laid out on the frame, centred, however far the canvas bleeds past it.
+  "uniform float u_frame;",
   "uniform float u_t;",
   "uniform float u_seed;",
   "uniform vec3 u_colors[4];",
@@ -87,7 +89,7 @@ export const FIELD_FRAG = [
   "}",
   "",
   "void main() {",
-  "  vec2 p = (gl_FragCoord.xy / u_res - 0.5) * vec2(u_res.x / u_res.y, 1.0) / u_scale;",
+  "  vec2 p = (gl_FragCoord.xy - 0.5 * u_res) / u_frame / u_scale;",
   "  vec2 q = p + u_warp * vec2(fbm(p + vec2(u_seed, u_t)), fbm(p + vec2(5.2 - u_seed, -u_t)));",
   // Unrolled: a loop indexing u_colors cost SwiftShader about a third of the frame.
   "  vec2 d0 = q - v_c0, d1 = q - v_c1, d2 = q - v_c2, d3 = q - v_c3;",

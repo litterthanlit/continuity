@@ -244,13 +244,22 @@ inside it together.
 
 Transition params (validated per type; `duration` defaults per type): `ease` (token or
 `[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, wipe, carry; `in|out`: depth, portal) · `angle` + `feather` (wipe) ·
-`blur` (push/pushUp: `true` = speed-matched, number = σ px, `false`) · `pairs` (morph: `["logo"]`
-for the same id in both scenes, `[["card", "tile"]]` for outgoing → incoming) + `squash` + `arc`
+`blur` (push/pushUp: `true` = speed-matched, number = σ px, `false`) · `pairs` (morph, match: `["logo"]`
+for the same id in both scenes, `[["card", "tile"]]` for outgoing → incoming; a match measures each
+pair at prepare: place and size, the partner's last-frame velocity when it moves ≥ 60 px/s — the
+element leaves the cut at that speed and travels to its place on one curve per axis that ends at
+rest, so put it ⅓–⅔ of speed × duration along the travel or it must speed up after the cut — and
+its fill, between two opaque solid fills only, and corner radius, which turn into the element's
+own) + `squash` + `arc`
 (morph: a bend of the path, −0.5..0.5). A morph pair must be at rest at the handoff: no entrance
 on the incoming element or its children during the morph (the carrier holds its built state).
 `via` (portal: the element the camera goes through — the outgoing scene's with `dir: "in"`, the
 incoming scene's with `dir: "out"`; measured at prepare, so the window stays locked to it) ·
-`distance` (carry: % of the frame the camera travels through the cut; default 8, ≤ 15 calm).
+`distance` (carry: % of the frame the camera travels through the cut; default 8, ≤ 15 calm) ·
+`layers` (carry, push, pushUp: `true` = a layered handoff — each top-level element with a role
+shifts on top of its scene by its depth (copy 1.0 / ui 0.6 / decor+media 0.35) × 8% of the frame on
+each side of a push, and twice that in a carry, split across the cut; in a wave ordered by `anchor`
+along the travel; motion-craft §8).
 Types, defaults and ranges: `catalog.md` → Scene transitions.
 
 ## Brand accent

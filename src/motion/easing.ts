@@ -136,6 +136,11 @@ export function easeFn(ease: EaseSpec): EaseFn {
     }
     case "whip":
       return whipEase(ease.snap, ease.share);
+    case "impulse":
+      return (p) => {
+        if (p <= 0 || p >= 1) return 0;
+        return (27 / 4) * p * (1 - p) * (1 - p);
+      };
     case "spring": {
       const settle = settleCached(ease);
       // A spring tween maps progress 0..1 onto the spring's settle time, so a

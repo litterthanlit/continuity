@@ -4,15 +4,17 @@ import storyboard from "../storyboard.json" with { type: "json" };
  * The film's own numbers, read from storyboard.json so the mock UI that shows
  * this film (the storyboard rows, the contact sheet header, the energy chart's
  * time axis) can never drift from the cut. Same rule as the engine: a scene
- * starts where the previous one's transition begins; a cut (no transition, or
- * type "cut") does not overlap.
+ * starts where the previous one's transition begins; a cut (no transition, or a
+ * cut-type join: cut, match, carry) does not overlap.
  */
 type Sc = { id: string; duration: number; beats: { at: number }[]; transition?: { type: string; duration?: number } };
 
 export const SCENES = storyboard.scenes as Sc[];
 
+// The joins that are cuts (the engine's `isCut`): the scenes meet, they do not overlap.
+const CUTS = new Set(["cut", "match", "carry"]);
 const overlap = (s: Sc, last: boolean) =>
-  last || !s.transition || s.transition.type === "cut" ? 0 : (s.transition.duration ?? 0.5);
+  last || !s.transition || CUTS.has(s.transition.type) ? 0 : (s.transition.duration ?? 0.5);
 
 /** [scene id, global start s] in order. */
 export const STARTS: [string, number][] = (() => {

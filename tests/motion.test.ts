@@ -615,3 +615,77 @@ describe("shutter blur", () => {
     expect(styleOf(mid).motionBlur![0]).toBeGreaterThan(5);
   });
 });
+
+describe("additive offsets, impulse, paint", () => {
+  const tl = (tweens: Array<{ target: string; props: Record<string, [number, number]>; duration: number }>): SceneTimeline => ({
+    scene: "a",
+    start: 0,
+    duration: 2,
+    beats: {},
+    loops: [],
+    tweens: tweens.map((t) => ({ kind: "move" as const, start: 0, ease: { type: "linear" as const }, ...t })),
+  });
+  const transformAt = (s: SceneTimeline, key: string, t: number) => styleOf(sampleScene(compileScene(s, {}), t).get(key)!).transform;
+
+  it("shift adds to x: an element's own move and a handoff compose", () => {
+    const s = tl([
+      { target: "a.el", props: { x: [0, 100] }, duration: 1 },
+      { target: "a.el", props: { shiftX: [0, 40] }, duration: 1 },
+    ]);
+    expect(transformAt(s, "a.el", 0.5)).toContain("translate3d(70px,0px,0px)");
+  });
+
+  it("impulse leaves at rest, starts at 27/4 slope, peaks at a third", () => {
+    const e = easeFn({ type: "impulse" });
+    expect(e(0)).toBe(0);
+    expect(e(1)).toBeCloseTo(0, 9);
+    expect(e(1 / 3)).toBeCloseTo(1, 9);
+    expect(e(1e-4) / 1e-4).toBeCloseTo(27 / 4, 2);
+  });
+
+  it("an impulse comes back to rest and stays there after its tween", () => {
+    const s = tl([{ target: "a.el", props: { shiftX: [0, 100] }, duration: 0.6 }]);
+    s.tweens[0].ease = { type: "impulse" };
+    const c = compileScene(s, {});
+    expect(sampleScene(c, 0.2).get("a.el")!.shiftX).toBeCloseTo(100, 6);
+    for (const t of [0.6, 0.61, 1.5]) expect(sampleScene(c, t).get("a.el")!.shiftX, String(t)).toBe(0);
+  });
+
+  it("the shutter sees a fast shift", () => {
+    const c = compileScene(tl([{ target: "a.el", props: { shiftX: [0, 600] }, duration: 0.3 }]), {});
+    expect(c.shutter.has("a.el")).toBe(true);
+  });
+
+  it("the shutter smears by the speed on screen, whatever the element's own scale (its filter is drawn scaled)", () => {
+    const blurAt = (scale: number) => {
+      const s = tl([
+        { target: "a.el", props: { shiftX: [0, 600] }, duration: 0.3 },
+        { target: "a.el", props: { scale: [scale, scale] }, duration: 0.3 },
+      ]);
+      return sampleScene(compileScene(s, {}), 0.15).get("a.el")!.blurX!;
+    };
+    expect(blurAt(1)).toBeGreaterThan(1);
+    // At a quarter size the filter is drawn at a quarter: its σ is four times as large in the element's own px.
+    expect(blurAt(0.25)).toBeCloseTo(4 * blurAt(1), 6);
+  });
+
+  it("the shutter is at full speed on a move's first frame (a match cut's frame 0)", () => {
+    // Constant speed: the blur is the same on the first frame, mid-move and on the last.
+    const c = compileScene(tl([{ target: "a.el", props: { x: [0, 600] }, duration: 0.3 }]), {});
+    const mid = sampleScene(c, 0.15).get("a.el")!.blurX!;
+    expect(mid).toBeGreaterThan(1);
+    for (const t of [0, 0.3 - 1e-6]) expect(sampleScene(c, t).get("a.el")!.blurX!, String(t)).toBeCloseTo(mid, 6);
+  });
+
+  it("paint mixes two fills; corner is px", () => {
+    const s = styleOf({ paint: 0.25, corner: 12 }, undefined, undefined, undefined, ["#000000", "#ffffff"]);
+    expect(s.backgroundColor).toBe("color-mix(in oklab, #ffffff 25%, #000000)");
+    expect(s.borderRadius).toBe("12px");
+  });
+
+  it("a paint tween carries its colour pair into the compiled scene", () => {
+    const s = tl([{ target: "a.el", props: { paint: [0, 1] }, duration: 1 }]);
+    s.tweens[0].paint = ["#111111", "#eeeeee"];
+    expect(compileScene(s, {}).paints.get("a.el")).toEqual(["#111111", "#eeeeee"]);
+  });
+});

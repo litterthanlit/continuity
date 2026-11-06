@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { scene, El, Card, Window, Terminal, Tag } from "continuity";
-import { Chapter, STACKED } from "../lib/chapter.js";
+import { Chapter, STACKED, leaveLeft } from "../lib/chapter.js";
 import { FILM_FRAMES, FILM_S, SCENES, fmtS } from "../lib/film.js";
 
 // 02 · Check — the film's punch. A contact sheet of this film (left) and the gate
@@ -222,10 +222,8 @@ const THUMBS: Array<{ body: ComponentChildren }> = [
   },
 ];
 
-// Radial order for the 3×3 grid: centre, then the edge-adjacent frames, then the corners.
-const BLOOM = [4, 1, 3, 5, 7, 0, 2, 6, 8].map((i) => `f${i}`);
-// Everything but the defect frame: recedes while f5 is red, returns with the ✔.
-const OTHERS = BLOOM.filter((id) => id !== "f5");
+// Every frame but the defect: recedes while f5 is red, returns with the ✔.
+const OTHERS = [0, 1, 2, 3, 4, 6, 7, 8].map((i) => `f${i}`);
 
 const FINDINGS = [
   { title: "overlap · headline × cta", meta: "f5" },
@@ -291,14 +289,19 @@ export default scene({
                       {r.title}
                     </El>
                     <span class="ml-auto font-mono text-[26px] text-fg-subtle">{r.meta}</span>
-                    {/* "error" and "fixed" share a slot; the swap is a step at the instant tier. */}
+                    {/* "error" and "fixed" share a slot; the swap is a step at the instant tier, so
+                        for a frame or two one word sits under the other (allowed: overlap, occlusion). */}
                     <span class="relative inline-flex w-[112px] justify-end">
                       <Tag ct={`err${i}`} tone="danger">
-                        <span data-layout-allow-overlap>error</span>
+                        <span data-layout-allow-overlap data-layout-allow-occlusion>
+                          error
+                        </span>
                       </Tag>
                       <span class="absolute inset-0 flex justify-end">
                         <Tag ct={`ok${i}`} tone="success">
-                          <span data-layout-allow-overlap>fixed</span>
+                          <span data-layout-allow-overlap data-layout-allow-occlusion>
+                            fixed
+                          </span>
                         </Tag>
                       </span>
                     </span>
@@ -313,14 +316,16 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // The push brings the surfaces in (present at t=0); copy, then the frames come up.
+    // In: plan's layered carry lands the sheet (its frames already on it: the bench is never
+    // empty) and the terminal still travelling left, the sheet first, the terminal a step behind.
+    // The label slides in the same way; then the statement.
+    m.enter("label", "slideLeft", { at: 0.15 });
     m.enter("headline", "maskUp", { at: "b1", split: "lines" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
-    m.enter(BLOOM, "fade", { at: "b1+0.3", stagger: "grid" });
 
-    // b2 · the prompt is waiting; the command types on, the gate scans every frame.
+    // b2 · the command types as the terminal settles; the gate scans every frame.
     m.type("cmd-l0", { at: "b2", cps: 24 });
-    m.enter("scan-l0", "fade", { at: "b3-0.3" }); // typing ends ≈ 2.0s
+    m.enter("scan-l0", "fade", { at: "b3-0.3" }); // typing ends ≈ 1.35s
 
     // b3 · RED. The report lands with two findings; the ring locks onto f5 at the
     // instant tier; the rest of the sheet recedes; the camera focuses. Then: hold.
@@ -344,5 +349,8 @@ export default scene({
     // through the fix. 1.03 in all: the surfaces span the full safe width.
     m.camera({ scale: [1, 1.01] }, { at: 0, duration: m.time("b3") });
     m.camera({ scale: [1.01, 1.03] }, { at: "b3", duration: "slow", ease: "inOut" });
+
+    // Out: the lockup leaves left first, then the carry takes the surfaces into measure.
+    leaveLeft(m);
   },
 });

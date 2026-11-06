@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import { fxStyle } from "../src/motion/fx.js";
 import { peakSlope, sigmaFor } from "../src/motion/easing.js";
 import { eases } from "../src/motion/tokens.js";
+import { compileScene, sampleScene } from "../src/motion/evaluate.js";
+import type { Tween } from "../src/motion/types.js";
+import { LAYER_DEPTH, LAYER_TRAVEL, layerPlan } from "../src/motion/layers.js";
+import { matchTravel } from "../src/motion/match.js";
 import { isCut, TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
 import { lintStoryboard } from "../src/lint/timeline.js";
 import type { FxSpec } from "../src/motion/types.js";
@@ -62,10 +66,36 @@ describe("litt's transition language", () => {
   it("match starts each paired element where its partner was, measured, and settles it after the cut", () => {
     const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
     expect(t.out).toEqual([]);
-    expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure])).toEqual([
+    expect(t.in.filter((tw) => tw.measure?.kind === "match").map((tw) => [tw.target, tw.start, tw.duration, tw.measure])).toEqual([
       ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }],
       ["b.label", 0, 0.6, { kind: "match", from: "a.word" }],
     ]);
+  });
+
+  it("match emits place, velocity (one per axis) and shape tweens per pair, all over [0, d]", () => {
+    const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
+    expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure, Object.keys(tw.props).sort()])).toEqual([
+      ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }, ["scale", "x", "y"]],
+      ["b.logo", 0, 0.6, { kind: "matchVelocity", from: "a.logo", axis: "x" }, ["shiftX"]],
+      ["b.logo", 0, 0.6, { kind: "matchVelocity", from: "a.logo", axis: "y" }, ["shiftY"]],
+      ["b.logo", 0, 0.6, { kind: "matchShape", from: "a.logo" }, ["corner", "paint"]],
+      ["b.label", 0, 0.6, { kind: "match", from: "a.word" }, ["scale", "x", "y"]],
+      ["b.label", 0, 0.6, { kind: "matchVelocity", from: "a.word", axis: "x" }, ["shiftX"]],
+      ["b.label", 0, 0.6, { kind: "matchVelocity", from: "a.word", axis: "y" }, ["shiftY"]],
+      ["b.label", 0, 0.6, { kind: "matchShape", from: "a.word" }, ["corner", "paint"]],
+    ]);
+  });
+
+  it("a match from rest is today's match: the place settles on out, the velocity tweens are still", () => {
+    const t = run({ type: "match", pairs: ["logo"] });
+    const [place, vx, vy, shape] = t.in;
+    expect(place).toMatchObject({ easeName: "out", props: { x: [0, 0], y: [0, 0], scale: [1, 1] } });
+    expect(vx).toMatchObject({ ease: { type: "impulse" }, props: { shiftX: [0, 0] } });
+    expect(vy).toMatchObject({ ease: { type: "impulse" }, props: { shiftY: [0, 0] } });
+    expect(shape.props).toEqual({ paint: [0, 1], corner: [0, 0] });
+    // Placeholders sample to nothing: no shift at any time, the place at rest.
+    const c = compileScene({ scene: "b", start: 0, duration: 3, beats: {}, tweens: [place, vx, vy], loops: [] }, {});
+    for (const s of [0, 0.1, 0.3, 0.6]) expect(sampleScene(c, s).get("b.logo")).toMatchObject({ shiftX: 0, shiftY: 0, x: 0, y: 0 });
   });
 
   it("pixels goes through the canvas: cells cover the outgoing scene, then uncover the incoming one", () => {
@@ -263,6 +293,87 @@ describe("registers and transitions (docs/decisions/0007)", () => {
   });
 });
 
+describe("carry on screen: every point of the frame keeps one speed through the cut (sampled at ±⅓ of the frame)", () => {
+  const fps = 30;
+  const f = 1 / fps;
+  const frame = { width: 1920, height: 1080, fps };
+  const els = [
+    { id: "label", role: "label" as const, anchor: "A2" },
+    { id: "title", role: "headline" as const, anchor: "A3" },
+    { id: "bars", role: "ui" as const, anchor: "D2:F5" },
+  ];
+  /**
+   * Where a point `u` px from the frame centre, inside element `id`, is on screen along the travel:
+   * the root's whole transform (translate, plus any scale about the frame centre) applied to the
+   * point and the element's own shift.
+   */
+  const screen = (scene: string, tweens: Tween[], axis: "x" | "y") => {
+    const c = compileScene({ scene, start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
+    const F = axis === "x" ? frame.width : frame.height;
+    return (id: string, t: number, u: number) => {
+      const v = sampleScene(c, t);
+      const r = v.get(`${scene}.scene`) ?? {};
+      const e = v.get(`${scene}.${id}`) ?? {};
+      const s = (r.scale ?? 1) * ((axis === "x" ? r.scaleX : r.scaleY) ?? 1);
+      const move = (((axis === "x" ? r.xPct : r.yPct) ?? 0) / 100) * F + ((axis === "x" ? r.x : r.y) ?? 0);
+      return move + s * (u + ((axis === "x" ? e.shiftX : e.shiftY) ?? 0));
+    };
+  };
+
+  for (const dir of ["left", "up"] as const)
+    for (const distance of [12, 45])
+      for (const layers of [false, true]) {
+        it(`${dir}, distance ${distance}${layers ? ", layered" : ""}: no step at the cut at −⅓, centre or +⅓, then it only slows`, () => {
+          const axis = dir === "left" ? "x" : "y";
+          const F = axis === "x" ? frame.width : frame.height;
+          const t = transitionTweens({ type: "carry", dir, distance, duration: 0.5, layers }, { id: "a", duration: 3 }, { id: "b" }, frame, layers ? { out: els, in: els } : { out: [], in: [] });
+          const out = screen("a", t.out, axis);
+          const into = screen("b", t.in, axis);
+          const lead = t.out.find((tw) => tw.target === "a.scene")!.duration;
+          for (const id of ["plane", ...(layers ? els.map((e) => e.id) : [])])
+            for (const u of [-F / 3, 0, F / 3]) {
+              const at = `${id} at u=${Math.round(u)}`;
+              // Instantaneous speed on each side of the cut.
+              const eps = 1e-4;
+              const vOut = (out(id, 3, u) - out(id, 3 - eps, u)) / eps;
+              const vIn = (into(id, eps, u) - into(id, 0, u)) / eps;
+              expect(Math.abs(vIn - vOut) / Math.max(Math.abs(vIn), Math.abs(vOut)), `${at}: ${(vOut * f).toFixed(1)} → ${(vIn * f).toFixed(1)} px/frame`).toBeLessThanOrEqual(0.15);
+              // Per frame: the step the cut replaces (the outgoing scene's last frame to where it would be) against the first shown after it.
+              const replaced = out(id, 3, u) - out(id, 3 - f, u);
+              const first = into(id, f, u) - into(id, 0, u);
+              expect(Math.abs(first - replaced) / Math.abs(replaced), `${at}: ${replaced.toFixed(1)} → ${first.toFixed(1)} px/frame`).toBeLessThanOrEqual(0.15);
+              // Accelerates into the cut, then only slows to rest, all one way.
+              let prev = 0;
+              for (let k = Math.ceil(lead / f) + 1; k >= 1; k--) {
+                const step = Math.abs(out(id, 3 - (k - 1) * f, u) - out(id, 3 - k * f, u));
+                expect(step, `${at} out frame −${k}`).toBeGreaterThanOrEqual(prev - 1e-6);
+                prev = step;
+              }
+              prev = Infinity;
+              for (let k = 0; k * f < 0.5 * 1.5; k++) {
+                const step = into(id, (k + 1) * f, u) - into(id, k * f, u);
+                expect(Math.sign(step) * Math.sign(vIn) >= 0, `${at} in frame ${k} reverses`).toBe(true);
+                expect(Math.abs(step), `${at} in frame ${k}`).toBeLessThanOrEqual(prev + 1e-6);
+                prev = Math.abs(step);
+              }
+            }
+        });
+      }
+
+  it("the roots never scale; the backdrop bleeds by each side's travel instead", () => {
+    const spec: TransitionSpec = { type: "carry", dir: "up", distance: 45, duration: 0.5 };
+    const t = transitionTweens(spec, { id: "a", duration: 3 }, { id: "b" }, frame);
+    for (const tw of [...t.out, ...t.in]) expect(Object.keys(tw.props)).not.toContain("scale");
+    const bleed = TRANSITION_DEFS.carry.bleed!(spec);
+    expect(bleed).toEqual({ axis: "y", out: 0.18, in: 0.27 });
+    // Each side's bleed covers its root's travel along the axis.
+    const travel = (tw: Tween) => Math.abs((tw.props.yPct as number[])[1] - (tw.props.yPct as number[])[0]) / 100;
+    expect(bleed.out).toBeGreaterThanOrEqual(travel(t.out.find((tw) => tw.props.yPct)!) - 1e-9);
+    expect(bleed.in).toBeGreaterThanOrEqual(travel(t.in.find((tw) => tw.props.yPct)!) - 1e-9);
+    expect(TRANSITION_DEFS.carry.bleed!({ type: "carry", duration: 0.5 })).toEqual({ axis: "x", out: 0.032, in: 0.048 });
+  });
+});
+
 describe("carry: a cut on movement", () => {
   const frame = { width: 1920, height: 1080, fps: 30 };
   const speed = (tw: ReturnType<typeof run>["out"][number], at: "start" | "end") => {
@@ -341,4 +452,229 @@ describe("portal: the camera goes through an element", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.issues.join()).toMatch(/via/);
   });
+});
+
+describe("layered handoffs: copy leads, UI follows, decor trails", () => {
+  const frame = { width: 1920, height: 1080, fps: 30 };
+  const els = [
+    { id: "title", role: "headline" as const, anchor: "A3" },
+    { id: "bars", role: "ui" as const, anchor: "D2:F5" },
+  ];
+  const layered = (spec: Partial<TransitionSpec> & { type: TransitionSpec["type"] }, elements = { out: els, in: els }) =>
+    transitionTweens({ duration: TRANSITION_DEFS[spec.type].duration, ...spec } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame, elements);
+  const on = (tws: ReturnType<typeof layered>["out"], target: string) => tws.filter((tw) => tw.target === target);
+
+  it("layerPlan orders along the travel and depths by role", () => {
+    const p = layerPlan([{ id: "chart", role: "ui", anchor: "D2:F5" }, { id: "title", role: "headline", anchor: "A3" }, { id: "dot", role: "decor" }], "left", 0.5);
+    expect(p.map((s) => s.id)).toEqual(["title", "chart", "dot"]);
+    expect(p.map((s) => s.depth)).toEqual([1, 0.6, 0.35]);
+    expect(p[2].delay).toBeLessThanOrEqual(0.15 + 1e-9);
+    // Reversed travel reverses the wave; vertical travel orders by row.
+    expect(layerPlan([{ id: "chart", role: "ui", anchor: "D2:F5" }, { id: "title", role: "headline", anchor: "A3" }], "right", 0.5).map((s) => s.id)).toEqual(["chart", "title"]);
+    expect(layerPlan([{ id: "low", role: "body", anchor: "A5" }, { id: "high", role: "label", anchor: "C1" }], "up", 0.5).map((s) => s.id)).toEqual(["high", "low"]);
+    expect(layerPlan([{ id: "low", role: "body", anchor: "A5" }, { id: "high", role: "label", anchor: "C1" }], "down", 0.5).map((s) => s.id)).toEqual(["low", "high"]);
+  });
+
+  it("layerPlan steps by the list stagger, capped at 0.3·d for the last", () => {
+    const many = Array.from({ length: 10 }, (_, i) => ({ id: "e" + i, role: "body" as const, anchor: `${"ABCDEF"[i % 6]}1` }));
+    const p = layerPlan(many, "left", 0.5);
+    expect(p[1].delay - p[0].delay).toBeLessThanOrEqual(0.04 + 1e-9);
+    expect(p.at(-1)!.delay).toBeLessThanOrEqual(0.15 + 1e-9);
+    expect(layerPlan(many.slice(0, 3), "left", 2).map((s) => s.delay)).toEqual([0, 0.04, 0.08]);
+  });
+
+  it("depth by role: copy 1, UI 0.6, decor and media 0.35", () => {
+    expect(LAYER_DEPTH).toMatchObject({ headline: 1, title: 1, body: 1, label: 1, caption: 1, stat: 1, cta: 1, logo: 1, ui: 0.6, decor: 0.35, media: 0.35 });
+    expect(LAYER_TRAVEL).toBe(0.08);
+  });
+
+  it("a layered carry shifts each element on top of the plane", () => {
+    const t = layered({ type: "carry", dir: "left", distance: 12, layers: true });
+    const plain = layered({ type: "carry", dir: "left", distance: 12 });
+    // The planes are untouched.
+    expect(on(t.out, "a.scene")).toEqual(plain.out);
+    expect(on(t.in, "b.scene")).toEqual(plain.in);
+    const plane = plain.out[0];
+    const tail = plain.in[0].duration;
+    const [ot, ob] = [on(t.out, "a.title")[0], on(t.out, "a.bars")[0]];
+    const [it_, ib] = [on(t.in, "b.title")[0], on(t.in, "b.bars")[0]];
+    // Outgoing: every layer lands with the plane on its ease; the leader leaves first (by the last delay).
+    for (const tw of [ot, ob]) {
+      expect(tw.start + tw.duration).toBeCloseTo(3, 6);
+      expect(tw.ease).toEqual(plane.ease);
+    }
+    expect(ot.start).toBeCloseTo(plane.start - 0.04, 6);
+    expect(ob.start).toBeCloseTo(plane.start, 6);
+    // Incoming: every layer leaves the cut with the plane on its ease; the trailer lands last (by its delay).
+    for (const tw of [it_, ib]) {
+      expect(tw.start).toBe(0);
+      expect(tw.ease).toEqual(plain.in[0].ease);
+    }
+    expect(it_.duration).toBeCloseTo(tail, 6);
+    expect(ib.duration).toBeCloseTo(tail + 0.04, 6);
+    // Across the cut each layer travels 2 × depth × LAYER_TRAVEL of the frame, behind on both sides.
+    const total = (o: typeof ot, i: typeof ot) => (o.props.shiftX as number[])[1] - (i.props.shiftX as number[])[0];
+    expect(total(ot, it_)).toBeCloseTo(-2 * LAYER_TRAVEL * 1920, 1);
+    expect(total(ob, ib)).toBeCloseTo(-2 * LAYER_TRAVEL * 1920 * 0.6, 1);
+    expect((it_.props.shiftX as number[])[1]).toBe(0);
+    for (const tw of [...t.out, ...t.in]) expect(tw.kind).toBe("transition");
+  });
+
+  it("a layered push moves its layers on the push's ease; pushUp shifts along y by the frame's height", () => {
+    const p = layered({ type: "push", layers: true });
+    for (const id of ["title", "bars"]) {
+      expect(on(p.out, "a." + id)[0].ease).toEqual(on(p.out, "a.scene")[0].ease);
+      expect(on(p.in, "b." + id)[0].ease).toEqual(on(p.in, "b.scene")[0].ease);
+      expect(on(p.in, "b." + id)[0].start).toBe(0);
+    }
+    expect(on(p.out, "a.title")[0].start).toBeCloseTo(3 - 0.5, 6);
+    const up = layered({ type: "pushUp", layers: true }, { out: [{ id: "title", role: "headline", anchor: "A3" }], in: [{ id: "title", role: "headline", anchor: "A3" }] });
+    expect(on(up.out, "a.title")[0].props).toEqual({ shiftY: [0, -LAYER_TRAVEL * 1080] });
+    expect(on(up.in, "b.title")[0].props).toEqual({ shiftY: [LAYER_TRAVEL * 1080, 0] });
+  });
+
+  it("without layers, push and carry are unchanged", () => {
+    for (const spec of [{ type: "push" as const }, { type: "pushUp" as const }, { type: "carry" as const, distance: 12 }, { type: "push" as const, dir: "right" as const, blur: true }]) {
+      const before = transitionTweens({ duration: 0.5, ...spec } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame);
+      expect(layered(spec)).toEqual(before);
+      expect(layered({ ...spec, layers: false })).toEqual(before);
+      // Layers asked for with nothing to layer (a placeholder neighbour): the plain move.
+      expect(layered({ ...spec, layers: true }, { out: [], in: [] })).toEqual(before);
+      expect(transitionTweens({ duration: 0.5, ...spec, layers: true } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame)).toEqual(before);
+    }
+  });
+
+  it("layers is a param of push, pushUp and carry only", () => {
+    expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].params.includes("layers"))).toEqual(["carry", "push", "pushUp"]);
+    const r = parseStoryboard({
+      title: "t",
+      format: { aspect: "16:9", fps: 30 },
+      scenes: [
+        { id: "a", duration: 2, intent: "one", transition: { type: "crossfade", layers: true } },
+        { id: "b", duration: 2, intent: "two" },
+      ],
+    });
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("a match from a moving partner travels on one curve per axis (sampled, px per frame)", () => {
+  const fps = 30;
+  const d = 0.7;
+  /** The incoming element's centre, frame by frame from the cut: the place (a zoom about its centre, no pan) plus the travel. */
+  const path = (v: [number, number], delta: [number, number]) => {
+    const [tx, ty] = [matchTravel(v[0], delta[0], d), matchTravel(v[1], delta[1], d)];
+    const tweens: Tween[] = [
+      { target: "b.el", kind: "transition", start: 0, duration: d, ease: eases.inOut, easeName: "inOut", props: { x: [0, 0], y: [0, 0], scale: [0.18, 1] } },
+      { target: "b.el", kind: "transition", start: 0, duration: d, ease: tx.ease, props: { shiftX: tx.range } },
+      { target: "b.el", kind: "transition", start: 0, duration: d, ease: ty.ease, props: { shiftY: ty.range } },
+    ];
+    const c = compileScene({ scene: "b", start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
+    const at = (f: number) => {
+      const s = sampleScene(c, f / fps).get("b.el")!;
+      return [(s.x ?? 0) + (s.shiftX ?? 0), (s.y ?? 0) + (s.shiftY ?? 0)];
+    };
+    const pts = Array.from({ length: Math.round(d * fps) + 4 }, (_, f) => at(f));
+    return { start: pts[0], end: pts[pts.length - 1], steps: pts.slice(1).map((p, i) => [p[0] - pts[i][0], p[1] - pts[i][1]]) };
+  };
+  const V = 1000 / fps; // the partner's speed, px per frame
+
+  it("in reach (½·v·d along the travel, a little across it): leaves at v, only slows, lands at rest", () => {
+    const { start, end, steps } = path([1000, 0], [-350, -120]);
+    expect(start).toEqual([-350, -120]);
+    expect(end).toEqual([0, 0]);
+    const speed = steps.map(([x, y]) => Math.hypot(x, y));
+    expect(Math.abs(steps[0][0] - V) / V).toBeLessThanOrEqual(0.15);
+    for (let k = 1; k < speed.length; k++) expect(speed[k], `frame ${k}: ${speed.map((n) => n.toFixed(1)).join(" ")}`).toBeLessThanOrEqual(speed[k - 1] + 0.5);
+    expect(Math.max(...speed)).toBeLessThanOrEqual(1.1 * V);
+    // At rest by d: the step after the tween ends is nothing.
+    expect(speed[Math.round(d * fps)]).toBeLessThan(0.5);
+  });
+
+  it("against the travel: leaves the partner's way, turns once, never jerks, lands at rest", () => {
+    const { end, steps } = path([1000, 0], [300, 0]);
+    const vx = steps.map(([x]) => x);
+    expect(Math.abs(vx[0] - V) / V).toBeLessThanOrEqual(0.2);
+    const signs = vx.filter((x) => Math.abs(x) > 0.05).map(Math.sign);
+    expect(signs.filter((sg, i) => i > 0 && sg !== signs[i - 1]), vx.map((n) => n.toFixed(1)).join(" ")).toHaveLength(1);
+    for (let k = 1; k < vx.length; k++) expect(Math.abs(vx[k] - vx[k - 1]), `frame ${k}`).toBeLessThanOrEqual(V / 3);
+    expect(end).toEqual([0, 0]);
+  });
+
+  it("with nowhere to travel on an axis, the speed is an impulse there: out at v and back to rest", () => {
+    expect(matchTravel(1000, 0.2, d)).toEqual({ range: [0, Math.round((4 * 1000 * d * 10000) / 27) / 10000], ease: { type: "impulse" } });
+    const { end, steps } = path([0, 1000], [0, 0]);
+    expect(Math.abs(steps[0][1] - V) / V).toBeLessThanOrEqual(0.15);
+    expect(end).toEqual([0, 0]);
+  });
+});
+
+describe("layered handoffs move continuously (sampled, px per frame)", () => {
+  const fps = 30;
+  const frame = { width: 1920, height: 1080, fps };
+  /** _flow's next scene: label, title and sub down column A, the chart across D–F. */
+  const flow = [
+    { id: "label", role: "label" as const, anchor: "A2" },
+    { id: "title", role: "headline" as const, anchor: "A3" },
+    { id: "sub", role: "body" as const, anchor: "A4" },
+    { id: "bars", role: "ui" as const, anchor: "D2:F5" },
+  ];
+  /** Six layers: the stagger compresses to the 0.3·d cap. */
+  const six = ["A1", "A2", "B3", "C4", "D2:F5", "F6"].map((anchor, i) => ({ id: "e" + i, role: (i === 4 ? "ui" : i === 5 ? "decor" : "body") as "ui" | "decor" | "body", anchor }));
+  const sampler = (scene: string, tweens: Tween[]) => {
+    const c = compileScene({ scene, start: 0, duration: 3, beats: {}, tweens, loops: [] }, {});
+    // Where the element is on screen along x: its scene plane plus its own shift (a carry's root only translates).
+    return (id: string, t: number) => {
+      const v = sampleScene(c, t);
+      return (v.get(`${scene}.scene`)?.xPct ?? 0) * 19.2 + (v.get(`${scene}.${id}`)?.shiftX ?? 0);
+    };
+  };
+  const cases = [
+    { d: 0.5, distance: 12, els: flow },
+    { d: 0.3, distance: 12, els: six },
+    { d: 0.8, distance: 8, els: six },
+  ];
+
+  for (const { d, distance, els } of cases) {
+    it(`carry (d ${d}, ${els.length} layers): each layer crosses the cut at one speed and decelerates to rest`, () => {
+      const t = transitionTweens({ type: "carry", dir: "left", distance, duration: d, layers: true }, { id: "a", duration: 3 }, { id: "b" }, frame, { out: els, in: els });
+      const out = sampler("a", t.out);
+      const into = sampler("b", t.in);
+      const lead = t.out.find((tw) => tw.target === "a.scene")!.duration;
+      for (const tw of t.out.filter((tw) => tw.props.shiftX)) expect(tw.duration, tw.target).toBeGreaterThanOrEqual(lead - 1e-9);
+      for (const id of ["plane", ...els.map((e) => e.id)]) {
+        const f = 1 / fps;
+        const vOut = Math.abs(out(id, 3) - out(id, 3 - f));
+        const vIn = Math.abs(into(id, f) - into(id, 0));
+        expect(Math.abs(vOut - vIn) / Math.max(vOut, vIn), `${id}: ${vOut.toFixed(1)} | ${vIn.toFixed(1)}`).toBeLessThanOrEqual(0.15);
+        let prev = Infinity;
+        for (let k = 0; k * f < d * 1.5; k++) {
+          const step = Math.abs(into(id, (k + 1) * f) - into(id, k * f));
+          expect(step, `${id} frame ${k}`).toBeLessThanOrEqual(prev + 1e-6);
+          prev = step;
+        }
+      }
+    });
+  }
+
+  for (const els of [flow, six]) {
+    it(`push (${els.length} layers): no layer jumps while the plane rests; speed changes smoothly`, () => {
+      const d = 0.5;
+      const t = transitionTweens({ type: "push", dir: "left", duration: d, layers: true }, { id: "a", duration: 3 }, { id: "b" }, frame, { out: els, in: els });
+      const out = sampler("a", t.out);
+      const into = sampler("b", t.in);
+      const f = 1 / fps;
+      const plane0 = Math.abs(into("plane", f) - into("plane", 0));
+      for (const id of els.map((e) => e.id)) {
+        const first = Math.abs(into(id, f) - into(id, 0));
+        expect(Math.abs(first - plane0) / plane0, `${id} first frame ${first.toFixed(1)} vs plane ${plane0.toFixed(1)}`).toBeLessThanOrEqual(0.15);
+        for (const [name, at, from, to] of [["in", into, 0, d * 1.4], ["out", out, 3 - d, 3]] as const) {
+          const steps: number[] = [];
+          for (let s = from; s < to - 1e-9; s += f) steps.push(Math.abs(at(id, Math.min(to, s + f)) - at(id, s)));
+          const peak = Math.max(...steps);
+          for (let k = 1; k < steps.length; k++) expect(Math.abs(steps[k] - steps[k - 1]) / peak, `${id} ${name} frame ${k}`).toBeLessThanOrEqual(0.3);
+        }
+      }
+    });
+  }
 });

@@ -17,7 +17,9 @@ export type EaseSpec =
    * its progress; the `whip` token keeps that at ~1.5 frames whatever the duration), and the rest
    * drifts in slowly over the remainder, so the element is still alive while it is read.
    */
-  | { type: "whip"; snap: number; share: number };
+  | { type: "whip"; snap: number; share: number }
+  /** Leaves at rest, kicks off steeply, peaks at 1 a third of the way, and returns to 0: e(u) = 27/4·u·(1-u)². */
+  | { type: "impulse" };
 
 /** Animatable channels. Units: px, %, deg, em or unitless as noted. */
 export const PROPS = [
@@ -58,12 +60,18 @@ export const PROPS = [
   "accent", // 0..1: live input in the accent's text tone (1) settling to the element's ink (0) — m.retype's accent
   "radius", // corner radius, % of the element's size: 0 square … 50 a circle (a cell becoming a dot)
   "clipRound", // px: corner radius of the clip insets (a rounded window — the portal transition)
+  "shiftX", // px, additive to x: a handoff moves an element that is also running its own x tween
+  "shiftY", // px, additive to y
+  "paint", // 0..1: a fill mixed from Tween.paint[0] (0) to Tween.paint[1] (1)
+  "corner", // px: border-radius
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
 export const SPATIAL_PROPS: ReadonlySet<PropName> = new Set<PropName>([
   "x",
   "y",
+  "shiftX",
+  "shiftY",
   "xPct",
   "yPct",
   "z",
@@ -114,6 +122,10 @@ export const BASE_VALUES: Record<PropName, number> = {
   radius: 0,
   accent: 0,
   clipRound: 0,
+  shiftX: 0,
+  shiftY: 0,
+  paint: 1,
+  corner: 0,
 };
 
 /** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
@@ -180,12 +192,16 @@ export interface Tween {
    * deletes it, then types phrase 1… The `typed` channel says which keystroke the element shows.
    */
   tape?: string[];
+  /** CSS colours [from, to] the `paint` channel mixes between (0 = from, 1 = to). */
+  paint?: [string, string];
   /** Shape presentation the `fx` channel drives. */
   fx?: FxSpec;
   /**
    * Geometry the runtime measures once at prepare (layout is unknown to the build) and writes into
    * this tween's values, as the morph carriers do: `focus` zooms the camera until `target` fills
-   * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end;
+   * `fill` of the frame; `match` starts this element where `from` was at the outgoing scene's end,
+   * `matchVelocity` carries `from`'s last-frame velocity through the cut on one axis (shiftX or
+   * shiftY: the whole travel when `from` is moving, match.ts) and `matchShape` turns `from`'s fill and corner into this element's own;
    * `portal` maps this scene root onto `via`'s rect (the portal transition: `inner` is the scene
    * seen through the element, `outer` the scene that holds it; `at` is when `via` is measured, in
    * its own scene's seconds).
@@ -193,6 +209,8 @@ export interface Tween {
   measure?:
     | { kind: "focus"; target: string; fill: number }
     | { kind: "match"; from: string }
+    | { kind: "matchVelocity"; from: string; axis: "x" | "y" }
+    | { kind: "matchShape"; from: string }
     | { kind: "portal"; via: string; at: number; role: "inner" | "outer"; dir: "in" | "out" };
   /** Lint rule ids this tween deliberately breaks. */
   allow?: string[];
@@ -234,6 +252,12 @@ export interface SceneTimeline {
    * classes): what `from: null` and loops start from, instead of BASE_VALUES.
    */
   bases?: Record<string, Partial<Record<PropName, number>>>;
+  /**
+   * A carried scene's backdrop bleed (TransitionDef.bleed): the backdrop and grain extend past the
+   * root by `x`/`y` of the frame on each side, and during `windows` (scene-local [from, to] seconds,
+   * while the root travels) the root stops clipping them, so its trailing edge shows backdrop.
+   */
+  bleed?: { x: number; y: number; windows: Array<[number, number]> };
 }
 
 export interface Timeline {

@@ -4,17 +4,17 @@
 every station the agent *sees* something: a plan, a frame, a curve, a score. "Agents can't see"
 becomes "agents check everything" by the end.
 
-## Narrative arc (16:9 · 31.6s · 7 scenes)
+## Narrative arc (16:9 · 32.9s · 7 scenes)
 
 | | Scene | Time | Idea |
 |---|---|---|---|
 | Hook | `hook` | 0–3.6 | *Agents can write motion. They just can't **see** it.* Each line takes the ink, then everything but "see" steps back to the grey. |
 | Turn | `studio` | 3.6–8.0 | *Continuity. Give agents a studio. And **eyes**.* Onto the moving cobalt field; "eyes." lands on its own beat. A hairline pipeline draws: Plan · Check · Measure · Critique · Ship. |
-| Payoff 1 | `plan` | 7.5–12.3 | *Plan before pixels.* The storyboard of this very film, with beat lanes. |
-| Payoff 2 | `check` | 11.8–18.8 | *Eyes on every frame.* Contact sheet + `ct check`. A collision is caught ("error") and fixed ("fixed"). **The punch.** |
-| Payoff 3 | `measure` | 18.3–23.3 | *Motion, measured. Not vibes.* The motion-energy curve draws under a playhead. |
-| Payoff 4 | `critic` | 22.8–27.9 | *Every cut, scored.* Five meters fill and count; the verdict reads "Ships". |
-| CTA | `end` | 27.4–31.6 | **Continuity** · Motion design, as code. · [Open source] |
+| Payoff 1 | `plan` | 7.1–12.1 | *Plan before pixels.* The storyboard of this very film, with beat lanes. |
+| Payoff 2 | `check` | 12.1–19.1 | *Eyes on every frame.* Contact sheet + `ct check`. A collision is caught ("error") and fixed ("fixed"). **The punch.** |
+| Payoff 3 | `measure` | 19.1–24.1 | *Motion, measured. Not vibes.* The motion-energy curve draws under a playhead. |
+| Payoff 4 | `critic` | 24.1–29.2 | *Every cut, scored.* Five meters fill and count; the verdict reads "Ships". |
+| CTA | `end` | 28.7–32.9 | **Continuity** · Motion design, as code. · [Open source] |
 
 The turn introduces the pipeline as a map. Each chapter scene is one stop on it, and its
 label (`01 · Plan` … `04 · Critique`) repeats the word of the matching station, so a muted
@@ -27,7 +27,7 @@ viewer always knows where they are. "Ship" is the end card.
   and the end card sit on a moving gradient field (`Stage bg="gradient"`): colour arrives, and
   returns for the brand (`accent` on the turn, `aurora` on the end card, where a cobalt field
   would swallow the cobalt button). Type on a field takes one ink, fg. The four chapters are solid: the product is the subject, and the
-  identical geometry makes the pushes read as one long bench.
+  identical geometry makes the carries read as one long bench.
 - **Composition.** Asymmetric and left-aligned on the safe edge. The hook is a display couplet,
   vertically centred; the turn puts its lockup in the upper half and the pipeline (1536px, air
   on the right) in the lower third. Plan, measure and critic use litt's split frame: the lockup
@@ -67,16 +67,25 @@ viewer always knows where they are. "Ship" is the end card.
 - **Nothing material moves.** No loops, no glow, no sheen. Ambient life is the camera's slow push
   (1 → 1.03 per scene, anchored on the left edge on the hook and the turn so the cut between them is still); in `check` it is a quiet 1% drift and then a short `inOut` focus move on
   the red that holds through the fix.
-- **Transitions (cuts + 2 accents).** A hard cut on the beat from the hook onto the field.
-  `push` (0.5s, left, with motion blur) between the sequential pipeline steps, studio → plan →
-  check → measure → critic. A `dip` (0.5s) before the end card: one breath before the brand.
+- **Transitions (cuts + 1 accent) — every join carries the eye** (docs/decisions/0010).
+  hook → studio: a hard cut on the beat that lands on the turn's entrance (label and headline
+  start on frame 0). studio → plan: a `portal` (0.9s) through the focused Plan tile — its word
+  steps out first, the field flies past and the tile opens onto chapter 01. plan → check: a
+  layered `carry` left (12%), copy-led: the lockup rides the cut and leads the wave, the board
+  follows; the sheet (frames on it) and the terminal land in a wave, and the command types as it
+  settles. check → measure: a layered `carry` (10%), product-led: the lockup exits first, the
+  sheet and the gate carry the cut; measure's lockup rides in on the wave with the chart, whose
+  playhead starts as it lands. measure → critic: a `match` (0.9s) — the chart window slides left
+  into the cut (t²) and the score card leaves the cut at its speed and settles on the left, the
+  split frame turned round. critic → end: a `match` (0.6s) — "Ships" becomes the "Open source"
+  button where it sits. Accents: portal only.
 
 ## Rhythm
 The hook is the shortest scene (3.6s: two word cascades and one ink step). The turn breathes
-(4.4s) while the rail draws. The chapters build: plan (4.8s), then check, the longest scene
-(7.0s), whose red-to-green flip at ~16.4s is the loudest moment of the film. Measure (5.0s)
-and critic (5.1s) sit back into calm data reveals, and the dip gives one clean breath before
-the end card holds for more than 2s.
+(4.4s) while the rail draws. The chapters build: plan (5.0s), then check, the longest scene
+(7.0s), whose red-to-green flip at ~16.7s is the loudest moment of the film. Measure (4.6s)
+and critic (5.0s) sit back into calm data reveals; the verdict holds, then becomes the end
+card's button, and the end card holds for more than 2s.
 
 ## References
 1. **Linear launch films:** hairline UI on near-black, UI as the hero, restrained cascades.
