@@ -32,10 +32,17 @@ export interface GradientUniforms {
   seed: number;
 }
 
+/**
+ * Bold and deep, not a pastel wash: the four colours mix with broad weights, so complementary
+ * hues average to grey and light ones flood the frame. Saturated, mid-dark hues keep every mix
+ * vivid; a scale under 1 lets the base show between the blobs, so the field has depth. On
+ * litt-dark, `accent` and `aurora` stay dark enough (luminance ≤ ~0.17) for `fg` type anywhere;
+ * `ember` glows brighter, so place type over its dark side or on glass (docs/decisions/0011).
+ */
 export const GRADIENTS: Record<GradientName, GradientSpec> = {
-  accent: { colors: ["accent", "accent-text", "accent-tint", "canvas"], base: "canvas", speed: 0.12, scale: 1.0, warp: 0.6 },
-  aurora: { colors: ["#2d57e5", "#7b4dff", "#1fb8c9", "#e5487b"], base: "canvas", speed: 0.15, scale: 1.1, warp: 0.7 },
-  ember: { colors: ["#ff5a1f", "#ffb347", "#b3200e", "#1a0a05"], base: "#0a0908", speed: 0.12, scale: 0.9, warp: 0.6 },
+  accent: { colors: ["accent", "accent-tint", "canvas", "accent-text"], base: "canvas", speed: 0.2, scale: 0.75, warp: 0.8 },
+  aurora: { colors: ["#2448ff", "#7a2cff", "#0a8fa8", "#e0206a"], base: "canvas", speed: 0.22, scale: 0.8, warp: 0.8 },
+  ember: { colors: ["#ff6a14", "#d1200f", "#4a0818", "#0a0908"], base: "#0a0908", speed: 0.2, scale: 0.75, warp: 0.85 },
 };
 
 /** Standard sRGB EOTF on a #rrggbb hex. */

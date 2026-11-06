@@ -131,7 +131,7 @@ export const littDark: Theme = {
     glow: 40,
     grain: 0.04,
     tint: 18,
-    glass: "rgba(17, 16, 15, 0.72)",
+    glass: "rgba(17, 16, 15, 0.5)",
     glassBorder: "rgba(255, 255, 255, 0.08)",
     highlight: "rgba(255, 255, 255, 0.06)",
     ...darkShadows,

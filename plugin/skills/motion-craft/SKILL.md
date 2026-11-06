@@ -49,6 +49,11 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   WebGL colour field that drifts on its own (`docs/decisions/0011`). Use the field on the hero
   and the end card; every other scene is `solid`. Hand-made gradients, radial glows and glow
   blobs are `litt-gradient`.
+- **Type on a field is `fg`.** On litt-dark, `accent` and `aurora` stay dark enough for `fg` type
+  anywhere; the greys fall under 3:1 somewhere on them, so on a field hold the hierarchy by size
+  and weight in one ink. `ember` glows brighter: set type over its dark side, or on a
+  `<Card glass>` (the field blurs through it and `fg` clears 7:1). `ct check` samples the
+  rendered field, so a miss is a `contrast_aa_failure`.
 - **Material is static (P5), except the field.** Grain, glows and the solid backdrop never
   animate, loop, pulse or sweep, and a tween never touches the backdrop (`material-motion` is an
   error): a gradient field moves by itself. The camera may push.

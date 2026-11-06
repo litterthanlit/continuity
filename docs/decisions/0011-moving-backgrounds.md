@@ -78,7 +78,7 @@ channel. That is a possible follow-up and is not built.
 ### 5. Measured
 
 On the session's 4 vCPU container, with `projects/_backgrounds` (two 2 s scenes on `aurora`,
-joined by a plain cut):
+joined by a plain cut; measured on the first preset values, §6 — the shader's cost does not depend on them):
 
 | measure | result |
 |---|---|
@@ -103,13 +103,44 @@ worker, `solid` took 22 s (23 MB) and `aurora` 121 s (186 MB). A static 2D canva
 gradient in place of the field took 110 s, so the PNG cost is in encoding the colour, not in the
 shader. HyperFrames' static-frame dedup is off in all three: Continuity registers frame sources.
 
+### 6. Tuned against the rendered MP4
+
+The first preset values (Task 1's guesses) rendered as a pastel wash: the four colours mix with
+broad weights (`exp(-3 d²)`, centres within 0.42 of each other), so complementary hues averaged to
+lavender, light hues flooded the frame and the near-black base never showed. `accent` read as one
+flat cobalt, `ember` as an orange flood, and all three moved 2–5 levels a second. The shader stayed
+as it is; the data changed, judged on frames from `ct render _backgrounds --draft` and a numpy port
+of the shader swept over time:
+
+| preset | colours | speed | scale | warp |
+|---|---|---|---|---|
+| `accent` | `accent, accent-text, accent-tint, canvas` → `accent, accent-tint, canvas, accent-text` | 0.12 → 0.2 | 1.0 → 0.75 | 0.6 → 0.8 |
+| `aurora` | `#2d57e5 #7b4dff #1fb8c9 #e5487b` → `#2448ff #7a2cff #0a8fa8 #e0206a` | 0.15 → 0.22 | 1.1 → 0.8 | 0.7 → 0.8 |
+| `ember` | `#ff5a1f #ffb347 #b3200e #1a0a05` → `#ff6a14 #d1200f #4a0818 #0a0908` | 0.12 → 0.2 | 0.9 → 0.75 | 0.6 → 0.85 |
+
+- **Saturated, mid-dark hues** keep every mix vivid; the light cyan and apricot went.
+- **Scale under 1** lets the base show between the blobs, so the field has depth: deep pockets
+  drift through it. Below ~0.7 the warp's value noise shows as blotches.
+- **Speed ~0.2**: two MP4 frames 1 s apart now differ by a mean of 4–17 levels per channel over
+  the whole frame (was 2–5), visibly alive, still slower than any element's entrance. In `accent` the order puts the
+  two darks on adjacent Lissajous paths, so a dark pocket is on screen more often.
+- Luminance (port, 5th / 50th / 95th percentile): `accent` 0.004 / 0.08 / 0.11, `aurora`
+  0.03 / 0.15 / 0.16, `ember` 0.02 / 0.10 / 0.22. White type needs ≤ 0.18 for 4.5:1.
+- **Glass**: litt-dark's `material.glass` fill went from 0.72 to 0.5 alpha. At 0.72 a glass card
+  over a field read as a dark panel tinted by it; at 0.5 the blurred field shows through as frosted
+  colour and `fg` type on it still clears 7:1. Over the solid canvas the two are indistinguishable.
+
 ## Consequences
 
 - A backdrop is a binary choice in every project, and the critique counts a faint gradient as a
   defect.
-- Type over a field must clear contrast on every colour the field passes through. `aurora`'s cyan
-  is too light for `fg` type at 3:1; the gallery labels use the canvas ink. `ct check` reads the
-  canvas pixels, so the contrast audit gates this.
+- Type over a field must clear contrast on every colour the field passes through, at every
+  moment. On litt-dark, `accent` and `aurora` stay under ~0.17 luminance, so `fg` type clears them
+  anywhere; the greys (`fg-muted`, `fg-subtle`) do not, so type on a field takes one ink and keeps
+  its hierarchy by size and weight. `ember` glows brighter: put type over its dark side or on glass.
+  `ct check` reads the canvas pixels (HyperFrames samples the rendered frame), so the contrast audit
+  gates this; `projects/_defects-layout` seeds `fg` type over `ember`'s orange and the slow suite
+  requires the finding on that element.
 - Each field is a WebGL context, and so is each GL shot (0009). Chrome keeps 16 live contexts per
   page and drops the oldest past that, with only a console warning. In a probe with 20 contexts it
   lost the first four. The runtime mounts GL shots first, so they would be the ones evicted, and

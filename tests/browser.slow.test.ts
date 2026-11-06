@@ -27,7 +27,8 @@ d("seeded layout defects (projects/_defects-layout)", () => {
     const b = await buildProject("_defects-layout");
     expect(b.ok).toBe(true);
     const [hf, probe] = await Promise.all([hfCheck(b), probeProject(b)]);
-    const ids = new Set([...hf.findings, ...probe].map((f) => `${f.source}:${f.rule}`));
+    const found = [...hf.findings, ...probe];
+    const ids = new Set(found.map((f) => `${f.source}:${f.rule}`));
     for (const r of [
       "probe:text-clipped",
       "probe:type-too-small",
@@ -39,6 +40,8 @@ d("seeded layout defects (projects/_defects-layout)", () => {
     ]) {
       expect(ids, r).toContain(r);
     }
+    // Text over a moving field: the contrast audit samples the rendered frame, canvas included (0011)
+    expect(found.some((f) => f.rule === "contrast_aa_failure" && f.element?.endsWith("over-field"))).toBe(true);
   });
 });
 

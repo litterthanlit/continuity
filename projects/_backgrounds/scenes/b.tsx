@@ -1,11 +1,11 @@
 import { scene, Label, Safe, Stage } from "continuity";
 
-// Ink, not fg: aurora's cyan is too light for fg type at 3:1; canvas ink clears every part of the field.
+// fg ink: aurora stays deep enough (luminance ≤ ~0.17) for fg type anywhere on it (docs/decisions/0011).
 export default scene({
   view: ({ text }) => (
     <Stage bg="gradient" gradient="aurora">
       <Safe>
-        <Label ct="label" class="absolute top-[64px] left-0 text-canvas">
+        <Label ct="label" class="absolute top-[64px] left-0 text-fg">
           {text.label}
         </Label>
       </Safe>
