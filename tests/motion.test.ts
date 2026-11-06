@@ -645,9 +645,38 @@ describe("additive offsets, impulse, paint", () => {
     expect(e(1e-4) / 1e-4).toBeCloseTo(27 / 4, 2);
   });
 
+  it("an impulse comes back to rest and stays there after its tween", () => {
+    const s = tl([{ target: "a.el", props: { shiftX: [0, 100] }, duration: 0.6 }]);
+    s.tweens[0].ease = { type: "impulse" };
+    const c = compileScene(s, {});
+    expect(sampleScene(c, 0.2).get("a.el")!.shiftX).toBeCloseTo(100, 6);
+    for (const t of [0.6, 0.61, 1.5]) expect(sampleScene(c, t).get("a.el")!.shiftX, String(t)).toBe(0);
+  });
+
   it("the shutter sees a fast shift", () => {
     const c = compileScene(tl([{ target: "a.el", props: { shiftX: [0, 600] }, duration: 0.3 }]), {});
     expect(c.shutter.has("a.el")).toBe(true);
+  });
+
+  it("the shutter smears by the speed on screen, whatever the element's own scale (its filter is drawn scaled)", () => {
+    const blurAt = (scale: number) => {
+      const s = tl([
+        { target: "a.el", props: { shiftX: [0, 600] }, duration: 0.3 },
+        { target: "a.el", props: { scale: [scale, scale] }, duration: 0.3 },
+      ]);
+      return sampleScene(compileScene(s, {}), 0.15).get("a.el")!.blurX!;
+    };
+    expect(blurAt(1)).toBeGreaterThan(1);
+    // At a quarter size the filter is drawn at a quarter: its σ is four times as large in the element's own px.
+    expect(blurAt(0.25)).toBeCloseTo(4 * blurAt(1), 6);
+  });
+
+  it("the shutter is at full speed on a move's first frame (a match cut's frame 0)", () => {
+    // Constant speed: the blur is the same on the first frame, mid-move and on the last.
+    const c = compileScene(tl([{ target: "a.el", props: { x: [0, 600] }, duration: 0.3 }]), {});
+    const mid = sampleScene(c, 0.15).get("a.el")!.blurX!;
+    expect(mid).toBeGreaterThan(1);
+    for (const t of [0, 0.3 - 1e-6]) expect(sampleScene(c, t).get("a.el")!.blurX!, String(t)).toBeCloseTo(mid, 6);
   });
 
   it("paint mixes two fills; corner is px", () => {

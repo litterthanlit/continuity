@@ -187,6 +187,95 @@ d("measured geometry (projects/_launch: m.zoomTo, the match cut)", () => {
   });
 });
 
+d("match cuts v2 (projects/_flow: chip → card)", () => {
+  // The outgoing chip is accelerating right when the cut lands; the incoming card is a different
+  // fill and corner. The label pair is text on no fill: it gets no paint.
+  const HELPERS = `
+    var ct = window.__ct, tl = ct.timeline, fps = tl.fps;
+    function sc(id) { return tl.scenes.find(function (s) { return s.scene === id; }); }
+    function el(id) { return document.querySelector('[data-ct="' + id + '"]'); }
+    function box(id) { var r = el(id).getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; }
+    // Fill and corner as seen: the corner radius in frame px (the element's own px × its drawn scale).
+    function look(id) {
+      var e = el(id), cs = getComputedStyle(e), r = e.getBoundingClientRect(), k = r.width / e.offsetWidth;
+      var rad = Math.min(parseFloat(cs.borderTopLeftRadius) || 0, e.offsetWidth / 2, e.offsetHeight / 2);
+      return { bg: cs.backgroundColor, radius: rad * k };
+    }
+    // The element's own fill and corner, without anything the timeline writes.
+    function own(id) {
+      var e = el(id), keep = e.style.cssText;
+      e.style.backgroundColor = ""; e.style.borderRadius = ""; e.style.transform = "none";
+      var o = look(id);
+      e.style.cssText = keep;
+      return o;
+    }
+    var A = sc("chip"), B = sc("card");
+    function tweens(target, kind) { return B.tweens.filter(function (t) { return t.target === target && t.measure && t.measure.kind === kind; }); }
+  `;
+
+  it("the incoming element leaves the cut at its partner's speed", async () => {
+    const got = await inProject<{ vA: number[]; vB: number[]; ease: string; shift: number[]; off: number[] }>("_flow", `(function () {
+      ${HELPERS}
+      ct.seek(A.start + A.duration - 1 / fps - 0.0001); var a0 = box("chip.chip");
+      ct.seek(B.start - 0.0001); var a1 = box("chip.chip");
+      ct.seek(B.start); var b0 = box("card.card");
+      ct.seek(B.start + 2 / fps); var b2 = box("card.card");
+      var vel = tweens("card.card", "matchVelocity")[0], place = tweens("card.card", "match")[0];
+      // Settled: back on its own layout, the shift given back (the impulse ends at rest).
+      ct.seek(B.start + vel.duration + 3 / fps); var settled = box("card.card");
+      var e = el("card.card"), keep = e.style.transform; e.style.transform = "none"; var home = box("card.card"); e.style.transform = keep;
+      return { vA: [a1.cx - a0.cx, a1.cy - a0.cy], vB: [(b2.cx - b0.cx) / 2, (b2.cy - b0.cy) / 2], ease: place.easeName, shift: [vel.props.shiftX[1], vel.props.shiftY[1]], off: [settled.cx - home.cx, settled.cy - home.cy] };
+    })()`);
+    // The chip is moving right at the cut, fast enough to carry (≥ 60 px/s is 2 px a frame).
+    expect(got.vA[0]).toBeGreaterThan(10);
+    expect(Math.abs(got.vB[0] - got.vA[0]) / got.vA[0], `chip ${got.vA[0].toFixed(1)} px/frame, card ${got.vB[0].toFixed(1)}`).toBeLessThanOrEqual(0.15);
+    expect(got.ease).toBe("inOut");
+    expect(got.shift[0]).toBeGreaterThan(0);
+    expect(Math.hypot(got.off[0], got.off[1])).toBeLessThan(0.5);
+  });
+
+  it("the shape is matched: the first frame has the partner's fill and corner, then settles to its own", async () => {
+    const got = await inProject<{ a: Look; b0: Look; bd: Look; ownB: Look }>("_flow", `(function () {
+      ${HELPERS}
+      ct.seek(B.start - 0.0001); var a = look("chip.chip");
+      ct.seek(B.start); var b0 = look("card.card");
+      var d = tweens("card.card", "matchShape")[0].duration;
+      ct.seek(B.start + d + 0.05); var bd = look("card.card");
+      return { a: a, b0: b0, bd: bd, ownB: own("card.card") };
+    })()`);
+    expect(got.a.bg).not.toBe(got.ownB.bg);
+    expect(Math.abs(got.a.radius - got.ownB.radius)).toBeGreaterThan(4);
+    expect(got.b0.bg).toBe(got.a.bg);
+    expect(Math.abs(got.b0.radius - got.a.radius), `card ${got.b0.radius} vs chip ${got.a.radius}`).toBeLessThan(1.5);
+    expect(got.bd.bg).toBe(got.ownB.bg);
+    expect(Math.abs(got.bd.radius - got.ownB.radius)).toBeLessThan(0.5);
+  });
+
+  it("fill matches only between two solid fills: text on no fill gets no paint, and no error", async () => {
+    const got = await inProject<{ shape: Array<{ props: Record<string, unknown>; paint?: unknown }>; bg: string }>("_flow", `(function () {
+      ${HELPERS}
+      ct.seek(B.start);
+      return { shape: tweens("card.label", "matchShape").map(function (t) { return { props: t.props, paint: t.paint }; }), bg: getComputedStyle(el("card.label")).backgroundColor };
+    })()`);
+    expect(got.shape).toHaveLength(1);
+    expect(got.shape[0].props).not.toHaveProperty("paint");
+    expect(got.shape[0].paint).toBeUndefined();
+    expect(got.bg).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  it("built alone, a match v2 join degrades to today's match", async () => {
+    for (const only of ["chip", "card"]) {
+      const b = await buildProject("_flow", { write: false, only });
+      expect(b.findings.filter((f) => f.severity === "error"), only).toEqual([]);
+    }
+  });
+});
+
+interface Look {
+  bg: string;
+  radius: number;
+}
+
 interface Box {
   cx: number;
   cy: number;
@@ -194,9 +283,12 @@ interface Box {
 }
 
 /** Build `_backgrounds`, open it in a browser and run `script` (an expression) once the runtime is ready. */
-async function inBackgrounds<T>(script: string): Promise<T> {
-  const out = mkdtempSync(join(tmpdir(), "ct-gradient-"));
-  const b = await buildProject("_backgrounds", { outDir: out });
+const inBackgrounds = <T>(script: string): Promise<T> => inProject<T>("_backgrounds", script);
+
+/** Build a project, open it in a browser and run `script` (an expression) once the runtime is ready. */
+async function inProject<T>(slug: string, script: string): Promise<T> {
+  const out = mkdtempSync(join(tmpdir(), "ct-project-"));
+  const b = await buildProject(slug, { outDir: out });
   expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
   const srv = await serveDir(out);
   try {

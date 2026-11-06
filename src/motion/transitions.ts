@@ -317,17 +317,26 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
   },
   match: {
     description:
-      "A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. pairs: [\"logo\"] (same id) or [[\"ring\", \"badge\"]]. A primary move, like a cut: it is not an accent.",
+      "A match cut: a hard cut where each paired element of the incoming scene starts exactly where its partner was in the outgoing one (place and size, measured), then settles into its own place over the duration, so the eye carries straight across the cut. If the partner is moving at the cut (≥ 60 px/s), the element leaves the cut at that velocity and eases into its place (inOut); its fill (only between two opaque solid fills) and corner radius start as the partner's and turn into its own. pairs: [\"logo\"] (same id) or [[\"ring\", \"badge\"]]. A primary move, like a cut: it is not an accent.",
     duration: 0.6,
     range: [0.3, 1.2],
     params: ["ease", "pairs"],
     cut: true,
+    // Per pair, three tweens the runtime fills from the layout at prepare (resolveMeasured): the
+    // place (where A was), the velocity A had on its last frame (an impulse that carries it
+    // through the cut), and the shape (A's fill and corner turning into B's).
     build: (c) => ({
       out: [],
-      in: pairsOf(c.spec).map(([a, b]) => ({
-        ...tw(`${c.into}.${b}`, 0, c.d, { x: [0, 0], y: [0, 0], scale: [1, 1] }, c.ease("out")),
-        measure: { kind: "match" as const, from: `${c.out}.${a}` },
-      })),
+      in: pairsOf(c.spec).flatMap(([a, b]): Tween[] => {
+        const target = `${c.into}.${b}`;
+        const from = `${c.out}.${a}`;
+        const ease = c.ease("out");
+        return [
+          { ...tw(target, 0, c.d, { x: [0, 0], y: [0, 0], scale: [1, 1] }, ease), measure: { kind: "match", from } },
+          { ...tw(target, 0, c.d, { shiftX: [0, 0], shiftY: [0, 0] }, { spec: { type: "impulse" } }), measure: { kind: "matchVelocity", from } },
+          { ...tw(target, 0, c.d, { paint: [0, 1], corner: [0, 0] }, ease), measure: { kind: "matchShape", from } },
+        ];
+      }),
     }),
   },
   carry: {

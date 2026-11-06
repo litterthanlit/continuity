@@ -152,7 +152,7 @@ shot into the next?
 | The eye rides… | Move | Example |
 |---|---|---|
 | a **direction** | `carry` (a cut on movement) | the camera is travelling left when the cut lands; the next shot decelerates from that speed |
-| a **place** | `match` (a cut) | the logo is exactly where the ring was, then settles |
+| a **place** | `match` (a cut) | the logo is exactly where the ring was, then settles; the chip sliding right keeps going and becomes the card |
 | an **element** | `portal`, `morph` | the camera goes *into* the tile and the tile becomes the next scene; the card flies to become the stat |
 | an **action** | a plain `cut` with an exit into it or an entrance on it | the row slides off as the cut lands; the headline whips in on frame 0 |
 | **nothing** (punctuation) | a plain `cut` between two rests, `dip` | after a statement's hold; before the end card |
@@ -167,7 +167,7 @@ types per video (`transition-language`; three once a scene is energetic):
 | Type | Default | Params | Use for |
 |---|---|---|---|
 | `cut` | — | | on the beat; with motion on one side of it |
-| `match` | 0.6 | pairs, ease | **primary**: an element starts where its partner was and settles |
+| `match` | 0.6 | pairs, ease | **primary**: an element starts where its partner was — place, size, speed, fill and corner — and settles into its own (below) |
 | `carry` | 0.5 | dir, distance, blur, layers | **primary**: a cut on movement — 40% of the travel before the cut (accelerating), 60% after (decelerating, same speed at the cut). `distance` 6–12 calm (a drift); 30–60 energetic (a whip pan, blur on its own) |
 | `portal` | 0.8 | via, dir (`in`/`out`), ease | the camera goes through an element: `in` — the outgoing scene grows until `via` fills the frame and the next scene is what was inside it; `out` — the scene shrinks into `via` in the next one (a pull-back to the screen it played on) |
 | `morph` | 0.6 | pairs, squash, arc, ease | one element carries the cut and becomes its partner (below, §13) |
@@ -186,6 +186,26 @@ types per video (`transition-language`; three once a scene is energetic):
 "transition": { "type": "portal", "dir": "out", "via": "screen-body", "duration": 1 }
 "transition": { "type": "push", "dir": "left", "blur": true }
 ```
+
+### Match cut (`match`)
+Each pair is measured at prepare: the incoming element starts where its partner was on the
+outgoing scene's last frame, the same place and size, and settles into its own over the duration.
+- **Speed carries through the cut.** If the partner is moving at the cut (≥ 60 px/s), the element
+  leaves the cut at that velocity: an impulse adds the speed and gives it back over the duration,
+  and the place eases `inOut` from rest underneath it, so frame 0 moves exactly as the partner's
+  last frame did. From rest it is the plain match: the place settles on `out` (or the `ease` you
+  set; a moving partner overrides it with `inOut`).
+- **Fill and corner turn into its own.** The first frame has the partner's corner radius as seen
+  (a pill stays a pill) and, between two opaque solid fills, its fill; both turn into the
+  element's own on the place's ease (the fill mixes in oklab). A gradient, image or transparent
+  side gets no fill change, only the corner.
+- **Recipe:** give the outgoing element its own move into the cut, still accelerating on the last
+  frame (t², `{ type: "bezier", p: [1/3, 0, 2/3, 1/3] }` ending at `end`), and put the incoming
+  element further along that travel, so the move carries on instead of reversing. Pair the copy
+  that stays (`"label"`, `"title"`) too, so only the element that changes moves. Bring the
+  incoming element's own content in after it lands (`at` ≈ the match's duration). `_flow`'s
+  `chip` → `card` is the reference.
+- Built alone (`--scene`), a neighbour is a placeholder: the match has no pairs and is a plain cut.
 
 ### Cut on movement (`carry`)
 - The move must already be there: drift the outgoing scene's camera or its last exit the same way

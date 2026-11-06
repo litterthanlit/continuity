@@ -89,7 +89,7 @@ function frameContours(svg: Element, root: DOMRect): Contour[] | undefined {
 let probe: CanvasRenderingContext2D | null | undefined;
 
 /** Any CSS colour as sRGB bytes and alpha 0..1, through a 1×1 canvas (computed styles can be oklch or color-mix). */
-function rgba(css: string): number[] {
+export function rgba(css: string): number[] {
   probe ??= Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true });
   if (!probe) return [0, 0, 0, 0];
   probe.clearRect(0, 0, 1, 1);

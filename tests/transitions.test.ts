@@ -65,10 +65,33 @@ describe("litt's transition language", () => {
   it("match starts each paired element where its partner was, measured, and settles it after the cut", () => {
     const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
     expect(t.out).toEqual([]);
-    expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure])).toEqual([
+    expect(t.in.filter((tw) => tw.measure?.kind === "match").map((tw) => [tw.target, tw.start, tw.duration, tw.measure])).toEqual([
       ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }],
       ["b.label", 0, 0.6, { kind: "match", from: "a.word" }],
     ]);
+  });
+
+  it("match emits place, velocity and shape tweens per pair, all over [0, d]", () => {
+    const t = run({ type: "match", pairs: ["logo", ["word", "label"]] });
+    expect(t.in.map((tw) => [tw.target, tw.start, tw.duration, tw.measure, Object.keys(tw.props).sort()])).toEqual([
+      ["b.logo", 0, 0.6, { kind: "match", from: "a.logo" }, ["scale", "x", "y"]],
+      ["b.logo", 0, 0.6, { kind: "matchVelocity", from: "a.logo" }, ["shiftX", "shiftY"]],
+      ["b.logo", 0, 0.6, { kind: "matchShape", from: "a.logo" }, ["corner", "paint"]],
+      ["b.label", 0, 0.6, { kind: "match", from: "a.word" }, ["scale", "x", "y"]],
+      ["b.label", 0, 0.6, { kind: "matchVelocity", from: "a.word" }, ["shiftX", "shiftY"]],
+      ["b.label", 0, 0.6, { kind: "matchShape", from: "a.word" }, ["corner", "paint"]],
+    ]);
+  });
+
+  it("a match from rest is today's match: the place settles on out, the velocity tween is still", () => {
+    const t = run({ type: "match", pairs: ["logo"] });
+    const [place, vel, shape] = t.in;
+    expect(place).toMatchObject({ easeName: "out", props: { x: [0, 0], y: [0, 0], scale: [1, 1] } });
+    expect(vel).toMatchObject({ ease: { type: "impulse" }, props: { shiftX: [0, 0], shiftY: [0, 0] } });
+    expect(shape.props).toEqual({ paint: [0, 1], corner: [0, 0] });
+    // Placeholders sample to nothing: no shift at any time, the place at rest.
+    const c = compileScene({ scene: "b", start: 0, duration: 3, beats: {}, tweens: [place, vel], loops: [] }, {});
+    for (const s of [0, 0.1, 0.3, 0.6]) expect(sampleScene(c, s).get("b.logo")).toMatchObject({ shiftX: 0, shiftY: 0, x: 0, y: 0 });
   });
 
   it("pixels goes through the canvas: cells cover the outgoing scene, then uncover the incoming one", () => {

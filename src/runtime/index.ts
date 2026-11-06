@@ -14,10 +14,11 @@
  */
 import { compileScene, mergeVariationSettings, sampleScene, styleOf, type CompiledScene } from "../motion/evaluate.js";
 import { morphAt, toPathD, type MorphData } from "../motion/morph.js";
-import type { PartCounts, PropRange, SplitMode, Timeline } from "../motion/types.js";
+import type { PartCounts, PropName, PropRange, SplitMode, Timeline } from "../motion/types.js";
 import type { GlHandle } from "../gl/runtime.js";
 import type { GlSpec } from "../gl/spec.js";
-import { prepareCarriers, renderCarrier, type Carrier } from "./carriers.js";
+import { eases, MATCH_SPEED } from "../motion/tokens.js";
+import { prepareCarriers, renderCarrier, rgba, type Carrier } from "./carriers.js";
 import { checkWebglContexts, drawGradients, mountGradients } from "./gradient.js";
 
 interface CtData {
@@ -372,12 +373,21 @@ function frameRect(el: Element): { x: number; y: number; w: number; h: number } 
   return { x: (r.left - rb.left) * k, y: (r.top - rb.top) * k, w: r.width * k, h: r.height * k };
 }
 
+/** An element's corner radius in its own px, as drawn: a % of its size resolved, a pill clamped to half its short side. */
+function radiusOf(el: HTMLElement, css: string): number {
+  const n = parseFloat(css) || 0;
+  const px = css.trim().endsWith("%") ? (n / 100) * Math.min(el.offsetWidth, el.offsetHeight) : n;
+  return Math.max(0, Math.min(px, el.offsetWidth / 2, el.offsetHeight / 2));
+}
+
 /**
  * Tweens whose values depend on layout (`measure`): measured once here, with the scenes laid out,
  * and written into the timeline, so every frame after is a pure function of time as usual.
  * focus: the camera move that makes the target fill `fill` of the frame at the move's end, its pan
  * clamped so the scene's edge never shows. match: the paired element starts at its partner's place
- * and size on the outgoing scene's last frame.
+ * and size on the outgoing scene's last frame; matchVelocity carries the partner's last-frame speed
+ * through the cut (from MATCH_SPEED up); matchShape turns its fill (two solid fills only) and corner
+ * into the element's own.
  */
 function resolveMeasured() {
   const W = data.timeline.width;
@@ -441,10 +451,19 @@ function resolveMeasured() {
         }
         changed = true;
       } else {
+        // The match cut: B (this tween's target) against its partner A on the outgoing scene's last frame.
         const outScene = byScene.get(m.from.slice(0, m.from.indexOf(".")));
-        const a = document.querySelector(`[data-ct="${m.from}"]`);
+        const a = document.querySelector<HTMLElement>(`[data-ct="${m.from}"]`);
         const b = document.querySelector<HTMLElement>(`[data-ct="${t.target}"]`);
-        if (!outScene || !a || !b) continue;
+        if (!outScene || !a || !b) {
+          // No partner to read: the shape's placeholders must not square B's corners.
+          if (m.kind === "matchShape") {
+            t.props = {};
+            delete t.paint;
+            changed = true;
+          }
+          continue;
+        }
         apply(outScene.scene, outScene.duration);
         const A = frameRect(a);
         apply(sc.scene, t.start);
@@ -452,7 +471,50 @@ function resolveMeasured() {
         // B's box is drawn at the scale of everything above it (the camera too): offsets are in its own px.
         const k = b.offsetWidth ? B.w / b.offsetWidth : 1;
         const s = Math.sqrt((A.w * A.h) / Math.max(1, B.w * B.h));
-        t.props = { x: [r4((A.x + A.w / 2 - (B.x + B.w / 2)) / k), 0], y: [r4((A.y + A.h / 2 - (B.y + B.h / 2)) / k), 0], scale: [r4(s), 1] };
+        if (m.kind === "match") {
+          t.props = { x: [r4((A.x + A.w / 2 - (B.x + B.w / 2)) / k), 0], y: [r4((A.y + A.h / 2 - (B.y + B.h / 2)) / k), 0], scale: [r4(s), 1] };
+        } else if (m.kind === "matchVelocity") {
+          // A's velocity over its last frame, in B's own px/s. From rest the match stays as it was.
+          const fps = data.timeline.fps;
+          apply(outScene.scene, outScene.duration - 1 / fps);
+          const A0 = frameRect(a);
+          const vx = ((A.x + A.w / 2 - (A0.x + A0.w / 2)) * fps) / k;
+          const vy = ((A.y + A.h / 2 - (A0.y + A0.h / 2)) * fps) / k;
+          if (Math.hypot(vx, vy) < MATCH_SPEED) continue;
+          // The impulse leaves 0 at slope 27/4: a reach of 4·v·d/27 starts B at exactly v, on top of a
+          // place that now eases in from rest (inOut), and gives the speed back by the end.
+          t.props = { shiftX: [0, r4((4 * vx * t.duration) / 27)], shiftY: [0, r4((4 * vy * t.duration) / 27)] };
+          for (const o of sc.tweens) {
+            const om = o.measure;
+            if (o.target === t.target && om && (om.kind === "match" || om.kind === "matchShape") && om.from === m.from) {
+              o.ease = eases.inOut;
+              o.easeName = "inOut";
+            }
+          }
+        } else {
+          // Fill and corner as A shows them at the cut, turning into B's own.
+          const sa = getComputedStyle(a);
+          const own = { bg: b.style.backgroundColor, radius: b.style.borderRadius };
+          b.style.backgroundColor = "";
+          b.style.borderRadius = "";
+          const sb = getComputedStyle(b);
+          const bBg = sb.backgroundColor;
+          const bImage = sb.backgroundImage;
+          const rB = radiusOf(b, sb.borderTopLeftRadius);
+          b.style.backgroundColor = own.bg;
+          b.style.borderRadius = own.radius;
+          // A's corner in frame px, then in B's own px at the scale B starts at (the place's s).
+          const kA = a.offsetWidth ? A.w / a.offsetWidth : 1;
+          const rA = radiusOf(a, sa.borderTopLeftRadius) * kA;
+          const props: Partial<Record<PropName, PropRange>> = {};
+          if (rA > 0 || rB > 0) props.corner = [r4(rA / (k * s)), r4(rB)];
+          const solid = (bg: string, image: string) => image === "none" && rgba(bg)[3] >= 0.99;
+          if (solid(sa.backgroundColor, sa.backgroundImage) && solid(bBg, bImage)) {
+            props.paint = [0, 1];
+            t.paint = [sa.backgroundColor, bBg];
+          } else delete t.paint;
+          t.props = props;
+        }
         changed = true;
       }
     }

@@ -225,7 +225,8 @@ function channelValue(segs: Segment[], t: number): number {
     if (s.start <= t) active = s;
     else break;
   }
-  if (t >= active.end) return active.to;
+  // A finished tween holds where its ease ends: `to`, except for an impulse, which comes back to `from`.
+  if (t >= active.end) return active.ease(1) === 0 ? active.from : active.to;
   const span = active.end - active.start;
   const p = span <= 0 ? 1 : (t - active.start) / span;
   return active.from + (active.to - active.from) * active.ease(p);
@@ -292,9 +293,20 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
       const ys = byProp.get("y");
       const sxs = byProp.get("shiftX");
       const sys = byProp.get("shiftY");
-      const speed = (segs: Segment[] | undefined) => (segs ? (channelValue(segs, t + H) - channelValue(segs, t - H)) / (2 * H) : 0);
-      const bx = (SHUTTER * Math.abs(speed(xs) + speed(sxs))) / c.fps;
-      const by = (SHUTTER * Math.abs(speed(ys) + speed(sys))) / c.fps;
+      // The faster side: at a move's first or last frame the other side holds still.
+      const speed = (segs: Segment[] | undefined) => {
+        if (!segs) return 0;
+        const now = channelValue(segs, t);
+        const back = (now - channelValue(segs, t - H)) / H;
+        const fwd = (channelValue(segs, t + H) - now) / H;
+        return Math.abs(back) > Math.abs(fwd) ? back : fwd;
+      };
+      // The speed is on screen (the translate is in the parent's px); the filter is drawn at the
+      // element's own scale, so its σ is that blur in the element's px.
+      const kx = Math.max(0.05, Math.abs((v.scale ?? 1) * (v.scaleX ?? 1)));
+      const ky = Math.max(0.05, Math.abs((v.scale ?? 1) * (v.scaleY ?? 1)));
+      const bx = (SHUTTER * Math.abs(speed(xs) + speed(sxs))) / c.fps / kx;
+      const by = (SHUTTER * Math.abs(speed(ys) + speed(sys))) / c.fps / ky;
       v.blurX = bx >= 0.5 ? bx : 0;
       v.blurY = by >= 0.5 ? by : 0;
     }

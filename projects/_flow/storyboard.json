@@ -1,6 +1,6 @@
 {
   "title": "Flow gallery",
-  "logline": "Portal, carry and pull-back chained once, so each move that flows through a cut can be judged mid-flight. Reference fixture.",
+  "logline": "Portal, carry, pull-back and a match cut chained once, so each move that flows through a cut can be judged mid-flight. Reference fixture.",
   "format": {
     "aspect": "16:9",
     "fps": 30
@@ -201,6 +201,104 @@
           "id": "title",
           "role": "title",
           "anchor": "C6:E6"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "chip",
+      "duration": 2.5,
+      "intent": "An accent chip under the title, accelerating right into the cut.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0
+        }
+      ],
+      "text": {
+        "label": "Match",
+        "title": "Speed and shape carry",
+        "chip": "Ship it"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        },
+        {
+          "id": "title",
+          "role": "headline",
+          "anchor": "A2:D2"
+        },
+        {
+          "id": "chip",
+          "role": "ui",
+          "anchor": "A4"
+        }
+      ],
+      "transition": {
+        "type": "match",
+        "pairs": [
+          [
+            "chip",
+            "card"
+          ],
+          "label",
+          "title"
+        ],
+        "duration": 0.7
+      }
+    },
+    {
+      "id": "card",
+      "duration": 3,
+      "intent": "The chip keeps moving through the cut and becomes the card: its speed, then its fill and corner, turn into the card's own.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.7
+        }
+      ],
+      "text": {
+        "label": "Match",
+        "title": "Speed and shape carry",
+        "sub": "The chip becomes the card",
+        "meta": "12 checks passed",
+        "status": "Shipped"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        },
+        {
+          "id": "title",
+          "role": "headline",
+          "anchor": "A2:D2"
+        },
+        {
+          "id": "sub",
+          "role": "body",
+          "anchor": "A4"
+        },
+        {
+          "id": "card",
+          "role": "ui",
+          "anchor": "D3:F5"
+        },
+        {
+          "id": "meta",
+          "role": "label",
+          "anchor": "D5"
+        },
+        {
+          "id": "status",
+          "role": "title",
+          "anchor": "D5"
         }
       ]
     }
