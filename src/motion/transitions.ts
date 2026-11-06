@@ -1,4 +1,5 @@
 import { sigmaFor } from "./easing.js";
+import { LAYER_TRAVEL, layerPlan, type LayerElement } from "./layers.js";
 import type { Register } from "./register.js";
 import { eases, fitEase, resolveEase, type EaseToken } from "./tokens.js";
 import type { EaseSpec, FxSpec, PropName, PropRange, Tween } from "./types.js";
@@ -24,7 +25,7 @@ export type PlanarDir = (typeof PLANAR_DIRS)[number];
 /** Every direction a transition can take: planar, plus depth's in (forward through the stack) and out (back). */
 export const DIRS = [...PLANAR_DIRS, "in", "out"] as const;
 export type Dir = (typeof DIRS)[number];
-export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "blur" | "pairs" | "squash" | "arc" | "via" | "distance";
+export type TransitionParam = "ease" | "dir" | "angle" | "feather" | "blur" | "pairs" | "squash" | "arc" | "via" | "distance" | "layers";
 
 /** A shared element: the same id in both scenes, or [outgoing id, incoming id]. */
 export type MorphPair = string | [string, string];
@@ -53,6 +54,14 @@ export interface TransitionSpec {
   via?: string;
   /** carry: how far the camera travels through the cut, % of the frame along dir. */
   distance?: number;
+  /** push, pushUp, carry: each top-level element moves on top of its scene, in a wave along the travel (layers.ts). */
+  layers?: boolean;
+}
+
+/** Each scene's top-level storyboard elements with a role, for a layered handoff. */
+export interface TransitionElements {
+  out: LayerElement[];
+  in: LayerElement[];
 }
 
 export interface TransitionFrame {
@@ -70,6 +79,8 @@ interface Ctx {
   os: number;
   d: number;
   frame: TransitionFrame;
+  /** Top-level elements of both scenes (empty when a neighbour is a placeholder). */
+  elements: TransitionElements;
   /** The spec's ease override, else `fallback`. */
   ease(fallback: EaseToken | EaseSpec): { spec: EaseSpec; name?: string };
 }
@@ -136,6 +147,7 @@ function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undef
   const o = `${c.out}.scene`;
   const i = `${c.into}.scene`;
   const res = { out: [tw(o, c.os, c.d, { [axis]: [0, sign * 100] }, ease)], in: [tw(i, 0, c.d, { [axis]: [-sign * 100, 0] }, ease)] };
+  const l = layered(c, dir, { start: c.os, duration: c.d, ease }, c.d);
   if (blur) {
     const distance = axis === "xPct" ? c.frame.width : c.frame.height;
     const sigma = typeof blur === "number" ? blur : sigmaFor(ease.spec, distance, c.d, c.frame.fps);
@@ -149,7 +161,31 @@ function push(c: Ctx, dir: PlanarDir, ease: Ease, blur: boolean | number | undef
       res.in.push(...bell(i, 0));
     }
   }
-  return res;
+  return { out: [...res.out, ...l.out], in: [...res.in, ...l.in] };
+}
+
+/**
+ * Layered handoff (`layers: true`): on top of the planes, each top-level element shifts a little
+ * further along the travel — LAYER_TRAVEL of the frame × its role's depth — in a wave that starts
+ * at the leading edge (layerPlan). Outgoing, it leaves from the plane's start + its delay and
+ * lands with the plane, on the plane's ease; incoming, it arrives from behind over the plane's
+ * in-duration, starting at its delay, easing out. Shift channels add to x/y, so each element's
+ * own entrance runs through it unchanged.
+ */
+function layered(c: Ctx, dir: PlanarDir, plane: { start: number; duration: number; ease: Ease }, inDuration: number): { out: Tween[]; in: Tween[] } {
+  if (!c.spec.layers) return { out: [], in: [] };
+  const horizontal = dir === "left" || dir === "right";
+  const ch: PropName = horizontal ? "shiftX" : "shiftY";
+  const sign = dir === "left" || dir === "up" ? -1 : 1;
+  const travel = LAYER_TRAVEL * (horizontal ? c.frame.width : c.frame.height);
+  const end = plane.start + plane.duration;
+  return {
+    out: layerPlan(c.elements.out, dir, c.d).map((s) => {
+      const start = r3(plane.start + s.delay);
+      return tw(`${c.out}.${s.id}`, start, r3(end - start), { [ch]: [0, r3(sign * s.depth * travel)] }, plane.ease);
+    }),
+    in: layerPlan(c.elements.in, dir, c.d).map((s) => tw(`${c.into}.${s.id}`, s.delay, inDuration, { [ch]: [r3(-sign * s.depth * travel), 0] }, named("out"))),
+  };
 }
 
 export function pairsOf(spec: TransitionSpec): Array<[string, string]> {
@@ -197,6 +233,7 @@ function carry(c: Ctx): { out: Tween[]; in: Tween[] } {
     out: [tw(o, start, lead, { [axis]: [0, r3(sign * outX)], scale: [1, r3(1 + (2 * outX) / 100)] }, QUAD_IN)],
     in: [tw(i, 0, tail, { [axis]: [r3(-sign * inX), 0], scale: [r3(1 + (2 * inX) / 100), 1] }, QUAD_OUT)],
   };
+  const l = layered(c, dir, { start, duration: lead, ease: QUAD_IN }, tail);
   const frame = axis === "xPct" ? c.frame.width : c.frame.height;
   const peak = (2 * (D / 100) * frame * CARRY_LEAD) / Math.max(1e-3, lead * c.frame.fps);
   const blur = c.spec.blur ?? peak >= CARRY_BLUR_FROM;
@@ -208,7 +245,7 @@ function carry(c: Ctx): { out: Tween[]; in: Tween[] } {
       res.in.push(tw(i, 0, tail, { [ch]: [sigma, 0] }, named("linear")));
     }
   }
-  return res;
+  return { out: [...res.out, ...l.out], in: [...res.in, ...l.in] };
 }
 
 /**
@@ -269,7 +306,7 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
       "A cut on movement: the camera is already travelling when the cut lands. The outgoing scene accelerates in the direction of travel (dir, default left), the cut swaps the scenes at peak speed, and the incoming one decelerates from that same speed to rest — two shots, one move. distance: % of the frame (default 8, a drift; 30–60 in the energetic register is a whip pan); blur follows the speed; each scene overscans with its travel, so no edge shows. A primary move, like a cut.",
     duration: 0.5,
     range: [0.3, 1],
-    params: ["dir", "distance", "blur"],
+    params: ["dir", "distance", "blur", "layers"],
     dirs: PLANAR_DIRS,
     cut: true,
     build: carry,
@@ -295,7 +332,7 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
     description: "The incoming scene pushes the outgoing one off in the direction of travel (dir, default left = reading order). Sequential steps. blur: true when it moves fast.",
     duration: 0.5,
     range: [0.3, 0.8],
-    params: ["ease", "dir", "blur"],
+    params: ["ease", "dir", "blur", "layers"],
     dirs: PLANAR_DIRS,
     build: (c) => push(c, (c.spec.dir as PlanarDir | undefined) ?? "left", c.ease("inOut"), c.spec.blur),
   },
@@ -303,7 +340,7 @@ export const TRANSITION_DEFS: Record<TransitionType, TransitionDef> = {
     description: "push with dir up: the incoming scene pushes up from below. Lists, feeds, 9:16.",
     duration: 0.5,
     range: [0.3, 0.8],
-    params: ["ease", "blur"],
+    params: ["ease", "blur", "layers"],
     build: (c) => push(c, "up", c.ease("inOut"), c.spec.blur),
   },
   wipe: {
@@ -440,6 +477,7 @@ export function transitionTweens(
   out: { id: string; duration: number },
   into: { id: string },
   frame: TransitionFrame = { width: 1920, height: 1080, fps: 30 },
+  elements: TransitionElements = { out: [], in: [] },
 ): { out: Tween[]; in: Tween[] } {
   const d = spec.duration;
   const given: Ease | undefined =
@@ -452,6 +490,7 @@ export function transitionTweens(
     os: Math.max(0, out.duration - d),
     d,
     frame,
+    elements,
     ease: (fallback) => override ?? (typeof fallback === "string" ? named(fallback) : { spec: fallback }),
   });
 }

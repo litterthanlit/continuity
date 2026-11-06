@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { fxStyle } from "../src/motion/fx.js";
 import { peakSlope, sigmaFor } from "../src/motion/easing.js";
 import { eases } from "../src/motion/tokens.js";
+import { LAYER_DEPTH, LAYER_TRAVEL, layerPlan } from "../src/motion/layers.js";
 import { isCut, TRANSITION_DEFS, TRANSITIONS, transitionTweens, type TransitionSpec } from "../src/motion/transitions.js";
 import { lintStoryboard } from "../src/lint/timeline.js";
 import type { FxSpec } from "../src/motion/types.js";
@@ -340,5 +341,105 @@ describe("portal: the camera goes through an element", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.issues.join()).toMatch(/via/);
+  });
+});
+
+describe("layered handoffs: copy leads, UI follows, decor trails", () => {
+  const frame = { width: 1920, height: 1080, fps: 30 };
+  const els = [
+    { id: "title", role: "headline" as const, anchor: "A3" },
+    { id: "bars", role: "ui" as const, anchor: "D2:F5" },
+  ];
+  const layered = (spec: Partial<TransitionSpec> & { type: TransitionSpec["type"] }, elements = { out: els, in: els }) =>
+    transitionTweens({ duration: TRANSITION_DEFS[spec.type].duration, ...spec } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame, elements);
+  const on = (tws: ReturnType<typeof layered>["out"], target: string) => tws.filter((tw) => tw.target === target);
+
+  it("layerPlan orders along the travel and depths by role", () => {
+    const p = layerPlan([{ id: "chart", role: "ui", anchor: "D2:F5" }, { id: "title", role: "headline", anchor: "A3" }, { id: "dot", role: "decor" }], "left", 0.5);
+    expect(p.map((s) => s.id)).toEqual(["title", "chart", "dot"]);
+    expect(p.map((s) => s.depth)).toEqual([1, 0.6, 0.35]);
+    expect(p[2].delay).toBeLessThanOrEqual(0.15 + 1e-9);
+    // Reversed travel reverses the wave; vertical travel orders by row.
+    expect(layerPlan([{ id: "chart", role: "ui", anchor: "D2:F5" }, { id: "title", role: "headline", anchor: "A3" }], "right", 0.5).map((s) => s.id)).toEqual(["chart", "title"]);
+    expect(layerPlan([{ id: "low", role: "body", anchor: "A5" }, { id: "high", role: "label", anchor: "C1" }], "up", 0.5).map((s) => s.id)).toEqual(["high", "low"]);
+    expect(layerPlan([{ id: "low", role: "body", anchor: "A5" }, { id: "high", role: "label", anchor: "C1" }], "down", 0.5).map((s) => s.id)).toEqual(["low", "high"]);
+  });
+
+  it("layerPlan steps by the list stagger, capped at 0.3·d for the last", () => {
+    const many = Array.from({ length: 10 }, (_, i) => ({ id: "e" + i, role: "body" as const, anchor: `${"ABCDEF"[i % 6]}1` }));
+    const p = layerPlan(many, "left", 0.5);
+    expect(p[1].delay - p[0].delay).toBeLessThanOrEqual(0.04 + 1e-9);
+    expect(p.at(-1)!.delay).toBeLessThanOrEqual(0.15 + 1e-9);
+    expect(layerPlan(many.slice(0, 3), "left", 2).map((s) => s.delay)).toEqual([0, 0.04, 0.08]);
+  });
+
+  it("depth by role: copy 1, UI 0.6, decor and media 0.35", () => {
+    expect(LAYER_DEPTH).toMatchObject({ headline: 1, title: 1, body: 1, label: 1, caption: 1, stat: 1, cta: 1, logo: 1, ui: 0.6, decor: 0.35, media: 0.35 });
+    expect(LAYER_TRAVEL).toBe(0.08);
+  });
+
+  it("a layered carry shifts each element on top of the plane", () => {
+    const t = layered({ type: "carry", dir: "left", distance: 12, layers: true });
+    const plain = layered({ type: "carry", dir: "left", distance: 12 });
+    // The planes are untouched.
+    expect(on(t.out, "a.scene")).toEqual(plain.out);
+    expect(on(t.in, "b.scene")).toEqual(plain.in);
+    const plane = plain.out[0];
+    const tail = plain.in[0].duration;
+    // Outgoing: from the plane's start + delay, ending with it, on the plane's ease, along the travel.
+    const [ot] = on(t.out, "a.title");
+    expect(ot.props).toEqual({ shiftX: [0, -LAYER_TRAVEL * 1920] });
+    expect(ot.start).toBeCloseTo(plane.start, 6);
+    expect(ot.start + ot.duration).toBeCloseTo(3, 6);
+    expect(ot.ease).toEqual(plane.ease);
+    const [ob] = on(t.out, "a.bars");
+    expect(ob.props.shiftX![1]).toBeCloseTo(-LAYER_TRAVEL * 1920 * 0.6, 6);
+    expect(ob.start).toBeCloseTo(plane.start + 0.04, 6);
+    expect(ob.start + ob.duration).toBeCloseTo(3, 6);
+    // Incoming: from behind, starting at its delay, for the plane's in-duration, easing out.
+    const [it_] = on(t.in, "b.title");
+    expect(it_.props).toEqual({ shiftX: [LAYER_TRAVEL * 1920, 0] });
+    expect(it_.start).toBe(0);
+    expect(it_.duration).toBeCloseTo(tail, 6);
+    expect(it_.easeName).toBe("out");
+    const [ib] = on(t.in, "b.bars");
+    expect(ib.props.shiftX![0]).toBeCloseTo(LAYER_TRAVEL * 1920 * 0.6, 6);
+    expect(ib.start).toBeCloseTo(0.04, 6);
+    expect(ib.duration).toBeCloseTo(tail, 6);
+    for (const tw of [...t.out, ...t.in]) expect(tw.kind).toBe("transition");
+  });
+
+  it("a layered push uses the push's ease; pushUp shifts along y by the frame's height", () => {
+    const p = layered({ type: "push", layers: true });
+    const [ot] = on(p.out, "a.title");
+    expect(ot.ease).toEqual(on(p.out, "a.scene")[0].ease);
+    expect(ot.start).toBeCloseTo(3 - 0.5, 6);
+    const up = layered({ type: "pushUp", layers: true }, { out: [{ id: "title", role: "headline", anchor: "A3" }], in: [{ id: "title", role: "headline", anchor: "A3" }] });
+    expect(on(up.out, "a.title")[0].props).toEqual({ shiftY: [0, -LAYER_TRAVEL * 1080] });
+    expect(on(up.in, "b.title")[0].props).toEqual({ shiftY: [LAYER_TRAVEL * 1080, 0] });
+  });
+
+  it("without layers, push and carry are unchanged", () => {
+    for (const spec of [{ type: "push" as const }, { type: "pushUp" as const }, { type: "carry" as const, distance: 12 }, { type: "push" as const, dir: "right" as const, blur: true }]) {
+      const before = transitionTweens({ duration: 0.5, ...spec } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame);
+      expect(layered(spec)).toEqual(before);
+      expect(layered({ ...spec, layers: false })).toEqual(before);
+      // Layers asked for with nothing to layer (a placeholder neighbour): the plain move.
+      expect(layered({ ...spec, layers: true }, { out: [], in: [] })).toEqual(before);
+      expect(transitionTweens({ duration: 0.5, ...spec, layers: true } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame)).toEqual(before);
+    }
+  });
+
+  it("layers is a param of push, pushUp and carry only", () => {
+    expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].params.includes("layers"))).toEqual(["carry", "push", "pushUp"]);
+    const r = parseStoryboard({
+      title: "t",
+      format: { aspect: "16:9", fps: 30 },
+      scenes: [
+        { id: "a", duration: 2, intent: "one", transition: { type: "crossfade", layers: true } },
+        { id: "b", duration: 2, intent: "two" },
+      ],
+    });
+    expect(r.ok).toBe(false);
   });
 });

@@ -10,6 +10,10 @@ interface FixtureScene {
   /** The body of `motion: (m) => { … }`. */
   motion?: string;
   text?: Record<string, string>;
+  /** Storyboard elements (roles, anchors). */
+  elements?: Array<{ id: string; role?: string; anchor?: string }>;
+  /** Storyboard transition into the next scene. */
+  transition?: Record<string, unknown>;
 }
 
 const made: string[] = [];
@@ -28,13 +32,20 @@ function fixtureProject(scenes: FixtureScene[]): string {
     format: { aspect: "16:9", fps: 30 },
     theme: "litt-dark",
     type: "litt",
-    scenes: scenes.map((s) => ({ id: s.id, duration: s.duration, intent: "A fixture scene.", text: s.text ?? {} })),
+    scenes: scenes.map((s) => ({
+      id: s.id,
+      duration: s.duration,
+      intent: "A fixture scene.",
+      text: s.text ?? {},
+      ...(s.elements ? { elements: s.elements } : {}),
+      ...(s.transition ? { transition: s.transition } : {}),
+    })),
   };
   writeFileSync(join(dir, "storyboard.json"), JSON.stringify(storyboard));
   for (const s of scenes) {
     writeFileSync(
       join(dir, "scenes", s.id + ".tsx"),
-      '/** @jsxImportSource preact */\nimport { scene, Stage, Safe, Headline } from "continuity";\n' +
+      '/** @jsxImportSource preact */\nimport { scene, Stage, Safe, Headline, Stack, Label } from "continuity";\n' +
         `export default scene({ view: ({ text }) => (${s.view}), motion: (m) => { ${s.motion ?? ""} } });\n`,
     );
   }
@@ -67,6 +78,27 @@ export function greyOnFieldFilm(n: number): string {
   };
   const half = Math.floor(n / 2);
   return fixtureProject([...Array.from({ length: half }, (_, i) => solid(i)), field, ...Array.from({ length: n - half }, (_, i) => solid(half + i))]);
+}
+
+/**
+ * Two scenes joined by a layered carry (left). Each has a headline `h` (A3) and a `panel` (ui,
+ * D2:F5) with a `stat` inside it — a storyboard element whose parent is one too, so it rides its
+ * parent instead of taking the handoff itself. The incoming headline rises in at 0.
+ */
+export function layeredFilm(): string {
+  const view =
+    '<Stage bg="solid"><Safe><Headline ct="h">{text.h}</Headline>' +
+    '<Stack ct="panel" class="absolute right-0 top-[200px]"><Label ct="stat">{text.stat}</Label></Stack></Safe></Stage>';
+  const elements = [
+    { id: "h", role: "headline", anchor: "A3" },
+    { id: "panel", role: "ui", anchor: "D2:F5" },
+    { id: "stat", role: "stat", anchor: "E3" },
+  ];
+  const text = { h: "Layered", stat: "42" };
+  return fixtureProject([
+    { id: "a", duration: 2, text, view, elements, transition: { type: "carry", dir: "left", distance: 12, layers: true } },
+    { id: "b", duration: 2, text, view, elements, motion: 'm.enter("h", "rise", { at: 0 });' },
+  ]);
 }
 
 export function removeFixtureProjects(): void {

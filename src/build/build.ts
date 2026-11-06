@@ -10,6 +10,7 @@ import { drainMissingText, textProxy, withScene, type SceneContext } from "../ki
 import { MotionBuilder } from "../motion/dsl.js";
 import { splitModes } from "../motion/evaluate.js";
 import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
+import type { LayerElement } from "../motion/layers.js";
 import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline, Tween } from "../motion/types.js";
 import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
@@ -204,10 +205,29 @@ export async function buildProject(
   const views = new Map<string, string>();
   drainMissingText();
 
-  // Built alone (`only`), a scene's neighbours are placeholders: a morph has nothing to carry, so it crossfades.
+  // Built alone (`only`), a scene's neighbours are placeholders: a morph has nothing to carry, so it
+  // crossfades; a layered push or carry has no elements to layer, so it moves the planes only.
   const transitionOf = (i: number) => {
     const t = sb.scenes[i].transition;
-    return t && opts.only && t.pairs?.length ? { ...t, pairs: [] } : t;
+    if (!t || !opts.only) return t;
+    if (t.pairs?.length) return { ...t, pairs: [] };
+    if (t.layers) return { ...t, layers: false };
+    return t;
+  };
+  /**
+   * A scene's elements for a layered handoff: storyboard elements with a role that are in its
+   * rendered view and not inside another storyboard element (a child rides its parent).
+   */
+  const layerElements = (i: number): LayerElement[] => {
+    const sc = sb.scenes[i];
+    const doc = parseHTML(`<!doctype html><html><body>${views.get(sc.id) ?? ""}</body></html>`).document;
+    const listed = new Set(sc.elements.map((e) => `${sc.id}.${e.id}`));
+    return sc.elements.flatMap((e) => {
+      const node = doc.querySelector(`[data-ct="${sc.id}.${e.id}"]`) as unknown as HTMLElement | null;
+      if (!e.role || !node) return [];
+      for (let p = node.parentElement; p; p = p.parentElement) if (listed.has(p.getAttribute?.("data-ct") ?? "")) return [];
+      return [{ id: e.id, role: e.role, ...(e.anchor ? { anchor: e.anchor } : {}) }];
+    });
   };
 
   for (const [index, sc] of sb.scenes.entries()) {
@@ -340,7 +360,8 @@ export async function buildProject(
     const spec = transitionOf(i);
     if (!spec || i === sb.scenes.length - 1) return;
     const next = sb.scenes[i + 1];
-    const t = transitionTweens(spec, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps });
+    const elements = spec.layers ? { out: layerElements(i), in: layerElements(i + 1) } : undefined;
+    const t = transitionTweens(spec, { id: sc.id, duration: sc.duration }, { id: next.id }, { width, height, fps: sb.format.fps }, elements);
     scenes.get(sc.id)!.tweens.push(...t.out);
     scenes.get(next.id)!.tweens.unshift(...t.in);
   });

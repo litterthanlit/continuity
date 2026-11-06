@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { lintTimeline } from "../src/lint/timeline.js";
 import type { Tween } from "../src/motion/types.js";
 import { PKG_ROOT } from "../src/paths.js";
-import { fieldScenes, removeFixtureProjects } from "./fixtures/field-scenes.js";
+import { fieldScenes, layeredFilm, removeFixtureProjects } from "./fixtures/field-scenes.js";
+import { compileScene, sampleScene, styleOf } from "../src/motion/evaluate.js";
 
 /** Projects that live outside projects/ (shipped with the package). */
 const SRC: Record<string, string> = { _template: join(PKG_ROOT, "templates", "project") };
@@ -225,5 +226,39 @@ describe("WebGL contexts (docs/decisions/0011)", () => {
     expect(f?.message).toMatch(/17 WebGL canvases \(0 GL shots, 17 gradient fields\).*16 per page.*0011/);
     const at = await buildProject("fields", { write: false, srcDir: fieldScenes(16) });
     expect(at.findings.filter((x) => x.severity === "error")).toEqual([]);
+  });
+});
+
+describe("layered handoffs (build)", () => {
+  afterAll(removeFixtureProjects);
+  const shifts = (b: Awaited<ReturnType<typeof buildProject>>) =>
+    b.timeline!.scenes.flatMap((s) => s.tweens).filter((tw) => "props" in tw && (tw.props.shiftX || tw.props.shiftY)) as Tween[];
+
+  it("only top-level elements take the handoff", async () => {
+    const b = await buildProject("layered", { write: false, srcDir: layeredFilm() });
+    expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+    const targets = new Set(shifts(b).map((tw) => tw.target));
+    expect(targets).toEqual(new Set(["a.h", "a.panel", "b.h", "b.panel"]));
+    // _flow's carry from detail to next is layered: the copy and the chart both ride it.
+    const flow = await buildProject("_flow", { write: false });
+    const flowTargets = new Set(shifts(flow).map((tw) => tw.target));
+    for (const id of ["detail.title", "detail.bars", "next.title", "next.bars"]) expect(flowTargets).toContain(id);
+  });
+
+  it("a layered handoff composes with the element's own entrance", async () => {
+    const b = await buildProject("layered", { write: false, srcDir: layeredFilm() });
+    const sc = b.timeline!.scenes.find((s) => s.scene === "b")!;
+    const v = sampleScene(compileScene(sc, b.partsEstimate), 0.1).get("b.h")!;
+    expect(Math.abs(v.y ?? 0)).toBeGreaterThan(0.5);
+    expect(Math.abs(v.shiftX ?? 0)).toBeGreaterThan(0.5);
+    const m = /translate3d\(([-\d.]+)px,([-\d.]+)px/.exec(styleOf(v).transform!)!;
+    expect(Number(m[1])).toBeCloseTo((v.x ?? 0) + v.shiftX!, 3);
+    expect(Number(m[2])).toBeCloseTo(v.y!, 3);
+  });
+
+  it("built alone, a layered join degrades to the plain move", async () => {
+    const b = await buildProject("_flow", { write: false, only: "next" });
+    expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+    expect(shifts(b)).toEqual([]);
   });
 });

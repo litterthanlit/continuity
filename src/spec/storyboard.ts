@@ -60,7 +60,7 @@ export const MusicSchema = z.object({
 });
 export type MusicSpec = z.infer<typeof MusicSchema>;
 
-const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur", "pairs", "squash", "arc", "via", "distance"];
+const PARAMS: readonly TransitionParam[] = ["ease", "dir", "angle", "feather", "blur", "pairs", "squash", "arc", "via", "distance", "layers"];
 
 /** Transition into the next scene. Parameters are validated per type (TRANSITION_DEFS); duration defaults per type. */
 export const TransitionSchema = z
@@ -79,6 +79,7 @@ export const TransitionSchema = z
     arc: z.number().min(-0.5).max(0.5).optional(),
     via: z.string().regex(/^[a-z][\w-]*$/i).optional(),
     distance: z.number().min(1).max(100).optional(),
+    layers: z.boolean().optional(),
   })
   .superRefine((t, ctx) => {
     const def = TRANSITION_DEFS[t.type];
@@ -108,6 +109,8 @@ export const ElementSchema = z.object({
   anchor: z.string().regex(/^[A-F][1-6](:[A-F][1-6])?$/).optional(),
   note: z.string().optional(),
 });
+/** An element's role: what it is in the frame (layered handoffs give each role its depth). */
+export type ElementRole = NonNullable<z.infer<typeof ElementSchema>["role"]>;
 
 export const SceneSchema = z.object({
   id,

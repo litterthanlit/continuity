@@ -250,7 +250,10 @@ for the same id in both scenes, `[["card", "tile"]]` for outgoing → incoming) 
 on the incoming element or its children during the morph (the carrier holds its built state).
 `via` (portal: the element the camera goes through — the outgoing scene's with `dir: "in"`, the
 incoming scene's with `dir: "out"`; measured at prepare, so the window stays locked to it) ·
-`distance` (carry: % of the frame the camera travels through the cut; default 8, ≤ 15 calm).
+`distance` (carry: % of the frame the camera travels through the cut; default 8, ≤ 15 calm) ·
+`layers` (carry, push, pushUp: `true` = a layered handoff — each top-level element with a role
+shifts on top of its scene, copy 1.0 / ui 0.6 / decor+media 0.35 × 8% of the frame, in a wave
+ordered by `anchor` along the travel; motion-craft §8).
 Types, defaults and ranges: `catalog.md` → Scene transitions.
 
 ## Brand accent
