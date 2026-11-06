@@ -53,9 +53,9 @@ describe("every transition", () => {
 });
 
 describe("litt's transition language", () => {
-  it("is cuts and match cuts plus four accents, pixels and depth for the energetic register, and morph; nothing that performs", () => {
-    expect([...TRANSITIONS]).toEqual(["cut", "match", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph"]);
-    expect(TRANSITIONS.filter((t) => isCut({ type: t }))).toEqual(["cut", "match"]);
+  it("is cuts, match cuts and carries plus four accents, pixels and depth for the energetic register, morph and portal; nothing that performs", () => {
+    expect([...TRANSITIONS]).toEqual(["cut", "match", "carry", "crossfade", "dip", "push", "pushUp", "wipe", "pixels", "depth", "morph", "portal"]);
+    expect(TRANSITIONS.filter((t) => isCut({ type: t }))).toEqual(["cut", "match", "carry"]);
     expect(TRANSITIONS.filter((t) => TRANSITION_DEFS[t].registers)).toEqual(["pixels", "depth"]);
   });
 
@@ -260,5 +260,85 @@ describe("registers and transitions (docs/decisions/0007)", () => {
     expect(rules(sb(undefined, three))).toContain("transition-language");
     expect(rules(sb("energetic", three))).not.toContain("transition-language");
     expect(rules(sb("energetic", [...three, { type: "crossfade" }]))).toContain("transition-language");
+  });
+});
+
+describe("carry: a cut on movement", () => {
+  const frame = { width: 1920, height: 1080, fps: 30 };
+  const speed = (tw: ReturnType<typeof run>["out"][number], at: "start" | "end") => {
+    const [a, b] = tw.props.xPct as [number, number];
+    const p = (tw.ease as { p: [number, number, number, number] }).p;
+    // A cubic bezier with linear x has slope 3·(y1) at 0 and 3·(1 − y2) at 1.
+    const slope = at === "start" ? 3 * p[1] : 3 * (1 - p[3]);
+    return ((b - a) * slope) / tw.duration;
+  };
+  it("is a cut: the outgoing scene accelerates into it, the incoming one leaves it at the same speed", () => {
+    const t = transitionTweens({ type: "carry", duration: 0.5, dir: "left", distance: 10 }, { id: "a", duration: 3 }, { id: "b" }, frame);
+    const out = t.out.find((tw) => tw.props.xPct)!;
+    const into = t.in.find((tw) => tw.props.xPct)!;
+    expect(out.start + out.duration).toBeCloseTo(3, 6);
+    expect(into.start).toBe(0);
+    expect(speed(out, "start")).toBeCloseTo(0, 6);
+    expect(speed(into, "end")).toBeCloseTo(0, 6);
+    expect(speed(out, "end")).toBeCloseTo(speed(into, "start"), 2);
+    expect(speed(out, "end")).toBeLessThan(0);
+    // The whole move covers the distance: what the outgoing scene travels plus what the incoming one still has to.
+    expect((out.props.xPct as number[])[1] - (into.props.xPct as number[])[0]).toBeCloseTo(-10, 6);
+  });
+  it("blurs only when it moves fast enough to strobe, unless asked", () => {
+    const blurOf = (s: Partial<TransitionSpec>) =>
+      transitionTweens({ type: "carry", duration: 0.5, ...s } as TransitionSpec, { id: "a", duration: 3 }, { id: "b" }, frame).out.some((tw) => tw.props.blurX);
+    expect(blurOf({})).toBe(false);
+    expect(blurOf({ distance: 50 })).toBe(true);
+    expect(blurOf({ blur: true })).toBe(true);
+    expect(blurOf({ distance: 50, blur: false })).toBe(false);
+  });
+  it("calm keeps it a drift: a whip-pan distance needs the energetic register", () => {
+    const sb = (register: "calm" | "energetic") => {
+      const r = parseStoryboard({
+        title: "t",
+        format: { aspect: "16:9", fps: 30 },
+        register,
+        scenes: [
+          { id: "a", duration: 2, intent: "one", transition: { type: "carry", distance: 40 } },
+          { id: "b", duration: 2, intent: "two" },
+        ],
+      });
+      if (!r.ok) throw new Error(r.issues.join());
+      return r.value as Storyboard;
+    };
+    expect(lintStoryboard(sb("calm")).map((f) => f.rule)).toContain("transition-register");
+    expect(lintStoryboard(sb("energetic")).map((f) => f.rule)).not.toContain("transition-register");
+  });
+});
+
+describe("portal: the camera goes through an element", () => {
+  it("in: the outgoing scene is the rig, the incoming scene the window, both measured on via in the outgoing scene", () => {
+    const t = run({ type: "portal", via: "card" });
+    const outer = t.out.find((tw) => tw.measure)!;
+    const inner = t.in.find((tw) => tw.measure)!;
+    expect(outer.measure).toEqual({ kind: "portal", via: "a.card", at: 3 - 0.8, role: "outer", dir: "in" });
+    expect(inner.measure).toEqual({ kind: "portal", via: "a.card", at: 3 - 0.8, role: "inner", dir: "in" });
+    expect(Object.keys(inner.props)).toEqual(expect.arrayContaining(["scale", "x", "y", "clipTop", "clipRound"]));
+    expect(t.in.some((tw) => tw.props.opacity && (tw.props.opacity as number[])[0] === 0)).toBe(true);
+    expect(TRANSITION_DEFS.portal.layers!.under!({ type: "portal", duration: 0.8 })).toBe(false);
+  });
+  it("out: the outgoing scene shrinks into via in the incoming one, on top of it", () => {
+    const t = run({ type: "portal", via: "screen", dir: "out" });
+    expect(t.out.find((tw) => tw.measure)!.measure).toEqual({ kind: "portal", via: "b.screen", at: 0.8, role: "inner", dir: "out" });
+    expect(t.in.find((tw) => tw.measure)!.measure).toMatchObject({ role: "outer", dir: "out" });
+    expect(TRANSITION_DEFS.portal.layers!.under!({ type: "portal", duration: 0.8, dir: "out" })).toBe(true);
+  });
+  it("needs via", () => {
+    const r = parseStoryboard({
+      title: "t",
+      format: { aspect: "16:9", fps: 30 },
+      scenes: [
+        { id: "a", duration: 2, intent: "one", transition: { type: "portal" } },
+        { id: "b", duration: 2, intent: "two" },
+      ],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues.join()).toMatch(/via/);
   });
 });

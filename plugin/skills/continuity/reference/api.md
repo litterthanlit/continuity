@@ -240,11 +240,14 @@ Scene `duration` includes the outgoing transition overlap; the next scene starts
 inside it together.
 
 Transition params (validated per type; `duration` defaults per type): `ease` (token or
-`[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, wipe; `in|out`: depth) · `angle` + `feather` (wipe) ·
+`[x1,y1,x2,y2]`) · `dir` (`left|right|up|down`: push, wipe, carry; `in|out`: depth, portal) · `angle` + `feather` (wipe) ·
 `blur` (push/pushUp: `true` = speed-matched, number = σ px, `false`) · `pairs` (morph: `["logo"]`
 for the same id in both scenes, `[["card", "tile"]]` for outgoing → incoming) + `squash` + `arc`
 (morph: a bend of the path, −0.5..0.5). A morph pair must be at rest at the handoff: no entrance
 on the incoming element or its children during the morph (the carrier holds its built state).
+`via` (portal: the element the camera goes through — the outgoing scene's with `dir: "in"`, the
+incoming scene's with `dir: "out"`; measured at prepare, so the window stays locked to it) ·
+`distance` (carry: % of the frame the camera travels through the cut; default 8, ≤ 15 calm).
 Types, defaults and ranges: `catalog.md` → Scene transitions.
 
 ## Brand accent

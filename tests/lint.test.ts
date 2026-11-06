@@ -161,3 +161,55 @@ describe("launch devices (projects/_launch)", () => {
     expect(calm.filter((f) => f.rule === "travel-too-far" && f.element?.startsWith("alerts.alerts-"))).toEqual([]);
   });
 });
+
+describe("flow across the joins (docs/decisions/0010)", () => {
+  type Shape = { enter?: number; settle?: number };
+  /** Four 2s scenes; each one's single tween enters at `enter` and settles at `settle`. */
+  const film = (sides: Shape[], transition?: { type: "crossfade"; duration: number }) =>
+    ({
+      ok: true,
+      slug: "t",
+      dir: "",
+      elements: [],
+      partsEstimate: {},
+      findings: [],
+      hash: "",
+      storyboard: {
+        title: "t",
+        format: { aspect: "16:9", fps: 30 },
+        scenes: sides.map((_, i) => ({ id: `s${i}`, duration: 2, intent: "one", ...(transition && i < sides.length - 1 ? { transition } : {}) })),
+      },
+      timeline: {
+        version: 1,
+        fps: 30,
+        width: 1920,
+        height: 1080,
+        duration: 2 * sides.length,
+        scenes: sides.map((s, i) => ({
+          scene: `s${i}`,
+          start: 2 * i,
+          duration: 2,
+          beats: {},
+          loops: [],
+          tweens: [
+            { target: `s${i}.camera`, kind: "camera", start: 0, duration: 2, ease: { type: "linear" }, props: { scale: [1, 1.03] } },
+            { target: `s${i}.a`, kind: "enter", start: s.enter ?? 0, duration: (s.settle ?? 1) - (s.enter ?? 0), ease: { type: "linear" }, props: { opacity: [0, 1] } },
+          ],
+        })),
+      },
+    }) as unknown as Parameters<typeof lintTimeline>[0];
+  const count = (b: Parameters<typeof lintTimeline>[0], rule: string) => lintTimeline(b).filter((f) => f.rule === rule).length;
+
+  it("a cut between two rests is dead; a camera push does not carry it, an entrance on the cut does", () => {
+    const rest = { enter: 0.5, settle: 1 };
+    expect(count(film([rest, rest]), "dead-cut")).toBe(1);
+    expect(count(film([rest, { enter: 0, settle: 1 }]), "dead-cut")).toBe(0);
+    expect(count(film([{ enter: 1.2, settle: 1.9 }, rest]), "dead-cut")).toBe(0);
+  });
+  it("a film whose joins mostly carry nothing is a slideshow", () => {
+    const rest = { enter: 0.5, settle: 1 };
+    expect(count(film([rest, rest, rest, rest]), "static-edit")).toBe(1);
+    expect(count(film([{ enter: 0 }, { enter: 0 }, { enter: 0 }, { enter: 0 }], { type: "crossfade", duration: 0.4 }), "static-edit")).toBe(1);
+    expect(count(film([{ enter: 0 }, { enter: 0 }, { enter: 0 }, { enter: 0 }]), "static-edit")).toBe(0);
+  });
+});

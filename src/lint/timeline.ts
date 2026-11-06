@@ -5,7 +5,10 @@ import { resolveScene, tapeText } from "../motion/evaluate.js";
 import { REGISTER_BOUNDS, registerOf, type Register } from "../motion/register.js";
 import { EXIT_FACTOR, SETTLED_HOLD, TOKEN_TOLERANCE, TRAVEL, bounceOf, durations, eases, readTime } from "../motion/tokens.js";
 import { WEIGHTS } from "../themes/kits.js";
-import { isCut, TRANSITION_DEFS } from "../motion/transitions.js";
+import { CARRY_DISTANCE, isCut, TRANSITION_DEFS } from "../motion/transitions.js";
+
+/** carry: the farthest a calm cut on movement travels (% of the frame); beyond it, a whip pan. */
+const CARRY_CALM_MAX = 15;
 import { SPATIAL_PROPS, type PropName, type SceneTimeline, type Tween } from "../motion/types.js";
 import type { Finding, Severity } from "../spec/findings.js";
 import { ASPECTS, sceneTimings, type Storyboard } from "../spec/storyboard.js";
@@ -45,6 +48,8 @@ export const RULES = {
   "split-too-busy": "Character split on long copy is slow and noisy. Split by words or lines instead.",
   "stagger-too-long": "The stagger cascade takes too long to complete.",
   "camera-too-fast": "Camera moves faster than ~15% zoom/s or 160px/s feel jarring (energetic register: 50% zoom/s, 480px/s).",
+  "dead-cut": "A plain cut between two rests: the outgoing scene has settled and the incoming one starts still, so the eye stops at the join. Cut on movement (an exit into the cut, an entrance on it, or a carry), match it, or go through an element (portal, morph).",
+  "static-edit": "Most of the film's joins carry nothing (dead cuts, crossfades, dips): it reads as a slideshow. Let the joins flow — carry, match, portal, morph, push — and keep the still cuts as punctuation.",
   "transition-too-long": "A transition longer than its type's craft range stalls the edit (a 1s push is no longer a step).",
   "transition-too-short": "A transition shorter than its type's range reads as a glitch, not a move.",
   "transition-language": "More than two accent transition types in one video reads as a template (three once any scene is energetic). Pick one primary (most cuts) and few accents; hard cuts are free.",
@@ -103,7 +108,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent", "clipRound"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */
@@ -474,6 +479,7 @@ export function lintTimeline(build: BuildResult): Finding[] {
   if (build.storyboard) out.push(...lintStoryboard(build.storyboard, tl));
 
   const grid = build.music?.grid;
+  if (build.storyboard) out.push(...lintFlow(build.storyboard, tl));
   const bpm = build.storyboard?.bpm;
   const frame = 1 / tl.fps;
   // On the beat: on its nearest frame. Times are kept to 4 decimals, so half a frame plus 1 ms.
@@ -511,6 +517,59 @@ export function lintTimeline(build: BuildResult): Finding[] {
   return out;
 }
 
+/** A side of a cut is at rest when nothing but the camera moves within this of the join. */
+const REST_OUT = 0.4;
+const REST_IN = 0.2;
+/** static-edit: from this share of joins that carry nothing, over at least three joins. */
+const STATIC_SHARE = 0.6;
+
+/**
+ * Flow across the joins (docs/decisions/0010): a plain cut where both sides are at rest stops the
+ * eye (`dead-cut`), and a film whose joins mostly carry nothing reads as a slideshow (`static-edit`).
+ * The camera does not count: a slow push does not carry the eye across a cut.
+ */
+function lintFlow(sb: Storyboard, tl: NonNullable<BuildResult["timeline"]>): Finding[] {
+  const out: Finding[] = [];
+  const moving = (sc: SceneTimeline) => sc.tweens.filter((t) => !t.target.endsWith(".camera") && t.kind !== "transition");
+  let flat = 0;
+  const joins = tl.scenes.length - 1;
+  for (let i = 0; i < joins; i++) {
+    const a = tl.scenes[i];
+    const b = tl.scenes[i + 1];
+    const t = sb.scenes[i].transition;
+    if (t && (t.type === "crossfade" || t.type === "dip")) {
+      flat++;
+      continue;
+    }
+    if (t && t.type !== "cut") continue;
+    const lastEnd = Math.max(0, ...moving(a).map((w) => w.start + w.duration));
+    const firstStart = Math.min(b.duration, ...moving(b).map((w) => w.start));
+    if (a.duration - lastEnd > REST_OUT && firstStart > REST_IN) {
+      flat++;
+      out.push({
+        source: "lint",
+        rule: "dead-cut",
+        severity: "info",
+        scene: a.scene,
+        time: r2(b.start),
+        message: `${a.scene} → ${b.scene}: both sides at rest (${a.scene} settled ${r2(a.duration - lastEnd)}s before the cut, ${b.scene} starts moving ${r2(firstStart)}s after it)`,
+        suggestion: `exit into the cut or enter on it, or make the join a carry, match or portal`,
+      });
+    }
+  }
+  if (joins >= 3 && flat / joins >= STATIC_SHARE) {
+    out.push({
+      source: "lint",
+      rule: "static-edit",
+      severity: "warning",
+      scene: tl.scenes[0].scene,
+      message: `${flat} of ${joins} joins carry nothing (dead cuts, crossfades, dips)`,
+      suggestion: "let most joins flow: carry the camera through a cut, match or morph an element across it, or go through one with a portal (motion-craft §8)",
+    });
+  }
+  return out;
+}
+
 /**
  * Storyboard-level rules: the edit's transition language and each transition's
  * craft range. Runs on the storyboard alone (`ct lint --storyboard`), so
@@ -526,7 +585,13 @@ export function lintStoryboard(sb: Storyboard, frame?: { width: number; height: 
   const accents = Math.max(...sb.scenes.map((s) => REGISTER_BOUNDS[registerOf(sb, s.id)].accents));
   sb.scenes.forEach((sc, i) => {
     const t = sc.transition;
-    // Cuts and match cuts are the primary: not accents, no craft range to keep.
+    if (t?.type === "carry" && i < sb.scenes.length - 1 && (t.distance ?? CARRY_DISTANCE) > CARRY_CALM_MAX) {
+      const own = [registerOf(sb, sc.id), registerOf(sb, sb.scenes[i + 1].id)];
+      if (!own.includes("energetic")) {
+        out.push({ source: "lint", scene: sc.id, time: r2(timings[i].start + sc.duration), rule: "transition-register", severity: "warning", message: `carry travels ${t.distance}% of the frame through the cut — a whip pan, but ${sc.id} and ${sb.scenes[i + 1].id} are calm`, suggestion: `keep distance ≤ ${CARRY_CALM_MAX} (a drift), or set "register": "energetic"` });
+      }
+    }
+    // Cuts, match cuts and carries are the primary: not accents, no craft range to keep.
     if (!t || isCut(t) || i === sb.scenes.length - 1) return;
     const def = TRANSITION_DEFS[t.type];
     const at = r2(timings[i].start + sc.duration - t.duration);

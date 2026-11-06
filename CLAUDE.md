@@ -48,7 +48,8 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 - **One look: litt** (`docs/decisions/0006`). Themes `litt-dark` / `litt-light`, type kit
   `litt` (Geist in three weights by role, two inks — the `typography` skill), litt's motion
   tiers with one expressive moment per scene, material static, and one transition language
-  (cuts + ≤ 2 accents, motion-craft §8). The `litt-*` and motion lint rules gate it; a
+  (cuts + ≤ 2 accents, motion-craft §8), and joins that carry the eye (`carry`, `match`, `portal`,
+  `morph` — `docs/decisions/0010`). The `litt-*` and motion lint rules gate it; a
   deliberate exception is `allow: [...]` / `litt-allow: <rule> (reason)`.
 - **Two registers** (`docs/decisions/0007`): `calm` (default, the above) and `energetic` for
   brand reels and montages — easing by role (`steep`/`pop`/`linear`), depth moves, bursts and
@@ -83,7 +84,7 @@ brief.md → storyboard.json → style frames → scenes → GATE → LOOK → f
 | `src/mcp/` | the MCP server: each tool runs a `ct` child process (`run.ts`) and reads its `CT_RESULT_FILE` result; `files.ts` is the project-source sandbox |
 | `Dockerfile`, `.github/workflows/docker.yml` | images: `toolchain` (pinned Chrome + ffmpeg) and `ct` (default, entrypoint `ct`); CI runs the browser suite inside `toolchain`; release pushes both to GHCR |
 | `templates/` | `project/` (what `ct new` copies) and `init/` (what `ct init` writes into a user's repo) |
-| `projects/_kit`, `_type`, `_transitions`, `_energetic`, `_launch`, `_defects*` | galleries of the litt kit, type, transitions, the energetic register and launch devices (Cycle, retype, notification stack, Ring, DotGrid, pixels, pull-back) (reference + goldens) and seeded-defect fixtures (tests) |
+| `projects/_kit`, `_type`, `_transitions`, `_flow`, `_energetic`, `_launch`, `_defects*` | galleries of the litt kit, type, transitions, flow moves (portal, carry, pull-back), the energetic register and launch devices (Cycle, retype, notification stack, Ring, DotGrid, pixels, pull-back) (reference + goldens) and seeded-defect fixtures (tests) |
 | `docs/decisions/` | architecture decisions |
 
 ## Commands

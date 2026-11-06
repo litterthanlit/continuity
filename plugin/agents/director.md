@@ -24,7 +24,10 @@ Deliverables, in `projects/<slug>/`:
    typical frame: display line, title, body, label), motion language (where each
    scene's ONE expressive moment is, what stays responsive, the ink emphasis,
    the camera), the transition language (cuts on the beat plus at most two
-   accents from crossfade / dip / push / pushUp / wipe), rhythm (where it
+   accents from crossfade / dip / push / pushUp / wipe / portal), the flow — what carries
+   the eye across each join (a direction: `carry`; a place: `match`; an element: `portal`,
+   `morph`; an action: an exit into the cut or an entrance on it; or nothing, as punctuation,
+   two or three times a film — motion-craft §8), rhythm (where it
    breathes, where it cuts), and 2–3 references. For energetic scenes (motion-craft
    §12) the motion language is easing by role instead of one expressive moment, and
    the treatment also names: the scene formulas and where each repeats (≥ 2 uses,
@@ -55,6 +58,10 @@ Deliverables, in `projects/<slug>/`:
      and of 1"). Run `npx ct beats <slug>` and read the tempo it heard before
      choosing durations. A `morph` transition names its `pairs`, and both
      elements of a pair are at rest at the handoff.
+   - every join planned as a handoff: the `motion` notes on both sides of a cut say what
+     carries it ("the rows exit left into the cut; carry left; the chart's bars rise from the
+     left on frame 0"). A `portal` names its `via` element (list it in `elements`, and say
+     what it shows: a thumbnail of the next scene, or — dir out — a still of the last one).
 4. Optional `theme.ts` only when the brand has its own accent (litt: one accent per
    project): `defineTheme("litt-dark", { colors: { accent, "accent-text", "accent-tint", focus } })`.
    Neutrals, type and material stay litt's.
