@@ -615,3 +615,50 @@ describe("shutter blur", () => {
     expect(styleOf(mid).motionBlur![0]).toBeGreaterThan(5);
   });
 });
+
+describe("additive offsets, impulse, paint", () => {
+  const lin = easeFn({ type: "linear" });
+  void lin;
+  const tl = (tweens: Array<{ target: string; props: Record<string, [number, number]>; duration: number }>): SceneTimeline => ({
+    scene: "a",
+    start: 0,
+    duration: 2,
+    beats: {},
+    loops: [],
+    tweens: tweens.map((t) => ({ kind: "move" as const, start: 0, ease: { type: "linear" as const }, ...t })),
+  });
+  const transformAt = (s: SceneTimeline, key: string, t: number) => styleOf(sampleScene(compileScene(s, {}), t).get(key)!).transform;
+
+  it("shift adds to x: an element's own move and a handoff compose", () => {
+    const s = tl([
+      { target: "a.el", props: { x: [0, 100] }, duration: 1 },
+      { target: "a.el", props: { shiftX: [0, 40] }, duration: 1 },
+    ]);
+    expect(transformAt(s, "a.el", 0.5)).toContain("translate3d(70px,0px,0px)");
+  });
+
+  it("impulse leaves at rest, starts at 27/4 slope, peaks at a third", () => {
+    const e = easeFn({ type: "impulse" });
+    expect(e(0)).toBe(0);
+    expect(e(1)).toBeCloseTo(0, 9);
+    expect(e(1 / 3)).toBeCloseTo(1, 9);
+    expect(e(1e-4) / 1e-4).toBeCloseTo(27 / 4, 2);
+  });
+
+  it("the shutter sees a fast shift", () => {
+    const c = compileScene(tl([{ target: "a.el", props: { shiftX: [0, 600] }, duration: 0.3 }]), {});
+    expect(c.shutter.has("a.el")).toBe(true);
+  });
+
+  it("paint mixes two fills; corner is px", () => {
+    const s = styleOf({ paint: 0.25, corner: 12 }, undefined, undefined, undefined, ["#000000", "#ffffff"]);
+    expect(s.backgroundColor).toBe("color-mix(in oklab, #ffffff 25%, #000000)");
+    expect(s.borderRadius).toBe("12px");
+  });
+
+  it("a paint tween carries its colour pair into the compiled scene", () => {
+    const s = tl([{ target: "a.el", props: { paint: [0, 1] }, duration: 1 }]);
+    s.tweens[0].paint = ["#111111", "#eeeeee"];
+    expect(compileScene(s, {}).paints.get("a.el")).toEqual(["#111111", "#eeeeee"]);
+  });
+});

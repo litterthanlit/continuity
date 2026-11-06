@@ -108,7 +108,7 @@ function spans(scene: SceneTimeline, parts: BuildResult["partsEstimate"]): Span[
 const ON_SCALE = [...Object.values(durations), EXIT_FACTOR * durations.responsive, EXIT_FACTOR * durations.expressive];
 const near = (d: number) => ON_SCALE.some((v) => Math.abs(d - v) <= v * TOKEN_TOLERANCE);
 /** Channels litt lets move: transform and opacity, ink, masks and clips, and data. */
-const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent", "clipRound"]);
+const LITT_PROPS = new Set<PropName>([...SPATIAL_PROPS, "opacity", "ink", "clipTop", "clipRight", "clipBottom", "clipLeft", "fx", "draw", "counter", "typed", "blurX", "blurY", "match", "morph", "radius", "accent", "clipRound", "shiftX", "shiftY", "paint", "corner"]);
 const isSpatial = (t: Tween) => Object.keys(t.props).some((p) => SPATIAL_PROPS.has(p as PropName));
 /** A motion-blur bell: timed to a snap (the whip preset), not a move of its own. */
 /** The time of the first frame that shows something starting at `t`. */

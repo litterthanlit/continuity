@@ -17,7 +17,9 @@ export type EaseSpec =
    * its progress; the `whip` token keeps that at ~1.5 frames whatever the duration), and the rest
    * drifts in slowly over the remainder, so the element is still alive while it is read.
    */
-  | { type: "whip"; snap: number; share: number };
+  | { type: "whip"; snap: number; share: number }
+  /** Leaves at rest, kicks off steeply, peaks at 1 a third of the way, and returns to 0: e(u) = 27/4·u·(1-u)². */
+  | { type: "impulse" };
 
 /** Animatable channels. Units: px, %, deg, em or unitless as noted. */
 export const PROPS = [
@@ -58,12 +60,18 @@ export const PROPS = [
   "accent", // 0..1: live input in the accent's text tone (1) settling to the element's ink (0) — m.retype's accent
   "radius", // corner radius, % of the element's size: 0 square … 50 a circle (a cell becoming a dot)
   "clipRound", // px: corner radius of the clip insets (a rounded window — the portal transition)
+  "shiftX", // px, additive to x: a handoff moves an element that is also running its own x tween
+  "shiftY", // px, additive to y
+  "paint", // 0..1: a fill mixed from Tween.paint[0] (0) to Tween.paint[1] (1)
+  "corner", // px: border-radius
 ] as const;
 export type PropName = (typeof PROPS)[number];
 
 export const SPATIAL_PROPS: ReadonlySet<PropName> = new Set<PropName>([
   "x",
   "y",
+  "shiftX",
+  "shiftY",
   "xPct",
   "yPct",
   "z",
@@ -114,6 +122,10 @@ export const BASE_VALUES: Record<PropName, number> = {
   radius: 0,
   accent: 0,
   clipRound: 0,
+  shiftX: 0,
+  shiftY: 0,
+  paint: 1,
+  corner: 0,
 };
 
 /** Channels that set font-variation-settings (wght/wdth go through font-weight/font-stretch). */
@@ -180,6 +192,8 @@ export interface Tween {
    * deletes it, then types phrase 1… The `typed` channel says which keystroke the element shows.
    */
   tape?: string[];
+  /** CSS colours [from, to] the `paint` channel mixes between (0 = from, 1 = to). */
+  paint?: [string, string];
   /** Shape presentation the `fx` channel drives. */
   fx?: FxSpec;
   /**

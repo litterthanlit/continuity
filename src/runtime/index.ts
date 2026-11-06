@@ -251,7 +251,7 @@ function apply(sceneId: string, t: number) {
     }
     const el = resolveKey(key);
     if (!el) return;
-    const s = styleOf(v, c.counters.get(key), c.fx.get(key), c.tapes.get(key));
+    const s = styleOf(v, c.counters.get(key), c.fx.get(key), c.tapes.get(key), c.paints.get(key));
     const st = el.style;
     if (s.transform !== undefined) st.transform = s.transform;
     if (s.opacity !== undefined) st.opacity = s.opacity;
@@ -273,6 +273,7 @@ function apply(sceneId: string, t: number) {
     if (s.color !== undefined) st.color = s.color;
     if (s.strokeDashoffset !== undefined) st.strokeDashoffset = s.strokeDashoffset;
     if (s.borderRadius !== undefined) st.borderRadius = s.borderRadius;
+    if (s.backgroundColor !== undefined) st.backgroundColor = s.backgroundColor;
     if (s.text !== undefined && el.textContent !== s.text) el.textContent = s.text;
     if (s.fontWeight !== undefined) st.fontWeight = s.fontWeight;
     if (s.fontStretch !== undefined) st.fontStretch = s.fontStretch;
