@@ -123,7 +123,7 @@ export function Backdrop({ kind, gradient = "accent", ct = "bg" }: { kind: Stage
   );
 }
 
-/** litt's grain: a static SVG fractal-noise tile at plain opacity. It also dithers the light's banding. */
+/** litt's grain: a static SVG fractal-noise tile at plain opacity (texture; a gradient field dithers itself). */
 export function Grain({ amount }: { amount: number }) {
   const svg =
     "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'>" +

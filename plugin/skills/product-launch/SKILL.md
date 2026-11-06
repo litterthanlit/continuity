@@ -1,6 +1,6 @@
 ---
 name: product-launch
-description: Product launch / feature announcement videos in litt (Linear, Vercel, Stripe, Raycast lineage) — narrative structure, UI choreography with the video-scale litt UI kit, cursor acting, data reveals with colour that carries data, device framing, the light, pacing and copy. Load with motion-craft and typography when the video shows a product or interface.
+description: Product launch / feature announcement videos in litt (Linear, Vercel, Stripe, Raycast lineage) — narrative structure, UI choreography with the video-scale litt UI kit, cursor acting, data reveals with colour that carries data, device framing, the backdrop, pacing and copy. Load with motion-craft and typography when the video shows a product or interface.
 ---
 
 # Product launch videos, in litt
@@ -13,7 +13,7 @@ colour appears only as light (the one primary action) or as data.
 1. **Cold open (0–3s):** the problem or the promise in one line, or a striking product moment.
    First motion ≤ 0.2s.
 2. **Reveal (3–8s):** the product is placed — the window `settle`s (the scene's one expressive
-   moment) under the top light. Name it.
+   moment), on the hero's moving field or the solid canvas. Name it.
 3. **Features (3 × 4–7s):** ONE feature per scene: a title (≤ 6 words) + the UI doing that one
    thing. Show, then tell — UI action first, the label after.
 4. **Proof (3–5s):** a number (`Stat` with a delta in words), a logo row, a quote, a before/after.

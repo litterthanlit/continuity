@@ -133,10 +133,10 @@ import { scene, Stage, Safe, Stack, Label, Headline } from "continuity";
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <Safe>
         <Stack gap={8} class="absolute bottom-[96px] left-[96px]">
-          <Label ct="label">{text.label}</Label>
+          <Label ct="label" class="text-fg">{text.label}</Label>
           <Headline ct="title">{text.title}</Headline>
         </Stack>
       </Safe>
@@ -224,12 +224,16 @@ above. The translation from web UI to video is
 - **Type:** Geist and Geist Mono, three weights by role (400 text, 500 titles, 600 labels),
   two inks, one display step per scene (112px) over title / body / small / label. Rank comes
   from weight, ink and space before size; emphasis is an ink step, not an accent word.
-- **Material:** one light from the top (`bg="lit"`), flat surfaces with 2px hairlines and a
-  top highlight, zero-offset glows on floating UI, static grain. Material never moves.
+- **Material:** a backdrop is one colour or a moving field, never a faint gradient
+  (docs/decisions/0011): `bg="solid"` (the canvas, the default), or `bg="gradient"` with a
+  bold WebGL field (`accent`, `aurora`, `ember`, tuned for each theme) on the hero and the end
+  card. Type on a field takes one ink, `fg`; `ct check` samples a field scene every half second
+  for contrast. Flat surfaces with 2px hairlines and a top highlight, zero-offset glows on
+  floating UI, static grain. Nothing material moves but the field, which drifts on its own.
 - **Motion:** litt's tiers — a 100ms instant tween, a responsive spring (the default) and one
   expressive spring per scene (bounce 0.12) — exits at 0.75× that never bounce, 32px travel,
-  40ms staggers, the camera's ≤ 3% push as the only ambient life. Transitions are cuts on the
-  beat plus crossfade, dip, push and a feathered wipe.
+  40ms staggers, the camera's ≤ 3% push (and a field's own drift) as the only ambient life.
+  Transitions are cuts on the beat plus crossfade, dip, push and a feathered wipe.
 - **Registers:** the same look, two energies. `calm` (the default) is the above; `energetic`
   is for brand reels, recaps and montages — steep in-outs for UI and camera, springs that
   overshoot for things that act like objects, linear for machines, a camera that flies through

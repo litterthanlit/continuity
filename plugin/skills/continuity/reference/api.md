@@ -69,7 +69,8 @@ Tailwind layer):
 Layout
 - `<Stage bg? gradient? grain?>` — every view's root. `bg`: `solid` (default) · `gradient` (a
   moving colour field — the hero, maybe the end card; `gradient`: `accent` (default) · `aurora` ·
-  `ember` or a spec; `bg="lit"` was removed, `docs/decisions/0011`) · `grid` (a static 2px hairline
+  `ember`, each tuned per theme mode, or a spec; type on it is `fg`; `bg="lit"` was removed,
+  `docs/decisions/0011`) · `grid` (a static 2px hairline
   grid, 96px cells, centred — collage and UI scenes in the energetic register) · `none`. A tween
   never touches the backdrop; a gradient field moves by itself.
 - `<Safe zone="title|action|social|none">` — inset content area.

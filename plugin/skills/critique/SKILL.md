@@ -45,7 +45,7 @@ Score **Temporal** from timeline/lint evidence first, the sheet second.
 
 ## litt signature checklist
 Mark each ✅ / ❌ / n/a; every ❌ names an element and goes into the fixes.
-- **P1** At most one accent fill per frame, on the primary action; the accent otherwise only as light (focus, caret, a click ring). No accent word in copy.
+- **P1** At most one accent fill per frame, on the primary action; the accent otherwise only as light (focus, caret, a click ring) or as material (the `accent` field is a backdrop, not a fill). The primary button still has to stand out: on an `accent` field it sinks, so it belongs on another field or on `solid`. No accent word in copy.
 - **P2** The backdrop is one colour or a moving field; a faint gradient is a defect. The field (`bg="gradient"`) on the hero (and maybe the end card) only.
 - **P3** Glass only on floating UI with content behind it.
 - **P4** No offset shadow; cards flat (hairline + highlight); floats zero-offset glow + ring.

@@ -27,7 +27,7 @@ the 1080 short side; line heights are whole pixels; tracking tightens as size gr
 - The 9:16 column is automatic (the build picks it from the aspect): the probe's legibility
   floor is 34px there, 26px otherwise. Components never branch on aspect.
 - **Display is the ceiling.** Nothing is set larger: the hero gets its presence from space,
-  light and the product, not from a bigger number. If a line needs to be smaller to fit, cut
+  the backdrop and the product, not from a bigger number. If a line needs to be smaller to fit, cut
   words — never shrink the step (`Fit` is for variable data, not copy).
 - **Video UI** (inside a Window, a List, a Toast) is litt's UI at 2×: 28px text, 26px meta,
   never below 26. The kit components already do this.

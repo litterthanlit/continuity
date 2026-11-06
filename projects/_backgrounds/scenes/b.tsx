@@ -1,6 +1,7 @@
 import { scene, Label, Safe, Stage } from "continuity";
 
-// fg ink: aurora stays deep enough (luminance ≤ ~0.17) for fg type anywhere on it (docs/decisions/0011).
+// fg ink: aurora stays deep (luminance ≤ ~0.19), so large fg type clears 3:1 anywhere on it (4.1:1 at its
+// brightest); the greys do not (docs/decisions/0011).
 export default scene({
   view: ({ text }) => (
     <Stage bg="gradient" gradient="aurora">

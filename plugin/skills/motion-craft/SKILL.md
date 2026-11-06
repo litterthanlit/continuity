@@ -7,8 +7,9 @@ description: The motion design taste layer — litt (Nick's design language) tra
 
 Continuity's taste is **litt** — technical precision, lit from above. The structure is exact
 and quiet: a grid, hairlines, one typeface in three weights, warm stone neutrals. The only bold
-move is light and material: a soft light from the top, surfaces that catch it. Color barely
-appears; where it does it behaves like light or carries data. **Motion explains and never
+move is material: a backdrop that is one flat colour or a bold field of colour that keeps moving
+(the hero, the end card), and surfaces that catch a top highlight. Color barely appears
+elsewhere; where it does it behaves like light or carries data. **Motion explains and never
 performs.** Spec: `docs/decisions/0006-litt-house-language.md`.
 
 **Two registers.** litt can speak quietly or loudly; the look never changes, the motion's energy
@@ -49,11 +50,15 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   WebGL colour field that drifts on its own (`docs/decisions/0011`). Use the field on the hero
   and the end card; every other scene is `solid`. Hand-made gradients, radial glows and glow
   blobs are `litt-gradient`.
-- **Type on a field is `fg`.** On litt-dark, `accent` and `aurora` stay dark enough for `fg` type
-  anywhere; the greys fall under 3:1 somewhere on them, so on a field hold the hierarchy by size
-  and weight in one ink. `ember` glows brighter: set type over its dark side, or on a
-  `<Card glass>` (the field blurs through it and `fg` clears 7:1). `ct check` samples the
-  rendered field, so a miss is a `contrast_aa_failure`.
+- **Type on a field is `fg`, in both themes.** Each preset is tuned per theme for its `fg`: on
+  litt-dark the fields stay deep (luminance ≤ ~0.19 on `accent` and `aurora`, ≤ ~0.25 on `ember`)
+  under near-white `fg`; on litt-light they stay luminous (≥ ~0.14 on `accent`, ≥ ~0.25 on
+  `aurora` and `ember`) under near-black `fg`. So **large `fg` type (≥ 24px) clears 3:1 anywhere**
+  on every preset; body type does not everywhere (fg over litt-dark's `#507afd` is 3.6:1), and the
+  greys fall under 3:1 on every field. Hold the hierarchy by size and weight in one ink; an ink
+  step (`ink`, `dim`) belongs on a solid scene. Put body copy on a `<Card glass>` (the field blurs
+  through it). `ct check` samples a field scene every 0.5s, so a miss anywhere in it is a
+  `contrast_aa_failure`.
 - **Material is static (P5), except the field.** Grain, glows and the solid backdrop never
   animate, loop, pulse or sweep, and a tween never touches the backdrop (`material-motion` is an
   error): a gradient field moves by itself. The camera may push.
@@ -65,7 +70,7 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   or `<Card glass>` floating over a gradient field). Never on cards in the flow, never glass on glass.
 - **Radius:** controls and tags 8 (`rounded-control`), surfaces 16 (`rounded-surface`), pills
   only for avatars, icon buttons and switches (`litt-radius`). A phone bezel is the device's own.
-- Grain is static noise at 2% (light) / 4% (dark); it also dithers the light's banding.
+- Grain is static noise at 2% (light) / 4% (dark). (The field dithers itself; grain is texture.)
 
 ## 3. Colour
 
@@ -73,7 +78,9 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   Pick one per video; never invert one into the other.
 - **The accent is light (P1).** At most one accent fill per frame, on the primary action (a
   `Button variant="primary"`, which carries the glow). Elsewhere the accent appears only as the
-  focus ring, a caret, a cursor's click ring. Never an accent word in a headline,
+  focus ring, a caret, a cursor's click ring — or as material: the `accent` field is a backdrop,
+  not a fill. Put the primary button on a field of another hue (`aurora`) or on `solid`, so the
+  one fill still stands out. Never an accent word in a headline,
   never an accent fill behind copy, never a decorative gradient.
 - **Colour carries data (P11).** Beyond the accent, colour only says something: a series, a
   category, an identity — the five data hues in a fixed order (blue, amber, teal, violet, rose).

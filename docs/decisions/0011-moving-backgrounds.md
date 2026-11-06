@@ -21,8 +21,11 @@ moving field. `lit` and `material.light` are gone; `bg="lit"` is a build error t
 decision and the replacement. `grid` stays for the energetic register (0007).
 
 A preset (`accent`, `aurora`, `ember`) is theme data (`src/themes/gradients.ts`): four colours, a
-base, a speed, a blob scale and a warp strength. `accent` reads the theme's own tokens. The other
-two are fixed bold palettes that a brand theme can override. A custom spec works too. The build
+base, a speed, a blob scale and a warp strength. Each preset has two tunings, one per theme mode
+(dark and light, §6), picked by `theme.mode`. `accent` reads the theme's own tokens. The other two
+are fixed bold palettes. A brand theme can override any preset. A custom spec works too, and is
+checked where it enters: exactly four colours, each a `#rrggbb` hex or a theme token, a finite
+speed, scale (above 0) and warp; the error names the field. The build
 resolves the preset to linear-RGB uniforms and writes them onto a `<canvas data-ct-gradient>`
 inside the scene's `bg` element.
 
@@ -121,26 +124,62 @@ of the shader swept over time:
 - **Saturated, mid-dark hues** keep every mix vivid; the light cyan and apricot went.
 - **Scale under 1** lets the base show between the blobs, so the field has depth: deep pockets
   drift through it. Below ~0.7 the warp's value noise shows as blotches.
-- **Speed ~0.2**: two MP4 frames 1 s apart now differ by a mean of 4–17 levels per channel over
-  the whole frame (was 2–5), visibly alive, still slower than any element's entrance. In `accent` the order puts the
+- **Speed ~0.2**: two MP4 frames 1 s apart now differ by a mean of about 2–17 levels per channel
+  over the whole frame (was 2–5; the final review measured `ember`'s blue channel at 1.8, the least), visibly alive, still
+  slower than any element's entrance. In `accent` the order puts the
   two darks on adjacent Lissajous paths, so a dark pocket is on screen more often.
-- Luminance (port, 5th / 50th / 95th percentile): `accent` 0.004 / 0.08 / 0.11, `aurora`
-  0.03 / 0.15 / 0.16, `ember` 0.02 / 0.10 / 0.22. White type needs ≤ 0.18 for 4.5:1.
+- Luminance (port, 120 s at 0.5 s steps, 5th / 50th / 95th percentile / max): `accent`
+  0.009 / 0.07 / 0.15 / 0.187, `aurora` 0.024 / 0.14 / 0.17 / 0.19, `ember` 0.007 / 0.08 / 0.19 /
+  0.25. litt-dark's `fg` needs ≤ 0.18 for 4.5:1 and ≤ 0.28 for 3:1: large `fg` type clears all
+  three anywhere (at worst 4.2:1, 4.1:1 and 3.3:1), body type not everywhere.
 - **Glass**: litt-dark's `material.glass` fill went from 0.72 to 0.5 alpha. At 0.72 a glass card
   over a field read as a dark panel tinted by it; at 0.5 the blurred field shows through as frosted
-  colour and `fg` type on it still clears 7:1. Over the solid canvas the two are indistinguishable.
+  colour and `fg` type on it still clears 7:1 (measured over `aurora`, the gallery's glass scene).
+  Over the solid canvas the two are indistinguishable.
+
+**litt-light.** The table above was tuned on litt-dark. On litt-light the same data read as the
+wash this decision rejects: `accent` resolved to cobalt, `#e8eeff` and the near-white canvas over
+a near-white base, a lavender haze; `aurora` faded to white at the edges (its base is the canvas);
+`ember` kept a near-black base under near-black type. litt-light's `fg` is near-black, so its
+fields go the other way: saturated, luminous hues on a coloured base, never the canvas.
+
+| preset | litt-light colours | base |
+|---|---|---|
+| `accent` | `#4d8dff accent-tint #8b7cff accent` | `#4d8dff` |
+| `aurora` | `#4d7dff #9a6bff #12b5c9 #ff4f8f` | `#8a7dff` |
+| `ember` | `#ff6a14 #ff3d2e #ffb000 #ff5c8a` | `#ff9a4d` |
+
+Speed, scale and warp are litt-dark's. `accent` keeps the theme's `accent` (a deep pocket) and
+`accent-tint` (the highlights); litt-light's accent is too dark to carry near-black type alone, so
+two luminous cobalts carry the rest. Luminance (port, as above; min / 50th / max): `accent` 0.14 /
+0.32 / 0.71, `aurora` 0.25 / 0.28 / 0.35, `ember` 0.28 / 0.37 / 0.49; `fg` over them at worst 3.4:1,
+5.4:1 and 6.1:1. Judged on frames of `ct render --draft` of the gallery on litt-light: cobalt-sky
+with periwinkle passages, violet / rose / teal, orange / coral; `fg` labels and glass cards
+(white at 0.72) read cleanly, and the rendered frames never fall under 5:1 for `fg`.
 
 ## Consequences
 
 - A backdrop is a binary choice in every project, and the critique counts a faint gradient as a
   defect.
 - Type over a field must clear contrast on every colour the field passes through, at every
-  moment. On litt-dark, `accent` and `aurora` stay under ~0.17 luminance, so `fg` type clears them
-  anywhere; the greys (`fg-muted`, `fg-subtle`) do not, so type on a field takes one ink and keeps
-  its hierarchy by size and weight. `ember` glows brighter: put type over its dark side or on glass.
-  `ct check` reads the canvas pixels (HyperFrames samples the rendered frame), so the contrast audit
-  gates this; `projects/_defects-layout` seeds `fg` type over `ember`'s orange and the slow suite
-  requires the finding on that element.
+  moment. In both themes large `fg` type clears 3:1 anywhere on every preset (§6); body type does
+  not everywhere, and the greys (`fg-muted`, `fg-subtle`) fall under 3:1 on every field. So type on
+  a field takes one ink and keeps its hierarchy by size and weight; an ink step (`ink`, `dim`)
+  belongs on a solid scene, and body copy over a field goes on glass.
+- `ct check` gates it by reading the rendered pixels, canvas included. HyperFrames' own contrast
+  pass audits five frames for the whole film, so in a long film a field scene got one sample or
+  none: a grey statement on `accent` passed the full check and failed only under `--scene`. The
+  probe now runs the same browser audit (HyperFrames' script, its WCAG maths and its "held" rule:
+  an error once a text fails at two samples) every 0.5 s through each scene whose stage paints a
+  field (`BuildResult.fields`), on landed type: a text mid-entrance or mid-exit is half-transparent
+  over the field, so it is judged at the next sample. HyperFrames' contrast findings in those scenes
+  are dropped, so one text gets one report. A settled ink step is the plain token, not a
+  `color-mix()`: the audit skips any colour it cannot parse, and Chrome computes a mix as
+  `oklab()`, so a dimmed line was never checked at all.
+- `projects/_defects-layout` seeds litt-light's grey over the luminous `ember` field: 5:1 on the
+  canvas, under 2:1 on any colour the field passes through, so only an audit that sees the canvas
+  catches it; the slow suite requires the finding on that element, and a 31-scene fixture film
+  requires the full check (not `--scene`) to report grey type on `accent` as an error.
 - Each field is a WebGL context, and so is each GL shot (0009). Chrome keeps 16 live contexts per
   page and drops the oldest past that, with only a console warning. In a probe with 20 contexts it
   lost the first four. The runtime mounts GL shots first, so they would be the ones evicted, and
