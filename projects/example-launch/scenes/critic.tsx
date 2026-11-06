@@ -1,5 +1,6 @@
 import { scene, El, Card, Meter, Counter, Stat, Tag, Caption } from "continuity";
 import { Chapter, SPLIT } from "../lib/chapter.js";
+import { SCENES } from "../lib/film.js";
 
 // 04 · Critique — the five-axis scorecard of this film's third iteration, beside the
 // lockup. litt: a flat card, meters filled with fg (no hue: the axes are not
@@ -20,6 +21,8 @@ const CARD_H = 600;
 const BAR_W = SPLIT.width - 96 - 224 - 72 - 80;
 
 const fills = AXES.map((_, i) => `bar${i}-fill`);
+/** The portal into the end card: this scene's storyboard transition. */
+const PORTAL_S = SCENES.find((s) => s.id === "critic")!.transition!.duration!;
 const round = (t: number) => Math.round(t * 100) / 100;
 
 export default scene({
@@ -43,8 +46,10 @@ export default scene({
           <Stat ct="mean" value={MEAN} decimals={1} label="v3 · mean score" unit="/ 5" />
           <div class="flex items-center gap-[16px]">
             <Caption ct="best">best of 3 versions</Caption>
-            <Tag ct="ships" tone="success">
-              Ships
+            <Tag ct="ships" tone="success" class="w-[100px] justify-center">
+              <El as="span" ct="ships-word">
+                Ships
+              </El>
             </Tag>
           </div>
         </div>
@@ -58,8 +63,8 @@ export default scene({
     m.enter("label", "slideLeft", { at: "b1-0.15" });
     m.enter("headline", "maskUp", { at: "b1", split: "lines" });
     // The card crosses this column on its way left, before the copy is in: the masked lines are
-    // hidden, and the block is held out of the layout until its mask opens (an instant step
-    // under the mask, never seen), so the gate does not read it as text under the card.
+    // hidden, and the block stays at opacity 0 until its mask opens (an instant step under the
+    // mask, never seen), so the gate's occlusion audit does not read it as text under the card.
     m.tween("headline", { opacity: [0, 1] }, { at: "b1", duration: "instant", ease: "out", kind: "enter" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
 
@@ -74,8 +79,12 @@ export default scene({
     m.enter("ships", "settle", { at: "b3" });
     m.enter("best", "fade", { at: "b3+0.1" });
 
-    m.camera({ scale: [1, 1.03] });
+    // The window opens from a clean tag: the word steps out as the portal starts.
+    m.exit("ships-word", "fadeOut", { at: `end-${PORTAL_S}`, duration: "instant" });
+    // The push lands as the portal starts: the portal is the scene's move.
+    m.camera({ scale: [1, 1.03] }, { duration: m.time("end") - PORTAL_S });
 
-    // Out: a match — the "Ships" tag becomes the end card's "Open source" button where it sits.
+    // Out: a portal through the "Ships" tag (drawn at 16:9, so the window keeps its edge): the
+    // card flies past, and the end card's field and button open from the verdict.
   },
 });

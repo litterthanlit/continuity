@@ -465,7 +465,7 @@
     },
     {
       "id": "critic",
-      "duration": 5.0,
+      "duration": 5.4,
       "intent": "A critic scores every cut on five axes, and only the best version ships.",
       "beats": [
         {
@@ -530,7 +530,13 @@
           "id": "ships",
           "role": "ui",
           "anchor": "C5",
-          "note": "<Tag tone=\"success\">Ships</Tag>: the verdict as a word. At the cut into the end card it becomes the 'Open source' button (match)."
+          "note": "<Tag tone=\"success\">Ships</Tag>, drawn at 16:9 (100 × 56) so the window keeps the tag's edge: the verdict as a word, and the portal's `via`: the camera goes through it into the end card."
+        },
+        {
+          "id": "ships-word",
+          "role": "label",
+          "anchor": "C5",
+          "note": "The word inside the Ships tag. It steps out at the instant tier as the portal starts, so the window opens from a clean tag, not ghosted letters over the end card."
         },
         {
           "id": "best",
@@ -539,16 +545,11 @@
           "note": "<Caption> 'best of 3 versions', just before the tag."
         }
       ],
-      "motion": "Solid canvas. In: a match from measure's chart window (match v2): the card starts where the window was, at the window's speed (≈ 940 px/s, left), and decelerates on one curve to the safe left edge, 468px along — the chart becomes the score card on its way across. The card makes no entrance of its own; its meters and counters wait for it to land. b1: label slides in, headline masks up, sub rises — in the right column the window left. b2: meter fills scaleX 0 → 1 and the five counters run together (slow, inOut, list 40ms); the mean counts over linger. b3: `ships` `settle` — the scene's one moment — and `best` fades in. ≈ 1.5s of settled hold before the cut. Camera 1 → 1.03. Out: a match — the 'Ships' tag becomes the end card's 'Open source' button where it sits.",
+      "motion": "Solid canvas. In: a match from measure's chart window (match v2): the card starts where the window was, at the window's speed (≈ 940 px/s, left), and decelerates on one curve to the safe left edge, 468px along — the chart becomes the score card on its way across. The card makes no entrance of its own; its meters and counters wait for it to land. b1: label slides in, headline masks up, sub rises — in the right column the window left. b2: meter fills scaleX 0 → 1 and the five counters run together (slow, inOut, list 40ms); the mean counts over linger. b3: `ships` `settle` — the scene's one moment — and `best` fades in. `ships-word` steps out at the instant tier as the portal starts. ≈ 1.2s of settled hold before the portal. Camera 1 → 1.03, landing as the portal starts (the portal is the scene's move). Out: a portal through the 'Ships' tag — the card and the copy fly past the camera, the tag fills the frame and opens onto the end card, so the field's colour arrives through the verdict instead of on a full-frame cut.",
       "transition": {
-        "type": "match",
-        "pairs": [
-          [
-            "ships",
-            "cta"
-          ]
-        ],
-        "duration": 0.6
+        "type": "portal",
+        "via": "ships",
+        "duration": 0.8
       }
     },
     {
@@ -559,16 +560,16 @@
         {
           "id": "b1",
           "at": 0.0,
-          "note": "the match: 'Ships' grows into the 'Open source' button and settles at its place"
+          "note": "the portal from critic's 'Ships' tag: the end card opens from the tag's rounded rect, the field and the 'Open source' button already on it"
         },
         {
           "id": "b2",
-          "at": 0.65,
-          "note": "wordmark is placed (the moment)"
+          "at": 0.85,
+          "note": "wordmark is placed as the portal lands (the moment)"
         },
         {
           "id": "b3",
-          "at": 1.2,
+          "at": 1.4,
           "note": "tagline rises; hold ≥ 2s"
         }
       ],
@@ -594,10 +595,10 @@
           "id": "cta",
           "role": "cta",
           "anchor": "C5:D5",
-          "note": "<Button variant=\"primary\">Open source</Button> (md, 88): the film's one accent fill, with the zero-offset glow. 'Ship', the last station: it is critic's 'Ships' verdict, matched across the cut (place, size, fill and corner turn into its own)."
+          "note": "<Button variant=\"primary\">Open source</Button> (md, 88): the film's one accent fill, with the zero-offset glow. 'Ship', the last station: it is on the end card from its first frame, inside the 'Ships' tag the camera goes through."
         }
       ],
-      "motion": "Stage bg `gradient` on `aurora` (colour returns for the brand; not `accent`, where the cobalt button would sink into the cobalt field). In: a match from critic's 'Ships' tag: the button starts at the tag's place and size and settles into its own (0.6s) — the verdict becomes the call to action. b2: wordmark `settle` (expressive) — the moment. b3: tagline `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame. Last scene: the film ends on the held card."
+      "motion": "Stage bg `gradient` on `aurora` (colour returns for the brand; not `accent`, where the cobalt button would sink into the cobalt field). In: the portal through critic's 'Ships' tag — the card opens from the tag's rounded rect with the field and the button already on it; nothing else moves until it lands (0.8s). b2: wordmark `settle` (expressive) — the moment. b3: tagline `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame, from the portal's landing. Last scene: the film ends on the held card."
     }
   ]
 }

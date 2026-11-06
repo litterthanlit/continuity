@@ -28,7 +28,6 @@
 # Critique B2: example-launch (layered carries + match v2), independent critic
 
 - Branch claude/kind-wozniak-vfwwac · HEAD e916070 · sources hash 77e5bb2d4eac
-- **Iteration: 15** (`ct status`: "#15 77e5bb2d4eac gate ✔ (0w) · draft render ← current sources"; best is still #12 = B1)
 - Gate (iteration 15 findings.json): **0 errors · 0 warnings · 0 info** (B1 had 11 info on the portal's "Plan" ghost; gone).
   Render QC: one info, `frozen` 1.67s from 15.00s (check's deliberate red hold, same as B1).
 - Draft: out/example-launch/example-launch-77e5bb2d4eac-draft.mp4 (32.90s, 987 frames, 30fps). B1's draft
@@ -230,7 +229,6 @@ full-frame black→aurora flash outweighs a 0.3%-of-frame carrier. J1 is identic
 3. J3's mass jump: from the board at the upper right to two windows across the bottom, with the eye landing on an
    empty "$" terminal. Also J5's 0.9s copy-free transit before critic's label.
 
-(`ct score` and `ct verdict` deliberately not run, per the task.)
 
 ## Frames read
 
@@ -239,30 +237,6 @@ full-frame black→aurora flash outweighs a 0.3%-of-frame carrier. J1 is identic
 - Settled stills (iterations/015/stills/): t-1.792 hook, t-6.700 studio, t-10.453 plan, t-17.732 check, t-21.612 measure,
   t-27.382 critic, t-30.353 end
 - Compare packs: projects/example-launch/.continuity/iterations/015/compare-12-15/pack-{ab,ba}.png
-- Join frames: frame-accurate from the draft (frame n at n/30 s), in
-  /home/user/continuity/.superpowers/sdd/2026-11-07-flow-benchmark-layers-match/frames-B2-critic/.
-  Montages read left→right, top→bottom:
-
-  | Montage | Frames |
-  |---|---|
-  | J1.png | t3.300 3.533 3.567 3.600 3.633 3.667 3.900 4.200 4.600 |
-  | J2a.png | t6.800 7.000 7.100 7.200 7.300 7.400 |
-  | J2b.png | t7.500 7.600 7.700 7.800 7.900 8.000 8.033 8.300 |
-  | J3.png | t11.800 11.900 12.000 12.033 12.067 12.100 12.133 12.167 12.200 12.300 12.400 |
-  | J3pair.png | t12.067 over t12.100 (half size) |
-  | J3cut.png | t12.067 12.100 12.133 |
-  | J4.png | t18.800 18.900 19.000 19.033 19.067 19.100 19.133 19.167 19.200 19.300 19.400 |
-  | J4cut.png | t19.067 19.100 19.133 |
-  | J5.png | t23.000 23.400 23.500 23.600 23.633 23.667 23.700 23.733 23.767 |
-  | J5b.png | t23.800 23.900 24.000 24.200 24.400 24.600 25.000 |
-  | J5pair.png | t23.667 over t23.700 |
-  | J5cut.png | t23.667 23.700 23.733 |
-  | J6.png | t28.400 28.500 28.600 28.633 28.667 28.700 28.733 28.767 28.800 |
-  | J6b.png | t28.900 29.000 29.200 29.500 30.000 |
-  | J6cut-crop.png | the tag/pill box at t28.667 / 28.700 / 28.733 |
-
-  Individual frames are t<seconds>.png.
-
 
 ## History
 

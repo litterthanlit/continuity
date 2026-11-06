@@ -289,14 +289,19 @@ export default scene({
                       {r.title}
                     </El>
                     <span class="ml-auto font-mono text-[26px] text-fg-subtle">{r.meta}</span>
-                    {/* "error" and "fixed" share a slot; the swap is a step at the instant tier. */}
+                    {/* "error" and "fixed" share a slot; the swap is a step at the instant tier, so
+                        for a frame or two one word sits under the other (allowed: overlap, occlusion). */}
                     <span class="relative inline-flex w-[112px] justify-end">
                       <Tag ct={`err${i}`} tone="danger">
-                        <span data-layout-allow-overlap>error</span>
+                        <span data-layout-allow-overlap data-layout-allow-occlusion>
+                          error
+                        </span>
                       </Tag>
                       <span class="absolute inset-0 flex justify-end">
                         <Tag ct={`ok${i}`} tone="success">
-                          <span data-layout-allow-overlap>fixed</span>
+                          <span data-layout-allow-overlap data-layout-allow-occlusion>
+                            fixed
+                          </span>
                         </Tag>
                       </span>
                     </span>

@@ -1,4 +1,5 @@
 import { scene, Stage, Safe, El, Label, Headline, Emph, Tag, Path } from "continuity";
+import { SCENES } from "../lib/film.js";
 
 /**
  * The turn: a moving colour field fills the frame (bg="gradient"), the first colour
@@ -18,8 +19,8 @@ const STEPS = ["plan", "check", "measure", "critique", "ship"] as const;
 const RAIL_Y = 724; // safe-local centre line of the rail (frame y ≈ 778, the lower third)
 const TAG_H = 56;
 const RAIL_W = 1536;
-/** The portal into plan (storyboard transition duration). */
-const PORTAL_S = 0.9;
+/** The portal into plan: this scene's storyboard transition, so the two never drift apart. */
+const PORTAL_S = SCENES.find((s) => s.id === "studio")!.transition!.duration!;
 
 export default scene({
   view: ({ text }) => {
