@@ -29,7 +29,7 @@ Procedure:
 1. **Style frame.** Write the view with minimal motion. Run
    `npx ct stills <slug> --scene <id>` and Read the PNG at full size. Fix
    hierarchy (weight and ink, then space, then the one display step), the left
-   edge, the 16px grid, lockups (8) and gaps (32), the light, contrast. Repeat
+   edge, the 16px grid, lockups (8) and gaps (32), the backdrop, contrast. Repeat
    until the settled frame would make a good poster.
 2. **Motion.** Choreograph with presets and tokens in the scene's register
    (storyboard `register`; the scene's own wins). Calm: responsive by default, ONE

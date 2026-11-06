@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { buildProject } from "../src/build/build.js";
 import { join } from "node:path";
 import { lintTimeline } from "../src/lint/timeline.js";
 import type { Tween } from "../src/motion/types.js";
 import { PKG_ROOT } from "../src/paths.js";
+import { fieldScenes, removeFixtureProjects } from "./fixtures/field-scenes.js";
 
 /** Projects that live outside projects/ (shipped with the package). */
 const SRC: Record<string, string> = { _template: join(PKG_ROOT, "templates", "project") };
@@ -172,6 +173,7 @@ describe("flow across the joins (docs/decisions/0010)", () => {
       dir: "",
       elements: [],
       partsEstimate: {},
+      fields: [],
       findings: [],
       hash: "",
       storyboard: {
@@ -211,5 +213,17 @@ describe("flow across the joins (docs/decisions/0010)", () => {
     expect(count(film([rest, rest, rest, rest]), "static-edit")).toBe(1);
     expect(count(film([{ enter: 0 }, { enter: 0 }, { enter: 0 }, { enter: 0 }], { type: "crossfade", duration: 0.4 }), "static-edit")).toBe(1);
     expect(count(film([{ enter: 0 }, { enter: 0 }, { enter: 0 }, { enter: 0 }]), "static-edit")).toBe(0);
+  });
+});
+
+describe("WebGL contexts (docs/decisions/0011)", () => {
+  afterAll(removeFixtureProjects);
+  it("more canvases than Chrome keeps contexts for is a build error; at the cap it builds", async () => {
+    const over = await buildProject("fields", { write: false, srcDir: fieldScenes(17) });
+    const f = over.findings.find((x) => x.rule === "webgl-contexts");
+    expect(f?.severity).toBe("error");
+    expect(f?.message).toMatch(/17 WebGL canvases \(0 GL shots, 17 gradient fields\).*16 per page.*0011/);
+    const at = await buildProject("fields", { write: false, srcDir: fieldScenes(16) });
+    expect(at.findings.filter((x) => x.severity === "error")).toEqual([]);
   });
 });

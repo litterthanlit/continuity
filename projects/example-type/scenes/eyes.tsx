@@ -19,7 +19,6 @@ interface Frame {
   scene: string;
   /** Storyboard text keys per line; several keys share a line (blind's "But they can't"). */
   lines: Array<[keys: string | string[], ink: Ink]>;
-  lit?: boolean;
   caret?: boolean;
   tick?: boolean;
   /** The eyes frame shows the sheet itself, in miniature. */
@@ -31,14 +30,14 @@ interface Frame {
 
 /** The sheet, in film order and in each frame's settled ink — as `ct sheet` would sample it. */
 const FRAMES: Frame[] = [
-  { scene: "hook", lit: true, lines: [["l1", "fg"]] },
-  { scene: "hook", lit: true, lines: [["l1", "grey"], ["l2", "fg"]] },
+  { scene: "hook", lines: [["l1", "fg"]] },
+  { scene: "hook", lines: [["l1", "grey"], ["l2", "fg"]] },
   { scene: "write", lines: [["l1", "fg"]] },
   { scene: "write", lines: [["l1", "grey"], ["l2", "fg"]], caret: true },
   { scene: "blind", lines: [[["l1", "l2"], "fg"], ["l3", "fg"]], greyWord: "see" },
   { scene: "eyes", lines: [["l1", "grey"], ["l2", "fg"]], sheet: true },
   { scene: "check", lines: [["l1", "grey"], ["l2", "fg"]], tick: true },
-  { scene: "end", lit: true, lines: [], end: true },
+  { scene: "end", lines: [], end: true },
 ];
 
 function Line({ text, ink, greyWord }: { text: string; ink: Ink; greyWord?: string }) {
@@ -59,7 +58,6 @@ function Tile({ ct, f }: { ct: string; f: Frame }) {
   const type = `font-display text-[${px(112)}] leading-[${px(112)}] tracking-[-0.04em]`;
   return (
     <El ct={ct} data-layout-ignore class="relative overflow-hidden rounded-control bg-canvas shadow-raised" style={`width:${W}px;height:${H}px`}>
-      {f.lit && <div class="ct-lit absolute inset-0" />}
       {f.end ? (
         <div class="absolute inset-0 flex flex-col items-center justify-center text-center" style={`padding-bottom:${px(154)}`}>
           <div class={`${type} text-fg`}>{copy("end", "wordmark")}</div>

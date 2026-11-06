@@ -4,7 +4,7 @@
     "aspect": "16:9",
     "fps": 30
   },
-  "theme": "litt-dark",
+  "theme": "litt-light",
   "scenes": [
     {
       "id": "layout",
@@ -28,6 +28,15 @@
       "text": {
         "bold": "Geist at a width it lacks",
         "label": "frames"
+      }
+    },
+    {
+      "id": "field",
+      "duration": 3,
+      "intent": "Grey type over a moving ember field on litt-light: it clears the canvas, never the field (contrast over a canvas).",
+      "beats": [],
+      "text": {
+        "over-field": "Grey on a bright field"
       }
     }
   ]

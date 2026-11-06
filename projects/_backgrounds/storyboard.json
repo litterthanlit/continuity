@@ -1,0 +1,278 @@
+{
+  "title": "Backgrounds gallery",
+  "logline": "Every backdrop once: one flat colour, then the moving fields (accent, aurora, ember), frosted glass floating over a field, and two joins that flow through it (carry, portal). Reference fixture.",
+  "format": {
+    "aspect": "16:9",
+    "fps": 30
+  },
+  "theme": "litt-dark",
+  "type": "litt",
+  "scenes": [
+    {
+      "id": "a",
+      "duration": 2,
+      "intent": "The aurora field, moving on its own under a quiet label.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.2
+        }
+      ],
+      "text": {
+        "label": "Aurora"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "b",
+      "duration": 2,
+      "intent": "The same field after a plain cut: it keeps flowing, unbroken.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.2
+        }
+      ],
+      "text": {
+        "label": "Through the cut"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "solid",
+      "duration": 2.5,
+      "intent": "One flat colour: the canvas, nothing moving behind the type. The statement the gallery makes.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Solid",
+        "title": "One colour, or a field."
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        },
+        {
+          "id": "title",
+          "role": "headline",
+          "anchor": "A3:D3"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "accent",
+      "duration": 2.5,
+      "intent": "The theme's own accent as a field: cobalt drifting through the canvas.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Accent"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "aurora",
+      "duration": 2.5,
+      "intent": "aurora: cobalt, violet, teal and pink, bold and moving.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Aurora"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "ember",
+      "duration": 2.5,
+      "intent": "ember: orange and red glowing out of near-black.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Ember"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        }
+      ],
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "glass",
+      "duration": 3,
+      "intent": "Three frosted glass panels floating over aurora: the field blurs through them.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Glass",
+        "t1": "Frosted",
+        "t2": "Floating",
+        "t3": "Over the field"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        },
+        {
+          "id": "panels",
+          "role": "ui",
+          "anchor": "A3:F5"
+        },
+        {
+          "id": "p1",
+          "role": "ui",
+          "anchor": "A3:B5"
+        },
+        {
+          "id": "p2",
+          "role": "ui",
+          "anchor": "C3:D5"
+        },
+        {
+          "id": "p3",
+          "role": "ui",
+          "anchor": "E3:F5"
+        },
+        {
+          "id": "t1",
+          "role": "title",
+          "anchor": "A5"
+        },
+        {
+          "id": "t2",
+          "role": "title",
+          "anchor": "C5"
+        },
+        {
+          "id": "t3",
+          "role": "title",
+          "anchor": "E5"
+        }
+      ],
+      "transition": {
+        "type": "carry",
+        "dir": "left",
+        "distance": 10
+      }
+    },
+    {
+      "id": "carry",
+      "duration": 3,
+      "intent": "A cut on movement from glass: the field keeps its colour while the camera travels left; a tile waits for the portal.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15
+        }
+      ],
+      "text": {
+        "label": "Carry"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        },
+        {
+          "id": "tile",
+          "role": "ui",
+          "anchor": "C3:E5"
+        }
+      ],
+      "transition": {
+        "type": "portal",
+        "via": "tile",
+        "duration": 0.9
+      }
+    },
+    {
+      "id": "portal",
+      "duration": 2.5,
+      "intent": "Through the tile into the same field, full frame.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.95
+        }
+      ],
+      "text": {
+        "label": "Portal"
+      },
+      "elements": [
+        {
+          "id": "label",
+          "role": "label",
+          "anchor": "A1"
+        }
+      ]
+    }
+  ]
+}

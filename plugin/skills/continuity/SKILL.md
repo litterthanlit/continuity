@@ -10,7 +10,8 @@ the craft lives in the `motion-craft` skill, the API in `reference/api.md`.
 
 **The look is litt** — Nick's design language: technical precision, lit from above. Geist in
 three weights by role, two inks, warm stone neutrals (`litt-dark` or `litt-light`), one accent
-that behaves like light, colour only for data, a soft light from the top, flat surfaces with
+that behaves like light, colour only for data, a backdrop that is one flat colour or a bold
+moving field (`bg="gradient"`, the hero and the end card; never a faint gradient), flat surfaces with
 hairlines. Motion explains and never performs: responsive springs, one expressive moment per
 scene, exits at 0.75×, material static, cuts on the beat. `docs/decisions/0006` is the
 translation table; the `litt-*` and motion lint rules gate it. There are no other themes or
@@ -71,7 +72,7 @@ Then `storyboard.json` (schema: `reference/api.md` → Storyboard; `npx ct lint 
 Build every scene's *settled* layout with minimal motion. `npx ct stills <slug>`
 → read each PNG at full size. Fix hierarchy (weight and ink first, then space,
 then the one display step), alignment (asymmetric, left edge), spacing (16px
-grid, lockups 8, blocks 32), negative space, light and colour **now** — motion
+grid, lockups 8, blocks 32), negative space, backdrop and colour **now** — motion
 cannot rescue a weak frame.
 
 ## 3 · Motion (builder)

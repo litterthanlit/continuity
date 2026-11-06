@@ -157,7 +157,9 @@ describe("evaluate", () => {
     m.emphasize("w", "ink", { at: 0.5 });
     expect(m.tweens[0]).toMatchObject({ props: { ink: [0, 1] }, duration: 0.1, easeName: "out" });
     expect(styleOf({ ink: 0.5 }).color).toBe("color-mix(in oklab, var(--color-fg) 50%, var(--color-fg-muted))");
-    expect(styleOf({ ink: 1 }).color).toBe("color-mix(in oklab, var(--color-fg) 100%, var(--color-fg-muted))");
+    // Settled, the ink is the plain token: the contrast audit cannot read a color-mix (Chrome computes it as oklab()).
+    expect(styleOf({ ink: 1 }).color).toBe("var(--color-fg)");
+    expect(styleOf({ ink: 0 }).color).toBe("var(--color-fg-muted)");
   });
 
   it("expands split parts with staggered starts", () => {
@@ -393,10 +395,10 @@ describe("retype", () => {
     m.retype("end", tape, { at: 0.5, cps: 20, accent: true });
     const c = compileScene(scene(m), {});
     const color = (t: number) => styleOf(sampleScene(c, t).get("s.end")!).color;
-    expect(color(0.7)).toContain("var(--color-accent-text) 100%");
-    expect(color(1.9)).toContain("var(--color-accent-text) 0%");
+    expect(color(0.7)).toBe("var(--color-accent-text)");
+    expect(color(1.9)).toBe("var(--color-fg)");
     const second = m.tweens.find((t) => t.props.typed && t.props.typed[0] === 20)!;
-    expect(color(second.start + 0.05)).toContain("var(--color-accent-text) 100%");
+    expect(color(second.start + 0.05)).toBe("var(--color-accent-text)");
   });
 
   it("types a field with a caret by its content, so the caret follows the last key", () => {

@@ -7,8 +7,9 @@ description: The motion design taste layer — litt (Nick's design language) tra
 
 Continuity's taste is **litt** — technical precision, lit from above. The structure is exact
 and quiet: a grid, hairlines, one typeface in three weights, warm stone neutrals. The only bold
-move is light and material: a soft light from the top, surfaces that catch it. Color barely
-appears; where it does it behaves like light or carries data. **Motion explains and never
+move is material: a backdrop that is one flat colour or a bold field of colour that keeps moving
+(the hero, the end card), and surfaces that catch a top highlight. Color barely appears
+elsewhere; where it does it behaves like light or carries data. **Motion explains and never
 performs.** Spec: `docs/decisions/0006-litt-house-language.md`.
 
 **Two registers.** litt can speak quietly or loudly; the look never changes, the motion's energy
@@ -44,21 +45,32 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
 
 ## 2. Material and light (P1–P5)
 
-- **One light source, from the top** (`<Stage bg="lit">`): an accent-tinted falloff anchored
-  above the frame. Once or twice per video — the hero, maybe the end card. Every other scene is
-  `solid`. Never a second coloured light, never a light from the side, no aurora, mesh or glow
-  blobs.
-- **Material is static (P5).** The light, the grain, glows and the backdrop never animate,
-  loop, pulse or sweep (`material-motion` is an error). The camera may push; the light stays put.
+- **A backdrop is one colour or a moving field** — never a faint gradient. `<Stage bg="solid">`
+  is the canvas (the default); `<Stage bg="gradient" gradient="accent|aurora|ember">` is a bold
+  WebGL colour field that drifts on its own (`docs/decisions/0011`). Use the field on the hero
+  and the end card; every other scene is `solid`. Hand-made gradients, radial glows and glow
+  blobs are `litt-gradient`.
+- **Type on a field is `fg`, in both themes.** Each preset is tuned per theme for its `fg`: on
+  litt-dark the fields stay deep (luminance ≤ ~0.19 on `accent` and `aurora`, ≤ ~0.25 on `ember`)
+  under near-white `fg`; on litt-light they stay luminous (≥ ~0.14 on `accent`, ≥ ~0.25 on
+  `aurora` and `ember`) under near-black `fg`. So **large `fg` type (≥ 24px) clears 3:1 anywhere**
+  on every preset; body type does not everywhere (fg over litt-dark's `#507afd` is 3.6:1), and the
+  greys fall under 3:1 on every field. Hold the hierarchy by size and weight in one ink; an ink
+  step (`ink`, `dim`) belongs on a solid scene. Put body copy on a `<Card glass>` (the field blurs
+  through it). `ct check` samples a field scene every 0.5s, so a miss anywhere in it is a
+  `contrast_aa_failure`.
+- **Material is static (P5), except the field.** Grain, glows and the solid backdrop never
+  animate, loop, pulse or sweep, and a tween never touches the backdrop (`material-motion` is an
+  error): a gradient field moves by itself. The camera may push.
 - **Depth without drop shadows (P4).** Cards in the flow are flat: surface-1, the 2px hairline
   and the top highlight (`shadow-raised`). Floating UI (a window over the stage, a toast, a
   menu) gets a zero-offset glow plus a ring (`shadow-float`, `shadow-lift`, `shadow-modal`).
   Nothing has an offset shadow (`litt-shadow`).
-- **Glass is earned (P3)** — only on floating UI with content behind it (`Toast`, `ct-glass`).
-  Never on cards, never glass on glass.
+- **Glass is earned (P3)** — only on floating UI with content behind it (`Toast`, `ct-glass`,
+  or `<Card glass>` floating over a gradient field). Never on cards in the flow, never glass on glass.
 - **Radius:** controls and tags 8 (`rounded-control`), surfaces 16 (`rounded-surface`), pills
   only for avatars, icon buttons and switches (`litt-radius`). A phone bezel is the device's own.
-- Grain is static noise at 2% (light) / 4% (dark); it also dithers the light's banding.
+- Grain is static noise at 2% (light) / 4% (dark). (The field dithers itself; grain is texture.)
 
 ## 3. Colour
 
@@ -66,7 +78,9 @@ is 16 here (8 inside components), its 1px hairline 2px, its 16px travel 32px.
   Pick one per video; never invert one into the other.
 - **The accent is light (P1).** At most one accent fill per frame, on the primary action (a
   `Button variant="primary"`, which carries the glow). Elsewhere the accent appears only as the
-  top light, a focus ring, a caret, a cursor's click ring. Never an accent word in a headline,
+  focus ring, a caret, a cursor's click ring — or as material: the `accent` field is a backdrop,
+  not a fill. Put the primary button on a field of another hue (`aurora`) or on `solid`, so the
+  one fill still stands out. Never an accent word in a headline,
   never an accent fill behind copy, never a decorative gradient.
 - **Colour carries data (P11).** Beyond the accent, colour only says something: a series, a
   category, an identity — the five data hues in a fixed order (blue, amber, teal, violet, rose).

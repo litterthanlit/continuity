@@ -8,6 +8,22 @@
  * Units are the frame's: x, y and z in px at the z = 0 plane (y down, as in CSS), angles in deg.
  * Materials are static presets — litt's material never animates; light comes from above.
  */
+/**
+ * Chrome keeps at most this many live WebGL contexts per page and silently drops the oldest past
+ * it. GL shots (0009) and gradient fields (0011) each hold one, so a composition with more is an
+ * error: the evicted canvas would render blank, and three.js does not notice.
+ */
+export const MAX_WEBGL_CONTEXTS = 16;
+
+/** The error for a composition over the context cap, shared by the build and the runtime. */
+export function webglContextsMessage(shots: number, fields: number): string {
+  return (
+    shots + fields + " WebGL canvases (" + shots + " GL shots, " + fields + " gradient fields): Chrome keeps " +
+    MAX_WEBGL_CONTEXTS + " per page and drops the oldest silently, so a shot or a field would render blank. " +
+    'Use bg="solid" on some scenes or fewer <Gl> shots (docs/decisions/0011)'
+  );
+}
+
 export const GL_MATERIALS = ["chrome", "glass", "neon", "satin"] as const;
 export type GlMaterialName = (typeof GL_MATERIALS)[number];
 

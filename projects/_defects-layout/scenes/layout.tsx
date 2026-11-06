@@ -8,7 +8,7 @@ export default scene({
       </div>
       <p data-ct="layout.tiny" class="absolute left-[200px] top-[320px] text-[16px] text-fg">{text.tiny}</p>
       <Headline ct="edge" size="title" class="absolute left-[8px] top-[480px]">{text.edge}</Headline>
-      <Body ct="dim" class="absolute left-[200px] top-[680px] text-[#141210]">{text.dim}</Body>
+      <Body ct="dim" class="absolute left-[200px] top-[680px] text-[#ebe8e4]">{text.dim}</Body>
       <Headline ct="x1" size="title" class="absolute left-[600px] top-[820px]">{text.x1}</Headline>
       <Headline ct="x2" size="title" class="absolute left-[600px] top-[820px]">{text.x2}</Headline>
     </Stage>

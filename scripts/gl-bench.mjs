@@ -4,6 +4,8 @@
 //   node scripts/gl-bench.mjs <slug>                    per-frame cost of every scene in SwiftShader
 //   node scripts/gl-bench.mjs <slug> --determinism 4    + PNG-sequence renders with 1 and 4 workers, md5 per frame
 //
+// GL shots (canvas[data-ct-gl], 0009) and gradient fields (canvas[data-ct-gradient], 0011) both count.
+//
 // Cost: the page is seeked frame by frame and each GL canvas is read back (readPixels), so the
 // time is the GPU process finishing the frame, not the call returning — gl.finish() does not wait
 // across Chrome's GPU process and reads ~0.5 ms for a 300 ms frame.
@@ -69,14 +71,21 @@ const prepareMs = Date.now() - t0;
 const report = await page.evaluate(async (only) => {
   const tl = window.__ct.timeline;
   const sync = () => {
-    for (const c of document.querySelectorAll("canvas[data-ct-gl]")) {
+    for (const c of document.querySelectorAll("canvas[data-ct-gl], canvas[data-ct-gradient]")) {
       const g = c.getContext("webgl2");
       if (g) g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
     }
   };
+  const kind = (s) => {
+    const sel = '[data-ct-scene="' + s.scene + '"] ';
+    return document.querySelector(sel + "canvas[data-ct-gl]") ? "gl" : document.querySelector(sel + "canvas[data-ct-gradient]") ? "field" : "dom";
+  };
   const out = [];
   for (const s of tl.scenes) {
-    if (only && s.scene !== only) continue;
+    if (only && s.scene !== only) {
+      out.push({ scene: s.scene, start: s.start, duration: s.duration, kind: kind(s), skipped: true });
+      continue;
+    }
     const ms = [];
     const n = Math.round(s.duration * tl.fps);
     for (let f = 0; f < n; f++) {
@@ -87,15 +96,15 @@ const report = await page.evaluate(async (only) => {
       ms.push(performance.now() - a);
     }
     ms.sort((x, y) => x - y);
-    out.push({ scene: s.scene, frames: n, gl: !!document.querySelector('[data-ct-scene="' + s.scene + '"] canvas[data-ct-gl]'), median: ms[Math.floor(n / 2)], p95: ms[Math.floor(n * 0.95)], max: ms[n - 1] });
+    out.push({ scene: s.scene, start: s.start, duration: s.duration, kind: kind(s), frames: n, median: ms[Math.floor(n / 2)], p95: ms[Math.floor(n * 0.95)], max: ms[n - 1] });
   }
-  return out;
+  return { scenes: out, fps: tl.fps };
 }, only);
 await browser.close();
 server.close();
 
 console.log(`${slug}: prepare (fonts, GL mount, env + shader compile) ${prepareMs} ms`);
-for (const r of report) console.log(`  ${r.scene.padEnd(12)} ${r.gl ? "gl " : "dom"} ${String(r.frames).padStart(4)} frames  median ${r.median.toFixed(1).padStart(6)} ms  p95 ${r.p95.toFixed(1).padStart(6)} ms  max ${r.max.toFixed(1).padStart(6)} ms`);
+for (const r of report.scenes.filter((x) => !x.skipped)) console.log(`  ${r.scene.padEnd(12)} ${r.kind.padEnd(5)} ${String(r.frames).padStart(4)} frames  median ${r.median.toFixed(1).padStart(6)} ms  p95 ${r.p95.toFixed(1).padStart(6)} ms  max ${r.max.toFixed(1).padStart(6)} ms`);
 
 if (workers > 0) {
   const env = { HYPERFRAMES_NO_TELEMETRY: "1", HYPERFRAMES_NO_UPDATE_CHECK: "1", HYPERFRAMES_NO_AUTO_INSTALL: "1", HYPERFRAMES_SKIP_SKILLS: "1", HYPERFRAMES_BROWSER_PATH: browserPath() };
@@ -116,5 +125,16 @@ if (workers > 0) {
   console.log(`  determinism: ${same}/${a.length} frames byte-identical between 1 and ${workers} workers; ${new Set(a).size} distinct frames`);
   const diff = a.map((h, i) => (h === b[i] ? -1 : i)).filter((i) => i >= 0);
   if (diff.length) console.log(`  differing frames (0-based): ${diff.join(", ")}`);
+  // Which kind of scene each frame shows (the later scene wins an overlap: it is drawn on top).
+  const kindAt = (i) => {
+    const t = (i + 0.5) / report.fps;
+    let k = "dom";
+    for (const s of report.scenes) if (t >= s.start && t < s.start + s.duration) k = s.kind;
+    return k;
+  };
+  for (const k of ["gl", "field"]) {
+    const frames = a.map((_, i) => i).filter((i) => kindAt(i) === k);
+    if (frames.length) console.log(`  ${k === "gl" ? "GL-shot" : "gradient-field"} frames: ${frames.filter((i) => a[i] === b[i]).length}/${frames.length} byte-identical`);
+  }
   if (same !== a.length || a.length !== b.length) process.exitCode = 1;
 }

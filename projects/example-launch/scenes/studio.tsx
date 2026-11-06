@@ -1,11 +1,14 @@
 import { scene, Stage, Safe, El, Label, Headline, Emph, Tag, Path } from "continuity";
 
 /**
- * The turn. litt's one light arrives from the top (bg="lit"). The statement
- * rises in the grey and its answer, "eyes.", steps up to fg — the hook ended
- * with only "see" in fg, so the two words rhyme by ink. Below, the studio
- * pipeline: a hairline rail with five stations; "Plan" takes focus (the accent
- * as a focus ring) and the push carries us into it.
+ * The turn: a moving colour field fills the frame (bg="gradient"), the first colour
+ * after the hook's solid canvas. On the field the type takes one ink, fg (the grey
+ * falls under 3:1 on the field's cobalt — docs/decisions/0011), so the answer cannot
+ * step up by ink the way the hook's "see" stepped down. It lands on its own beat
+ * instead: the statement rises without "eyes.", and the word arrives at b2 — the
+ * rhyme with "see" moves from ink to timing. Below, the studio pipeline: a hairline
+ * rail with five stations; "Plan" takes focus (the accent as a focus ring) and the
+ * push carries us into it.
  *
  * Layout: the lockup on the safe left edge in the upper half, the rail across
  * the content width in the lower third. Stations sit at their natural width,
@@ -26,11 +29,11 @@ export default scene({
     const line1 = text.headline.slice(0, cut);
     const line2 = text.headline.slice(cut + 1);
     return (
-      <Stage bg="lit">
+      <Stage bg="gradient" gradient="accent">
         <Safe>
           <div class="absolute left-0 top-[240px] flex flex-col">
-            <Label ct="label">{text.label}</Label>
-            <Headline ct="headline" class="mt-[8px] text-fg-muted">
+            <Label ct="label" class="text-fg">{text.label}</Label>
+            <Headline ct="headline" class="mt-[8px]">
               {line1}
               <br />
               <Emph text={line2} word="eyes.">
@@ -72,11 +75,11 @@ export default scene({
     );
   },
   motion: (m) => {
-    // b1 — the answer to the hook, rising into the light: the scene's one moment.
+    // b1 — the answer to the hook, rising onto the field: the scene's one moment.
     m.enter("label", "fade", { at: "b1" });
     m.enter("headline", "maskUp", { at: "b1+0.08", split: "lines", ease: "expressive" });
-    // b2 — "eyes." takes its ink.
-    m.emphasize("eyes", "ink", { at: "b2" });
+    // b2 — "eyes." lands on its own beat: the word the hook could not do.
+    m.enter("eyes", "fade", { at: "b2" });
     // b3 — the pipeline draws left → right; the stations rise in reading order along it.
     m.enter("rail", "draw", { at: "b3" });
     m.enter([...STEPS], "rise", { at: "b3+0.1", stagger: "list" });

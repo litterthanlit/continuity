@@ -18,7 +18,7 @@ export const SOURCE_RULES: Record<string, string> = {
     "A weight outside litt's three roles (P9) — text is 400 (font-normal, the default), titles 500 (font-title, Headline and Title), labels 600 (font-label, Label). No medium, semibold, bold or light.",
   "litt-case": "Uppercase text — litt sets every label in sentence case. Use Label (600, the grey), never an uppercase eyebrow.",
   "litt-gradient":
-    "A decorative gradient (gradient text, a gradient fill or border) — litt's only gradient is the top light (Stage bg=\"lit\"). Use a flat token colour.",
+    "A hand-made gradient (gradient text, a fill, a border, a faint glow behind the content) — a backdrop is one colour or a moving field (Stage bg=\"gradient\"). Everything else is a flat token colour.",
   "litt-radius":
     "A radius off litt's scale — rounded-control (8) for controls and tags, rounded-surface (16) for cards and panels, rounded-full for avatars, icon buttons and switches. Nothing else.",
   "litt-shadow":
@@ -66,7 +66,7 @@ function tokenRule(raw: string): string | undefined {
 const STRING_RE = /"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`/g;
 const STYLE_CHECKS: Array<{ rule: string; re: RegExp; what: string }> = [
   { rule: "litt-case", re: /text-transform\s*:\s*["'`]?uppercase|textTransform\s*:\s*["'`]uppercase/, what: "text-transform: uppercase" },
-  { rule: "litt-gradient", re: /(?:linear|conic)-gradient\(|background-clip\s*:\s*text|backgroundClip\s*:\s*["'`]text/, what: "a gradient in a style" },
+  { rule: "litt-gradient", re: /(?:linear|radial|conic)-gradient\(|background-clip\s*:\s*text|backgroundClip\s*:\s*["'`]text/, what: "a gradient in a style" },
   { rule: "litt-hex", re: /:\s*["'`]?#[0-9a-fA-F]{3,8}\b/, what: "a hex colour in a style" },
   { rule: "litt-weight", re: /font-?[wW]eight\s*:\s*["'`]?(?!400|500|600)\d{3}/, what: "a font-weight outside 400/500/600" },
 ];

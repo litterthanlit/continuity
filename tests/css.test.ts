@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildFamilies, compileCss, fontFaceCss, kitCss } from "../src/build/css.js";
 import { PKG_ROOT } from "../src/paths.js";
 import { fonts, hasTabularFigures } from "../src/themes/fonts.js";
-import { DATA_HUES, littDark, littLight, themes } from "../src/themes/index.js";
+import { GRADIENT_NAMES, resolveGradient, srgbToLinear, type GradientSpec } from "../src/themes/gradients.js";
+import { DATA_HUES, littDark, littLight, themes, type Theme } from "../src/themes/index.js";
 import { defineKit, KIT_NAMES, kitScale, littKit, resolveKit, typeKits, WEIGHTS } from "../src/themes/kits.js";
 
 describe("the litt kit", () => {
@@ -49,8 +50,6 @@ describe("the litt themes", () => {
   it("are both first-class (P8): every token in both, material tuned per theme, never inverted", () => {
     expect(Object.keys(themes).sort()).toEqual(["litt-dark", "litt-light"]);
     expect(Object.keys(littDark.colors).sort()).toEqual(Object.keys(littLight.colors).sort());
-    expect(littDark.material.light).toBe(22);
-    expect(littLight.material.light).toBe(12);
     expect(littDark.material.grain).toBe(0.04);
     expect(littLight.material.grain).toBe(0.02);
     for (const h of DATA_HUES) expect(littDark.colors[`data-${h}-text`]).toMatch(/^#/);
@@ -100,9 +99,58 @@ describe("kit CSS", () => {
     expect(css).toContain("--radius-control: 8px");
     expect(css).toContain("--font-weight-label: 600");
     expect(css).toContain("color-mix(in oklab, var(--color-data-blue) 18%, var(--color-surface-1))");
-    expect(css).toContain(".ct-lit");
+    expect(css).not.toContain(".ct-lit");
     expect(css).not.toMatch(/"ss01"|aurora|accent-2/);
     const portrait = await compileCss(littDark, littKit, [], ["text-label"], PKG_ROOT, true);
     expect(portrait).toContain("--text-label: 34px");
+  });
+});
+
+describe("gradient presets", () => {
+  it("has three bold presets; accent reads the theme's own tokens", () => {
+    expect([...GRADIENT_NAMES]).toEqual(["accent", "aurora", "ember"]);
+    const u = resolveGradient(littDark, "accent");
+    expect(u.colors).toHaveLength(12);
+    expect(u.base).toEqual(srgbToLinear(littDark.colors.canvas));
+    expect(u.colors.slice(0, 3)).toEqual(srgbToLinear(littDark.colors.accent));
+  });
+  it("the same preset gives the same seed in every scene; a custom spec gets its own", () => {
+    expect(resolveGradient(littDark, "aurora").seed).toBe(resolveGradient(littDark, "aurora").seed);
+    expect(resolveGradient(littDark, "aurora").seed).not.toBe(resolveGradient(littDark, "ember").seed);
+    const custom = { colors: ["#ff0000", "#00ff00", "#0000ff", "canvas"], base: "canvas", speed: 0.2, scale: 1, warp: 0.5 } as GradientSpec;
+    expect(resolveGradient(littDark, custom).seed).not.toBe(resolveGradient(littDark, "aurora").seed);
+  });
+  for (const theme of [littDark, littLight]) {
+    for (const name of GRADIENT_NAMES) {
+      it(`${name} resolves on ${theme.name}`, () => {
+        const u = resolveGradient(theme, name);
+        expect(u.colors).toHaveLength(12);
+        for (const v of [...u.colors, ...u.base, u.speed, u.scale, u.warp, u.seed]) expect(Number.isFinite(v)).toBe(true);
+      });
+    }
+  }
+  it("each mode has its own tuning: on litt-light no preset floats on the near-white canvas (a wash)", () => {
+    for (const name of GRADIENT_NAMES) {
+      expect(resolveGradient(littLight, name).base, name).not.toEqual(srgbToLinear(littLight.colors.canvas));
+      expect(resolveGradient(littLight, name).colors, name).not.toEqual(resolveGradient(littDark, name).colors);
+    }
+  });
+  it("a brand theme overrides a preset", () => {
+    const brand = { ...littDark, gradients: { ember: { colors: ["#ff0000", "#00ff00", "#0000ff", "canvas"], base: "canvas", speed: 0.2, scale: 1, warp: 0.5 } } } as Theme;
+    expect(resolveGradient(brand, "ember").colors.slice(0, 3)).toEqual([1, 0, 0]);
+  });
+  it("checks a custom spec at the boundary, naming the field that is wrong", () => {
+    const ok = { colors: ["#000000", "#000000", "#000000", "#000000"], base: "canvas", speed: 0.1, scale: 1, warp: 0 };
+    const bad = (patch: Record<string, unknown>) => () => resolveGradient(littDark, { ...ok, ...patch } as unknown as GradientSpec);
+    expect(bad({ colors: ["nope", "#000000", "#000000", "#000000"] })).toThrow(/colors\[0\] "nope" is not a colour/);
+    expect(bad({ colors: ["#000000", "#000", "#000000", "#000000"] })).toThrow(/colors\[1\] "#000" is not a colour: use a #rrggbb hex/);
+    expect(bad({ colors: ["#000000", "#000000", "#000000"] })).toThrow(/colors must be exactly four colours \(got 3\)/);
+    expect(bad({ base: "toString" })).toThrow(/base "toString" is not a colour/);
+    expect(bad({ speed: Number.NaN })).toThrow(/speed must be a finite number/);
+    expect(bad({ warp: "0.5" })).toThrow(/warp must be a finite number/);
+    expect(bad({ scale: 0 })).toThrow(/scale must be above 0/);
+    expect(bad({})).not.toThrow();
+    const brand = { ...littDark, gradients: { aurora: { ...ok, speed: Infinity } } } as Theme;
+    expect(() => resolveGradient(brand, "aurora")).toThrow(/gradient "aurora" in theme litt-dark: speed must be a finite number/);
   });
 });

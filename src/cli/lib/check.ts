@@ -91,9 +91,12 @@ export async function hfCheck(
   const TRANSIENT = new Set(["content_overlap", "text_occluded", "occlusion", "content_occlusion", "contrast_aa_failure"]);
   // A WebGL canvas read back by the capture itself (every <Gl> shot): Chrome's performance notice, not a defect.
   const noise = (f: HfCheckFinding) => f.code === "console_warning" && /GPU stall due to ReadPixels/.test(f.message);
+  // Contrast over a moving field is the probe's (field-contrast.ts samples those scenes through time): one report, not two.
+  const fields = new Set(build.fields);
+  const fieldOwned = (f: HfCheckFinding) => f.code === "contrast_aa_failure" && fields.has(sceneAt(f.time) ?? "");
   for (const [section, data] of Object.entries({ runtime: j.runtime, layout: j.layout, motion: j.motion, contrast: j.contrast })) {
     for (const f of data?.findings ?? []) {
-      if (noise(f)) continue;
+      if (noise(f) || fieldOwned(f)) continue;
       const element = f.dataAttributes?.["data-ct"];
       const extra: Record<string, unknown> = { section };
       for (const k of PASSTHROUGH) if (f[k] !== undefined) extra[k] = f[k];

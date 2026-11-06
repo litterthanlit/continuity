@@ -6,17 +6,18 @@
  *   change; a missing golden is written on first run)
  * - the type kit cascade contract
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { buildProject } from "../src/build/build.js";
 import { hfCheck } from "../src/cli/lib/check.js";
 import { captureFrames } from "../src/cli/lib/frames.js";
 import { probeProject } from "../src/cli/lib/probe.js";
 import { serveDir, withBrowser } from "../src/cli/lib/browser.js";
 import { PKG_ROOT as ROOT } from "../src/paths.js";
+import { fieldScenes, greyOnFieldFilm, removeFixtureProjects } from "./fixtures/field-scenes.js";
 
 const slow = process.env.CT_SLOW === "1";
 const d = slow ? describe : describe.skip;
@@ -26,7 +27,8 @@ d("seeded layout defects (projects/_defects-layout)", () => {
     const b = await buildProject("_defects-layout");
     expect(b.ok).toBe(true);
     const [hf, probe] = await Promise.all([hfCheck(b), probeProject(b)]);
-    const ids = new Set([...hf.findings, ...probe].map((f) => `${f.source}:${f.rule}`));
+    const found = [...hf.findings, ...probe];
+    const ids = new Set(found.map((f) => `${f.source}:${f.rule}`));
     for (const r of [
       "probe:text-clipped",
       "probe:type-too-small",
@@ -37,6 +39,27 @@ d("seeded layout defects (projects/_defects-layout)", () => {
       "check:contrast_aa_failure",
     ]) {
       expect(ids, r).toContain(r);
+    }
+    // Text over a moving field: the contrast audit samples the rendered frame, canvas included (0011)
+    expect(found.some((f) => f.rule === "contrast_aa_failure" && f.element?.endsWith("over-field"))).toBe(true);
+  });
+});
+
+d("contrast over a moving field (docs/decisions/0011)", () => {
+  afterAll(removeFixtureProjects);
+
+  // HyperFrames audits contrast on five frames a film: in a long film a field scene gets one or none,
+  // so a grey headline on `accent` passed the full check and failed only under --scene.
+  it("the full check catches grey type on a field in a long film", async () => {
+    const out = mkdtempSync(join(tmpdir(), "ct-grey-field-"));
+    try {
+      const b = await buildProject("grey-field", { srcDir: greyOnFieldFilm(30), outDir: out });
+      expect(b.ok).toBe(true);
+      const [hf, probe] = await Promise.all([hfCheck(b), probeProject(b)]);
+      const grey = [...hf.findings, ...probe].filter((f) => f.rule === "contrast_aa_failure" && f.element === "field.grey");
+      expect(grey.map((f) => f.severity)).toContain("error");
+    } finally {
+      rmSync(out, { recursive: true, force: true });
     }
   });
 });
@@ -169,3 +192,126 @@ interface Box {
   cy: number;
   w: number;
 }
+
+/** Build `_backgrounds`, open it in a browser and run `script` (an expression) once the runtime is ready. */
+async function inBackgrounds<T>(script: string): Promise<T> {
+  const out = mkdtempSync(join(tmpdir(), "ct-gradient-"));
+  const b = await buildProject("_backgrounds", { outDir: out });
+  expect(b.findings.filter((f) => f.severity === "error")).toEqual([]);
+  const srv = await serveDir(out);
+  try {
+    return await withBrowser(async (browser) => {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+      await page.goto(srv.url + "index.html", { waitUntil: "load" });
+      await page.waitForFunction("Boolean(window.__ct)");
+      await page.evaluate("window.__ct.ready");
+      return (await page.evaluate(script)) as T;
+    });
+  } finally {
+    await srv.close();
+    rmSync(out, { recursive: true, force: true });
+  }
+}
+
+// Page helpers: a scene's field canvas, its pixels as a data URL, and one pixel read through a 2D copy.
+const FIELD_HELPERS = `
+  var ct = window.__ct, tl = ct.timeline;
+  function sc(id) { return tl.scenes.find(function (s) { return s.scene === id; }); }
+  function field(id) { return document.querySelector('[data-ct-scene="' + id + '"] canvas[data-ct-gradient]'); }
+  function centre(id) {
+    var c = field(id), k = document.createElement("canvas");
+    k.width = c.width; k.height = c.height;
+    var g = k.getContext("2d"); g.drawImage(c, 0, 0);
+    return Array.from(g.getImageData(c.width >> 1, c.height >> 1, 1, 1).data);
+  }
+  function sync() {
+    document.querySelectorAll("canvas[data-ct-gradient]").forEach(function (c) {
+      var g = c.getContext("webgl2"); g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
+    });
+  }
+`;
+
+d("gradient fields (projects/_backgrounds)", () => {
+  afterAll(removeFixtureProjects);
+
+  it("is a pure function of time: same t, same pixels; later t, different pixels", async () => {
+    const got = await inBackgrounds<{ first: string; later: string; again: string; alpha: number[] }>(`(function () {
+      ${FIELD_HELPERS}
+      ct.seek(0.5); var first = field("a").toDataURL();
+      var alpha = centre("a");
+      ct.seek(1.5); var later = field("a").toDataURL();
+      ct.seek(0.5); var again = field("a").toDataURL();
+      return { first: first, later: later, again: again, alpha: alpha };
+    })()`);
+    // It draws: an opaque field, not the transparent canvas Task 2 left.
+    expect(got.alpha[3]).toBe(255);
+    expect(got.again).toBe(got.first);
+    expect(got.later).not.toBe(got.first);
+  });
+
+  it("the field flows straight through a cut", async () => {
+    const got = await inBackgrounds<{ lastA: number[]; firstB: number[]; sameA: string; sameB: string }>(`(function () {
+      ${FIELD_HELPERS}
+      var a = sc("a"), b = sc("b");
+      ct.seek(a.start + a.duration - 1 / tl.fps); var lastA = centre("a");
+      ct.seek(b.start); var firstB = centre("b");
+      // Both scenes drawn at the same global time (a at its end, b at its start): the same field.
+      ct.apply("a", b.start - a.start); var sameA = field("a").toDataURL();
+      ct.apply("b", 0); var sameB = field("b").toDataURL();
+      return { lastA: lastA, firstB: firstB, sameA: sameA, sameB: sameB };
+    })()`);
+    expect(got.lastA[3]).toBe(255);
+    for (let k = 0; k < 3; k++) expect(Math.abs(got.lastA[k]! - got.firstB[k]!)).toBeLessThanOrEqual(2);
+    expect(got.sameB).toBe(got.sameA);
+  });
+
+  it("stops before Chrome's WebGL context cap would blank a canvas", async () => {
+    // 17 fields: the 17th context would evict the first without an error. The build flags it, and a
+    // page built anyway refuses to prepare instead of rendering a blank backdrop.
+    const out = mkdtempSync(join(tmpdir(), "ct-fields-"));
+    const b = await buildProject("fields", { srcDir: fieldScenes(17), outDir: out });
+    expect(b.findings.map((f) => f.rule)).toContain("webgl-contexts");
+    const srv = await serveDir(out);
+    try {
+      const got = await withBrowser(async (browser) => {
+        const page = await browser.newPage();
+        await page.goto(srv.url + "index.html", { waitUntil: "load" });
+        await page.waitForFunction("Boolean(window.__ct)");
+        return (await page.evaluate(`window.__ct.ready.then(function () { return "ready"; }, function (e) { return String(e.message); })`)) as string;
+      });
+      expect(got).toMatch(/17 WebGL canvases \(0 GL shots, 17 gradient fields\)/);
+    } finally {
+      await srv.close();
+      rmSync(out, { recursive: true, force: true });
+    }
+  });
+
+  // A timing test inside a parallel suite: alone the field measures 13-16 ms a frame, but once, with
+  // HyperFrames rendering beside it on the same 4 cores, 25.7 ms. A retry asks for one uncontended
+  // run; the budget itself does not move (docs/decisions/0011 §5).
+  it("fits the frame budget", { retry: 2 }, async () => {
+    const got = await inBackgrounds<{ medianGradient: number; medianSolid: number }>(`(function () {
+      ${FIELD_HELPERS}
+      var a = sc("a");
+      function median(xs) { xs.sort(function (p, q) { return p - q; }); return xs[xs.length >> 1]; }
+      function run(offset) {
+        var ms = [];
+        for (var i = 0; i < 30; i++) {
+          var s = performance.now();
+          ct.seek(a.start + offset + (i * (a.duration - 0.1)) / 30);
+          sync();
+          ms.push(performance.now() - s);
+        }
+        return median(ms);
+      }
+      run(0.05);
+      var medianGradient = run(0);
+      document.querySelectorAll("canvas[data-ct-gradient]").forEach(function (c) { c.remove(); });
+      var medianSolid = run(0.01);
+      return { medianGradient: medianGradient, medianSolid: medianSolid };
+    })()`);
+    console.log(`gradient field: ${got.medianGradient.toFixed(1)} ms/frame median, ${got.medianSolid.toFixed(1)} ms without it`);
+    expect(got.medianGradient - got.medianSolid).toBeLessThanOrEqual(25);
+  });
+});

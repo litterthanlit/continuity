@@ -1,4 +1,5 @@
 import { fonts, type FontFamily } from "./fonts.js";
+import type { GradientName, GradientSpec } from "./gradients.js";
 import type { KitName, TypeKit } from "./kits.js";
 
 /**
@@ -37,15 +38,13 @@ export const DATA_HUES = ["blue", "amber", "teal", "violet", "rose"] as const;
 export type DataHue = (typeof DATA_HUES)[number];
 
 /**
- * Stage backgrounds: the solid canvas, litt's one light source from the top, or
- * a static technical grid of hairlines (96px cells, centred) for the energetic
- * register's collage and UI scenes (docs/decisions/0007). All of them are still.
+ * Stage backgrounds: a still colour, hairlines, or a field that keeps moving. `solid` is the canvas;
+ * `grid` a static technical grid (96px cells, centred) for the energetic register's collage and UI
+ * scenes (docs/decisions/0007); `gradient` a WebGL colour field that drifts on its own (docs/decisions/0011).
  */
-export type StageBackground = "solid" | "lit" | "grid";
+export type StageBackground = "solid" | "grid" | "gradient";
 
 export interface Material {
-  /** Accent share of the top light (`lit`), %. */
-  light: number;
   /** Accent share of the primary action's glow, %. */
   glow: number;
   /** Grain opacity (static noise, plain opacity). */
@@ -75,6 +74,8 @@ export interface Theme {
   radius: { control: number; surface: number };
   /** Type kit a brand theme.ts pins. The storyboard's `type` wins over it; with neither, `litt`. */
   type?: KitName | TypeKit;
+  /** Brand overrides of the moving gradient presets (`gradients.ts`); the rest keep litt's. */
+  gradients?: Partial<Record<GradientName, GradientSpec>>;
 }
 
 /** Shadows at video scale: litt's glows and 1px rings, doubled. */
@@ -127,11 +128,10 @@ export const littDark: Theme = {
     "data-rose-text": "#eb81a7",
   },
   material: {
-    light: 22,
     glow: 40,
     grain: 0.04,
     tint: 18,
-    glass: "rgba(17, 16, 15, 0.72)",
+    glass: "rgba(17, 16, 15, 0.5)",
     glassBorder: "rgba(255, 255, 255, 0.08)",
     highlight: "rgba(255, 255, 255, 0.06)",
     ...darkShadows,
@@ -177,7 +177,6 @@ export const littLight: Theme = {
     "data-rose-text": "#bb3c72",
   },
   material: {
-    light: 12,
     glow: 28,
     grain: 0.02,
     tint: 12,

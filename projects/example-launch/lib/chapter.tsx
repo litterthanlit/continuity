@@ -4,7 +4,7 @@ import { Stage, Safe, Label, Headline, Body } from "continuity";
 /**
  * The four chapter scenes (plan, check, measure, critic) share one lockup on the
  * safe left edge: Label 8px above the display line, the display line 32px above
- * its summary (Body, in the grey). Solid canvas: the light (Stage bg="lit") is
+ * its summary (Body, in the grey). Solid canvas: the moving field (Stage bg="gradient") is
  * kept for the turn and the end card. Ids: `label`, `headline`, `sub`.
  *
  * - `split` (default) — litt's asymmetric frame: the lockup in a 608px column

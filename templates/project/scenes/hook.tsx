@@ -1,13 +1,14 @@
 import { scene, Stage, Safe, Stack, Label, Headline } from "continuity";
 
 // litt: asymmetric and left-aligned, a label 8px above the one display line,
-// lit from the top. Rank comes from weight, two inks and space.
+// over the accent field. Rank comes from weight, two inks and space; over a field
+// the label takes the fg ink (the muted one fails contrast on the brighter colours).
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="gradient" gradient="accent">
       <Safe>
         <Stack gap={8} class="absolute bottom-[96px] left-[96px] max-w-[1200px]">
-          <Label ct="label">{text.label}</Label>
+          <Label ct="label" class="text-fg">{text.label}</Label>
           <Headline ct="headline">{text.headline}</Headline>
         </Stack>
       </Safe>

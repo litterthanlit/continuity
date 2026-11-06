@@ -19,7 +19,8 @@ Deliverables, in `projects/<slug>/`:
    launch, a feature, an explainer; `energetic` for a brand reel, a recap, a montage, a
    collage-led social cut; or calm with named energetic chapters) and why, narrative arc (hook → turn
    → payoff), visual language in litt's terms (`litt-dark` or `litt-light` and
-   why; where the one light falls — the hero, maybe the end card; the accent's
+   why; which scenes get a moving field (`bg="gradient"`, which preset) — the hero, maybe the end
+   card — and which stay `solid`; the accent's
    one job per frame; what, if anything, carries a data hue; the hierarchy of a
    typical frame: display line, title, body, label), motion language (where each
    scene's ONE expressive moment is, what stays responsive, the ink emphasis,

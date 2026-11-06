@@ -142,7 +142,7 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `spring-bounce` — litt: a spring bounces at 0.12 or less (the expressive tier). More reads as a toy. Energetic register: up to 0.35, for things that act like objects (the pop spring).
 - `exit-bounce` — litt: exits never bounce. They ease out at 0.75× the entrance (the exit presets do it).
 - `expressive-budget` — litt: one expressive moment per scene (the statement, or the product placed). Every other entrance is responsive. Energetic register: up to three (a group counts once).
-- `material-motion` — litt P5: material is static. The backdrop, the light, glow and grain never animate, loop or sweep.
+- `material-motion` — litt P5: material is static. Tween the backdrop never; a gradient field moves by itself. The light, glow and grain never animate, loop or sweep.
 - `property-motion` — litt: transform and opacity animate, plus ink at the instant tier, masks and data (draw, counter, a cell's radius). Tracking, weight, blur and filters perform.
 - `travel-too-far` — litt: entrances travel 32px (litt's 16 at video scale). Further reads as thrown, not placed. Energetic register: collage pieces may land from up to 160px.
 - `camera-edge` — The camera shows past the edge of the scene: a pan can be at most what the zoom adds (|x| ≤ (scale − 1) × half the width, the same for y), and the camera never zooms below 1.
@@ -157,7 +157,7 @@ Weights by role: `font-normal` 400 text · `font-title` 500 titles · `font-labe
 - `css-animation` — CSS animation/transition (style `animation:`/`transition:` or Tailwind `animate-*`/`transition*` classes) — real-time CSS motion is invisible to seeking and drifts between workers. Animate with `motion: (m) => …` instead.
 - `litt-weight` — A weight outside litt's three roles (P9) — text is 400 (font-normal, the default), titles 500 (font-title, Headline and Title), labels 600 (font-label, Label). No medium, semibold, bold or light.
 - `litt-case` — Uppercase text — litt sets every label in sentence case. Use Label (600, the grey), never an uppercase eyebrow.
-- `litt-gradient` — A decorative gradient (gradient text, a gradient fill or border) — litt's only gradient is the top light (Stage bg="lit"). Use a flat token colour.
+- `litt-gradient` — A hand-made gradient (gradient text, a fill, a border, a faint glow behind the content) — a backdrop is one colour or a moving field (Stage bg="gradient"). Everything else is a flat token colour.
 - `litt-radius` — A radius off litt's scale — rounded-control (8) for controls and tags, rounded-surface (16) for cards and panels, rounded-full for avatars, icon buttons and switches. Nothing else.
 - `litt-shadow` — An ad-hoc or offset shadow (P4) — use the depth tokens: shadow-raised (cards), shadow-float / shadow-modal / shadow-tooltip (floating), shadow-glow (the one primary action), shadow-hairline / shadow-control / shadow-field / shadow-lift / shadow-focus.
 - `litt-accent-text` — Accent-coloured text — litt never picks out a headline word in the accent. Rank by ink: the key word in text-fg, the rest in text-fg-muted (or m.emphasize(id, "ink")).

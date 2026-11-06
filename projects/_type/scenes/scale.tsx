@@ -6,7 +6,7 @@ const Meta = ({ ct, children }: { ct: string; children: string }) => (
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="solid">
       <Safe>
         <div class="absolute left-[96px] top-[96px] grid grid-cols-[880px_1fr] items-baseline gap-x-[64px] gap-y-[32px]">
           <Headline ct="display" as="p">{text.display}</Headline>

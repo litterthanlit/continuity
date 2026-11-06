@@ -2,6 +2,7 @@
 /** @jsxImportSource preact */
 import type { ComponentChildren, CSSProperties, JSX } from "preact";
 import type { StageBackground } from "../themes/index.js";
+import { resolveGradient, type GradientName, type GradientSpec } from "../themes/gradients.js";
 import { ctId, useScene } from "./context.js";
 
 export type Style = CSSProperties | string;
@@ -79,10 +80,13 @@ export function El({
 
 export interface StageProps extends BaseProps {
   /**
-   * `solid` canvas (the default), `lit` (litt's one light source, from the top — the hero, maybe the
-   * end card) or `grid` (a static hairline grid under collage and UI — the energetic register).
+   * A still colour, hairlines, or a field that keeps moving: `solid` canvas (the default), `grid` (a
+   * static hairline grid under collage and UI — the energetic register) or `gradient` (a moving
+   * colour field — the hero, the end card; docs/decisions/0011).
    */
   bg?: StageBackground | "none";
+  /** The field under `bg="gradient"`: a preset (`accent`, `aurora`, `ember`) or a spec. Default `accent`. */
+  gradient?: GradientName | GradientSpec;
   /** Grain opacity 0..1 (false to disable). Defaults to the theme's (litt: 0.02 light, 0.04 dark). */
   grain?: number | false;
 }
@@ -90,15 +94,15 @@ export interface StageProps extends BaseProps {
 /**
  * The scene canvas: background + content layer + grain. Every scene view
  * starts with a Stage. Content is positioned absolutely inside it.
- * Material is static in litt (P5): the backdrop never animates.
+ * Material is static in litt (P5): tweens never touch the backdrop; a gradient field moves by itself.
  */
-export function Stage({ bg, grain, class: cls, style, children }: StageProps) {
+export function Stage({ bg, gradient, grain, class: cls, style, children }: StageProps) {
   const { theme } = useScene();
   const kind = bg ?? theme.background;
   const grainAmount = grain === false ? 0 : (grain ?? theme.material.grain);
   return (
     <div class="ct-stage absolute inset-0 overflow-hidden bg-canvas text-fg font-sans" style={{ perspective: "1600px" }}>
-      {kind !== "none" && <Backdrop kind={kind} />}
+      {kind !== "none" && <Backdrop kind={kind} gradient={gradient} />}
       <div class={cx("ct-content absolute inset-0", cls)} style={style}>
         {children}
       </div>
@@ -107,15 +111,19 @@ export function Stage({ bg, grain, class: cls, style, children }: StageProps) {
   );
 }
 
-export function Backdrop({ kind, ct = "bg" }: { kind: StageBackground; ct?: string }) {
+export function Backdrop({ kind, gradient = "accent", ct = "bg" }: { kind: StageBackground; gradient?: GradientName | GradientSpec; ct?: string }) {
+  const { theme } = useScene();
+  if ((kind as string) === "lit") throw new Error('bg "lit" was removed (docs/decisions/0011): use bg="solid" or bg="gradient"');
   return (
     <div class="ct-backdrop absolute inset-0 bg-canvas" data-layout-ignore>
-      <div data-ct={ctId(ct)} class={cx("absolute inset-0", kind === "lit" && "ct-lit", kind === "grid" && "ct-grid")} />
+      <div data-ct={ctId(ct)} class={cx("absolute inset-0", kind === "grid" && "ct-grid")}>
+        {kind === "gradient" && <canvas class="absolute inset-0 h-full w-full" data-ct-gradient={JSON.stringify(resolveGradient(theme, gradient))} />}
+      </div>
     </div>
   );
 }
 
-/** litt's grain: a static SVG fractal-noise tile at plain opacity. It also dithers the light's banding. */
+/** litt's grain: a static SVG fractal-noise tile at plain opacity (texture; a gradient field dithers itself). */
 export function Grain({ amount }: { amount: number }) {
   const svg =
     "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'>" +

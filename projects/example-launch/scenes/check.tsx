@@ -79,7 +79,7 @@ const MINI_CURVE = (() => {
     .join(" ");
 })();
 
-const THUMBS: Array<{ lit?: boolean; body: ComponentChildren }> = [
+const THUMBS: Array<{ body: ComponentChildren }> = [
   // f0 · hook: the couplet on the canvas, "see" in fg, the focus caret
   {
     body: (
@@ -92,14 +92,14 @@ const THUMBS: Array<{ lit?: boolean; body: ComponentChildren }> = [
       </>
     ),
   },
-  // f1 · studio: the light, the statement in the grey with one word in fg, the rail
+  // f1 · studio: the statement in fg (one ink on the field), the rail. The thumbnails are flat:
+  // the canvas stands in for the field (a miniature of it would be a hand-made gradient).
   {
-    lit: true,
     body: (
       <>
-        <B x={22} y={28} w={36} h={5} c="bg-fg/40" />
-        <B x={22} y={38} w={150} h={15} c="bg-fg/45" />
-        <B x={22} y={58} w={34} h={15} c="bg-fg/45" />
+        <B x={22} y={28} w={36} h={5} c="bg-fg/90" />
+        <B x={22} y={38} w={150} h={15} c="bg-fg/95" />
+        <B x={22} y={58} w={34} h={15} c="bg-fg/95" />
         <B x={60} y={58} w={40} h={15} c="bg-fg/95" />
         <B x={22} y={115} w={240} h={1} r={0} c="bg-fg/25" />
         {[0, 1, 2, 3, 4].map((k) => (
@@ -165,7 +165,6 @@ const THUMBS: Array<{ lit?: boolean; body: ComponentChildren }> = [
   },
   // f5 · THE DEFECT: an end-card draft whose wordmark (f5b) collides with the button (f5a); the caption (f5c) is too faint
   {
-    lit: true,
     body: (
       <>
         <B ct="f5a" x={114} y={84} w={56} h={16} r={1} c="bg-accent" />
@@ -211,9 +210,8 @@ const THUMBS: Array<{ lit?: boolean; body: ComponentChildren }> = [
       </Box>
     ),
   },
-  // f8 · end card: the light, wordmark, tagline, the button
+  // f8 · end card: wordmark, tagline, the button
   {
-    lit: true,
     body: (
       <>
         <B x={74} y={48} w={136} h={22} c="bg-fg/95" />
@@ -257,7 +255,6 @@ export default scene({
             {THUMBS.map((t, i) => (
               <El ct={`f${i}`} class="relative" data-layout-ignore>
                 <div class="absolute inset-0 overflow-hidden rounded-control bg-canvas shadow-hairline">
-                  {t.lit && <div class="ct-lit absolute inset-0" />}
                   <div
                     class="absolute left-0 top-0"
                     style={{ width: `${DESIGN_W}px`, height: `${DESIGN_H}px`, transform: `scale(${K})`, transformOrigin: "0 0" }}

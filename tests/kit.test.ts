@@ -20,7 +20,9 @@ describe("kit components set litt's type by role", async () => {
   const { renderToString } = await import("preact-render-to-string");
   const { withScene } = await import("../src/kit/context.js");
   const { Body, Caption, Headline, Label, Title } = await import("../src/kit/type.js");
-  const { Button, DotGrid, Ring, Sidebar, Stat, Tag, Toggle } = await import("../src/kit/ui.js");
+  const { Button, Card, DotGrid, Ring, Sidebar, Stat, Tag, Toggle } = await import("../src/kit/ui.js");
+  const { Stage } = await import("../src/kit/core.js");
+  const { resolveGradient } = await import("../src/themes/gradients.js");
   const { littDark } = await import("../src/themes/index.js");
   const { littKit } = await import("../src/themes/kits.js");
   const ctx = { id: "s", text: {}, aspect: "16:9", width: 1920, height: 1080, portrait: false, landscape: true, square: false, theme: littDark, typeKit: littKit, beats: {}, duration: 3, index: 0, total: 1 } as const;
@@ -64,5 +66,23 @@ describe("kit components set litt's type by role", async () => {
     // P12: the current item is the raised segment
     expect(render(h(Sidebar, { ct: "n", items: ["Inbox", "Issues"], active: 1 }))).toMatch(/data-ct="s\.n-i1" class="[^"]*bg-surface-2 text-fg shadow-raised/);
     expect(render(h(Stat, { ct: "n", value: 1200, label: "Deploys" }))).toContain("font-sans font-title tabular-nums text-fg");
+  });
+
+  const attr = (html: string, name: string) => {
+    const m = new RegExp(`${name}="([^"]*)"`).exec(html);
+    if (!m) throw new Error(`no ${name} in ${html}`);
+    return m[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+  };
+
+  it("a gradient stage carries its field's uniforms", () => {
+    const html = render(h(Stage, { bg: "gradient", gradient: "ember" }));
+    expect(JSON.parse(attr(html, "data-ct-gradient")).seed).toBe(resolveGradient(littDark, "ember").seed);
+  });
+  it("bg lit is a build error that names the replacement", () => {
+    expect(() => render(h(Stage, { bg: "lit" as never }))).toThrow(/"lit" was removed \(docs\/decisions\/0011\): use bg="solid" or bg="gradient"/);
+  });
+  it("a glass card floats: ct-glass instead of the raised surface", () => {
+    expect(render(h(Card, { glass: true }))).toContain("ct-glass");
+    expect(render(h(Card, {}))).not.toContain("ct-glass");
   });
 });

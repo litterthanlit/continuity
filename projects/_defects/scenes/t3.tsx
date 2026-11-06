@@ -2,7 +2,7 @@ import { scene, Stage, Center, Headline } from "continuity";
 
 export default scene({
   view: ({ text }) => (
-    <Stage bg="lit">
+    <Stage bg="solid">
       <Center>
         <Headline ct="word">{text.word}</Headline>
       </Center>
