@@ -21,7 +21,7 @@ import { FONT_CHANNELS, typeBaseOf } from "./typebase.js";
 import { missingGlyphs } from "./glyphs.js";
 import { sourceHash } from "./hash.js";
 import { glBundle, runtimeBundle } from "./runtime-bundle.js";
-import { cameraId, type GlSpec } from "../gl/spec.js";
+import { cameraId, MAX_WEBGL_CONTEXTS, webglContextsMessage, type GlSpec } from "../gl/spec.js";
 
 export interface ElementInfo {
   id: string;
@@ -419,6 +419,12 @@ export async function buildProject(
       glTargets.add(id);
       elements.push({ id, scene, tag: "gl", text: "", ownText: "", decor: true, ancestors: [spec.id], ui: false });
     }
+  }
+  // Each GL shot and each gradient field holds a WebGL context; Chrome drops the oldest past its cap.
+  const shots = document.querySelectorAll("canvas[data-ct-gl]").length;
+  const fields = document.querySelectorAll("canvas[data-ct-gradient]").length;
+  if (shots + fields > MAX_WEBGL_CONTEXTS) {
+    findings.push({ source: "build", rule: "webgl-contexts", severity: "error", message: webglContextsMessage(shots, fields), suggestion: 'keep the field for the hero and the end card; give the other scenes bg="solid"' });
   }
   for (const [id, n] of seen) {
     if (n > 1) findings.push({ source: "build", rule: "duplicate-ct", severity: "error", element: id, message: `${n} elements share ct="${id}" — ids must be unique within a scene` });

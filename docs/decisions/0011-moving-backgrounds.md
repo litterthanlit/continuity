@@ -64,7 +64,8 @@ The rest follows 0009's rules:
   redrawn. That is an optimisation: with `preserveDrawingBuffer` it keeps the same pixels.
 - One WebGL2 context and program per canvas, mounted once at prepare.
 - A lost context throws on the next draw. A render must stop rather than continue over a blank
-  backdrop. A missing WebGL2 context also throws.
+  backdrop. A missing WebGL2 context also throws, and so does a composition with more WebGL
+  canvases than Chrome keeps contexts for (see Consequences).
 
 ### 4. The timeline does not drive the field
 
@@ -109,8 +110,12 @@ shader. HyperFrames' static-frame dedup is off in all three: Continuity register
 - Type over a field must clear contrast on every colour the field passes through. `aurora`'s cyan
   is too light for `fg` type at 3:1; the gallery labels use the canvas ink. `ct check` reads the
   canvas pixels, so the contrast audit gates this.
-- Each field is a WebGL context. Chrome keeps about 16 live contexts per page and drops the oldest
-  past that, and GL shots count too. A film with more field scenes than that would hit the
-  context-loss error. The next step would be one shared context that draws each scene's field in
-  turn.
+- Each field is a WebGL context, and so is each GL shot (0009). Chrome keeps 16 live contexts per
+  page and drops the oldest past that, with only a console warning. In a probe with 20 contexts it
+  lost the first four. The runtime mounts GL shots first, so they would be the ones evicted, and
+  three.js draws into a lost context as a no-op: a blank shot, no error. So the cap is checked
+  before any context exists. The build reports `webgl-contexts` (error) when GL shots plus fields
+  exceed 16, and `prepare()` throws the same message before mounting, so a page built anyway does
+  not render. The next step, if films need more, is one shared context that draws each scene's
+  field in turn.
 - Not built: beat-synced surges (§4), a field in the timeline's data, a CSS fallback.

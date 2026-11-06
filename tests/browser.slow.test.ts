@@ -17,6 +17,7 @@ import { captureFrames } from "../src/cli/lib/frames.js";
 import { probeProject } from "../src/cli/lib/probe.js";
 import { serveDir, withBrowser } from "../src/cli/lib/browser.js";
 import { PKG_ROOT as ROOT } from "../src/paths.js";
+import { fieldScenes } from "./fixtures/field-scenes.js";
 
 const slow = process.env.CT_SLOW === "1";
 const d = slow ? describe : describe.skip;
@@ -238,6 +239,26 @@ d("gradient fields (projects/_backgrounds)", () => {
     expect(got.lastA[3]).toBe(255);
     for (let k = 0; k < 3; k++) expect(Math.abs(got.lastA[k]! - got.firstB[k]!)).toBeLessThanOrEqual(2);
     expect(got.sameB).toBe(got.sameA);
+  });
+
+  it("stops before Chrome's WebGL context cap would blank a canvas", async () => {
+    // 17 fields: the 17th context would evict the first without an error. The build flags it, and a
+    // page built anyway refuses to prepare instead of rendering a blank backdrop.
+    const out = mkdtempSync(join(tmpdir(), "ct-fields-"));
+    const b = await buildProject("fields", { srcDir: fieldScenes(17), outDir: out });
+    expect(b.findings.map((f) => f.rule)).toContain("webgl-contexts");
+    const srv = await serveDir(out);
+    try {
+      const got = await withBrowser(async (browser) => {
+        const page = await browser.newPage();
+        await page.goto(srv.url + "index.html", { waitUntil: "load" });
+        await page.waitForFunction("Boolean(window.__ct)");
+        return (await page.evaluate(`window.__ct.ready.then(function () { return "ready"; }, function (e) { return String(e.message); })`)) as string;
+      });
+      expect(got).toMatch(/17 WebGL canvases \(0 GL shots, 17 gradient fields\)/);
+    } finally {
+      await srv.close();
+    }
   });
 
   // A timing test inside a parallel suite: alone the field measures 13-16 ms a frame, but once, with

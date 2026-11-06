@@ -5,6 +5,7 @@
  * cut. Half the composition's resolution: the field is soft, and SwiftShader pays per pixel.
  */
 import type { GradientUniforms } from "../themes/gradients.js";
+import { MAX_WEBGL_CONTEXTS, webglContextsMessage } from "../gl/spec.js";
 import { FIELD_FRAG, FIELD_VERT } from "./gradient-shader.js";
 
 interface Field {
@@ -53,6 +54,16 @@ function mount(canvas: HTMLCanvasElement, width: number, height: number): Field 
   gl.uniform1f(gl.getUniformLocation(prog, "u_warp"), u.warp);
   gl.viewport(0, 0, canvas.width, canvas.height);
   return { canvas, gl, uT: gl.getUniformLocation(prog, "u_t"), speed: u.speed, last: NaN };
+}
+
+/**
+ * Before any context exists: past Chrome's per-page cap the oldest contexts (the GL shots, mounted
+ * first) are dropped without an error, and three.js keeps drawing into them as a no-op. Stop instead.
+ */
+export function checkWebglContexts(): void {
+  const shots = document.querySelectorAll("canvas[data-ct-gl]").length;
+  const fields = document.querySelectorAll("canvas[data-ct-gradient]").length;
+  if (shots + fields > MAX_WEBGL_CONTEXTS) throw new Error(webglContextsMessage(shots, fields));
 }
 
 /** Mount every gradient canvas in the composition (once, at prepare). */

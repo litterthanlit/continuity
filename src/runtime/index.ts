@@ -18,7 +18,7 @@ import type { PartCounts, PropRange, SplitMode, Timeline } from "../motion/types
 import type { GlHandle } from "../gl/runtime.js";
 import type { GlSpec } from "../gl/spec.js";
 import { prepareCarriers, renderCarrier, type Carrier } from "./carriers.js";
-import { drawGradients, mountGradients } from "./gradient.js";
+import { checkWebglContexts, drawGradients, mountGradients } from "./gradient.js";
 
 interface CtData {
   timeline: Timeline;
@@ -480,6 +480,7 @@ async function prepare() {
   captureVariationBases();
   createMotionBlurs();
   collectMorphs();
+  checkWebglContexts();
   mountGl();
   mountGradients();
   const root = document.querySelector<HTMLElement>("[data-composition-id]");
