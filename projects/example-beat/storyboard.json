@@ -33,13 +33,6 @@
             "beat": 1
           },
           "note": "'hears the beat.' wipes on the next kick"
-        },
-        {
-          "id": "dim",
-          "at": {
-            "beat": 3
-          },
-          "note": "'Motion that' steps to the grey on the last beat"
         }
       ],
       "text": {
@@ -58,7 +51,7 @@
           "anchor": "A4:E4"
         }
       ],
-      "motion": "Two display lines wipe on, one per kick. On beat 3 the first line dims: rank by ink, on the beat. Hard cut on the bar."
+      "motion": "Two display lines wipe on, one per kick, in fg over the aurora field (one ink on a field). The camera push holds the rest of the bar. Hard cut on the bar."
     },
     {
       "id": "grid",

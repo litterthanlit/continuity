@@ -59,7 +59,7 @@
           "note": "Inline span inside l2, pinned to text-fg so it keeps its ink when the rest of l2 dims. Emphasis by ink, never a colour or italic."
         }
       ],
-      "motion": "Solid canvas, no light (the world before eyes). b1: l1 maskUp by words (responsive, word stagger 40ms); the caret fades in with it and blinks until b2-0.08, then fades out. b2: l1 `dim` (instant) as l2 maskUp by words on the expressive spring — the scene's one moment. b3: l2 `dim` (instant); 'see' keeps fg. Camera 1 → 1.03 anchored on the safe left edge (origin x 96), so the type never drifts and the cut into the turn doesn't snap. Nothing exits; hard cut on the beat into the light."
+      "motion": "Solid canvas, no light (the world before eyes). b1: l1 maskUp by words (responsive, word stagger 40ms); the caret fades in with it and blinks until b2-0.08, then fades out. b2: l1 `dim` (instant) as l2 maskUp by words on the expressive spring — the scene's one moment. b3: l2 `dim` (instant); 'see' keeps fg. Camera 1 → 1.03 anchored on the safe left edge (origin x 96), so the type never drifts and the cut into the turn doesn't snap. Nothing exits; hard cut on the beat onto the field."
     },
     {
       "id": "studio",
@@ -69,12 +69,12 @@
         {
           "id": "b1",
           "at": 0.15,
-          "note": "label + headline rise into the light, in the grey"
+          "note": "label + headline rise onto the field, in fg, without 'eyes.'"
         },
         {
           "id": "b2",
           "at": 1.0,
-          "note": "'eyes.' steps up to fg: the answer to the hook's 'see'"
+          "note": "'eyes.' lands on its own beat: the answer to the hook's 'see'"
         },
         {
           "id": "b3",
@@ -101,19 +101,19 @@
           "id": "label",
           "role": "label",
           "anchor": "A2",
-          "note": "<Label> (28, 600, the grey, sentence case), 8px above the headline."
+          "note": "<Label> (28, 600, fg: the grey falls under 3:1 on the field, sentence case), 8px above the headline."
         },
         {
           "id": "headline",
           "role": "headline",
           "anchor": "A2:E3",
-          "note": "<Headline> display (112), the grey, broken by meaning: 'Give agents a studio.' / 'And eyes.'."
+          "note": "<Headline> display (112), fg, broken by meaning: 'Give agents a studio.' / 'And eyes.'."
         },
         {
           "id": "eyes",
           "role": "headline",
           "anchor": "B3",
-          "note": "'eyes.' span inside the headline: the one word that steps up to fg (ink)."
+          "note": "'eyes.' span inside the headline: held back as the line rises, then fades in on b2. On the field the type has one ink, so the answer rhymes with 'see' by timing, not ink."
         },
         {
           "id": "rail",
@@ -158,7 +158,7 @@
           "note": "<Tag> 'Ship', at the right end: the destination (the end card)."
         }
       ],
-      "motion": "Stage bg `lit`: litt's one light arrives (the hero). b1: label `fade`; headline maskUp by lines on the expressive spring (the moment). b2: `eyes` `ink` (instant). b3: rail `draw` (slow, inOut); the five tags `rise` in reading order (list stagger 40ms) as it passes. b4: plan `ink` + plan-focus `fade` at the instant tier. Camera 1 → 1.03 anchored on the safe left edge, like the hook. Push into the first chapter.",
+      "motion": "Stage bg `gradient` on `accent`: the first colour of the film, a moving cobalt field (the hero). b1: label `fade`; headline maskUp by lines on the expressive spring (the moment), 'eyes.' held back. b2: `eyes` `fade` (responsive). b3: rail `draw` (slow, inOut); the five tags `rise` in reading order (list stagger 40ms) as it passes. b4: plan `ink` + plan-focus `fade` at the instant tier. Camera 1 → 1.03 anchored on the safe left edge, like the hook. Push into the first chapter.",
       "transition": {
         "type": "push",
         "duration": 0.5,
@@ -302,7 +302,7 @@
           "id": "frames",
           "role": "ui",
           "anchor": "A3:C6",
-          "note": "Thumbnails f0…f8: miniatures of this film in litt (canvas or the top light, fg/grey type bars, raised UI boxes, a focus caret, an accent button on the end card). Shapes only, no readable text."
+          "note": "Thumbnails f0…f8: miniatures of this film in litt (flat: the canvas stands in for the fields; fg/grey type bars, raised UI boxes, a focus caret, an accent button on the end card). Shapes only, no readable text."
         },
         {
           "id": "f5",
@@ -571,7 +571,7 @@
           "note": "<Button variant=\"primary\">Open source</Button> (md, 88): the film's one accent fill, with the zero-offset glow. 'Ship', the last station."
         }
       ],
-      "motion": "Stage bg `lit` (the light returns). b1: wordmark `settle` (expressive) — the moment. b2: tagline `rise`. b3: cta `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame. Last scene: the film ends on the held card."
+      "motion": "Stage bg `gradient` on `aurora` (colour returns for the brand; not `accent`, where the cobalt button would sink into the cobalt field). b1: wordmark `settle` (expressive) — the moment. b2: tagline `rise`. b3: cta `rise`. Then hold, settled, for more than 2s while the camera pushes 1 → 1.03 into the last frame. Last scene: the film ends on the held card."
     }
   ]
 }

@@ -37,9 +37,9 @@
 - **No URL, no VO, no music.** The CTA is the word "Open source" plus the wordmark (the link lives
   in the post). The film is silent-first, so every idea is carried by type and UI, and the hook
   has to land in the first 2s of a muted autoplay. No `bpm`: cuts are placed on visual beats.
-- **Accent = litt's cobalt, used the litt way.** It is light (the top light on the turn and the
-  end card), focus (the caret, the focus ring on "Plan", the playhead) and the one fill: the
-  end card's primary "Open source" button. Red and green appear only in the gate moment and
+- **Accent = litt's cobalt, used the litt way.** It is colour (the moving field on the turn),
+  focus (the caret, the focus ring on "Plan", the playhead) and the one fill: the end card's
+  primary "Open source" button. Red and green appear only in the gate moment and
   the verdicts, as status words in tags (and the one danger mark on the sheet): signals, not
   a second brand colour. No data hue is needed: nothing in the film is a category that recurs.
 - **What counts as copy:** `storyboard.text` holds every line the viewer is meant to *read*
@@ -56,5 +56,6 @@
   Plan → Check → Measure → Critique → Ship. A separate "build" chapter would push the cut past
   35s without serving one of the six must-say ideas.
 - **The ink motif is used twice, as a pair:** the hook ends with only "see" in fg (everything
-  else steps back to the grey), and the turn lights "eyes." the same way (the answer). The
+  else steps back to the grey), and the turn answers with "eyes." (on the field the type has one ink, so the answer lands on
+  its own beat instead). The
   hook's two lines are one statement in one display block, broken by meaning.

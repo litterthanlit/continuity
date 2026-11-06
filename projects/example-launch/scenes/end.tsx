@@ -2,12 +2,14 @@ import { scene, Stage, Safe, Center, Headline, Body, Button } from "continuity";
 
 // End card — the film's only centred frame, on the field. The wordmark (the display
 // line) 32px over the tagline, then the one accent fill of the film: the primary
-// "Open source" button (the "Ship" station). One ink on the field: the grey falls under
-// 3:1 somewhere on accent, fg clears all of it (docs/decisions/0011); the tagline stays
-// second by size and weight.
+// "Open source" button (the "Ship" station). The field is `aurora`, not `accent`: on a
+// cobalt field the cobalt button would sink into it; on aurora's violet, teal and rose it
+// stays the one accent. One ink on the field: the grey falls under 3:1 on its brighter
+// colours, large fg clears all of it (docs/decisions/0011); the tagline stays second by
+// size and weight.
 export default scene({
   view: ({ text }) => (
-    <Stage bg="gradient" gradient="accent">
+    <Stage bg="gradient" gradient="aurora">
       <Safe>
         <Center>
           <Headline ct="wordmark">{text.wordmark}</Headline>

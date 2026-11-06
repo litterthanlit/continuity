@@ -11,15 +11,14 @@
       "intent": "Stake the claim: motion design is a craft (earn trust with designers).",
       "beats": [
         { "id": "b1", "at": 0.1, "note": "'Motion is' rises from its baseline" },
-        { "id": "b2", "at": 0.55, "note": "'a craft.' is placed — the scene's one expressive moment" },
-        { "id": "b3", "at": 1.2, "note": "'Motion is' steps to the grey; 'a craft.' leads" }
+        { "id": "b2", "at": 0.55, "note": "'a craft.' is placed — the scene's one expressive moment" }
       ],
       "text": { "l1": "Motion is", "l2": "a craft." },
       "elements": [
-        { "id": "l1", "role": "headline", "anchor": "A2:E2", "note": "the setup line; recedes to the grey at b3" },
-        { "id": "l2", "role": "headline", "anchor": "A3:E3", "note": "the payload; stays in fg" }
+        { "id": "l1", "role": "headline", "anchor": "A2:E2", "note": "the setup line; fg (one ink on the field)" },
+        { "id": "l2", "role": "headline", "anchor": "A3:E3", "note": "the payload; lands last, on the expressive spring" }
       ],
-      "motion": "Lit from above (the hero). Two display lines, left-aligned on the piece's one top edge. l1 masks up by line on the responsive spring; l2 masks up on the expressive spring. Once both have landed l1 dims to the grey at the instant tier, so rank comes from ink. A 3% camera push carries the hold. Hard cut out."
+      "motion": "On the moving accent field (the hero). Two display lines in fg, left-aligned on the piece's one top edge: one ink on the field (the grey falls under 3:1 on its cobalt), so rank comes from order and the expressive landing, not ink. l1 masks up by line on the responsive spring; l2 masks up on the expressive spring. A 3% camera push carries the hold. Hard cut out."
     },
     {
       "id": "write",

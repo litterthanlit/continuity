@@ -9,7 +9,7 @@ becomes "agents check everything" by the end.
 | | Scene | Time | Idea |
 |---|---|---|---|
 | Hook | `hook` | 0–3.6 | *Agents can write motion. They just can't **see** it.* Each line takes the ink, then everything but "see" steps back to the grey. |
-| Turn | `studio` | 3.6–8.0 | *Continuity. Give agents a studio. And **eyes**.* Into the light; "eyes." takes the ink. A hairline pipeline draws: Plan · Check · Measure · Critique · Ship. |
+| Turn | `studio` | 3.6–8.0 | *Continuity. Give agents a studio. And **eyes**.* Onto the moving cobalt field; "eyes." lands on its own beat. A hairline pipeline draws: Plan · Check · Measure · Critique · Ship. |
 | Payoff 1 | `plan` | 7.5–12.3 | *Plan before pixels.* The storyboard of this very film, with beat lanes. |
 | Payoff 2 | `check` | 11.8–18.8 | *Eyes on every frame.* Contact sheet + `ct check`. A collision is caught ("error") and fixed ("fixed"). **The punch.** |
 | Payoff 3 | `measure` | 18.3–23.3 | *Motion, measured. Not vibes.* The motion-energy curve draws under a playhead. |
@@ -22,10 +22,11 @@ viewer always knows where they are. "Ship" is the end card.
 
 ## Visual language (litt)
 - **Theme `litt-dark`.** Warm near-black canvas, stone surfaces, fg type and one grey, litt's
-  cobalt as light, focus and a single fill.
+  cobalt as the turn's field, focus and a single fill.
 - **Colour tells the story.** The hook is on the solid canvas (the world before eyes). The turn
   and the end card sit on a moving gradient field (`Stage bg="gradient"`): colour arrives, and
-  returns for the brand. The four chapters are solid: the product is the subject, and the
+  returns for the brand (`accent` on the turn, `aurora` on the end card, where a cobalt field
+  would swallow the cobalt button). Type on a field takes one ink, fg. The four chapters are solid: the product is the subject, and the
   identical geometry makes the pushes read as one long bench.
 - **Composition.** Asymmetric and left-aligned on the safe edge. The hook is a display couplet,
   vertically centred; the turn puts its lockup in the upper half and the pipeline (1536px, air
@@ -38,8 +39,9 @@ viewer always knows where they are. "Ship" is the end card.
 - **Type.** Geist in three weights by role: display/title 500, text 400, labels 600 in sentence
   case. One display line (112px) per scene, everything else on title/body/small/label. Geist
   Mono for commands, ids, durations and scores. Emphasis is by ink — the hook ends with "see"
-  in fg, the turn with "eyes." — never a colour, an italic or a serif.
-- **Colour.** Two inks. The accent appears as the top light, the caret, the focus ring on
+  in fg — never a colour, an italic or a serif. On the field the type has one ink, so the turn's
+  "eyes." answers by timing: it lands on its own beat.
+- **Colour.** Two inks. The accent appears as the turn's field, the caret, the focus ring on
   "Plan", the playhead, and the one primary button on the end card. Status is a word in a tag
   (error / fixed / Ships / 100% eased) in danger or success; the only coloured mark is the danger
   ring on the defect frame. No data hue: nothing here is a recurring category.
@@ -65,7 +67,7 @@ viewer always knows where they are. "Ship" is the end card.
 - **Nothing material moves.** No loops, no glow, no sheen. Ambient life is the camera's slow push
   (1 → 1.03 per scene, anchored on the left edge on the hook and the turn so the cut between them is still); in `check` it is a quiet 1% drift and then a short `inOut` focus move on
   the red that holds through the fix.
-- **Transitions (cuts + 2 accents).** A hard cut on the beat from the hook into the light.
+- **Transitions (cuts + 2 accents).** A hard cut on the beat from the hook onto the field.
   `push` (0.5s, left, with motion blur) between the sequential pipeline steps, studio → plan →
   check → measure → critic. A `dip` (0.5s) before the end card: one breath before the brand.
 
