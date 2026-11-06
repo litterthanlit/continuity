@@ -1,4 +1,5 @@
 import { fonts, type FontFamily } from "./fonts.js";
+import type { GradientName, GradientSpec } from "./gradients.js";
 import type { KitName, TypeKit } from "./kits.js";
 
 /**
@@ -75,6 +76,8 @@ export interface Theme {
   radius: { control: number; surface: number };
   /** Type kit a brand theme.ts pins. The storyboard's `type` wins over it; with neither, `litt`. */
   type?: KitName | TypeKit;
+  /** Brand overrides of the moving gradient presets (`gradients.ts`); the rest keep litt's. */
+  gradients?: Partial<Record<GradientName, GradientSpec>>;
 }
 
 /** Shadows at video scale: litt's glows and 1px rings, doubled. */

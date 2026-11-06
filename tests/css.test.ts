@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildFamilies, compileCss, fontFaceCss, kitCss } from "../src/build/css.js";
 import { PKG_ROOT } from "../src/paths.js";
 import { fonts, hasTabularFigures } from "../src/themes/fonts.js";
-import { DATA_HUES, littDark, littLight, themes } from "../src/themes/index.js";
+import { GRADIENT_NAMES, resolveGradient, srgbToLinear } from "../src/themes/gradients.js";
+import { DATA_HUES, littDark, littLight, themes, type Theme } from "../src/themes/index.js";
 import { defineKit, KIT_NAMES, kitScale, littKit, resolveKit, typeKits, WEIGHTS } from "../src/themes/kits.js";
 
 describe("the litt kit", () => {
@@ -104,5 +105,26 @@ describe("kit CSS", () => {
     expect(css).not.toMatch(/"ss01"|aurora|accent-2/);
     const portrait = await compileCss(littDark, littKit, [], ["text-label"], PKG_ROOT, true);
     expect(portrait).toContain("--text-label: 34px");
+  });
+});
+
+describe("gradient presets", () => {
+  it("has three bold presets; accent reads the theme's own tokens", () => {
+    expect([...GRADIENT_NAMES]).toEqual(["accent", "aurora", "ember"]);
+    const u = resolveGradient(littDark, "accent");
+    expect(u.colors).toHaveLength(12);
+    expect(u.base).toEqual(srgbToLinear(littDark.colors.canvas));
+    expect(u.colors.slice(0, 3)).toEqual(srgbToLinear(littDark.colors.accent));
+  });
+  it("the same preset gives the same seed in every scene; a custom spec gets its own", () => {
+    expect(resolveGradient(littDark, "aurora").seed).toBe(resolveGradient(littDark, "aurora").seed);
+    expect(resolveGradient(littDark, "aurora").seed).not.toBe(resolveGradient(littDark, "ember").seed);
+  });
+  it("a brand theme overrides a preset", () => {
+    const brand = { ...littDark, gradients: { ember: { colors: ["#ff0000", "#00ff00", "#0000ff", "canvas"], base: "canvas", speed: 0.2, scale: 1, warp: 0.5 } } } as Theme;
+    expect(resolveGradient(brand, "ember").colors.slice(0, 3)).toEqual([1, 0, 0]);
+  });
+  it("rejects an unknown token", () => {
+    expect(() => resolveGradient(littDark, { colors: ["nope", "#000", "#000", "#000"], base: "canvas", speed: 0.1, scale: 1, warp: 0 })).toThrow(/nope/);
   });
 });
