@@ -78,7 +78,7 @@ viewer always knows where they are. "Ship" is the end card.
 
 ## Rhythm
 The hook is the shortest scene (3.6s: two word cascades and one ink step). The turn breathes
-(4.4s) while the rail draws. The chapters build: plan (4.8s), then check, the longest scene
+(4.4s) while the rail draws. The chapters build: plan (5.0s), then check, the longest scene
 (7.0s), whose red-to-green flip at ~16.7s is the loudest moment of the film. Measure (5.0s)
 and critic (5.1s) sit back into calm data reveals, and the dip gives one clean breath before
 the end card holds for more than 2s.
