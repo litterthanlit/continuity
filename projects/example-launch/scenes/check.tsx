@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { scene, El, Card, Window, Terminal, Tag } from "continuity";
-import { Chapter, STACKED } from "../lib/chapter.js";
+import { Chapter, STACKED, arriveLeft, leaveLeft } from "../lib/chapter.js";
 import { FILM_FRAMES, FILM_S, SCENES, fmtS } from "../lib/film.js";
 
 // 02 · Check — the film's punch. A contact sheet of this film (left) and the gate
@@ -313,7 +313,9 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // The push brings the surfaces in (present at t=0); copy, then the frames come up.
+    // In: the carry from plan lands both surfaces still travelling left (present at t=0,
+    // the far one trailing); the label slides in the same way; copy, then the frames.
+    arriveLeft(m, ["sheet", "term"]);
     m.enter("headline", "maskUp", { at: "b1", split: "lines" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
     m.enter(BLOOM, "fade", { at: "b1+0.3", stagger: "grid" });
@@ -344,5 +346,8 @@ export default scene({
     // through the fix. 1.03 in all: the surfaces span the full safe width.
     m.camera({ scale: [1, 1.01] }, { at: 0, duration: m.time("b3") });
     m.camera({ scale: [1.01, 1.03] }, { at: "b3", duration: "slow", ease: "inOut" });
+
+    // Out: the lockup leaves left first, then the carry takes the surfaces into measure.
+    leaveLeft(m);
   },
 });

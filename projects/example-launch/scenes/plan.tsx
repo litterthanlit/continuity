@@ -1,5 +1,5 @@
 import { scene, El, Window } from "continuity";
-import { Chapter, SPLIT } from "../lib/chapter.js";
+import { Chapter, SPLIT, leaveLeft } from "../lib/chapter.js";
 import { SCENES as ALL, FILM_S, FORMAT, fmtS } from "../lib/film.js";
 
 // 01 · Plan — the storyboard of this very film: scenes on the left, their beat
@@ -154,22 +154,28 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // The push brings the board in: it is on screen from t=0, so the push never lands
-    // on an empty frame. The statement is the scene's one expressive moment.
+    // In: the portal from studio's Plan tile (0.9s). The scene opens from the tile with
+    // "01 · Plan" and the board already on it; nothing of its own moves until the portal
+    // lands (b1). The statement is the scene's one expressive moment.
     m.enter("headline", "maskUp", { at: "b1", split: "lines", ease: "expressive" });
     m.enter("sub", "rise", { at: "after:headline-0.25" });
 
-    // The scene rows ride in with the push (the bench is never empty). Once it lands the
-    // beat lanes wipe on along the time axis, then the real beats appear in reading
-    // order, all landed by b2.
-    m.enter(LANE_IDS, "wipeRight", { at: 0.6, stagger: "list" });
-    m.enter(TICK_IDS, "fade", { at: 0.9, stagger: "list" });
+    // The scene rows came through the portal (the bench is never empty). Once it lands the
+    // beat lanes wipe on along the time axis, then the real beats appear in reading order,
+    // all landed by b2.
+    m.enter(LANE_IDS, "wipeRight", { at: "b1+0.25", stagger: "list" });
+    m.enter(TICK_IDS, "fade", { at: "b1+0.55", stagger: "list" });
 
     // b3 — "you are here": the raised segment comes up under this scene's row and its
     // title steps up to fg, at the instant tier.
     m.enter("current", "fade", { at: "b3" });
     m.emphasize(`title${CURRENT}`, "ink", { at: "b3" });
 
-    m.camera({ scale: [1, 1.03] });
+    // Out: the lockup leaves first, travelling left (the carry's direction); then the carry
+    // takes the board left through the cut into check.
+    leaveLeft(m);
+
+    // After the portal: the portal is the scene's move, no push under it.
+    m.camera({ scale: [1, 1.03] }, { at: "b1" });
   },
 });

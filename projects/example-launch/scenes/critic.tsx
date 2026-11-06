@@ -1,5 +1,5 @@
 import { scene, El, Card, Meter, Counter, Stat, Tag, Caption } from "continuity";
-import { Chapter, SPLIT } from "../lib/chapter.js";
+import { Chapter, SPLIT, arriveLeft } from "../lib/chapter.js";
 
 // 04 · Critique — the five-axis scorecard of this film's third iteration, beside the
 // lockup. litt: a flat card, meters filled with fg (no hue: the axes are not
@@ -52,8 +52,11 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // The scorecard (labels, empty meters, 0.0 scores) is already on the surface when
-    // the push brings it in; only the data moves.
+    // In: the carry from measure. Measure's lockup left before the cut, so the eye is on
+    // the chart window when the cut lands, and this card is the next thing along the bench:
+    // it is on screen from the cut (labels, empty meters, 0.0), still travelling left a
+    // little ahead of the camera; the copy follows it in.
+    arriveLeft(m, ["card"], { lag: 64 });
     m.enter("headline", "maskUp", { at: "b1", split: "lines" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
 

@@ -1,5 +1,5 @@
 import { scene, El, Window, Tag } from "continuity";
-import { Chapter, SPLIT } from "../lib/chapter.js";
+import { Chapter, SPLIT, arriveLeft, leaveLeft } from "../lib/chapter.js";
 import { FILM_S, STARTS } from "../lib/film.js";
 
 // 03 · Measure — the motion-energy curve of THIS film wipes on under a playhead,
@@ -141,8 +141,10 @@ export default scene({
     </Chapter>
   ),
   motion: (m) => {
-    // b1 (0.0) — the push carries the chart window in (no entrance of its own); copy leads.
-    m.enter("headline", "maskUp", { at: "b1+0.2", split: "lines" });
+    // In: the carry from check lands the chart window still travelling left; the label
+    // slides in the same way. b1 — the carry has landed; the statement.
+    arriveLeft(m, ["chart"], { lag: 64 });
+    m.enter("headline", "maskUp", { at: "b1", split: "lines" });
     m.enter("sub", "rise", { at: "after:headline-0.2" });
 
     // b2 — the playhead pulls the line: same start, duration and ease; it travels the plot width.
@@ -155,5 +157,8 @@ export default scene({
     m.enter(["eased", "dead", "jolts"], "settle", { at: "b3", stagger: "list" });
 
     m.camera({ scale: [1, 1.03] });
+
+    // Out: the lockup leaves left first, so only the chart window rides the carry into critic.
+    leaveLeft(m);
   },
 });

@@ -8,7 +8,7 @@ import { scene, Stage, Safe, El, Label, Headline, Emph, Tag, Path } from "contin
  * instead: the statement rises without "eyes.", and the word arrives at b2 — the
  * rhyme with "see" moves from ink to timing. Below, the studio pipeline: a hairline
  * rail with five stations; "Plan" takes focus (the accent as a focus ring) and the
- * push carries us into it.
+ * camera goes through it (a portal) into chapter 01.
  *
  * Layout: the lockup on the safe left edge in the upper half, the rail across
  * the content width in the lower third. Stations sit at their natural width,
@@ -18,6 +18,8 @@ const STEPS = ["plan", "check", "measure", "critique", "ship"] as const;
 const RAIL_Y = 724; // safe-local centre line of the rail (frame y ≈ 778, the lower third)
 const TAG_H = 56;
 const RAIL_W = 1536;
+/** The portal into plan (storyboard transition duration). */
+const PORTAL_S = 0.9;
 
 export default scene({
   view: ({ text }) => {
@@ -65,7 +67,12 @@ export default scene({
                     // litt's focus ring (a canvas gap, then the focus colour): the accent as focus.
                     <El ct="plan-focus" class="absolute inset-0 rounded-control shadow-focus" data-layout-ignore />
                   )}
-                  <Tag ct={id}>{text[id]}</Tag>
+                  {/* Plan is the portal's tile: drawn at 16:9 (100 × 56) so the window the next
+                      scene opens in is the tile's own edge at every frame (other shapes open as
+                      a crop whose edge drifts inside the tile's border — at 19× it shows). */}
+                  <Tag ct={id} class={id === "plan" ? "w-[100px] justify-center" : undefined}>
+                    {text[id]}
+                  </Tag>
                 </div>
               ))}
             </div>
@@ -75,18 +82,24 @@ export default scene({
     );
   },
   motion: (m) => {
-    // b1 — the answer to the hook, rising onto the field: the scene's one moment.
+    // b1 (frame 0) — the hook cuts onto this entrance: the answer starts rising on the
+    // cut's first frame, so the eye goes from "see" straight to it. The scene's one moment.
     m.enter("label", "fade", { at: "b1" });
-    m.enter("headline", "maskUp", { at: "b1+0.08", split: "lines", ease: "expressive" });
+    m.enter("headline", "maskUp", { at: "b1", split: "lines", ease: "expressive" });
     // b2 — "eyes." lands on its own beat: the word the hook could not do.
     m.enter("eyes", "fade", { at: "b2" });
     // b3 — the pipeline draws left → right; the stations rise in reading order along it.
     m.enter("rail", "draw", { at: "b3" });
     m.enter([...STEPS], "rise", { at: "b3+0.1", stagger: "list" });
-    // b4 — Plan takes focus: chapter 01 starts.
+    // b4 — Plan takes focus: chapter 01 starts, and the portal goes through this tile.
     m.emphasize("plan", "ink", { at: "b4" });
     m.enter("plan-focus", "fade", { at: "b4", duration: "instant", ease: "out" });
+    // The ring has pointed: it clears as the camera starts into the tile, so the tile
+    // (not a 19× focus ring) is the window the next scene opens in.
+    m.exit("plan-focus", "fadeOut", { at: `end-${PORTAL_S}` });
     // Anchored on the lockup's left edge, like the hook's, so the cut between them is still.
-    m.camera({ scale: [1, 1.03] }, { origin: { x: 96, y: 540 } });
+    // It lands as the portal starts: the portal is the scene's move (the tile is measured at
+    // that instant, so a camera still moving under it would slide the window off the tile).
+    m.camera({ scale: [1, 1.03] }, { origin: { x: 96, y: 540 }, duration: m.time("end") - PORTAL_S });
   },
 });

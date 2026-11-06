@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import type { MotionBuilder } from "continuity";
 import { Stage, Safe, Label, Headline, Body } from "continuity";
 
 /**
@@ -67,4 +68,26 @@ export function Chapter({
       </Safe>
     </Stage>
   );
+}
+
+/**
+ * The carries between chapters (docs/decisions/0010): the cut lands on movement, so both
+ * sides move the way the camera travels (left).
+ *
+ * Out — the lockup leaves first, travelling left, just before the carry picks the scene up
+ * (the carry's lead starts 0.2s before the end): copy, then the camera.
+ */
+export function leaveLeft(m: MotionBuilder) {
+  m.tween(["label", "headline", "sub"], { x: [0, -24], opacity: [1, 0] }, { at: "end-0.5", duration: "exit", ease: "out", stagger: "list", kind: "exit" });
+}
+
+/**
+ * In — the carry lands the scene still travelling left; `lead` (the product) arrives along
+ * the travel with a lag (it travels further than the camera, so it reads as nearer), the
+ * label slides in the same way, and the headline waits for the carry to land.
+ */
+export function arriveLeft(m: MotionBuilder, lead: string[], opts: { lag?: number } = {}) {
+  const lag = opts.lag ?? 48;
+  m.tween(lead, { x: [lag, 0] }, { at: 0, duration: "slow", ease: "out", stagger: "list", kind: "enter" });
+  m.enter("label", "slideLeft", { at: 0.15 });
 }
