@@ -12,3 +12,14 @@
 - **Must-say copy:** "Stop re-explaining your project to every agent." · "Save in Claude Code. Resume in Codex." · "Your code never leaves your machine." · "Join the pilot" · hypher.app
 - **Sample data (from the site; label it as such where the UI could be mistaken for a recording):** note `token-gate` · goal "Gate agent writes behind a hashed token." · constraint "Don't widen OAuth." · decision "Hash tokens at rest." replaces "Keep the session cookie" · next "Run the stale-revision test, then open the PR." · tree `acme/checkout · token-gate @ 3f2a91c`.
 - **Honesty:** the site calls its UI "illustrations with sample data. Not a recording" — never imply a real recording or unshipped features (Baton is not shipped; no automatic checkpoints for Claude Code/Codex). What leaves the machine: decisions, constraints, branch and commit ids, file names and dirty state, the handoff. Never: source code, diffs, uncommitted edits, transcripts, secrets.
+
+## Assumptions (director, 2026-11-07)
+
+- **Length and sound:** 30.8 s, 9 scenes, no music, so durations are in seconds. Joins land on story beats, not on a bar grid.
+- **The one line on the end card:** the brief's "one thing" is said twice. The hook says the pain ("Every agent starts from zero."). The end card answers it ("The next agent starts from one note."). The must-say "Stop re-explaining your project to every agent." is the turn, on the smoke, where the site sets it.
+- **Word budget counts UI text too:** ≤ 12 words a frame, including terminal lines, card rows and the caption. So the UI shows one or two rows of the sample data per scene, never the whole note.
+- **The illustration caption** ("Illustration · sample data") is on the scenes where the UI could pass for a recording: the first sample-data scene (capture, where text types) and the two terminal scenes (save, resume). The note and writeback cards are drawn as cards rather than screens, like the site's illustrations, so they don't carry it. The trust scene is a diagram.
+- **Honesty:** save and resume are explicit commands the user runs (`/hypher-save`, `$hypher-resume`). Nothing in the film says the switch is automatic, says checkpoints happen by themselves, or names Baton. Trust shows only what leaves the machine (decisions, branch, commit). The headline says what never does.
+- **Wordmark:** lowercase "hypher" in Geist 500 at the title step, set as type (no logo file). It appears on the turn, not on the end card, where the URL names the product.
+- **CTA:** "Join the pilot" is the one primary button (the sage accent fill, `accent-fg` text) on the end card's black smoke. The URL "hypher.app" sits under it.
+- **Colour:** sage is the accent's one job (the CTA fill, and focus or caret light). Claude orange (`data-amber`) is used only on the two command lines. Type on the smoke field is `text-canvas` (one ink). Product scenes sit on the #fdfcfc canvas.

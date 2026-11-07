@@ -1,41 +1,577 @@
 {
   "title": "Hypher Launch",
-  "logline": "Who this is for, what it shows, and what it should make them do.",
+  "logline": "For builders who switch between Claude Code and Codex on one repo: stop re-explaining your project. The next agent starts from one note. Join the pilot at hypher.app.",
   "format": {
     "aspect": "16:9",
     "fps": 30
   },
   "theme": "litt-light",
   "type": "litt",
+  "register": "calm",
   "scenes": [
     {
       "id": "hook",
       "duration": 3,
-      "intent": "Stop the scroll: one promise, said quietly.",
+      "intent": "The pain: you are typing your project's context into yet another agent, again.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.2,
-          "note": "the statement lands"
+          "at": 0.15,
+          "note": "the Codex prompt is there; typing starts"
+        },
+        {
+          "id": "b2",
+          "at": 0.7,
+          "note": "the statement lands (show, then tell)"
         }
       ],
       "text": {
-        "label": "Introducing",
-        "headline": "Your one promise."
+        "agent": "Codex",
+        "prompt-text": "Again: hash tokens, don't widen OAuth…",
+        "headline": "Every agent starts from zero."
       },
       "elements": [
         {
-          "id": "label",
-          "role": "label",
-          "anchor": "A4"
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A2:D2",
+          "note": "display step, one line, fg, left edge"
         },
+        {
+          "id": "agent",
+          "role": "label",
+          "anchor": "A3",
+          "note": "Label 8px above the prompt, grey"
+        },
+        {
+          "id": "prompt",
+          "role": "ui",
+          "anchor": "A4:D4",
+          "note": "<Input ct=\"prompt\" focus> ~1120px wide, empty value; types into prompt-text, caret prompt-caret (accent as light)"
+        },
+        {
+          "id": "prompt-text",
+          "role": "ui",
+          "anchor": "A4:C4"
+        },
+        {
+          "id": "prompt-caret",
+          "role": "ui",
+          "anchor": "C4"
+        }
+      ],
+      "motion": "Solid canvas. b1 (0.15): agent fades, prompt rises (responsive); m.type(\"prompt-text\", { at: 0.3, cps: 22 }) runs to ~2.0, with m.blink(\"prompt-caret\") until the end. b2 (0.7): headline maskUp split lines, ease expressive (the scene's one moment). Camera push 1 → 1.03 over the whole scene, origin on the headline's left edge ({ x: 96, y: 400 }), still moving on the last frame. JOIN OUT (cut on action): no exit; the push and the blinking caret are live at the cut, and the turn's statement rises on its frame 0. The light page cuts to black smoke as the answer arrives.",
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "turn",
+      "duration": 3.4,
+      "intent": "The turn: the must-say promise on the site's black smoke, signed by the name.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0,
+          "note": "the statement rises on the cut"
+        },
+        {
+          "id": "b2",
+          "at": 1,
+          "note": "the wordmark signs it"
+        }
+      ],
+      "text": {
+        "headline": "Stop re-explaining your project to every agent.",
+        "wordmark": "hypher"
+      },
+      "elements": [
         {
           "id": "headline",
           "role": "headline",
-          "anchor": "A5:D5"
+          "anchor": "A2:D3",
+          "note": "display, two lines broken as the site does: 'Stop re-explaining your / project to every agent.', text-canvas"
+        },
+        {
+          "id": "wordmark",
+          "role": "logo",
+          "anchor": "A5",
+          "note": "lowercase 'hypher' in Geist 500 at the title step, text-canvas, 32px under the statement"
         }
       ],
-      "motion": "The label fades in; the statement rises by line on the expressive spring — the scene's one moment. A 3% camera push carries the hold."
+      "motion": "<Stage bg=\"gradient\" gradient=\"accent\"> (the theme's black monochrome smoke); all type text-canvas, one ink. JOIN IN (cut on action): b1 = frame 0, headline maskUp split lines, ease expressive (the one moment), so the cut lands on movement. b2 (1.0): wordmark fades (responsive). No camera push: the field moves by itself and the carry out must be a pure translate. JOIN OUT (carry left, 10%): no exit; the carry's lead-in accelerates the whole frame left over its last ~0.2s. The field bleeds past the edge, so the light page arrives at the same speed.",
+      "transition": {
+        "type": "carry",
+        "dir": "left",
+        "distance": 10,
+        "duration": 0.5
+      }
+    },
+    {
+      "id": "capture",
+      "duration": 3.8,
+      "intent": "Step one: capture the project as it is, and it goes into the note.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.15,
+          "note": "the headline lands"
+        },
+        {
+          "id": "b2",
+          "at": 1.9,
+          "note": "the capture flows into the token-gate tile"
+        }
+      ],
+      "text": {
+        "headline": "Capture the mess.",
+        "capture-text": "Don't widen OAuth.",
+        "file": "chat-export.md",
+        "tile-label": "token-gate",
+        "caption": "Illustration · sample data"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A1:C2",
+          "note": "display, ≤ 2 lines"
+        },
+        {
+          "id": "capture",
+          "role": "ui",
+          "anchor": "A3:C5",
+          "note": "a Card (~800×360) holding a multi-line Input and the dropped file chip"
+        },
+        {
+          "id": "capture-text",
+          "role": "ui",
+          "anchor": "A3:C3",
+          "note": "typed into the Input, fg"
+        },
+        {
+          "id": "file",
+          "role": "ui",
+          "anchor": "A5",
+          "note": "a neutral Tag/chip with the file name in mono"
+        },
+        {
+          "id": "link",
+          "role": "decor",
+          "anchor": "C4:E4",
+          "note": "<Path> 2px hairline from the capture card's right edge to the tile's left edge"
+        },
+        {
+          "id": "note-tile",
+          "role": "ui",
+          "anchor": "E3:F4",
+          "note": "THE PORTAL. A 16:9 raised tile (576×324). Inside: a thumbnail of the note scene's frame 0 (canvas + the empty note card with its 'token-gate' header at right), drawn with no ct ids"
+        },
+        {
+          "id": "tile-label",
+          "role": "label",
+          "anchor": "E5",
+          "note": "mono id under the tile, 8px gap, grey"
+        },
+        {
+          "id": "caption",
+          "role": "caption",
+          "anchor": "A6",
+          "note": "Caption, grey, bottom-left on the safe edge"
+        }
+      ],
+      "motion": "Solid canvas. JOIN IN (carry left): the capture card slideLeft on frame 0, so its entrance travels the carry's way. b1 (0.15): headline maskUp lines, ease expressive (the one moment). 0.3: note-tile + tile-label slideLeft (list stagger after the card). 0.5: caption fades. 0.6: m.type(\"capture-text\", { cps: 20 }) to ~1.5. 1.5: file rises. b2 (1.9): link draws left → right (draw, slow 0.6s, inOut), tying the capture to the note. 2.5: note-tile press (instant). It has received the capture. Hold. JOIN OUT (portal in via note-tile, 0.9s from 2.9): no camera push in this scene. Nothing exits; headline, card and caption fly past the camera as it goes through the tile.",
+      "transition": {
+        "type": "portal",
+        "dir": "in",
+        "via": "note-tile",
+        "duration": 0.9,
+        "ease": "inOut"
+      }
+    },
+    {
+      "id": "note",
+      "duration": 3.6,
+      "intent": "Step two: Hypher keeps one bounded note per project; the capture is now in it.",
+      "beats": [
+        {
+          "id": "land",
+          "at": 0.9,
+          "note": "the portal has landed"
+        },
+        {
+          "id": "b1",
+          "at": 0.95,
+          "note": "the rows fill the note"
+        },
+        {
+          "id": "b2",
+          "at": 1.2,
+          "note": "the headline lands"
+        }
+      ],
+      "text": {
+        "note-id": "token-gate",
+        "row-constraint": "Don't widen OAuth.",
+        "row-decision": "Hash tokens at rest.",
+        "headline": "One note per project."
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A1:C2",
+          "note": "display, ≤ 2 lines ('One note / per project.')"
+        },
+        {
+          "id": "note-card",
+          "role": "ui",
+          "anchor": "D1:F5",
+          "note": "a raised Card (~860×640), on screen from frame 0, exactly as in the capture tile's thumbnail"
+        },
+        {
+          "id": "note-id",
+          "role": "ui",
+          "anchor": "E1",
+          "note": "the card's header: 'token-gate' in mono on a neutral tag, top-right of the card; present from frame 0"
+        },
+        {
+          "id": "row-constraint",
+          "role": "ui",
+          "anchor": "D2:F2",
+          "note": "row text fg, hairline divider above"
+        },
+        {
+          "id": "row-decision",
+          "role": "ui",
+          "anchor": "D3:F3",
+          "note": "row text fg, hairline divider above"
+        }
+      ],
+      "motion": "Solid canvas. JOIN IN (portal in from capture's note-tile): frame 0 is the empty note card and its token-gate header, at rest, matching the thumbnail. Nothing else is on screen and nothing moves until land (0.9). b1 (0.95): row-constraint then row-decision rise (list stagger, responsive); the typed capture reappears as the constraint. b2 (1.2): headline maskUp lines, ease expressive (the one moment). From land: camera push 1 → 1.02, origin on the headline's left edge. JOIN OUT (carry left, 12%, layers): no exit. The layered handoff moves the headline (column A, copy, depth 1.0) first and the note card (column D, ui, 0.6) after it.",
+      "transition": {
+        "type": "carry",
+        "dir": "left",
+        "distance": 12,
+        "duration": 0.5,
+        "layers": true
+      }
+    },
+    {
+      "id": "writeback",
+      "duration": 3.4,
+      "intent": "Step three: when an agent stops, it writes back what comes next.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.35,
+          "note": "the writeback header appears"
+        },
+        {
+          "id": "b2",
+          "at": 0.6,
+          "note": "the next action lands"
+        }
+      ],
+      "text": {
+        "headline": "Agents write back.",
+        "wb-head": "Claude Code wrote back",
+        "wb-next": "Next: run the stale-revision test."
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A1:C2",
+          "note": "display; same place as the note's headline"
+        },
+        {
+          "id": "wb-card",
+          "role": "ui",
+          "anchor": "D2:F5",
+          "note": "a raised Card (~860×420), same right column as the note card"
+        },
+        {
+          "id": "wb-head",
+          "role": "ui",
+          "anchor": "D2:F2",
+          "note": "Title-weight UI line (500, 28px) in fg"
+        },
+        {
+          "id": "wb-next",
+          "role": "ui",
+          "anchor": "D3:F4",
+          "note": "'Next:' grey, the action fg (two inks via spans or Emph)"
+        }
+      ],
+      "motion": "Solid canvas. JOIN IN (carry left, 12%, layers from note): headline and wb-card are on screen from frame 0 and arrive with the layered wave, copy leading. They have no entrance of their own, and the carry's deceleration is their entrance. b1 (0.35): wb-head fades. b2 (0.6): wb-next rises, ease expressive (the one moment: what the agent hands on). Hold still. JOIN OUT (carry up, 10%, layers): no exit. The handoff chapter rises in, and the headline (row 1) leads the card (row 2) up and out.",
+      "transition": {
+        "type": "carry",
+        "dir": "up",
+        "distance": 10,
+        "duration": 0.5,
+        "layers": true
+      }
+    },
+    {
+      "id": "save",
+      "duration": 3.3,
+      "intent": "The handoff, part one: one explicit command saves it in Claude Code.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.55,
+          "note": "the command types"
+        },
+        {
+          "id": "b2",
+          "at": 1.2,
+          "note": "saved: the confirmation lands"
+        },
+        {
+          "id": "go",
+          "at": 2.7,
+          "note": "the command starts towards Codex"
+        }
+      ],
+      "text": {
+        "headline": "Save in Claude Code.",
+        "save-cmd": "/hypher-save",
+        "save-out": "Saved token-gate @ 3f2a91c",
+        "caption": "Illustration · sample data"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A1:D2",
+          "note": "display, one line"
+        },
+        {
+          "id": "save-term",
+          "role": "ui",
+          "anchor": "A3:C5",
+          "note": "a Window/Terminal surface with no title text, x 96 → ~896 (800 wide), rows 3–5; not overflow-clipped where save-cmd travels"
+        },
+        {
+          "id": "save-cmd",
+          "role": "ui",
+          "anchor": "A3",
+          "note": "the command box: fixed 288×56, rounded-control, bg-surface-2 (opaque), mono 28px text-data-amber-text, left at x ≈ 160. Identical box to resume-cmd"
+        },
+        {
+          "id": "save-out",
+          "role": "ui",
+          "anchor": "A4:C4",
+          "note": "terminal output, mono, grey; 'token-gate @ 3f2a91c' may step to fg"
+        },
+        {
+          "id": "caption",
+          "role": "caption",
+          "anchor": "A6",
+          "note": "same place and style as capture's and resume's caption"
+        }
+      ],
+      "motion": "Solid canvas. JOIN IN (carry up, 10%, layers from writeback): headline on screen from frame 0, arriving with the wave. save-term rises on frame 0 (its entrance travels up with the carry). 0.4: caption fades. b1 (0.55): m.type(\"save-cmd\", { cps: 20 }) to ~1.15 (the box fades in at b1, then the text types). b2 (1.2): save-out rises, ease expressive (the one moment: saved). Hold. go (2.7): JOIN OUT (match v2): save-cmd tweens x 0 → 360 over the last 0.6s on t², { type: \"bezier\", p: [1/3, 0, 2/3, 1/3] }, ending at end, so it is fastest on the last frame (v ≈ 1200 px/s). Nothing else moves; the caption stays put (it is paired).",
+      "transition": {
+        "type": "match",
+        "pairs": [
+          [
+            "save-cmd",
+            "resume-cmd"
+          ],
+          "caption"
+        ],
+        "duration": 0.8
+      }
+    },
+    {
+      "id": "resume",
+      "duration": 4,
+      "intent": "The handoff, part two: Codex resumes from the note and starts on the next action.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.8,
+          "note": "the match has landed; the headline lands"
+        },
+        {
+          "id": "b2",
+          "at": 0.95,
+          "note": "Codex reads the next action"
+        }
+      ],
+      "text": {
+        "headline": "Resume in Codex.",
+        "resume-cmd": "$hypher-resume",
+        "resume-out": "Next: run the stale-revision test.",
+        "caption": "Illustration · sample data"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A1:C2",
+          "note": "display, one line, same place as save's"
+        },
+        {
+          "id": "resume-term",
+          "role": "ui",
+          "anchor": "D3:F5",
+          "note": "the Codex terminal: same surface and size as save-term (800 wide), at x ≈ 936 → 1736, same rows; on screen from frame 0, no entrance"
+        },
+        {
+          "id": "resume-cmd",
+          "role": "ui",
+          "anchor": "D3",
+          "note": "the command box, identical to save-cmd (288×56, surface-2, mono amber text), left at x ≈ 1000 and the same y as save-cmd. That is ~480px along from where save-cmd is at the cut (≈ ½·v·d), 0 across"
+        },
+        {
+          "id": "resume-out",
+          "role": "ui",
+          "anchor": "D4:F4",
+          "note": "terminal output: 'Next:' grey, the action fg"
+        },
+        {
+          "id": "caption",
+          "role": "caption",
+          "anchor": "A6",
+          "note": "paired in the match: stays exactly where save's was"
+        }
+      ],
+      "motion": "Solid canvas. JOIN IN (match from save, 0.8s, pairs save-cmd → resume-cmd and caption): resume-cmd leaves the cut at save-cmd's speed (≈ 1200 px/s rightward) and slows into place in the Codex terminal by 0.8. Reach rule: v·d = 960, so the target is 320–640px along. Place it ~480px right of save-cmd's position at the cut, on the same row. resume-cmd has no entrance of its own, and resume-term is already there on frame 0. b1 (0.8): headline maskUp lines, ease expressive (the one moment). b2 (0.95): resume-out rises (responsive). Everything is settled by ~1.4. No caret, no push, no motion after 1.6, so trust's still of this frame is exact. JOIN OUT (portal out via trust's machine-screen, 1.0s from 3.0): the whole shot shrinks into the screen on 'Your machine'.",
+      "transition": {
+        "type": "portal",
+        "dir": "out",
+        "via": "machine-screen",
+        "duration": 1,
+        "ease": "inOut"
+      }
+    },
+    {
+      "id": "trust",
+      "duration": 4.4,
+      "intent": "Trust: the session was on your machine all along; only decisions and ids travel, never code.",
+      "beats": [
+        {
+          "id": "land",
+          "at": 1,
+          "note": "the pull-back has landed"
+        },
+        {
+          "id": "b1",
+          "at": 1.05,
+          "note": "the statement lands"
+        },
+        {
+          "id": "b2",
+          "at": 1.5,
+          "note": "what leaves: the link draws to Hypher"
+        }
+      ],
+      "text": {
+        "headline": "Your code never leaves your machine.",
+        "machine-label": "Your machine",
+        "hypher-label": "Hypher",
+        "leaves": "Decisions, branch, commit"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "A1:D2",
+          "note": "display, two lines ('Your code never leaves / your machine.')"
+        },
+        {
+          "id": "machine",
+          "role": "ui",
+          "anchor": "A3:C6",
+          "note": "a flat raised panel framing the screen and its label; present from frame 0"
+        },
+        {
+          "id": "machine-screen",
+          "role": "ui",
+          "anchor": "A3:C5",
+          "note": "THE PORTAL (out). A 16:9 screen (640×360) inside machine, holding a still of resume's settled last frame drawn at 1/3 scale with NO ct ids. Present from frame 0"
+        },
+        {
+          "id": "machine-label",
+          "role": "label",
+          "anchor": "A6",
+          "note": "Label under the screen, inside the panel, grey"
+        },
+        {
+          "id": "link",
+          "role": "decor",
+          "anchor": "C5:E5",
+          "note": "<Path> 2px hairline from the machine panel to the Hypher card, left → right"
+        },
+        {
+          "id": "hypher-card",
+          "role": "ui",
+          "anchor": "E4:F5",
+          "note": "a small raised Card (~480×200)"
+        },
+        {
+          "id": "hypher-label",
+          "role": "title",
+          "anchor": "E4",
+          "note": "Title-weight 'Hypher' inside the card, fg"
+        },
+        {
+          "id": "leaves",
+          "role": "body",
+          "anchor": "E5",
+          "note": "Caption/Body in the card, grey: only these leave the machine"
+        }
+      ],
+      "motion": "Solid canvas. JOIN IN (portal out from resume, via machine-screen, 1.0s): frame 0 is framed on machine-screen, which shows resume's last frame. The rig pulls back to reveal the machine panel. Every other element enters after land (1.0), and there is no camera push until then. b1 (1.05): headline maskUp lines, ease expressive (the one moment). 1.2: machine-label fades. b2 (1.5): link draws left → right (draw, slow 0.6s, inOut). 1.8: hypher-card rises with hypher-label and leaves (list stagger). Settled by ~2.3; camera push 1 → 1.02 from land to ~3.6, origin on the headline's left edge, then still. JOIN OUT (cut, the film's one punctuation): everything at rest for the last ~0.8s, then a still cut to the smoke.",
+      "transition": {
+        "type": "cut"
+      }
+    },
+    {
+      "id": "end",
+      "duration": 3.8,
+      "intent": "Payoff and CTA: the next agent starts from one note. Join the pilot.",
+      "beats": [
+        {
+          "id": "b1",
+          "at": 0.3,
+          "note": "the statement lands"
+        },
+        {
+          "id": "cta",
+          "at": 1.1,
+          "note": "the CTA lands; hold ≥ 1.5s"
+        }
+      ],
+      "text": {
+        "headline": "The next agent starts from one note.",
+        "cta": "Join the pilot",
+        "url": "hypher.app"
+      },
+      "elements": [
+        {
+          "id": "headline",
+          "role": "headline",
+          "anchor": "B2:E3",
+          "note": "the film's one centred statement, display, two lines ('The next agent starts / from one note.'), text-canvas"
+        },
+        {
+          "id": "cta",
+          "role": "cta",
+          "anchor": "C4:D4",
+          "note": "<Button variant=\"primary\" size=\"lg\">: the one sage fill in the film, accent-fg text, its glow"
+        },
+        {
+          "id": "url",
+          "role": "caption",
+          "anchor": "C5:D5",
+          "note": "Geist 400 at the body step, text-canvas, 32px under the button, centred"
+        }
+      ],
+      "motion": "<Stage bg=\"gradient\" gradient=\"accent\"> (the smoke, as on the turn); type text-canvas. JOIN IN (still cut, punctuation): the smoke alone for 0.3s. b1 (0.3): headline maskUp lines, ease expressive (the one moment). It mirrors the hook's 'Every agent starts from zero.' cta (1.1): cta rises (responsive). 1.2: url fades. Camera push 1 → 1.02 about the centre over the whole scene. Hold to the end (≥ 2.3s on the CTA)."
     }
   ]
 }
