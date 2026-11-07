@@ -115,4 +115,13 @@ describe("source lint: litt's rules a class list can break (docs/decisions/0006)
     });
     expect(lintSources(dir)).toEqual([]);
   });
+  it("a project's theme.ts is where the brand's hex colours live: litt-hex skips it, nothing else does", () => {
+    const dir = project({
+      "theme.ts": 'export default defineTheme("litt-light", { colors: { accent: "#88bba2" } });\nconst s = { fontWeight: 700 };',
+      "lib/brand.ts": 'const style = { color: "#88bba2" };',
+    });
+    const f = lintSources(dir);
+    expect(f.filter((x) => x.rule === "litt-hex").map((x) => x.message)).toEqual(["lib/brand.ts:1 uses a hex colour in a style"]);
+    expect(f.some((x) => x.rule === "litt-weight" && x.message.startsWith("theme.ts:2"))).toBe(true);
+  });
 });

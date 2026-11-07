@@ -133,7 +133,8 @@ export function lintSources(projectDir: string): Finding[] {
       for (const c of STYLE_CHECKS) if (!hits.has(c.rule) && c.re.test(line)) hits.set(c.rule, c.what);
       if (/<svg\b[^>]*(?:overflow-visible|overflow\s*[:=]\s*["'`{]?\s*["'`]?visible)/.test(line)) hits.set("svg-overflow", "an <svg> with overflow visible");
       for (const [rule, what] of hits) {
-        if (allow.has(rule)) continue;
+        // The project's theme.ts is where a brand's colours are defined (defineTheme): hex is its job there.
+        if (allow.has(rule) || (rule === "litt-hex" && where === "theme.ts")) continue;
         findings.push({ source: "lint", rule, severity: "warning", scene, message: `${where}:${i + 1} uses ${what}`, suggestion: SOURCE_RULES[rule].split(" — ")[1] });
       }
     });
