@@ -1,34 +1,35 @@
 import { scene, ctId, cx, El, Headline, Path, Safe, Stage } from "continuity";
-import { CAPTURE_ROW_H, CAPTURE_TOP, COPY_WIDTH, DISPLAY, DRIFT, IdChip, Lines, NoteStill, REGION, SampleCaption, UI, breakAfter } from "../lib/index.js";
+import { CAPTURE_ROW_H, CAPTURE_TOP, COPY_WIDTH, DISPLAY, DRIFT, IdChip, Lines, NoteStill, PUSH_X, REGION, RIGHT_EDGE, SampleCaption, UI, breakAfter } from "../lib/index.js";
 
 /**
  * Step one: capture the project as it is. One block centred on the frame's centre line
  * (CAPTURE_TOP, lib/layout.ts): the headline (column A–C), a region, then the capture card in the
- * copy column and the note-tile (the note scene's frame 0 at 0.3) on the safe right edge, on the
- * card's row, tied to it by a 2px hairline. The tile is the portal into `note`.
+ * copy column and the note-tile (the note scene's frame 0 at 0.3) ending on the right column's
+ * edge (RIGHT_EDGE, as note's card), on the card's row, tied to it by a 2px hairline. The tile is
+ * the portal into `note`.
  *
  *   card  0 → 768 (COPY_WIDTH), top ROW, 324 high — the tile's height, so the two share edges
- *   tile  1152 → 1728 (safe right edge), top ROW, 576 × 324; its label 8 under it
+ *   tile  1120 → 1696 (RIGHT_EDGE: stage 1792), top ROW, 576 × 324; its label 8 under it
  *   link  card's right edge → tile's left edge, through both centres
  */
 const ROW = CAPTURE_TOP + 2 * DISPLAY + REGION; // 464
-const TILE = { left: 1152, width: 576, height: CAPTURE_ROW_H } as const;
+const TILE = { left: RIGHT_EDGE - 576, width: 576, height: CAPTURE_ROW_H } as const; // 1120
 const LINK_Y = ROW + TILE.height / 2;
 /**
  * The push's fixed point: the frame's centre line across, the headline's top line down. Not the
- * headline's left edge: the block spans the safe width, so a push held at x 96 carries the tile
- * past action-safe on the right (1859 > 1853). Held at the centre, both edges stay inside (79 and
- * 1841); the headline drifts 17px over 2.3s into a portal (a continuous move, not a hard cut, so
- * nothing snaps back).
+ * headline's left edge: a push held at x 96 carries the tile's right edge out of title-safe.
+ * Held at the centre (PUSH_X, as note's and writeback's), the tile ends at ≈ 1809, inside
+ * title-safe (1824); the headline drifts 17px over 2.3s into a portal (a continuous move, not a
+ * hard cut, so nothing snaps back).
  */
-const PUSH_ORIGIN = { x: 960, y: 54 + CAPTURE_TOP };
+const PUSH_ORIGIN = { x: PUSH_X, y: 54 + CAPTURE_TOP };
 
 export default scene({
   view: ({ text }) => (
     <Stage bg="solid">
       <Safe>
         <Headline ct="headline" class="absolute left-0" style={`top:${CAPTURE_TOP}px;width:${COPY_WIDTH}px`}>
-          <Lines lines={breakAfter(text.headline, "Capture")} />
+          <Lines twoInk lines={breakAfter(text.headline, "Capture")} />
         </Headline>
 
         {/* The capture card: a multi-line field with the typed constraint, and the dropped file. */}

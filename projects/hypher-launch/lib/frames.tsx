@@ -29,7 +29,7 @@ export function NoteFrame({ text = copyOf("note"), quiet }: { text?: Record<stri
       <Safe>
         {!quiet && (
           <Headline ct="headline" class="absolute left-0" style={`top:${NOTE_TOP}px;width:${COPY_WIDTH}px`}>
-            <Lines lines={breakAfter(text.headline, "note")} />
+            <Lines twoInk lines={breakAfter(text.headline, "note")} />
           </Headline>
         )}
         <NoteCard

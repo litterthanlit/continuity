@@ -53,11 +53,20 @@ export const ROW_H = 2 + 32 + 48 + 32; // 114: one note row (rule, padding, a 48
 export const CARD_FOOT = 16;
 
 /**
- * The card scenes' right column (x 864 → 1728, the safe right edge). The note card's height is
- * fixed (an empty card on note's frame 0 is exactly the card the rows later fill): header, two
- * rows, the foot — 48 + 56 + 32 + 2·114 + 16 = 380 → 384.
+ * The card scenes' right column (x 864 → 1696: stage 960 → 1792, 32 inside the safe right edge,
+ * so a 2% push from the frame centre grows it to ≈ 1809, inside title-safe 1824). The note
+ * card's height is fixed (an empty card on note's frame 0 is exactly the card the rows later
+ * fill): header, two rows, the foot — 48 + 56 + 32 + 2·114 + 16 = 380 → 384.
  */
-export const CARD = { left: 864, width: 864, noteHeight: 384 } as const;
+export const CARD = { left: 864, width: 832, noteHeight: 384 } as const;
+/** The right column's end: 32 inside the safe edge (stage 1792), so a push's growth stays in title-safe. */
+export const RIGHT_EDGE = CARD.left + CARD.width; // 1696
+/**
+ * The product frames' push (capture, note, writeback): 2% from the frame's centre across, on the
+ * headline's top line down — both edges grow ≤ 17 px (stage 79 … 1809), inside title-safe on
+ * the right. Anchored on the headline's left edge instead, the right column walked out to 1857–1874.
+ */
+export const PUSH_X = 960;
 export const NOTE_TOP = centreTop(CARD.noteHeight); // 296 → stage 350–734
 
 /** Hook: the statement, a region, the agent label (36) 16 over the prompt (104). */

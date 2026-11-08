@@ -51,7 +51,7 @@ export default scene({
           class="absolute left-0"
           style={`top:${HEAD_TOP}px;width:1344px`}
         >
-          <Lines lines={breakAfter(text.headline, "leaves")} />
+          <Lines twoInk lines={breakAfter(text.headline, "leaves")} />
         </Headline>
 
         <El
@@ -128,19 +128,21 @@ export default scene({
     m.enter("link", "draw", { at: "b2", duration: "slow", ease: "inOut" });
     m.enter(["hypher-card", "hypher-label"], "rise", { at: 1.8, stagger: "list" });
     // b3: what leaves. The chips come out of the machine one after another, the far one first
-    // (list stagger from the end, so the gaps open a touch: lead → follow), ride the hairline
-    // and settle into the card's row. A travel along a wire, not an entrance: inOut (the
-    // cursor/playhead ease) over `linger` keeps a 922 px trip legible (≈ 55 px/frame at its
-    // peak) and lands it by ~3.5, 0.9 s before the cut. They wait wholly behind the road's
-    // clip at the panel edge; the instant opacity step only keeps the waiting chips out of the
-    // audits (it happens while they are still hidden). kind "enter": they are the scene's last
-    // entrance, so its settled frame is the full card.
-    const chips = { at: "b3", stagger: { each: 0.04, from: "end" as const }, kind: "enter" as const };
+    // (from the end, so the gaps open as they go: lead → follow), ride the hairline and settle
+    // into the card's row. 0.12 s apart (4 frames, not the 40 ms list step: at 40 ms the three
+    // moved as one locked block and smeared together) on `out` over 1.1 s each: fastest leaving
+    // the panel edge, where the clip still hides most of the row, then each decelerates into the
+    // card legibly. The last lands at 2.0 + 0.24 + 1.1 = 3.34, 1.06 s settled before the cut.
+    // They wait wholly behind the road's clip at the panel edge; the instant opacity step only
+    // keeps the waiting chips out of the audits (it happens while they are still hidden).
+    // kind "enter": they are the scene's last entrance, so its settled frame is the full card.
+    const chips = { at: "b3", stagger: { each: 0.12, from: "end" as const }, kind: "enter" as const };
     m.tween([...CHIPS], { opacity: [0, 1] }, { ...chips, duration: "instant", ease: "out" });
     m.tween([...CHIPS], { x: [-TRAVEL, 0] }, {
       ...chips,
-      duration: "linger",
-      ease: "inOut",
+      // 1.1 s: a 922 px trip, between `slow` and `linger` (no token fits a travel this long).
+      duration: 1.1,
+      ease: "out",
       // travel-too-far: this is the scene's content (data leaving the machine on the link),
       // not an entrance placed from 32 px; the clip makes the distance the road's length.
       allow: ["travel-too-far"],

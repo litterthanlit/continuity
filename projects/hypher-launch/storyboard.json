@@ -598,12 +598,12 @@
       "beats": [
         {
           "id": "b1",
-          "at": 0.3,
+          "at": 0.05,
           "note": "the statement lands"
         },
         {
           "id": "cta",
-          "at": 1.1,
+          "at": 0.85,
           "note": "the CTA lands; hold ≥ 1.5s"
         }
       ],

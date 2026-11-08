@@ -33,9 +33,13 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    m.enter("headline", "maskUp", { at: "b1", split: "lines", ease: "expressive" });
-    m.enter("cta", "rise", { at: "cta" });
-    m.enter("url", "fade", { at: "cta+0.1" });
+    // The still cut swaps trust's statement for this one in place: it masks up from 0.05 (frame
+    // 1–2), not the storyboard's b1 0.3, which left 9 frames of bare smoke after the cut. The
+    // CTA and url follow at the same spacing (0.8, then 0.1): CTA 0.85, url 0.95 (beats b1 0.3 /
+    // cta 1.1 in storyboard.json are stale — the director moves them).
+    m.enter("headline", "maskUp", { at: 0.05, split: "lines", ease: "expressive" });
+    m.enter("cta", "rise", { at: 0.85 });
+    m.enter("url", "fade", { at: 0.95 });
     // The push holds the statement's left edge (between its lines), so the block never walks
     // out of title-safe; the film's ambient ease.
     m.camera({ scale: [1, 1.02] }, { ease: DRIFT, origin: ORIGIN });

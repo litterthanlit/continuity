@@ -36,14 +36,19 @@ export function TwoInk({ text, strong, dim = "text-fg-muted", bright = "text-fg"
   );
 }
 
-/** Display lines from `breakAfter(…)`, joined by a space and <br/> (so the copy's text stays intact for read-time). */
-export function Lines({ lines }: { lines: string[] }) {
+/**
+ * Display lines from `breakAfter(…)`, joined by a space and <br/> (so the copy's text stays intact
+ * for read-time). `twoInk`: the site's signature headline — the first line in fg, the lines after
+ * it in the grey ("Capture / the mess."); for the solid scenes only (the smoke keeps one ink).
+ * The grey line is one inline span, so split: "lines" still finds it as one line.
+ */
+export function Lines({ lines, twoInk = false }: { lines: string[]; twoInk?: boolean }) {
   return (
     <>
       {lines.map((l, i) => (
         <Fragment key={i}>
           {i > 0 && <br />}
-          {l}
+          {twoInk && i > 0 ? <span class="text-fg-muted">{l}</span> : l}
           {i < lines.length - 1 ? " " : ""}
         </Fragment>
       ))}
