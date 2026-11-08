@@ -27,8 +27,12 @@ import { CMD, PANE, UI } from "./layout.js";
 export const PANE_TITLES = { claude: "Claude Code", codex: "Codex CLI" } as const;
 export type Agent = keyof typeof PANE_TITLES;
 
-/** The command's inset inside its box (px-[24px]): the echo sets its text on the same pixel. */
-const CMD_INSET = 24;
+/**
+ * The pane's prompt column: the output's left edge (PANE.pad, = CMD.x). The command's grey echo
+ * (Claude) and the idle prompt (Codex: "›" and the focus caret) sit on it, on the box's row, so
+ * the echo lines up with "Saved" under it and the arriving box lands on the waiting prompt.
+ */
+const PROMPT_X = PANE.pad;
 
 export function CommandBox({ ct, cmd, class: cls, style }: { ct?: string; cmd: string; class?: string; style?: Style }) {
   return (
@@ -54,6 +58,9 @@ export function HandoffPane({
   echo,
   echoCt,
   out,
+  prompt,
+  promptCt,
+  caretCt,
   strong,
   title,
   slot = true,
@@ -71,7 +78,7 @@ export function HandoffPane({
   /** The command (text["save-cmd"]); leave out to draw the pane with the command gone. */
   cmd?: string;
   /**
-   * The command's grey trace (text["save-cmd"]) on the box's text line, no box: what the pane
+   * The command's grey trace (text["save-cmd"]) on the box's row at the prompt column, no box: what the pane
    * keeps once the command has left for the other agent. Drawn under the box, so the opaque box
    * covers it until it moves away (save) and it is simply there after (resume).
    */
@@ -80,6 +87,14 @@ export function HandoffPane({
   echoCt?: string;
   /** The output line (text["save-out"]); leave out for none. */
   out?: string;
+  /**
+   * The idle prompt on the box's row (text["codex-prompt"], "›"): the pane is waiting. Grey, with
+   * the focus caret (sage) after it; the arriving command box covers both. Leave out for none.
+   */
+  prompt?: string;
+  /** The prompt's id (codex-prompt) and its caret's (codex-caret), to blink it; leave out for a static one. */
+  promptCt?: string;
+  caretCt?: string;
   /** The phrase of `out` in the bright ink. Default: after "Lead: " ("Next: ‹…›"), or else after the first word ("Saved ‹token-gate @ 3f2a91c›"). */
   strong?: string;
   /** Header text; defaults to the agent's name. `false` draws the header bar empty. */
@@ -109,10 +124,23 @@ export function HandoffPane({
           data-layout-allow-overlap
           data-layout-allow-occlusion
           class={cx("absolute flex items-center font-mono whitespace-nowrap text-canvas/64", UI.mono)}
-          style={`left:${CMD.x + CMD_INSET}px;top:${CMD.y}px;height:${CMD.height}px`}
+          style={`left:${PROMPT_X}px;top:${CMD.y}px;height:${CMD.height}px`}
         >
           {echo}
         </El>
+      )}
+      {prompt !== undefined && (
+        <div
+          data-layout-allow-overlap
+          data-layout-allow-occlusion
+          class={cx("absolute flex items-center gap-[12px] font-mono whitespace-nowrap", UI.mono)}
+          style={`left:${PROMPT_X}px;top:${CMD.y}px;height:${CMD.height}px`}
+        >
+          <El as="span" ct={promptCt} data-layout-allow-overlap data-layout-allow-occlusion class="text-canvas/64">
+            {prompt}
+          </El>
+          <El as="span" ct={caretCt} data-layout-ignore class="inline-block h-[40px] w-[3px] bg-focus" />
+        </div>
       )}
       {cmd !== undefined && <CommandBox ct={cmdCt} cmd={cmd} class="absolute" style={`left:${CMD.x}px;top:${CMD.y}px`} />}
       {out !== undefined && (

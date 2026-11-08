@@ -8,8 +8,8 @@ import { CARD, CARD_FOOT, CARD_PAD, NOTE_TOP, ROW_H, UI } from "./layout.js";
  * surface-1, the hairline + top highlight, radius 16, 48 inset), a header with the note's
  * title and its id on a mono chip at the right, then rows under 2px hairlines — a label in the
  * grey (30, UI.meta) in a 192 px column, the value in fg (36, UI.value): litt's video UI at
- * ×1.25 (layout.ts UI). A decision row can carry what it replaces (grey, 8 under the value) and
- * the "Pinned" mark (under its label).
+ * ×1.25 (layout.ts UI). A decision row can carry what it replaces (a second line 8 under the
+ * value: "Replaces" and the old value, both grey) and the "Pinned" mark (under its label).
  *
  * Every row's ct id is passed in (`rows[i].ct`), so scenes animate them by storyboard id.
  * The note card's size is fixed (864 × 384, CARD: it hugs a header and two rows), so an empty
@@ -21,15 +21,23 @@ export interface NoteRowSpec {
   /** "Goal", "Constraint", "Decision", "Next" (NOTE_LABELS). Leave out for a full-width line in two inks ("Next: …"). */
   label?: string;
   value: string;
-  /** What a decision replaces, without quotes: draws `Replaces “…”` in the grey under the value. */
+  /** The value's own id (wb-change), so it can mask in on its own line. */
+  valueCt?: string;
+  /**
+   * What a decision replaces: a second line, 8 under the value — "Replaces" in the label column,
+   * the old value beside it, both in the grey at the meta step (30/40, baselines shared).
+   */
   replaces?: string;
-  /** The replaces line's own id (wb-replaces), so it can follow the value in. */
+  /** The old value's id (wb-replaces). It is a block with its origin top-left, so a scene can
+   * lift it onto the value line at ×1.2 (30/40 → 36/48: the value step exactly) and drop it back. */
   replacesCt?: string;
+  /** The "Replaces" label's id. */
+  replacesLabelCt?: string;
   /** The sage "Pinned" mark under the row's label, 8 below it (a human approved the decision): `${ct}-pin`. */
   pinned?: boolean;
 }
 
-export const NOTE_LABELS = { goal: "Goal", constraint: "Constraint", decision: "Decision", next: "Next", changed: "Changed" } as const;
+export const NOTE_LABELS = { goal: "Goal", constraint: "Constraint", decision: "Decision", next: "Next", changed: "Changed", replaces: "Replaces" } as const;
 
 /** The note's id (token-gate) on a neutral chip: Geist Mono, the grey, surface-2 with a hairline. */
 export function IdChip({ ct, children }: { ct?: string; children: ComponentChildren }) {
@@ -55,6 +63,27 @@ export function Pinned({ ct, children = "Pinned" }: { ct?: string; children?: Co
 }
 
 export function NoteRow({ row }: { row: NoteRowSpec }) {
+  if (row.replaces !== undefined) {
+    // A decision with its history: the value line, then 8 under it the line it replaces.
+    return (
+      <El ct={row.ct} class="flex flex-col gap-[8px] border-t-2 border-line py-[32px]">
+        <div class="flex items-start gap-[32px]">
+          <span class={cx("w-[192px] shrink-0 pt-[6px] font-sans text-fg-muted", UI.meta)}>{row.label}</span>
+          <El as="span" ct={row.valueCt} class={cx("block min-w-0 flex-1 font-sans text-fg", UI.value)}>
+            {row.value}
+          </El>
+        </div>
+        <div class="flex items-start gap-[32px]">
+          <El as="span" ct={row.replacesLabelCt} class={cx("block w-[192px] shrink-0 font-sans text-fg-muted", UI.meta)}>
+            {NOTE_LABELS.replaces}
+          </El>
+          <El as="span" ct={row.replacesCt} class={cx("block min-w-0 origin-top-left font-sans text-fg-muted", UI.meta)}>
+            {row.replaces}
+          </El>
+        </div>
+      </El>
+    );
+  }
   return (
     <El ct={row.ct} class="flex items-start gap-[32px] border-t-2 border-line py-[32px]">
       {row.label !== undefined ? (
@@ -65,12 +94,9 @@ export function NoteRow({ row }: { row: NoteRowSpec }) {
             {row.pinned && <Pinned ct={row.ct ? `${row.ct}-pin` : undefined} />}
           </div>
           <div class="flex min-w-0 flex-1 flex-col gap-[8px]">
-            <span class={cx("font-sans text-fg", UI.value)}>{row.value}</span>
-            {row.replaces && (
-              <El as="span" ct={row.replacesCt} class={cx("font-sans text-fg-muted", UI.meta)}>
-                Replaces “{row.replaces}”
-              </El>
-            )}
+            <El as="span" ct={row.valueCt} class={cx("font-sans text-fg", UI.value)}>
+              {row.value}
+            </El>
           </div>
         </>
       ) : (
@@ -128,7 +154,7 @@ export function NoteCard({
 
 /**
  * The writeback card: who wrote back (text["wb-head"], the title weight, 36, fg), an optional mono
- * meta line under it (8 below: a lockup), then rows as in the note — a "Changed" decision row with
+ * meta line under it (8 below: a lockup), then rows as in the note — a decision row with
  * what it replaces, or a full-width line in two inks ("Next: …": the lead in the grey, the action
  * in fg). Slotted, it takes the note card's place: the same right column and the same top
  * (NOTE_TOP), so the note → writeback carry hands one card place to the next and the two headlines

@@ -12,11 +12,16 @@ import { defineTheme } from "continuity";
  *   colour that carries data, not decoration.
  * - the `accent` gradient preset is the site's hero: a black field with one bright plume. Three
  *   of the four colours are black (one a step off, #0d0d0d, for depth) so they carve the white
- *   one into a plume, and a small scale (0.36) keeps it tight enough that the black shows around
- *   it (~60% of the frame below luma 20, p95 ≥ 150, like the site's median 7). The speed (0.07)
- *   is chosen for where the plume is when the field is on screen (the field runs on global time):
- *   on the turn (3.4–7.0 s) it sits right of the statement, on the end (27.6–31.4 s) low-left,
- *   under the centred statement, so canvas-coloured type keeps ≥ 3:1 at every sampled frame.
+ *   one into a plume, and a small scale (0.29) keeps it tight enough that the black shows around
+ *   it (≥ 65% of the frame below luma 20 and p95 ≥ 150 at every 0.25 s of both windows; the
+ *   site: 74%, p95 150). The shader keeps its colour centres within ±0.42 field units of the
+ *   frame's middle, so the plume always lives around the centre; the copy goes to the upper left
+ *   (turn on hook's line, end on trust's), and speed + warp (0.05, 0.8) are chosen — by sampling
+ *   the field, a pure function of global time, every 0.25 s — so the plume stays right of and
+ *   below that copy on both windows: on the turn (3.4–7.2 s) behind-copy luma p90 ≤ ~47, median
+ *   ≤ 10; on the end (27.2–31.0 s) p90 ≤ ~28, median ≈ 0. Change speed, scale, warp or the
+ *   white's slot and the plume lands somewhere else in those windows: re-measure.
+ *   Shape (ridged silk streaks and the site's grain rather than soft blobs) needs shader work.
  */
 export default defineTheme("litt-light", {
   colors: {
@@ -33,6 +38,6 @@ export default defineTheme("litt-light", {
     "data-amber-text": "#b04f2e",
   },
   gradients: {
-    accent: { colors: ["#000000", "#000000", "#0d0d0d", "#ffffff"], base: "#000000", speed: 0.07, scale: 0.36, warp: 1 },
+    accent: { colors: ["#000000", "#000000", "#0d0d0d", "#ffffff"], base: "#000000", speed: 0.05, scale: 0.29, warp: 0.8 },
   },
 });

@@ -55,7 +55,7 @@ export function NoteFrame({ text = copyOf("note"), quiet }: { text?: Record<stri
  * and pane row centred on the frame's centre line), both handoff panes in their slots —
  * Claude Code on the left as save left it (its output line, and the command's grey echo where
  * the box left it — it crossed to Codex; no ct ids, it never moves) and Codex CLI on the right (resume-term, resume-cmd,
- * resume-out) — and the caption. `quiet` draws its last frame for trust's machine-screen.
+ * resume-out; under the box, save's idle prompt and its caret, held solid: the box lands on them) — and the caption. `quiet` draws its last frame for trust's machine-screen.
  */
 export function ResumeFrame({ text = copyOf("resume"), quiet }: { text?: Record<string, string>; quiet?: boolean }) {
   const ct = (id: string) => (quiet ? undefined : id);
@@ -74,6 +74,7 @@ export function ResumeFrame({ text = copyOf("resume"), quiet }: { text?: Record<
           outCt={ct("resume-out")}
           cmd={text["resume-cmd"]}
           out={text["resume-out"]}
+          prompt={save["codex-prompt"]}
         />
         <SampleCaption ct={ct("caption")}>{text.caption}</SampleCaption>
       </Safe>

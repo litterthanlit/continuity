@@ -5,9 +5,8 @@ import { DISPLAY, DRIFT, HOOK_TOP, Lines, Wordmark, breakAfter } from "../lib/in
 // One ink (text-canvas) on the field; rank comes from size and weight alone. The statement and
 // its signature are one block on the left edge, its second line on hook's headline line
 // (HOOK_TOP: stage 358), so the cut swaps hook's statement for this one in place; the wordmark
-// 32px under it. Why not the first line on hook's line: the field runs on global time, and on the
-// turn its plume sits under the lower right of that band — "agent." would be on luma ~180 (≈ 2:1);
-// one line higher the type keeps ≈ 3:1 or better at every frame.
+// 32px under it. The field runs on global time: theme.ts tunes it so on the turn's window the
+// plume stays right of and below this block (behind-copy luma p90 ≤ ~47).
 const TOP = HOOK_TOP - DISPLAY;
 
 // The push holds on the statement's left edge, between its two lines (stage x 96).

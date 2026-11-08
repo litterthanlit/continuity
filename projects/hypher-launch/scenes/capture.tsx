@@ -14,8 +14,6 @@ import { CAPTURE_ROW_H, CAPTURE_TOP, COPY_WIDTH, DISPLAY, DRIFT, IdChip, Lines, 
 const ROW = CAPTURE_TOP + 2 * DISPLAY + REGION; // 464
 const TILE = { left: 1152, width: 576, height: CAPTURE_ROW_H } as const;
 const LINK_Y = ROW + TILE.height / 2;
-/** The card's translate-only arrival (2× litt's travel): the carry's speed, continued on the light page. */
-const ARRIVE = 64;
 /**
  * The push's fixed point: the frame's centre line across, the headline's top line down. Not the
  * headline's left edge: the block spans the safe width, so a push held at x 96 carries the tile
@@ -85,10 +83,11 @@ export default scene({
     </Stage>
   ),
   motion: (m) => {
-    // JOIN IN (carry left from turn): the card is there at full opacity on frame 0 and travels
-    // the carry's way by translate only, so the carry's speed lands on something.
-    m.tween("capture", { x: [ARRIVE, 0] }, { at: 0 });
-    // b1: the statement lands — the scene's one expressive moment.
+    // JOIN IN (carry left from turn): the card is there at full opacity on frame 0 and rides the
+    // carry's plane alone — a move of its own stacked on the carry's deceleration doubled the
+    // speed across the cut (19 → 40 px/f).
+    // b1 (0, the cut): the statement lands — the scene's one expressive moment — so the light
+    // page has type on it from the first frames.
     m.enter("headline", "maskUp", { at: "b1", split: "lines", ease: "expressive" });
     // The note it feeds follows the card in, the same way; the honesty line after it.
     m.enter(["note-tile", "tile-label"], "slideLeft", { at: 0.3, stagger: "list" });
