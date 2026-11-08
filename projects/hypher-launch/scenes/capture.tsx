@@ -1,25 +1,25 @@
-import { scene, ctId, El, Headline, Path, Safe, Stage } from "continuity";
-import { COPY_WIDTH, HEAD_TOP, IdChip, Lines, NoteStill, SampleCaption, breakAfter } from "../lib/index.js";
+import { scene, ctId, cx, El, Headline, Path, Safe, Stage } from "continuity";
+import { CAPTURE_ROW_H, CAPTURE_TOP, COPY_WIDTH, DISPLAY, IdChip, Lines, NoteStill, REGION, SampleCaption, UI, breakAfter } from "../lib/index.js";
 
 /**
- * Step one: capture the project as it is. The headline on the film's top line (HEAD_TOP, column
- * A–C), the capture card under it in the copy column, the note-tile (the note scene's frame 0 at
- * 0.3) on the safe right edge, on the card's row, tied to it by a 2px hairline. The tile is the
- * portal into `note`.
+ * Step one: capture the project as it is. One block centred on the frame's centre line
+ * (CAPTURE_TOP, lib/layout.ts): the headline (column A–C), a region, then the capture card in the
+ * copy column and the note-tile (the note scene's frame 0 at 0.3) on the safe right edge, on the
+ * card's row, tied to it by a 2px hairline. The tile is the portal into `note`.
  *
  *   card  0 → 768 (COPY_WIDTH), top ROW, 324 high — the tile's height, so the two share edges
  *   tile  1152 → 1728 (safe right edge), top ROW, 576 × 324; its label 8 under it
  *   link  card's right edge → tile's left edge, through both centres
  */
-const ROW = 432;
-const TILE = { left: 1152, width: 576, height: 324 } as const;
+const ROW = CAPTURE_TOP + 2 * DISPLAY + REGION; // 464
+const TILE = { left: 1152, width: 576, height: CAPTURE_ROW_H } as const;
 const LINK_Y = ROW + TILE.height / 2;
 
 export default scene({
   view: ({ text }) => (
     <Stage bg="solid">
       <Safe>
-        <Headline ct="headline" class="absolute left-0" style={`top:${HEAD_TOP}px;width:${COPY_WIDTH}px`}>
+        <Headline ct="headline" class="absolute left-0" style={`top:${CAPTURE_TOP}px;width:${COPY_WIDTH}px`}>
           <Lines lines={breakAfter(text.headline, "Capture")} />
         </Headline>
 
@@ -31,7 +31,7 @@ export default scene({
           style={`top:${ROW}px;width:${COPY_WIDTH}px;height:${TILE.height}px`}
         >
           <div class="h-[132px] rounded-control bg-surface-1 px-[32px] py-[24px] shadow-field">
-            <span class="relative inline-flex items-center font-sans text-[28px] leading-[40px]">
+            <span class={cx("relative inline-flex items-center font-sans", UI.value)}>
               <El
                 as="span"
                 ct="capture-text"
@@ -41,7 +41,7 @@ export default scene({
               >
                 {text["capture-text"]}
               </El>
-              <El as="span" ct="capture-caret" data-layout-ignore class="ml-[4px] inline-block h-[36px] w-[3px] bg-focus" />
+              <El as="span" ct="capture-caret" data-layout-ignore class="ml-[4px] inline-block h-[44px] w-[3px] bg-focus" />
             </span>
           </div>
           <div class="flex">
@@ -65,7 +65,7 @@ export default scene({
         {/* The portal: the note scene's first frame, and its id under it (8, a lockup). */}
         <div class="absolute flex flex-col gap-[8px]" style={`left:${TILE.left}px;top:${ROW}px`}>
           <NoteStill ct="note-tile" width={TILE.width} />
-          <El as="p" ct="tile-label" class="font-mono text-[26px] leading-[32px] text-fg-muted">
+          <El as="p" ct="tile-label" class={cx("font-mono text-fg-muted", UI.meta)}>
             {text["tile-label"]}
           </El>
         </div>

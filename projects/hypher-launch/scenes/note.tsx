@@ -1,9 +1,10 @@
 import { scene } from "continuity";
-import { HEAD_TOP, NoteFrame } from "../lib/index.js";
+import { NOTE_TOP, NoteFrame } from "../lib/index.js";
 
 /**
- * Step two: one bounded note per project. The view is the shared NoteFrame — the headline on the
- * film's top line (columns A–C), the note card in the right column from the same line — so the
+ * Step two: one bounded note per project. The view is the shared NoteFrame — the headline
+ * (columns A–C) beside the note card in the right column, top-aligned, the pair centred on the
+ * frame's centre line (NOTE_TOP) — so the
  * live scene is exactly what capture's note-tile shows (<NoteFrame quiet/>) until the portal lands.
  *
  *   frame 0 → land (0.9)  the empty card and its token-gate header, at rest; nothing else on screen
@@ -13,8 +14,8 @@ import { HEAD_TOP, NoteFrame } from "../lib/index.js";
  *   out                   the layered carry left: headline (column A) leads, the card follows
  */
 
-// The headline's top-left corner on the stage: Safe's inset (96, 54) + (0, HEAD_TOP).
-const HEAD_ORIGIN = { x: 96, y: 54 + HEAD_TOP };
+// The headline's top-left corner on the stage: Safe's inset (96, 54) + (0, NOTE_TOP).
+const HEAD_ORIGIN = { x: 96, y: 54 + NOTE_TOP };
 
 export default scene({
   view: ({ text }) => <NoteFrame text={text} />,

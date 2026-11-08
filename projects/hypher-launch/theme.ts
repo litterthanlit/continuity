@@ -10,8 +10,13 @@ import { defineTheme } from "continuity";
  * - accent: sage. `accent-text` is a darker sage for type on the page (AA on canvas).
  * - data-amber: Claude orange, for the commands only (`/hypher-save`, `$hypher-resume`):
  *   colour that carries data, not decoration.
- * - the `accent` gradient preset is the site's hero: monochrome smoke on black. Its brightest
- *   blob stays mid-grey so canvas-coloured type on it clears 3:1 at every frame.
+ * - the `accent` gradient preset is the site's hero: a black field with one bright plume. Three
+ *   of the four colours are black (one a step off, #0d0d0d, for depth) so they carve the white
+ *   one into a plume, and a small scale (0.36) keeps it tight enough that the black shows around
+ *   it (~60% of the frame below luma 20, p95 ≥ 150, like the site's median 7). The speed (0.07)
+ *   is chosen for where the plume is when the field is on screen (the field runs on global time):
+ *   on the turn (3.4–7.0 s) it sits right of the statement, on the end (27.6–31.4 s) low-left,
+ *   under the centred statement, so canvas-coloured type keeps ≥ 3:1 at every sampled frame.
  */
 export default defineTheme("litt-light", {
   colors: {
@@ -28,6 +33,6 @@ export default defineTheme("litt-light", {
     "data-amber-text": "#b04f2e",
   },
   gradients: {
-    accent: { colors: ["#8e8e8e", "#5a5a5a", "#262626", "#000000"], base: "#050505", speed: 0.08, scale: 1.2, warp: 0.8 },
+    accent: { colors: ["#000000", "#000000", "#0d0d0d", "#ffffff"], base: "#000000", speed: 0.07, scale: 0.36, warp: 1 },
   },
 });

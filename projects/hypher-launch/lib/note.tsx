@@ -1,18 +1,20 @@
 import type { ComponentChildren } from "preact";
 import { El, cx } from "continuity";
 import { TwoInk } from "./ink.js";
-import { CARD } from "./layout.js";
+import { CARD, CARD_FOOT, CARD_PAD, NOTE_TOP, ROW_H, UI, centreTop } from "./layout.js";
 
 /**
  * Hypher's note, drawn like the site's illustration: a raised white card (litt's Card:
  * surface-1, the hairline + top highlight, radius 16, 48 inset), a header with the note's
  * title and its id on a mono chip at the right, then rows under 2px hairlines — a label in the
- * grey (26, the meta size) in a 192 px column, the value in fg (28). A decision row can carry
- * what it replaces (grey, 8 under the value) and the "Pinned" mark (under its label).
+ * grey (30, UI.meta) in a 192 px column, the value in fg (36, UI.value): litt's video UI at
+ * ×1.25 (layout.ts UI). A decision row can carry what it replaces (grey, 8 under the value) and
+ * the "Pinned" mark (under its label).
  *
  * Every row's ct id is passed in (`rows[i].ct`), so scenes animate them by storyboard id.
- * The card's size is fixed (864 × 640 by default), so an empty card (frame 0 of the note
- * scene, and its quiet still in capture's tile) is exactly the card the rows later fill.
+ * The note card's size is fixed (864 × 384, CARD: it hugs a header and two rows), so an empty
+ * card (frame 0 of the note scene, and its quiet still in capture's tile) is exactly the card
+ * the rows later fill. The writeback card's height follows its content (`wbHeight`).
  */
 export interface NoteRowSpec {
   ct?: string;
@@ -30,7 +32,8 @@ export const NOTE_LABELS = { goal: "Goal", constraint: "Constraint", decision: "
 /** The note's id (token-gate) on a neutral chip: Geist Mono, the grey, surface-2 with a hairline. */
 export function IdChip({ ct, children }: { ct?: string; children: ComponentChildren }) {
   return (
-    <El ct={ct} as="span" class="inline-flex h-[48px] items-center rounded-control bg-surface-2 px-[16px] font-mono text-[26px] leading-[32px] text-fg-muted shadow-hairline">
+    <El ct={ct} as="span" class={cx("inline-flex items-center rounded-control bg-surface-2 px-[16px] font-mono text-fg-muted shadow-hairline", UI.meta)}
+      style={`height:${UI.chip}px`}>
       {children}
     </El>
   );
@@ -42,7 +45,8 @@ export function IdChip({ ct, children }: { ct?: string; children: ComponentChild
  */
 export function Pinned({ ct, children = "Pinned" }: { ct?: string; children?: ComponentChildren }) {
   return (
-    <El ct={ct} as="span" class="inline-flex h-[48px] shrink-0 items-center rounded-control bg-accent-tint px-[16px] font-sans text-[26px] leading-[32px] font-label text-accent-fg">
+    <El ct={ct} as="span" class={cx("inline-flex shrink-0 items-center rounded-control bg-accent-tint px-[16px] font-sans font-label text-accent-fg", UI.meta)}
+      style={`height:${UI.chip}px`}>
       {children}
     </El>
   );
@@ -54,20 +58,21 @@ export function NoteRow({ row }: { row: NoteRowSpec }) {
       {row.label !== undefined ? (
         <>
           <div class="flex w-[192px] shrink-0 flex-col items-start gap-[8px]">
-            <span class="pt-[2px] font-sans text-[26px] leading-[36px] text-fg-muted">{row.label}</span>
+            {/* 6 down: the label's baseline on the value's (30/40 beside 36/48). */}
+            <span class={cx("pt-[6px] font-sans text-fg-muted", UI.meta)}>{row.label}</span>
             {row.pinned && <Pinned ct={row.ct ? `${row.ct}-pin` : undefined} />}
           </div>
           <div class="flex min-w-0 flex-1 flex-col gap-[8px]">
-            <span class="font-sans text-[28px] leading-[40px] text-fg">{row.value}</span>
+            <span class={cx("font-sans text-fg", UI.value)}>{row.value}</span>
             {row.replaces && (
-              <span class="font-sans text-[26px] leading-[36px] text-fg-muted">
+              <span class={cx("font-sans text-fg-muted", UI.meta)}>
                 Replaces “{row.replaces}”
               </span>
             )}
           </div>
         </>
       ) : (
-        <span class="font-sans text-[28px] leading-[40px]">
+        <span class={cx("font-sans", UI.value)}>
           <TwoInk text={row.value} />
         </span>
       )}
@@ -97,7 +102,7 @@ export function NoteCard({
   rows?: NoteRowSpec[];
   width?: number;
   height?: number;
-  /** Place it in the right column on the top line (CARD; absolute, inside <Safe>). `false`: the scene places it. */
+  /** Place it in the right column, centred on the frame's centre line (CARD, NOTE_TOP; absolute, inside <Safe>). `false`: the scene places it. */
   slot?: boolean;
   class?: string;
 }) {
@@ -106,10 +111,10 @@ export function NoteCard({
       ct={ct}
       data-ct-ui
       class={cx("flex flex-col rounded-surface bg-surface-1 p-[48px] shadow-raised", slot ? "absolute" : "relative", cls)}
-      style={`width:${width}px;height:${height}px${slot ? `;left:${CARD.left}px;top:${CARD.top}px` : ""}`}
+      style={`width:${width}px;height:${height}px${slot ? `;left:${CARD.left}px;top:${NOTE_TOP}px` : ""}`}
     >
       <div class="flex items-center justify-between pb-[32px]">
-        <span class="font-sans text-[28px] leading-[40px] font-title text-fg">{title || ""}</span>
+        <span class={cx("font-sans font-title text-fg", UI.value)}>{title || ""}</span>
         <IdChip ct={idCt}>{noteId}</IdChip>
       </div>
       {rows.map((r) => (
@@ -120,11 +125,19 @@ export function NoteCard({
 }
 
 /**
- * The writeback card: "Claude Code wrote back" (the title weight, 28, fg), an optional mono
+ * The writeback card: "Claude Code wrote back" (the title weight, 36, fg), an optional mono
  * meta line under it (token-gate @ 3f2a91c, 8 below: a lockup), then rows as in the note — a
  * "Changed" decision row, or a full-width line in two inks ("Next: run the stale-revision test.":
- * the lead in the grey, the action in fg). Height follows the content unless `height` is set.
+ * the lead in the grey, the action in fg). Height follows the content (`wbHeight`), with the
+ * even foot (CARD_FOOT) built in; slotted, it sits in the right column at `wbTop(…)`.
  */
+export function wbHeight(rows: NoteRowSpec[], meta = false): number {
+  const row = (r: NoteRowSpec) => ROW_H + (r.replaces ? 8 + 40 : 0);
+  return CARD_PAD + 48 + (meta ? 8 + 40 : 0) + 32 + rows.reduce((h, r) => h + row(r), 0) + CARD_FOOT;
+}
+/** The writeback block's top (headline and card, top-aligned): the card centred on the frame's centre line. */
+export const wbTop = (rows: NoteRowSpec[], meta = false) => centreTop(wbHeight(rows, meta));
+
 export function WritebackCard({
   ct,
   headCt,
@@ -146,7 +159,7 @@ export function WritebackCard({
   rows?: NoteRowSpec[];
   width?: number;
   height?: number;
-  /** Place it in the right column on the top line (CARD; absolute, inside <Safe>). `false`: the scene places it. */
+  /** Place it in the right column, centred on the frame's centre line (CARD, wbTop; absolute, inside <Safe>). `false`: the scene places it. */
   slot?: boolean;
   class?: string;
 }) {
@@ -155,14 +168,14 @@ export function WritebackCard({
       ct={ct}
       data-ct-ui
       class={cx("flex flex-col rounded-surface bg-surface-1 p-[48px] shadow-raised", slot ? "absolute" : "relative", cls)}
-      style={`width:${width}px${height ? `;height:${height}px` : ""}${slot ? `;left:${CARD.left}px;top:${CARD.top}px` : ""}`}
+      style={`width:${width}px;padding-bottom:${CARD_FOOT}px${height ? `;height:${height}px` : ""}${slot ? `;left:${CARD.left}px;top:${wbTop(rows, !!meta)}px` : ""}`}
     >
       <div class="flex flex-col gap-[8px] pb-[32px]">
-        <El as="p" ct={headCt} class="font-sans text-[28px] leading-[40px] font-title text-fg">
+        <El as="p" ct={headCt} class={cx("font-sans font-title text-fg", UI.value)}>
           {head}
         </El>
         {meta && (
-          <El as="p" ct={metaCt} class="font-mono text-[26px] leading-[32px] text-fg-muted">
+          <El as="p" ct={metaCt} class={cx("font-mono text-fg-muted", UI.meta)}>
             {meta}
           </El>
         )}

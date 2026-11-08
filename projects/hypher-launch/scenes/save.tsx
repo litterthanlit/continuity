@@ -1,9 +1,10 @@
 import { scene, Headline, Safe, Stage } from "continuity";
-import { HEAD_TOP, HandoffPane, SampleCaption } from "../lib/index.js";
+import { HANDOFF_TOP, HandoffPane, SampleCaption } from "../lib/index.js";
 
 /**
- * The handoff, part one: one explicit command saves the note in Claude Code. The headline on the
- * film's top line (one line, as resume's), the Claude pane in its slot (PANE: safe 0, top 304),
+ * The handoff, part one: one explicit command saves the note in Claude Code. The handoff block
+ * (lib/layout.ts), as resume's: the one-line headline at HANDOFF_TOP, the Claude pane in its slot
+ * a region under it (PANE: safe 0, top 432; the block centred on the frame's centre line),
  * the command box at CMD inside it, the output line under it, and the honesty caption
  * bottom-left — the same pixels resume uses, so the match only has to move the command.
  *
@@ -18,7 +19,7 @@ export default scene({
   view: ({ text }) => (
     <Stage bg="solid">
       <Safe>
-        <Headline ct="headline" class="absolute left-0 whitespace-nowrap" style={`top:${HEAD_TOP}px`}>
+        <Headline ct="headline" class="absolute left-0 whitespace-nowrap" style={`top:${HANDOFF_TOP}px`}>
           {text.headline}
         </Headline>
         <HandoffPane

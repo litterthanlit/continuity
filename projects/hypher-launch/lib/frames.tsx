@@ -2,7 +2,7 @@ import type { ComponentChildren } from "preact";
 import { El, Headline, Safe, Stage, cx } from "continuity";
 import { SampleCaption } from "./brand.js";
 import { Lines } from "./ink.js";
-import { COPY_WIDTH, HEAD_TOP, breakAfter, copyOf } from "./layout.js";
+import { COPY_WIDTH, HANDOFF_TOP, NOTE_TOP, breakAfter, copyOf } from "./layout.js";
 import { NOTE_LABELS, NoteCard } from "./note.js";
 import { HandoffPane } from "./terminal.js";
 
@@ -17,8 +17,8 @@ const Frame = ({ quiet, children }: { quiet?: boolean; children: ComponentChildr
 
 /**
  * The note scene: "One note / per project." on the left (headline, columns A–C), the note card
- * in the right column from the top line (note-card, note-id; rows row-constraint and
- * row-decision). `quiet` draws its frame 0 — the empty card and its token-gate header, nothing
+ * in the right column, top-aligned with it, the pair centred on the frame's centre line
+ * (NOTE_TOP; note-card, note-id; rows row-constraint and row-decision). `quiet` draws its frame 0 — the empty card and its token-gate header, nothing
  * else — for capture's note-tile. So the live scene must keep the headline and the rows unseen
  * at frame 0 (their entrances come after the portal lands) and the card at rest.
  */
@@ -28,7 +28,7 @@ export function NoteFrame({ text = copyOf("note"), quiet }: { text?: Record<stri
     <Frame quiet={quiet}>
       <Safe>
         {!quiet && (
-          <Headline ct="headline" class="absolute left-0" style={`top:${HEAD_TOP}px;width:${COPY_WIDTH}px`}>
+          <Headline ct="headline" class="absolute left-0" style={`top:${NOTE_TOP}px;width:${COPY_WIDTH}px`}>
             <Lines lines={breakAfter(text.headline, "note")} />
           </Headline>
         )}
@@ -51,7 +51,8 @@ export function NoteFrame({ text = copyOf("note"), quiet }: { text?: Record<stri
 }
 
 /**
- * The resume scene, settled: "Resume in Codex." (headline), both handoff panes in their slots —
+ * The resume scene, settled: "Resume in Codex." (headline, HANDOFF_TOP: the block of statement
+ * and pane row centred on the frame's centre line), both handoff panes in their slots —
  * Claude Code on the left as save left it (its output line, the command gone: it crossed to
  * Codex; no ct ids, it never moves) and Codex CLI on the right (resume-term, resume-cmd,
  * resume-out) — and the caption. `quiet` draws its last frame for trust's machine-screen.
@@ -62,7 +63,7 @@ export function ResumeFrame({ text = copyOf("resume"), quiet }: { text?: Record<
   return (
     <Frame quiet={quiet}>
       <Safe>
-        <Headline ct={ct("headline")} class="absolute left-0 whitespace-nowrap" style={`top:${HEAD_TOP}px`}>
+        <Headline ct={ct("headline")} class="absolute left-0 whitespace-nowrap" style={`top:${HANDOFF_TOP}px`}>
           {text.headline}
         </Headline>
         <HandoffPane variant="claude" out={save["save-out"]} />

@@ -1,7 +1,7 @@
 import type { Style } from "continuity";
 import { El, cx } from "continuity";
 import { TwoInk } from "./ink.js";
-import { CMD, PANE } from "./layout.js";
+import { CMD, PANE, UI } from "./layout.js";
 
 /**
  * The handoff's terminal pane — the site's dark handoff panel, one per agent: a near-black
@@ -11,15 +11,18 @@ import { CMD, PANE } from "./layout.js";
  *
  * Inks on the dark pane: `text-canvas` (bright) and `text-canvas/64` (the grey).
  *
- * The command box is the same 288×56 box in both variants, at the same place in the pane
+ * The command box is the same 352×72 box in both variants, at the same place in the pane
  * (CMD: x 48, y 112), opaque (`bg-fg` on the `bg-device` pane: one surface step up), so the
  * storyboard's match (save-cmd → resume-cmd) hands over place, size, fill and corner exactly.
  * It is its own element: `cmdCt` on the box, `${cmdCt}-text` on the command inside it (type
  * that one; fade or move the box). The box has no entrance of its own unless the scene gives it
  * one, and nothing inside the pane clips it (no overflow-hidden), so it can travel.
  *
- * Place the pane with `class="absolute left-[…] top-[…]"` inside <Safe>, from PANE
- * (`left-[0px] top-[304px]` Claude, `left-[896px] top-[304px]` Codex), or use `slot`.
+ * Type is litt's video UI at ×1.25 (layout.ts UI): mono 34/48 for the command and the output,
+ * the header at the small step (30/40). The pane hugs its content (PANE.height 320).
+ *
+ * Place the pane in its PANE slot with `slot` (the default: Claude at x 0, Codex at x 896,
+ * both at PANE.top), or with `slot={false}` and the scene's own class.
  */
 export const PANE_TITLES = { claude: "Claude Code", codex: "Codex CLI" } as const;
 export type Agent = keyof typeof PANE_TITLES;
@@ -29,7 +32,7 @@ export function CommandBox({ ct, cmd, class: cls, style }: { ct?: string; cmd: s
     <El
       ct={ct}
       data-ct-ui
-      class={cx("flex items-center rounded-control bg-fg px-[24px] font-mono text-[28px] leading-[40px] whitespace-nowrap", cls)}
+      class={cx("flex items-center rounded-control bg-fg px-[24px] font-mono whitespace-nowrap", UI.mono, cls)}
       style={[`width:${CMD.width}px;height:${CMD.height}px`, typeof style === "string" ? style : ""].join(";")}
     >
       <El as="span" ct={ct ? `${ct}-text` : undefined} class="text-data-amber">
@@ -84,14 +87,14 @@ export function HandoffPane({
       style={`width:${width}px;height:${height}px${slot ? `;left:${left}px;top:${PANE.top}px` : ""}`}
     >
       <div class="flex items-center border-b-2 border-canvas/8 px-[48px]" style={`height:${PANE.head}px`}>
-        {name && <span class="font-sans text-[28px] leading-[36px] font-title text-canvas/64">{name}</span>}
+        {name && <span class={cx("font-sans font-title text-canvas/64", UI.meta)}>{name}</span>}
       </div>
       {cmd !== undefined && <CommandBox ct={cmdCt} cmd={cmd} class="absolute" style={`left:${CMD.x}px;top:${CMD.y}px`} />}
       {out !== undefined && (
         <El
           as="p"
           ct={outCt}
-          class="absolute font-mono text-[28px] leading-[40px] whitespace-nowrap"
+          class={cx("absolute font-mono whitespace-nowrap", UI.mono)}
           style={`left:${PANE.pad}px;top:${CMD.y + CMD.height + 32}px`}
         >
           <TwoInk text={out} strong={strong ?? (out.includes(": ") ? undefined : out.slice(out.indexOf(" ") + 1))} dim="text-canvas/64" bright="text-canvas" />
