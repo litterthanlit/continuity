@@ -12,19 +12,11 @@ import { DRIFT, HANDOFF_TOP, HandoffPane, SampleCaption } from "../lib/index.js"
  *
  * Into the cut the command box travels +SAVE_TRAVEL right (stage 144 → 504) on t²: resume-cmd
  * waits 536 px further along (Codex slot) — 0.56 · v·d at v 1200 px/s, d 0.8 s, inside the reach
- * window (lib/layout.ts PANE). Once it has left, the command's grey echo (save-echo, drawn under
- * the box at the prompt column) shows, and resume's Claude pane keeps it on the same pixel.
+ * window (lib/layout.ts PANE). The command's grey echo is resume's (its Claude pane, from frame 0),
+ * on the pixel the box has left by the cut.
  */
 const SAVE_TRAVEL = 360;
 const INTO_CUT = 0.6;
-/**
- * When the moving box has cleared the echo: its left edge (x = SAVE_TRAVEL·u², u = t / INTO_CUT)
- * passes the echo's right edge (12 mono chars at 34 ≈ 245 px from the same left) at u ≈ 0.83,
- * end − 0.105 s. The echo shows from end − 0.1 (box 250 px along), at instant: solid by the cut,
- * where resume's Claude pane has it. Before that the box is still over it, so revealing it with
- * the box would print the command twice ("/ /hypher-save").
- */
-const ECHO_AT = 0.1;
 /** The panes' translate-only arrival, up with the carry (litt's travel). */
 const ARRIVE = 32;
 /** The headline's left edge on the stage (Safe's inset 96, 54 + HANDOFF_TOP + half the line). */
@@ -43,8 +35,6 @@ export default scene({
           cmdCt="save-cmd"
           outCt="save-out"
           cmd={text["save-cmd"]}
-          echo={text["save-cmd"]}
-          echoCt="save-echo"
           out={text["save-out"]}
         />
         <HandoffPane variant="codex" ct="codex-term" prompt={text["codex-prompt"]} promptCt="codex-prompt" caretCt="codex-caret" />
@@ -72,12 +62,9 @@ export default scene({
     // match's hard cut would snap both panes back; this way they line up pixel for pixel.
     m.camera({ scale: [1.02, 1] }, { at: 0.3, duration: m.time("go") - 0.3, ease: DRIFT, origin: HEAD_ORIGIN });
     // JOIN OUT (match v2 → resume-cmd): t² into the cut, fastest on the last frame (≈ 1200 px/s),
-    // so the match carries the command across to Codex. Its grey echo stays hidden while the box
-    // crosses it, then shows once the box has cleared it (ECHO_AT; resume's Claude pane keeps it on
-    // the same pixel). Nothing else moves; the caption is paired.
-    // allow late-entrance: the echo is not this scene's copy to read (storyboard role decor) — it is
-    // resume's, on the same pixel there (Claude pane, 2.6 s at rest); here it must only not double the box.
-    m.enter("save-echo", "fade", { at: `end-${ECHO_AT}`, duration: "instant", allow: ["late-entrance"] });
+    // so the match carries the command across to Codex. Nothing else moves; the caption is paired.
+    // The command's grey echo is resume's (its Claude pane draws it from frame 0, on the pixel the
+    // box has left by the cut) — save draws none, so the moving box never doubles it.
     m.tween(
       "save-cmd",
       { x: [0, SAVE_TRAVEL] },

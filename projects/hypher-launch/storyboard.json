@@ -402,12 +402,6 @@
           "note": "terminal output, mono, grey; 'token-gate @ 3f2a91c' may step to fg"
         },
         {
-          "id": "save-echo",
-          "role": "decor",
-          "anchor": "A3",
-          "note": "the command's grey trace on the box's row at the prompt column (pane x 48, with 'Saved'), text-canvas/64, no box, drawn under the box: hidden until the moving box has cleared it (end − 0.1), then fades in at instant, and stays (resume's Claude pane has it). Role decor here: in save it is a trace that appears on the last 3 frames, not copy to read; it is read in resume, where it sits static on the same pixel for 2.6 s"
-        },
-        {
           "id": "caption",
           "role": "caption",
           "anchor": "A6",
