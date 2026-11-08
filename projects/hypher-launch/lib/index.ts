@@ -5,3 +5,4 @@ export * from "./terminal.js";
 export * from "./note.js";
 export * from "./brand.js";
 export * from "./frames.js";
+export * from "./motion.js";

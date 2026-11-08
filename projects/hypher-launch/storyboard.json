@@ -99,7 +99,7 @@
           "note": "lowercase 'hypher' in Geist 500 at the title step, text-canvas, 32px under the statement"
         }
       ],
-      "motion": "<Stage bg=\"gradient\" gradient=\"accent\"> (the theme's black monochrome smoke); all type text-canvas, one ink. JOIN IN (cut on action): b1 = frame 0, headline maskUp split lines, ease expressive (the one moment), so the cut lands on movement. b2 (1.0): wordmark fades (responsive). No camera push: the field moves by itself and the carry out must be a pure translate. JOIN OUT (carry left, 10%): no exit; the carry's lead-in accelerates the whole frame left over its last ~0.2s. The field bleeds past the edge, so the light page arrives at the same speed.",
+      "motion": "<Stage bg=\"gradient\" gradient=\"accent\"> (the theme's black monochrome smoke); all type text-canvas, one ink. The statement block sits on the left edge with its second line on hook's headline line (HOOK_TOP: stage y 358; the block's top one display line above), so the cut swaps one statement for the next in place. Not the first line there: on the turn the field's plume lies under the lower right of that band (\"agent.\" would sit on luma ~180). JOIN IN (cut on action): b1 = frame 0, headline maskUp split lines, ease expressive (the one moment), so the cut lands on movement. b2 (1.0): wordmark fades (responsive). From 0.4 (the lines landed): camera push 1 → 1.02 on the statement's left edge, inOut, at rest by 3.4 as the carry's lead-in starts (the slow field alone reads as still). JOIN OUT (carry left, 10%): no exit; the carry's lead-in accelerates the whole frame left over its last ~0.2s. The field bleeds past the edge, so the light page arrives at the same speed.",
       "transition": {
         "type": "carry",
         "dir": "left",
@@ -119,7 +119,7 @@
         },
         {
           "id": "b2",
-          "at": 1.9,
+          "at": 1.6,
           "note": "the capture flows into the token-gate tile"
         }
       ],
@@ -180,7 +180,7 @@
           "note": "Caption, grey, bottom-left on the safe edge"
         }
       ],
-      "motion": "Solid canvas. JOIN IN (carry left): the capture card slideLeft on frame 0, so its entrance travels the carry's way. b1 (0.15): headline maskUp lines, ease expressive (the one moment). 0.3: note-tile + tile-label slideLeft (list stagger after the card). 0.5: caption fades. 0.6: m.type(\"capture-text\", { cps: 20 }) to ~1.5. 1.5: file rises. b2 (1.9): link draws left → right (draw, slow 0.6s, inOut), tying the capture to the note. 2.5: note-tile press (instant). It has received the capture. Hold. JOIN OUT (portal in via note-tile, 0.9s from 2.9): no camera push in this scene. Nothing exits; headline, card and caption fly past the camera as it goes through the tile.",
+      "motion": "Solid canvas. JOIN IN (carry left): the capture card is on screen at full opacity on frame 0 and moves by translate only (x 64 → 0, responsive), so the carry's speed visibly continues on the light page. b1 (0.15): headline maskUp lines, ease expressive (the one moment). 0.3: note-tile + tile-label slideLeft (list stagger after the card). 0.5: caption fades. 0.6: m.type(\"capture-text\", { cps: 20 }) to ~1.5. 1.5: file rises. b2 (1.6): link draws left → right (draw, slow 0.6s, inOut), tying the capture to the note. ~2.1: note-tile press (instant). It has received the capture. From 0.6: camera push 1 → 1.02 (fixed point: the frame's centre across, the headline's line down, so the tile stays inside action-safe), inOut, at rest at 2.9 as the portal starts (the portal measures the tile as drawn then, so its rig stays locked; no camera move during it). JOIN OUT (portal in via note-tile, 0.9s from 2.9). Nothing exits; headline, card and caption fly past the camera as it goes through the tile.",
       "transition": {
         "type": "portal",
         "dir": "in",
@@ -260,51 +260,58 @@
     {
       "id": "writeback",
       "duration": 3.4,
-      "intent": "Step three: when an agent stops, it writes back what comes next.",
+      "intent": "Step three: when an agent stops, it writes back why a decision changed.",
       "beats": [
         {
           "id": "b1",
           "at": 0.35,
-          "note": "the writeback header appears"
+          "note": "the change lands: the decision the agent changed"
         },
         {
           "id": "b2",
-          "at": 0.6,
-          "note": "the next action lands"
+          "at": 0.7,
+          "note": "what it replaces: the why"
         }
       ],
       "text": {
         "headline": "Agents write back.",
-        "wb-head": "Claude Code wrote back",
-        "wb-next": "Next: run the stale-revision test."
+        "wb-head": "Claude Code",
+        "wb-change": "Hash tokens at rest.",
+        "wb-replaces": "Keep the session cookie"
       },
       "elements": [
         {
           "id": "headline",
           "role": "headline",
           "anchor": "A1:C2",
-          "note": "display; same place as the note's headline"
+          "note": "display; same place as the note's headline (NOTE_TOP)"
         },
         {
           "id": "wb-card",
           "role": "ui",
           "anchor": "D2:F5",
-          "note": "a raised Card (~860×420), same right column as the note card"
+          "note": "a raised Card, the note card's twin: same right column, same top and size (864×384)"
         },
         {
           "id": "wb-head",
           "role": "ui",
           "anchor": "D2:F2",
-          "note": "Title-weight UI line (500, 28px) in fg"
+          "note": "the card's title: who wrote back, UI value step at 500, fg; on screen from frame 0"
         },
         {
-          "id": "wb-next",
+          "id": "wb-change",
           "role": "ui",
-          "anchor": "D3:F4",
-          "note": "'Next:' grey, the action fg (two inks via spans or Emph)"
+          "anchor": "D3:F3",
+          "note": "a 'Changed' row like the note's rows: label grey, the decision fg, hairline above"
+        },
+        {
+          "id": "wb-replaces",
+          "role": "ui",
+          "anchor": "D4:F4",
+          "note": "'Replaces “…”' in the grey, 8 under the decision (NoteRow replaces)"
         }
       ],
-      "motion": "Solid canvas. JOIN IN (carry left, 12%, layers from note): headline and wb-card are on screen from frame 0 and arrive with the layered wave, copy leading. They have no entrance of their own, and the carry's deceleration is their entrance. b1 (0.35): wb-head fades. b2 (0.6): wb-next rises, ease expressive (the one moment: what the agent hands on). Hold still. JOIN OUT (carry up, 10%, layers): no exit. The handoff chapter rises in, and the headline (row 1) leads the card (row 2) up and out.",
+      "motion": "Solid canvas. JOIN IN (carry left, 12%, layers from note): headline and wb-card (with its wb-head) are on screen from frame 0 and arrive with the layered wave, copy leading; the same headline line and card slot as the note's, so the step reads as the same note moving on. They have no entrance of their own. b1 (0.35): wb-change rises, ease expressive (the one moment: the decision the agent changed). b2 (0.7): wb-replaces fades (responsive): what it replaces. From 0.3: camera push 1 → 1.03 on the headline's left edge, inOut, running into the carry (as note's does). JOIN OUT (carry up, 10%, layers): no exit. The handoff chapter rises in, and the headline (row 1) leads the card (row 2) up and out.",
       "transition": {
         "type": "carry",
         "dir": "up",
@@ -351,13 +358,19 @@
           "id": "save-term",
           "role": "ui",
           "anchor": "A3:C5",
-          "note": "a Window/Terminal surface with no title text, x 96 → ~896 (800 wide), rows 3–5; not overflow-clipped where save-cmd travels"
+          "note": "the Claude Code pane (HandoffPane, PANE slot 0: 832×320); not overflow-clipped where save-cmd travels"
+        },
+        {
+          "id": "codex-term",
+          "role": "ui",
+          "anchor": "D3:F5",
+          "note": "the Codex CLI pane, idle (header only), in PANE.codex: the same pane resume shows as resume-term; on screen from frame 0"
         },
         {
           "id": "save-cmd",
           "role": "ui",
           "anchor": "A3",
-          "note": "the command box: fixed 288×56, rounded-control, bg-surface-2 (opaque), mono 28px text-data-amber-text, left at x ≈ 160. Identical box to resume-cmd"
+          "note": "the command box: fixed 352×72 (CMD), rounded-control, bg-fg (opaque), mono 34px text-data-amber. Identical box to resume-cmd"
         },
         {
           "id": "save-out",
@@ -366,13 +379,19 @@
           "note": "terminal output, mono, grey; 'token-gate @ 3f2a91c' may step to fg"
         },
         {
+          "id": "save-echo",
+          "role": "ui",
+          "anchor": "A3",
+          "note": "the command's grey trace on the box's text line (text-canvas/64, no box), drawn under the box: it shows as the box leaves, and stays (resume's Claude pane has it)"
+        },
+        {
           "id": "caption",
           "role": "caption",
           "anchor": "A6",
           "note": "same place and style as capture's and resume's caption"
         }
       ],
-      "motion": "Solid canvas. JOIN IN (carry up, 10%, layers from writeback): headline on screen from frame 0, arriving with the wave. save-term rises on frame 0 (its entrance travels up with the carry). 0.4: caption fades. b1 (0.55): m.type(\"save-cmd\", { cps: 20 }) to ~1.15 (the box fades in at b1, then the text types). b2 (1.2): save-out rises, ease expressive (the one moment: saved). Hold. go (2.7): JOIN OUT (match v2): save-cmd tweens x 0 → 360 over the last 0.6s on t², { type: \"bezier\", p: [1/3, 0, 2/3, 1/3] }, ending at end, so it is fastest on the last frame (v ≈ 1200 px/s). Nothing else moves; the caption stays put (it is paired).",
+      "motion": "Solid canvas. JOIN IN (carry up, 10%, layers from writeback): headline on screen from frame 0, arriving with the wave. Both panes, save-term (Claude Code) and codex-term (Codex CLI, idle: resume's pane in its slot), are on screen at full opacity from frame 0 and move by translate only (y 32 → 0, responsive), travelling up with the carry. 0.4: caption fades. b1 (0.55): m.type(\"save-cmd\", { cps: 20 }) to ~1.15 (the box fades in at b1, then the text types). b2 (1.2): save-out rises, ease expressive (the one moment: saved). Camera: frame 0 at 1.02 on the headline's left edge, easing back to 1 (inOut) from 0.3 to go: the hold's ambient life, at rest on the identity before the command moves, so the match cut lines both panes up pixel for pixel (a push would end 2% in, and both panes would jump at the cut). go (2.7): JOIN OUT (match v2): save-cmd tweens x 0 → 360 over the last 0.6s on t², { type: \"bezier\", p: [1/3, 0, 2/3, 1/3] }, ending at end, so it is fastest on the last frame (v ≈ 1200 px/s); as it leaves it uncovers save-echo, the command's grey trace, laid under the box once the box is opaque (after save-cmd's fade, unseen until then). Nothing else moves; the caption stays put (it is paired).",
       "transition": {
         "type": "match",
         "pairs": [
@@ -387,18 +406,18 @@
     },
     {
       "id": "resume",
-      "duration": 4,
+      "duration": 3.6,
       "intent": "The handoff, part two: Codex resumes from the note and starts on the next action.",
       "beats": [
         {
           "id": "b1",
-          "at": 0.8,
-          "note": "the match has landed; the headline lands"
+          "at": 0.4,
+          "note": "the headline lands while the command slows into Codex"
         },
         {
           "id": "b2",
-          "at": 0.95,
-          "note": "Codex reads the next action"
+          "at": 1.15,
+          "note": "the command has landed and runs; Codex prints the next action"
         }
       ],
       "text": {
@@ -418,13 +437,13 @@
           "id": "resume-term",
           "role": "ui",
           "anchor": "D3:F5",
-          "note": "the Codex terminal: same surface and size as save-term (800 wide), at x ≈ 936 → 1736, same rows; on screen from frame 0, no entrance"
+          "note": "the Codex pane: save's codex-term, same surface, size and slot (PANE.codex); on screen from frame 0, no entrance"
         },
         {
           "id": "resume-cmd",
           "role": "ui",
           "anchor": "D3",
-          "note": "the command box, identical to save-cmd (288×56, surface-2, mono amber text), left at x ≈ 1000 and the same y as save-cmd. That is ~480px along from where save-cmd is at the cut (≈ ½·v·d), 0 across"
+          "note": "the command box, identical to save-cmd (352×72 CMD, bg-fg, mono amber), at stage x 1040 on save-cmd's row: 536 px along from save-cmd at the cut (0.56·v·d), 0 across"
         },
         {
           "id": "resume-out",
@@ -439,7 +458,7 @@
           "note": "paired in the match: stays exactly where save's was"
         }
       ],
-      "motion": "Solid canvas. JOIN IN (match from save, 0.8s, pairs save-cmd → resume-cmd and caption): resume-cmd leaves the cut at save-cmd's speed (≈ 1200 px/s rightward) and slows into place in the Codex terminal by 0.8. Reach rule: v·d = 960, so the target is 320–640px along. Place it ~480px right of save-cmd's position at the cut, on the same row. resume-cmd has no entrance of its own, and resume-term is already there on frame 0. b1 (0.8): headline maskUp lines, ease expressive (the one moment). b2 (0.95): resume-out rises (responsive). Everything is settled by ~1.4. No caret, no push, no motion after 1.6, so trust's still of this frame is exact. JOIN OUT (portal out via trust's machine-screen, 1.0s from 3.0): the whole shot shrinks into the screen on 'Your machine'.",
+      "motion": "Solid canvas. JOIN IN (match from save, 0.8s, pairs save-cmd → resume-cmd and caption): resume-cmd leaves the cut at save-cmd's speed (≈ 1200 px/s rightward) and slows into place in the Codex pane by 0.8. Both panes are the ones save showed (Claude Code keeps its output and the command's grey echo where the box left; resume-term is save's codex-term), so only the command moves and the headline swaps. resume-cmd has no entrance of its own. b1 (0.4): headline maskUp lines, ease expressive (the one moment). b2 (1.15): resume-out rises (responsive), a beat after the command lands, as a terminal prints. Everything is settled by ~1.5. No caret, no push, no motion after it, so trust's still of this frame is exact. JOIN OUT (portal out via trust's machine-screen, 1.0s from 2.6): the whole shot shrinks into the screen on 'Your machine'.",
       "transition": {
         "type": "portal",
         "dir": "out",

@@ -27,6 +27,9 @@ import { CMD, PANE, UI } from "./layout.js";
 export const PANE_TITLES = { claude: "Claude Code", codex: "Codex CLI" } as const;
 export type Agent = keyof typeof PANE_TITLES;
 
+/** The command's inset inside its box (px-[24px]): the echo sets its text on the same pixel. */
+const CMD_INSET = 24;
+
 export function CommandBox({ ct, cmd, class: cls, style }: { ct?: string; cmd: string; class?: string; style?: Style }) {
   return (
     <El
@@ -48,6 +51,8 @@ export function HandoffPane({
   cmdCt,
   outCt,
   cmd,
+  echo,
+  echoCt,
   out,
   strong,
   title,
@@ -65,6 +70,14 @@ export function HandoffPane({
   outCt?: string;
   /** The command (text["save-cmd"]); leave out to draw the pane with the command gone. */
   cmd?: string;
+  /**
+   * The command's grey trace (text["save-cmd"]) on the box's text line, no box: what the pane
+   * keeps once the command has left for the other agent. Drawn under the box, so the opaque box
+   * covers it until it moves away (save) and it is simply there after (resume).
+   */
+  echo?: string;
+  /** The trace's id (save-echo), to give it an entrance; leave out for a static one. */
+  echoCt?: string;
   /** The output line (text["save-out"]); leave out for none. */
   out?: string;
   /** The phrase of `out` in the bright ink. Default: after "Lead: " ("Next: ‹…›"), or else after the first word ("Saved ‹token-gate @ 3f2a91c›"). */
@@ -89,6 +102,18 @@ export function HandoffPane({
       <div class="flex items-center border-b-2 border-canvas/8 px-[48px]" style={`height:${PANE.head}px`}>
         {name && <span class={cx("font-sans font-title text-canvas/64", UI.meta)}>{name}</span>}
       </div>
+      {echo !== undefined && (
+        <El
+          as="p"
+          ct={echoCt}
+          data-layout-allow-overlap
+          data-layout-allow-occlusion
+          class={cx("absolute flex items-center font-mono whitespace-nowrap text-canvas/64", UI.mono)}
+          style={`left:${CMD.x + CMD_INSET}px;top:${CMD.y}px;height:${CMD.height}px`}
+        >
+          {echo}
+        </El>
+      )}
       {cmd !== undefined && <CommandBox ct={cmdCt} cmd={cmd} class="absolute" style={`left:${CMD.x}px;top:${CMD.y}px`} />}
       {out !== undefined && (
         <El

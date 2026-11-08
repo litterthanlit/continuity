@@ -53,8 +53,8 @@ export function NoteFrame({ text = copyOf("note"), quiet }: { text?: Record<stri
 /**
  * The resume scene, settled: "Resume in Codex." (headline, HANDOFF_TOP: the block of statement
  * and pane row centred on the frame's centre line), both handoff panes in their slots —
- * Claude Code on the left as save left it (its output line, the command gone: it crossed to
- * Codex; no ct ids, it never moves) and Codex CLI on the right (resume-term, resume-cmd,
+ * Claude Code on the left as save left it (its output line, and the command's grey echo where
+ * the box left it — it crossed to Codex; no ct ids, it never moves) and Codex CLI on the right (resume-term, resume-cmd,
  * resume-out) — and the caption. `quiet` draws its last frame for trust's machine-screen.
  */
 export function ResumeFrame({ text = copyOf("resume"), quiet }: { text?: Record<string, string>; quiet?: boolean }) {
@@ -66,7 +66,7 @@ export function ResumeFrame({ text = copyOf("resume"), quiet }: { text?: Record<
         <Headline ct={ct("headline")} class="absolute left-0 whitespace-nowrap" style={`top:${HANDOFF_TOP}px`}>
           {text.headline}
         </Headline>
-        <HandoffPane variant="claude" out={save["save-out"]} />
+        <HandoffPane variant="claude" echo={save["save-cmd"]} out={save["save-out"]} />
         <HandoffPane
           variant="codex"
           ct={ct("resume-term")}

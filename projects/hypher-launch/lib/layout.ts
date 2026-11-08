@@ -12,10 +12,10 @@ import storyboard from "../storyboard.json" with { type: "json" };
  *   hook       headline, a region (96), the agent label + prompt       → HOOK_TOP
  *   capture    headline (2 lines), a region, the card ↔ tile row       → CAPTURE_TOP
  *   note       headline beside the note card, top-aligned, centred     → NOTE_TOP (CARD)
- *   writeback  headline beside the writeback card, the same             → wbTop(rows) (note.tsx)
+ *   writeback  the note's twin: the same headline line, the same card slot → NOTE_TOP (CARD)
  *   save       headline, a region, the pane row                        → HANDOFF_TOP, PANE.top
  *   resume     the same block as save (the match pairs them)
- *   turn       the field's top line, as the site's hero sets it        → HEAD_TOP (unchanged)
+ *   turn       the statement on hook's headline line, so the cut swaps it in place → HOOK_TOP
  *   trust      its 796-high block centres at 88; it keeps HEAD_TOP (96), within a grid step
  *   end        the film's one centred frame (<Center>)
  *
@@ -32,7 +32,7 @@ export function centreTop(h: number): number {
   return Math.round((SAFE.height - h) / 16) * 8;
 }
 
-/** The field scenes' (turn's) top line, where the site's hero sets its statement; trust keeps it too. */
+/** The film's old top line: trust keeps it (its 796-high block would centre at 88). */
 export const HEAD_TOP = 96;
 /** Columns A–C: a headline beside the right-hand card breaks into ≤ 2 lines inside this. */
 export const COPY_WIDTH = 768;

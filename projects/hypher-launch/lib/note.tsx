@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { El, cx } from "continuity";
 import { TwoInk } from "./ink.js";
-import { CARD, CARD_FOOT, CARD_PAD, NOTE_TOP, ROW_H, UI, centreTop } from "./layout.js";
+import { CARD, CARD_FOOT, CARD_PAD, NOTE_TOP, ROW_H, UI } from "./layout.js";
 
 /**
  * Hypher's note, drawn like the site's illustration: a raised white card (litt's Card:
@@ -23,6 +23,8 @@ export interface NoteRowSpec {
   value: string;
   /** What a decision replaces, without quotes: draws `Replaces “…”` in the grey under the value. */
   replaces?: string;
+  /** The replaces line's own id (wb-replaces), so it can follow the value in. */
+  replacesCt?: string;
   /** The sage "Pinned" mark under the row's label, 8 below it (a human approved the decision): `${ct}-pin`. */
   pinned?: boolean;
 }
@@ -65,9 +67,9 @@ export function NoteRow({ row }: { row: NoteRowSpec }) {
           <div class="flex min-w-0 flex-1 flex-col gap-[8px]">
             <span class={cx("font-sans text-fg", UI.value)}>{row.value}</span>
             {row.replaces && (
-              <span class={cx("font-sans text-fg-muted", UI.meta)}>
+              <El as="span" ct={row.replacesCt} class={cx("font-sans text-fg-muted", UI.meta)}>
                 Replaces “{row.replaces}”
-              </span>
+              </El>
             )}
           </div>
         </>
@@ -125,18 +127,17 @@ export function NoteCard({
 }
 
 /**
- * The writeback card: "Claude Code wrote back" (the title weight, 36, fg), an optional mono
- * meta line under it (token-gate @ 3f2a91c, 8 below: a lockup), then rows as in the note — a
- * "Changed" decision row, or a full-width line in two inks ("Next: run the stale-revision test.":
- * the lead in the grey, the action in fg). Height follows the content (`wbHeight`), with the
- * even foot (CARD_FOOT) built in; slotted, it sits in the right column at `wbTop(…)`.
+ * The writeback card: who wrote back (text["wb-head"], the title weight, 36, fg), an optional mono
+ * meta line under it (8 below: a lockup), then rows as in the note — a "Changed" decision row with
+ * what it replaces, or a full-width line in two inks ("Next: …": the lead in the grey, the action
+ * in fg). Slotted, it takes the note card's place: the same right column and the same top
+ * (NOTE_TOP), so the note → writeback carry hands one card place to the next and the two headlines
+ * share a line; it hugs its content (`wbHeight`, up to the 8 grid), so it is never half blank.
  */
 export function wbHeight(rows: NoteRowSpec[], meta = false): number {
   const row = (r: NoteRowSpec) => ROW_H + (r.replaces ? 8 + 40 : 0);
   return CARD_PAD + 48 + (meta ? 8 + 40 : 0) + 32 + rows.reduce((h, r) => h + row(r), 0) + CARD_FOOT;
 }
-/** The writeback block's top (headline and card, top-aligned): the card centred on the frame's centre line. */
-export const wbTop = (rows: NoteRowSpec[], meta = false) => centreTop(wbHeight(rows, meta));
 
 export function WritebackCard({
   ct,
@@ -152,23 +153,24 @@ export function WritebackCard({
 }: {
   ct?: string;
   headCt?: string;
-  /** text["wb-head"]: "Claude Code wrote back". */
+  /** text["wb-head"]: who wrote back ("Claude Code"). */
   head: string;
   metaCt?: string;
   meta?: string;
   rows?: NoteRowSpec[];
   width?: number;
   height?: number;
-  /** Place it in the right column, centred on the frame's centre line (CARD, wbTop; absolute, inside <Safe>). `false`: the scene places it. */
+  /** Place it where the note card sits (CARD.left, NOTE_TOP; absolute, inside <Safe>). `false`: the scene places it. */
   slot?: boolean;
   class?: string;
 }) {
+  const h = height ?? Math.ceil(wbHeight(rows, !!meta) / 8) * 8;
   return (
     <El
       ct={ct}
       data-ct-ui
       class={cx("flex flex-col rounded-surface bg-surface-1 p-[48px] shadow-raised", slot ? "absolute" : "relative", cls)}
-      style={`width:${width}px;padding-bottom:${CARD_FOOT}px${height ? `;height:${height}px` : ""}${slot ? `;left:${CARD.left}px;top:${wbTop(rows, !!meta)}px` : ""}`}
+      style={`width:${width}px;padding-bottom:${CARD_FOOT}px${h ? `;height:${h}px` : ""}${slot ? `;left:${CARD.left}px;top:${NOTE_TOP}px` : ""}`}
     >
       <div class="flex flex-col gap-[8px] pb-[32px]">
         <El as="p" ct={headCt} class={cx("font-sans font-title text-fg", UI.value)}>
