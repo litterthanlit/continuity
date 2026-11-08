@@ -11,7 +11,7 @@
   "scenes": [
     {
       "id": "hook",
-      "duration": 3,
+      "duration": 3.4,
       "intent": "The pain: you are typing your project's context into yet another agent, again.",
       "beats": [
         {
@@ -27,7 +27,7 @@
       ],
       "text": {
         "agent": "Codex",
-        "prompt-text": "Again: hash tokens, don't widen OAuth…",
+        "prompt-text": "Again: hash tokens, don’t widen OAuth…",
         "headline": "Every agent starts from zero."
       },
       "elements": [
@@ -67,7 +67,7 @@
     },
     {
       "id": "turn",
-      "duration": 3.4,
+      "duration": 3.6,
       "intent": "The turn: the must-say promise on the site's black smoke, signed by the name.",
       "beats": [
         {
@@ -125,7 +125,7 @@
       ],
       "text": {
         "headline": "Capture the mess.",
-        "capture-text": "Don't widen OAuth.",
+        "capture-text": "Don’t widen OAuth.",
         "file": "chat-export.md",
         "tile-label": "token-gate",
         "caption": "Illustration · sample data"
@@ -212,7 +212,7 @@
       ],
       "text": {
         "note-id": "token-gate",
-        "row-constraint": "Don't widen OAuth.",
+        "row-constraint": "Don’t widen OAuth.",
         "row-decision": "Hash tokens at rest.",
         "headline": "One note per project."
       },
