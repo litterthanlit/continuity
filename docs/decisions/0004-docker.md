@@ -45,12 +45,16 @@ root, which is what GitHub Actions `container:` jobs expect.
 `docker.yml` is reusable: on pushes and PRs it builds both targets on amd64 and arm64
 (native runners), runs the browser suite (golden frames, seeded defects, MCP browser tools)
 inside the amd64 toolchain image, and drives the `ct` image like a user
-(`doctor → init → new → check → render --draft`). `release.yml` calls it with
-`publish: true` after npm publishing — a tag trigger would miss manual releases, whose tags
-are created with `GITHUB_TOKEN` and trigger no workflows.
+(`doctor → init → new → check → render --draft`). `release.yml` calls it twice.
+The first call (`publish: false`) is a gate before npm publishing: an npm version cannot be
+republished, so the browser suite has to pass first. The second (`publish: true`) pushes the
+images after npm publishing — a tag trigger would miss manual releases, whose tags are created
+with `GITHUB_TOKEN` and trigger no workflows.
 
 ## Consequences
 - The browser suite now runs in CI, so golden-frame drift is caught on every push.
+- A release runs the image tests twice, once as the gate and once before the push. The second
+  run mostly hits the build cache; skipping it is possible but not worth the extra workflow logic yet.
 - The toolchain image is ~450 MB compressed (most of it Chrome's libraries and fonts).
 - First publish: the GHCR package starts private; make it public once in the package
   settings.
