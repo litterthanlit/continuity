@@ -87,10 +87,20 @@ async function main() {
   }
 }
 
-main().then(
-  (code) => process.exit(code),
-  (e) => {
-    fail(e instanceof Error ? e.stack ?? e.message : String(e));
-    process.exit(1);
-  },
-);
+/**
+ * Exit once stdout and stderr have drained. On POSIX a pipe is written asynchronously, so exiting
+ * straight after printing cuts a large `--json` document off at the pipe's buffer (64 KB).
+ */
+function exit(code: number): void {
+  process.exitCode = code;
+  const done = () => process.exit(code);
+  // A reader that went away (`ct … | head -1`) must not hang or crash the exit.
+  process.stdout.once("error", done);
+  process.stderr.once("error", done);
+  process.stdout.write("", () => process.stderr.write("", done));
+}
+
+main().then(exit, (e) => {
+  fail(e instanceof Error ? e.stack ?? e.message : String(e));
+  exit(1);
+});
