@@ -277,7 +277,7 @@ Machine-checkable. ALL must hold:
 
 - [ ] `npx vitest run tests/cli.test.ts` → 2 passed
 - [ ] `pnpm verify` exits 0
-- [ ] `grep -c "process.exit" src/cli/index.ts` prints `1` (the one inside `exit`)
+- [ ] `grep -c "process.exit(" src/cli/index.ts` prints `1` (the one inside `exit`)
 - [ ] `grep -rn "process.exit" src/cli/commands src/cli/lib` prints nothing
 - [ ] The three checks in Step 3 give the expected output
 - [ ] `git status --short` lists only `src/cli/index.ts`, `tests/cli.test.ts` and `plans/README.md`

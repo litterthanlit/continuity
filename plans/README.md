@@ -11,7 +11,7 @@ elsewhere, in `docs/superpowers/plans/`.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [001](001-json-output-survives-a-pipe.md) | A `--json` document reaches a pipe whole | P1 | S | — | TODO |
+| [001](001-json-output-survives-a-pipe.md) | A `--json` document reaches a pipe whole | P1 | S | — | DONE — reviewed and approved; commit `8862590` on branch `worktree-agent-a9bb95c3fcb03ee63`, not yet merged |
 | [002](002-browser-suite-gates-npm-publish.md) | The browser suite must pass before anything is published to npm | P1 | S | — | TODO |
 | [003](003-gate-recorded-only-for-checked-sources.md) | A gate result is recorded only for the sources that were checked | P1 | S | — | TODO |
 | 004 | CLI arguments are validated before they are used as paths | P1 | S | — | TODO — plan file held back from this public repo until the fix lands; the maintainer has it |
