@@ -507,10 +507,11 @@ d("gradient fields (projects/_backgrounds)", () => {
     }
   });
 
-  // A timing test inside a parallel suite: alone the field measures 13-16 ms a frame, but once, with
-  // HyperFrames rendering beside it on the same 4 cores, 25.7 ms. A retry asks for one uncontended
-  // run; the budget itself does not move (docs/decisions/0011 §5).
-  it("fits the frame budget", { retry: 2 }, async () => {
+  // A wall-clock measurement: alone the field costs 13-16 ms a frame, but beside the rest of the
+  // suite on the same 4 cores it has measured 25-37 ms. CI therefore runs the suite with
+  // CT_BUDGET=0 (this test skipped) and then this test by itself, by name (docker.yml): keep the
+  // name and that command in step. The budget itself does not move (docs/decisions/0011 §5).
+  it.skipIf(process.env.CT_BUDGET === "0")("fits the frame budget", { retry: 2 }, async () => {
     const got = await inBackgrounds<{ medianGradient: number; medianSolid: number }>(`(function () {
       ${FIELD_HELPERS}
       var a = sc("a");
