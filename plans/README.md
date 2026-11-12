@@ -16,7 +16,7 @@ elsewhere, in `docs/superpowers/plans/`.
 | [003](003-gate-recorded-only-for-checked-sources.md) | A gate result is recorded only for the sources that were checked | P1 | S | — | TODO |
 | 004 | CLI arguments are validated before they are used as paths | P1 | S | — | TODO — plan file held back from this public repo until the fix lands; the maintainer has it |
 | [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | TODO |
-| [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | DONE locally — reviewed and approved; commit `796262e` on local branch `worktree-agent-a18c56b8803287499`; not yet pushed, so not yet proven on the CI runner |
+| [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#12](https://github.com/litterthanlit/continuity/pull/12), not yet merged; its `test (amd64)` job is the proof |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 
