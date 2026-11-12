@@ -16,12 +16,14 @@ elsewhere, in `docs/superpowers/plans/`.
 | [003](003-gate-recorded-only-for-checked-sources.md) | A gate result is recorded only for the sources that were checked | P1 | S | — | TODO |
 | 004 | CLI arguments are validated before they are used as paths | P1 | S | — | TODO — plan file held back from this public repo until the fix lands; the maintainer has it |
 | [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | TODO |
+| [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 
 ## Dependency notes
 
 - No plan depends on another. They can land in any order.
+- 006 should land before 002 is merged: until it does, a timing test that fails by chance on a busy runner would block a release.
 - 002 should land before the next release: it is the only one whose cost of
   waiting is a published package.
 - 003 and 004 both edit `src/cli/commands/check.ts`, on different lines. Run
