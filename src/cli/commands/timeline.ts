@@ -1,6 +1,6 @@
 import { buildProject } from "../../build/build.js";
 import { resolveScene } from "../../motion/evaluate.js";
-import { flagBool, flagStr, requireSlug } from "../lib/args.js";
+import { flagBool, requireSlug, sceneFlag } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { fail, log } from "../lib/log.js";
 import { report } from "../lib/project.js";
@@ -21,13 +21,13 @@ export const timeline: Command = {
       fail("no timeline");
       return 1;
     }
-    const scoped = flagStr(a, "scene");
+    const scoped = sceneFlag(a);
     emitResult({ timeline: scoped ? { ...b.timeline, scenes: b.timeline.scenes.filter((s) => s.scene === scoped) } : b.timeline });
     if (flagBool(a, "json")) {
       log(JSON.stringify(b.timeline, null, 2));
       return 0;
     }
-    const only = flagStr(a, "scene");
+    const only = scoped;
     log(`${b.storyboard!.title} — ${b.timeline.duration}s @${b.timeline.fps}fps, ${b.timeline.width}×${b.timeline.height}`);
     for (const sc of b.timeline.scenes) {
       if (only && sc.scene !== only) continue;

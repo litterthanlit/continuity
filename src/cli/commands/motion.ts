@@ -4,7 +4,7 @@ import { buildProject } from "../../build/build.js";
 import { resolveScene } from "../../motion/evaluate.js";
 import { rel } from "../../paths.js";
 import { formatFindings } from "../../spec/findings.js";
-import { flagNum, flagStr, requireSlug, UsageError } from "../lib/args.js";
+import { flagNum, requireSlug, sceneFlag, UsageError } from "../lib/args.js";
 import { screenshotHtml, withBrowser } from "../lib/browser.js";
 import type { Command } from "../lib/command.js";
 import { analyzeEnergy, energyCurve, energyHtml } from "../lib/energy.js";
@@ -60,7 +60,7 @@ export const strip: Command = {
     "  times are scene-local; default window = the scene's entrance choreography",
   async run(a) {
     const slug = requireSlug(a);
-    const sceneId = flagStr(a, "scene");
+    const sceneId = sceneFlag(a);
     if (!sceneId) throw new UsageError("--scene is required");
     const b = await buildFor(slug, sceneId);
     if (!b.ok || !b.timeline) {

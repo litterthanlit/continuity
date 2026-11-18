@@ -1,7 +1,7 @@
 import { loadStoryboard } from "../../build/build.js";
 import { lintStoryboard } from "../../lint/timeline.js";
 import { sceneTimings } from "../../spec/storyboard.js";
-import { flagBool, flagStr, requireSlug } from "../lib/args.js";
+import { flagBool, requireSlug, sceneFlag } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { buildAndLint, buildSummary, report } from "../lib/project.js";
 import { log } from "../lib/log.js";
@@ -32,7 +32,7 @@ export const lint: Command = {
       }
       return report("storyboard", findings, { json }) ? 0 : 1;
     }
-    const { build, findings } = await buildAndLint(slug, { hf: !flagBool(a, "fast"), scene: flagStr(a, "scene") });
+    const { build, findings } = await buildAndLint(slug, { hf: !flagBool(a, "fast"), scene: sceneFlag(a) });
     if (!json) log(buildSummary(build));
     emitResult({ summary: buildSummary(build) });
     return report("lint", findings, { json }) ? 0 : 1;
