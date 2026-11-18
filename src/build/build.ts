@@ -278,8 +278,10 @@ export async function buildProject(
       findings.push({ source: "build", rule: "scene-missing", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx not found in ${rel(src)}` });
     } else {
       let def: SceneDefinition | undefined;
+      let loaded = false;
       try {
         def = defaultExport<SceneDefinition>(await import(pathToFileURL(file).href));
+        loaded = true;
       } catch (e) {
         const msg = errMsg(e);
         const cjs = /require\(\)|ERR_REQUIRE|exports is not defined/.test(msg);
@@ -292,7 +294,9 @@ export async function buildProject(
           ...(cjs ? { suggestion: `scene files must load as ES modules: add ${rel(join(PROJECTS_DIR, "package.json"))} with {"type":"module"} (npx ct init does this)` } : {}),
         });
       }
-      if (def && typeof def.view !== "function") {
+      // A file that loads but exports no scene (no default export, or one without a view) is an error
+      // too: left alone, the film would render the "missing scene" placeholder and still build.
+      if (loaded && typeof def?.view !== "function") {
         findings.push({ source: "build", rule: "scene-export", severity: "error", scene: sc.id, message: `scenes/${sc.id}.tsx must \`export default scene({ view, motion })\`` });
         def = undefined;
       }
