@@ -2,6 +2,7 @@ name: Release
 
 # Publishes @litterthanlit/continuity to npm with provenance, cuts a GitHub release and
 # pushes the Docker images (ghcr.io/litterthanlit/continuity, via docker.yml).
+# Nothing is published until the browser suite has passed (the `browser` job, docker.yml).
 #   - push a tag `vX.Y.Z` (matching package.json and plugin.json), or
 #   - run it manually ("Run workflow") on a branch: it releases v<package.json version>
 #     from that commit and creates the tag itself.
@@ -18,7 +19,20 @@ permissions:
   id-token: write
 
 jobs:
+  # The browser suite (golden frames, seeded layout defects, MCP browser tools) on the pinned
+  # toolchain image. An npm version cannot be republished, so this must pass before `publish`.
+  # packages: write mirrors the `image` job: docker.yml's own publish job declares it, and a
+  # called workflow may not ask for more than its caller grants (that job is skipped here).
+  browser:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      publish: false
+
   publish:
+    needs: browser
     runs-on: ubuntu-latest
     env:
       PUPPETEER_SKIP_DOWNLOAD: "1"
@@ -45,6 +59,7 @@ jobs:
       - run: pnpm verify
       - run: pnpm -s ct licenses
       - run: node scripts/pack-smoke.mjs
+      - run: node scripts/pack-smoke.mjs --pm pnpm
       - name: npm with trusted publishing support (≥ 11.5)
         run: npm install -g npm@11.20.0 && npm -v
       - name: Publish to npm
