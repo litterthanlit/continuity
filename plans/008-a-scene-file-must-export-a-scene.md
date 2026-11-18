@@ -109,7 +109,7 @@ describe("a scene file that exports no scene", () => {
 });
 ```
 
-**Verify**: `npx vitest run tests/scene-export.test.ts` → 2 failed, 1 passed. The two failures are the "no default export" and "no view" cases, each receiving `[]` where `["scene-export"]` is expected.
+**Verify**: `npx vitest run tests/scene-export.test.ts` → 1 failed, 2 passed. The failure is the "no default export" case, which receives `[]` where `["scene-export"]` is expected. The "no view" case already passes (the existing check catches it) and stays as a guard.
 
 ### Step 2: Make the change
 
