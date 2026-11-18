@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { CONFIG_FILE, PKG_ROOT, PROJECTS_DIR, WORK_CONFIG, WORK_ROOT, depDir, rel } from "../../paths.js";
+import { UsageError } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { color, log, ok } from "../lib/log.js";
 import { emitResult } from "../lib/result.js";
@@ -34,7 +35,9 @@ function upsertBlock(file: string, block: string, wrap: (s: string) => string): 
   if (begin >= 0) {
     const endMarker = wrap("").split("\n").at(-1)!;
     const end = cur.indexOf(endMarker, begin);
-    next = cur.slice(0, begin) + managed + (end >= 0 ? cur.slice(end + endMarker.length) : "\n");
+    // Without its end marker the block has no known extent: replacing it would drop whatever follows.
+    if (end < 0) throw new UsageError(`${rel(file)} has "${wrap("").split("\n")[0]}" without "${endMarker}": restore that line (or delete the block) and run ct init again`);
+    next = cur.slice(0, begin) + managed + cur.slice(end + endMarker.length);
   } else next = cur.replace(/\n*$/, "\n\n") + managed + "\n";
   if (next === cur) return "unchanged";
   writeFileSync(file, next);

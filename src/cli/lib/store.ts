@@ -168,14 +168,20 @@ export function recordCheck(slug: string, builtHash: string, findings: Finding[]
   return { iteration: it.n, findingsFile: join(it.dir, name), findings, stale: false };
 }
 
-/** Restore a previous iteration's sources into the project (for "keep the best"). */
-export function restoreIteration(slug: string, n: number) {
+/**
+ * Restore a previous iteration's sources into the project (for "keep the best"). What is on disk
+ * is kept first as an iteration of its own, and its number returned: the edit hook only lints, so
+ * sources edited since the last check, still or sheet have no snapshot yet.
+ */
+export function restoreIteration(slug: string, n: number): number {
   const src = join(iterationDir(slug, n), "src");
   if (!existsSync(src)) throw new Error(`iteration ${n} has no source snapshot`);
+  const saved = currentIteration(slug).n;
   for (const name of SNAPSHOT) {
     const to = join(projectDir(slug), name);
     const from = join(src, name);
     if (existsSync(to)) rmSync(to, { recursive: true, force: true });
     if (existsSync(from)) cpSync(from, to, { recursive: true });
   }
+  return saved;
 }
