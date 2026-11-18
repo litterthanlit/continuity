@@ -18,11 +18,11 @@ elsewhere, in `docs/superpowers/plans/`.
 | [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#15](https://github.com/litterthanlit/continuity/pull/15), merged 2026-11-18 |
 | [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#12](https://github.com/litterthanlit/continuity/pull/12), merged 2026-11-18; `test (amd64)` passed on both of its runs |
 | [007](007-frame-budget-is-judged-against-a-reference.md) | The frame budget is judged against a reference workload, not a stopwatch | P1 | S | 006 | DONE — reviewed and approved; [litterthanlit/continuity#16](https://github.com/litterthanlit/continuity/pull/16), merged 2026-11-18; on a slow runner it measured 25.7 ms a frame and passed at 0.82× the reference |
-| [008](008-a-scene-file-must-export-a-scene.md) | A scene file that exports no scene fails the build | P2 | S | — | TODO |
-| [009](009-a-track-with-no-tempo-is-an-error.md) | A track with no tempo is an error, not infinite scenes | P2 | S | — | TODO |
-| [010](010-time-refs-with-numbered-ids.md) | `"after:card-2"` means the element card-2 | P2 | S | — | TODO |
-| [011](011-a-windowed-loop-rests-at-its-base.md) | A loop outside its window writes its resting value | P2 | S | — | TODO |
-| [012](012-ct-keeps-what-is-the-users.md) | `ct restore`, `ct new` and `ct init` keep what is the user's | P2 | S | — | TODO |
+| [008](008-a-scene-file-must-export-a-scene.md) | A scene file that exports no scene fails the build | P2 | S | — | DONE locally — reviewed and approved; commit `d3747e3` on local branch `worktree-agent-a14b9b03a9a2ff5bb`, not yet pushed |
+| [009](009-a-track-with-no-tempo-is-an-error.md) | A track with no tempo is an error, not infinite scenes | P2 | S | — | DONE locally — reviewed and approved; commit `48d1c4f` on local branch `worktree-agent-ac925bd7ea64276fa`, not yet pushed |
+| [010](010-time-refs-with-numbered-ids.md) | `"after:card-2"` means the element card-2 | P2 | S | — | DONE locally — reviewed and approved; commit `39d1cb9` on local branch `worktree-agent-a0266d3e434de5791`, not yet pushed |
+| [011](011-a-windowed-loop-rests-at-its-base.md) | A loop outside its window writes its resting value | P2 | S | — | DONE locally — reviewed and approved; commit `991e977` on local branch `worktree-agent-a57e9eb08dffcc318`, not yet pushed |
+| [012](012-ct-keeps-what-is-the-users.md) | `ct restore`, `ct new` and `ct init` keep what is the user's | P2 | S | — | DONE locally — reviewed and approved; commit `9ecd1a0` on local branch `worktree-agent-a957ccdeae4d9f636`, not yet pushed |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 
@@ -83,6 +83,7 @@ plan them without re-auditing. Numbers continue from the audit's ranking.
 | 20 | README is stale: the roadmap lists beat-synced music (delivered in 0008), the CLI list lacks `beats`, the galleries line lacks `_flow`, `_launch`, `_backgrounds`, the skills list lacks `typography`, and the example-launch caption predates the re-cut (31.6 s and "blurred pushes"; the film is 32.5 s with portals, carries and a match) | docs | S | `README.md:30,157-159,210-212,250,278` |
 | 21 | Smaller engine and CLI edge cases: `m.camera` with `origin` and an inherited scale snaps the pan to 0; a `from: null` tween after an impulse starts at the impulse's peak; a GL object's settled placement is ignored by `from: null`; the engine hash omits `src/spec` and `src/lint`; a failed ffmpeg run reads as clean render QC; `ct sheet --every 0` never ends; `matchShape` reads the outgoing element one frame early (known, 0012) | bug | S each | `src/motion/dsl.ts:249`; `src/motion/evaluate.ts:73`; `src/build/build.ts:333`; `src/build/hash.ts:34`; `src/cli/lib/ffmpeg.ts:69-74`; `src/cli/lib/times.ts:66`; `src/runtime/index.ts:489,513` |
 | 22 | Three functions of 270–450 lines on the highest-churn paths (`buildProject`, `lintTimeline`, `probeProject`); rule descriptions hard-code numbers that live in `REGISTER_BOUNDS` | tech debt | L | `src/build/build.ts:158-606`; `src/lint/timeline.ts:44-74,132-525`; `src/cli/lib/probe.ts:233-505` |
+| 23 | `tests/audio.test.ts` › "analyses a 30 s track in under 1.5 s" is a wall-clock limit in the default suite. With the machine busy it measured 1.6–3.5 s and failed; it passes alone. Same class as the frame budget (plans 006, 007), and it runs in `pnpm verify`, so a busy CI runner can fail it by chance | tests | S | `tests/audio.test.ts` (the test of that name) |
 
 Further security hardening items (the MCP file sandbox, the plugin hooks'
 argument handling, what `ct init` grants) were verified and are with the
