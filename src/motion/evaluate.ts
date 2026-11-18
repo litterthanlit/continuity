@@ -282,7 +282,12 @@ export function sampleScene(c: CompiledScene, t: number): Map<string, Values> {
     const loops = c.loops.get(key);
     if (loops) {
       for (const l of loops) {
-        if (t < l.start || (l.end !== null && t > l.end)) continue;
+        // Outside its window a loop rests at the base, written out: frames are seeked, so one that
+        // wrote nothing would keep whatever the last seek drew.
+        if (t < l.start || (l.end !== null && t > l.end)) {
+          if (v[l.prop] === undefined) v[l.prop] = baseValue(c.bases, key.split("::")[0], l.prop);
+          continue;
+        }
         const base = v[l.prop] ?? baseValue(c.bases, key.split("::")[0], l.prop);
         v[l.prop] = base + l.amplitude * Math.sin(2 * Math.PI * ((t - l.start) / l.period + l.phase));
       }
