@@ -234,7 +234,14 @@ function round(n: number) {
  * the music.
  */
 function resolveTiming(sb: z.infer<typeof StoryboardSchema>, grid: MusicGrid | undefined, issues: string[]): Storyboard {
-  const step = 60 / (grid?.bpm ?? sb.bpm ?? 120);
+  // A track with no tempo to count (silence, a pad, a stinger) analyses to 0 bpm. Dividing by it made
+  // every scene timed in beats infinitely long, with no finding; say so instead.
+  const tempo = grid && grid.bpm > 0 ? grid.bpm : undefined;
+  const counted = (at: unknown) => typeof at === "object" && at !== null && ("beat" in at || "bar" in at);
+  if (grid && !tempo && sb.scenes.some((s) => typeof s.duration !== "number" || s.beats.some((b) => counted(b.at)))) {
+    issues.push('music: no tempo could be found in the track, so nothing can be counted in beats or bars — set "bpm" on "music", or time the scenes in seconds');
+  }
+  const step = 60 / (tempo ?? sb.bpm ?? 120);
   const fps = sb.format.fps;
   let t = 0;
   const scenes = sb.scenes.map((s, i): SceneSpec => {
