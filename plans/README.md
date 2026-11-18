@@ -17,7 +17,7 @@ elsewhere, in `docs/superpowers/plans/`.
 | 004 | CLI arguments are validated before they are used as paths | P1 | S | — | TODO — plan file held back from this public repo until the fix lands; the maintainer has it |
 | [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#15](https://github.com/litterthanlit/continuity/pull/15), not yet merged |
 | [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#12](https://github.com/litterthanlit/continuity/pull/12), merged 2026-11-18; `test (amd64)` passed on both of its runs |
-| [007](007-frame-budget-is-judged-against-a-reference.md) | The frame budget is judged against a reference workload, not a stopwatch | P1 | S | 006 | DONE — reviewed and approved; [litterthanlit/continuity#16](https://github.com/litterthanlit/continuity/pull/16), not yet merged |
+| [007](007-frame-budget-is-judged-against-a-reference.md) | The frame budget is judged against a reference workload, not a stopwatch | P1 | S | 006 | DONE — reviewed and approved; [litterthanlit/continuity#16](https://github.com/litterthanlit/continuity/pull/16), merged 2026-11-18; on a slow runner it measured 25.7 ms a frame and passed at 0.82× the reference |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 
