@@ -18,6 +18,11 @@ elsewhere, in `docs/superpowers/plans/`.
 | [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#15](https://github.com/litterthanlit/continuity/pull/15), merged 2026-11-18 |
 | [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#12](https://github.com/litterthanlit/continuity/pull/12), merged 2026-11-18; `test (amd64)` passed on both of its runs |
 | [007](007-frame-budget-is-judged-against-a-reference.md) | The frame budget is judged against a reference workload, not a stopwatch | P1 | S | 006 | DONE — reviewed and approved; [litterthanlit/continuity#16](https://github.com/litterthanlit/continuity/pull/16), merged 2026-11-18; on a slow runner it measured 25.7 ms a frame and passed at 0.82× the reference |
+| [008](008-a-scene-file-must-export-a-scene.md) | A scene file that exports no scene fails the build | P2 | S | — | TODO |
+| [009](009-a-track-with-no-tempo-is-an-error.md) | A track with no tempo is an error, not infinite scenes | P2 | S | — | TODO |
+| [010](010-time-refs-with-numbered-ids.md) | `"after:card-2"` means the element card-2 | P2 | S | — | TODO |
+| [011](011-a-windowed-loop-rests-at-its-base.md) | A loop outside its window writes its resting value | P2 | S | — | TODO |
+| [012](012-ct-keeps-what-is-the-users.md) | `ct restore`, `ct new` and `ct init` keep what is the user's | P2 | S | — | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 
@@ -28,6 +33,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 006 should land before 002 is merged: until it does, a timing test that fails by chance on a busy runner would block a release.
 - 002 should land before the next release: it is the only one whose cost of
   waiting is a published package.
+- 009 and 010 both edit `src/motion/dsl.ts`, in different functions. Their diffs apply in either order; merge them one after the other.
+- 008–012 were written against `09b0d13`. Each plan's diff applies to that commit alone and all five apply together; with all five the suite is 321 passed, 26 skipped.
 - 003 and 004 both edit `src/cli/commands/check.ts`, on different lines. Run
   them one after the other, not in parallel worktrees; each plan's drift check
   says which difference from the other to expect.
@@ -60,11 +67,11 @@ plan them without re-auditing. Numbers continue from the audit's ranking.
 | # | Finding | Category | Effort | Evidence |
 |---|---|---|---|---|
 | 6 | Security hardening of the documented command form (details with the maintainer) | security | S–M | — |
-| 7 | A scene file with no default export builds `ok: true` and renders the "missing scene" placeholder; no finding is raised | bug | S | `src/build/build.ts:258,266,279-283` |
-| 8 | Music with no detectable tempo (`bpm: 0`, no beats) resolves beat-timed scenes to `Infinity` and beat refs to `NaN`; the gate stays silent | bug | S | `src/audio/analyze.ts:124`; `src/spec/storyboard.ts:237`; `src/motion/dsl.ts:167,676` |
-| 9 | The `At` parser reads the trailing `-N` of an id as a time offset: `"after:card-2"` means `after:card` minus 2 s | bug | S | `src/motion/dsl.ts:144`; ids like `${ct}-${i}` from `src/kit/ui.tsx:348` |
-| 10 | A loop or blink outside its `at`…`until` window writes no value, so the frame keeps whatever the previous seek left (breaks "a pure function of time"); reaches `m.retype(…, { caret })` | bug | S | `src/motion/evaluate.ts:285`; `src/runtime/index.ts:264`; `src/motion/dsl.ts:415` |
-| 11 | `ct restore` deletes sources that were never snapshotted; `ct new`/`ct init` overwrite an existing `package.json` in the projects dir; `ct init` drops everything after a managed block whose end marker is missing | data loss | S | `src/cli/commands/iterate.ts:89`; `src/cli/lib/store.ts:139-140`; `src/cli/commands/new.ts:16-23`; `src/cli/commands/init.ts:36-37` |
+| 7 (plan 008) | A scene file with no default export builds `ok: true` and renders the "missing scene" placeholder; no finding is raised | bug | S | `src/build/build.ts:258,266,279-283` |
+| 8 (plan 009) | Music with no detectable tempo (`bpm: 0`, no beats) resolves beat-timed scenes to `Infinity` and beat refs to `NaN`; the gate stays silent | bug | S | `src/audio/analyze.ts:124`; `src/spec/storyboard.ts:237`; `src/motion/dsl.ts:167,676` |
+| 9 (plan 010) | The `At` parser reads the trailing `-N` of an id as a time offset: `"after:card-2"` means `after:card` minus 2 s | bug | S | `src/motion/dsl.ts:144`; ids like `${ct}-${i}` from `src/kit/ui.tsx:348` |
+| 10 (plan 011) | A loop or blink outside its `at`…`until` window writes no value, so the frame keeps whatever the previous seek left (breaks "a pure function of time"); reaches `m.retype(…, { caret })` | bug | S | `src/motion/evaluate.ts:285`; `src/runtime/index.ts:264`; `src/motion/dsl.ts:415` |
+| 11 (plan 012) | `ct restore` deletes sources that were never snapshotted; `ct new`/`ct init` overwrite an existing `package.json` in the projects dir; `ct init` drops everything after a managed block whose end marker is missing | data loss | S | `src/cli/commands/iterate.ts:89`; `src/cli/lib/store.ts:139-140`; `src/cli/commands/new.ts:16-23`; `src/cli/commands/init.ts:36-37` |
 | 12 | Parallel scene-builders share `<iteration>/stills/.snap`, `<iteration>/frames/.snap` and `sheet.png`, so they delete each other's frames and read each other's sheet | bug | M | `src/cli/lib/frames.ts:24-25`; `src/cli/commands/sheet.ts:65` |
 | 13 | Nine lint rules have no test and no seeded defect (`duration-too-fast`, `duration-too-slow`, `duration-off-token`, `hold-too-short`, `ui-glance`, `crowded`, `split-too-busy`, `stagger-too-long`, `mask-needs-split`); `exit-slower-than-enter` is in `RULES` and the catalog but is never emitted | tests | M | `src/lint/timeline.ts:35`; `tests/lint.test.ts:20-58` |
 | 14 | Lint accuracy: camera rules read each tween's own props (false `camera-edge` after a zoom, no `camera-too-fast` on a `[null, 1]` back-out); `read-time` on copy that leaves and re-enters is an error with no `allow`; `slow-open` counts only `enter`; an explicit `cut` gets a 0.5 s duration and fails between scenes of 0.5 s or less | bug | M | `src/lint/timeline.ts:156,263-273,321-325,355`; `src/spec/storyboard.ts:101,298` |
