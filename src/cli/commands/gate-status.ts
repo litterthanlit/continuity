@@ -6,7 +6,7 @@ import { PROJECTS_DIR, WORK_ROOT } from "../../paths.js";
 import { flagBool } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { log } from "../lib/log.js";
-import { readState } from "../lib/store.js";
+import { iterationForHash, readState } from "../lib/store.js";
 
 export interface GateState {
   slug: string;
@@ -49,7 +49,7 @@ export function gateStates(): GateState[] {
       continue;
     }
     const { combined } = sourceHash(slug);
-    const it = readState(slug).iterations.find((i) => i.hash === combined);
+    const it = iterationForHash(readState(slug), combined);
     const passing = Boolean(it?.gate?.ok);
     out.push({
       slug,
