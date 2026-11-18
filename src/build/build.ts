@@ -1,5 +1,5 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseHTML } from "linkedom";
 import { renderToString } from "preact-render-to-string";
@@ -12,7 +12,7 @@ import { splitModes } from "../motion/evaluate.js";
 import { TRANSITION_DEFS, transitionTweens } from "../motion/transitions.js";
 import type { LayerElement } from "../motion/layers.js";
 import type { PartCounts, PropName, SceneTimeline, SplitMode, Timeline, Tween } from "../motion/types.js";
-import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, buildDir, projectDir, rel, resolveDep } from "../paths.js";
+import { BUILD_DIR, PKG_ROOT, PROJECTS_DIR, WORK_ROOT, buildDir, projectDir, rel, resolveDep } from "../paths.js";
 import type { Finding } from "../spec/findings.js";
 import { ASPECTS, beatsOf, MusicSchema, musicStop, parseStoryboard, sceneTimings, type Storyboard } from "../spec/storyboard.js";
 import { getTheme, type Theme } from "../themes/index.js";
@@ -149,6 +149,22 @@ function errMsg(e: unknown): string {
   if (!firstFrame) return err.message;
   const where = firstFrame.replace(/^at\s+/, "").replace(/\(?(?:file:\/\/)?(\/[^:)]+)/, (_, p: string) => rel(p));
   return `${err.message} (${where.replace(/\)$/, "")})`;
+}
+
+/**
+ * The output dir is deleted and rewritten on every build. Refuse one that is, or holds, the repo,
+ * the projects dir, the build dir or the project's sources, or that sits inside those sources.
+ */
+export function assertDisposable(dir: string, src: string): void {
+  const out = resolve(dir);
+  const holds = (outer: string, inner: string) => {
+    const r = relative(outer, inner);
+    return !(r === ".." || r.startsWith(".." + sep) || isAbsolute(r));
+  };
+  for (const keep of [WORK_ROOT, PROJECTS_DIR, BUILD_DIR, resolve(src)]) {
+    if (holds(out, keep)) throw new Error(`refusing to build into ${out}: that would delete ${keep}`);
+  }
+  if (holds(resolve(src), out)) throw new Error(`refusing to build into ${out}: it is inside the project's sources`);
 }
 
 /**
@@ -553,6 +569,7 @@ export async function buildProject(
   if (!write) return result;
 
   // ---- Emit the HyperFrames project.
+  assertDisposable(dir, src);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, "fonts"), { recursive: true });
   const families = buildFamilies([kit, ...sceneKits]);

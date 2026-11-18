@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { rel } from "../../paths.js";
-import { flagBool, flagNums, flagStr, requireSlug } from "../lib/args.js";
+import { flagBool, flagNums, requireSlug, sceneFlag } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { captureFrames } from "../lib/frames.js";
 import { fail, log, ok, step } from "../lib/log.js";
@@ -19,13 +19,13 @@ export const stills: Command = {
     "  --at      exact global times (seconds)",
   async run(a) {
     const slug = requireSlug(a);
-    const b = await buildFor(slug, flagStr(a, "scene"));
+    const scene = sceneFlag(a);
+    const b = await buildFor(slug, scene);
     if (!b.ok || !b.timeline) {
       report("build", b.findings);
       fail("fix build errors first (ct lint)");
       return 1;
     }
-    const scene = flagStr(a, "scene");
     let points: TimePoint[];
     const at = flagNums(a, "at");
     if (at) points = at.map((t) => ({ t, scene: "", label: "" }));

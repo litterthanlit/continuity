@@ -1,6 +1,6 @@
 import { rel } from "../../paths.js";
 import type { Finding } from "../../spec/findings.js";
-import { flagBool, requireSlug } from "../lib/args.js";
+import { flagBool, requireSlug, sceneFlag } from "../lib/args.js";
 import { hfCheck } from "../lib/check.js";
 import type { Command } from "../lib/command.js";
 import { log, step } from "../lib/log.js";
@@ -19,7 +19,7 @@ export const check: Command = {
   async run(a) {
     const slug = requireSlug(a);
     const json = flagBool(a, "json");
-    const scene = typeof a.flags.scene === "string" ? a.flags.scene : undefined;
+    const scene = sceneFlag(a);
     const { build, findings } = await buildAndLint(slug, { scene });
     if (!json) log(buildSummary(build));
     const all: Finding[] = [...findings];

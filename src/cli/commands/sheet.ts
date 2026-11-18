@@ -1,6 +1,6 @@
 import { join, relative } from "node:path";
 import { rel } from "../../paths.js";
-import { flagBool, flagNum, flagStr, requireSlug } from "../lib/args.js";
+import { flagBool, flagNum, requireSlug, sceneFlag } from "../lib/args.js";
 import { withBrowser, screenshotHtml } from "../lib/browser.js";
 import type { Command } from "../lib/command.js";
 import { captureFrames } from "../lib/frames.js";
@@ -21,14 +21,14 @@ export const sheet: Command = {
     "  --per      frames per sheet image (default 20)",
   async run(a) {
     const slug = requireSlug(a);
-    const b = await buildFor(slug, flagStr(a, "scene"));
+    const scene = sceneFlag(a);
+    const b = await buildFor(slug, scene);
     if (!b.ok || !b.timeline) {
       report("build", b.findings);
       fail("fix build errors first (ct lint)");
       return 1;
     }
     const tl = b.timeline;
-    const scene = flagStr(a, "scene");
     const span = scene ? tl.scenes.find((s) => s.scene === scene)?.duration ?? tl.duration : tl.duration;
     const per = flagNum(a, "per") ?? 20;
     const every = flagNum(a, "every") ?? Math.max(0.25, Math.ceil((span / per) * 4) / 4);
