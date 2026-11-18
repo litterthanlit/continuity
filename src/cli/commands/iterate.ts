@@ -86,9 +86,9 @@ export const restore: Command = {
     const s = readState(slug);
     const n = a._[1] === "best" ? s.best : Number(a._[1]);
     if (!n) throw new UsageError("which iteration? (number or 'best')");
-    restoreIteration(slug, n);
-    emitResult({ restored: n });
-    ok(`restored iteration ${n} sources into projects/${slug}`);
+    const saved = restoreIteration(slug, n);
+    emitResult({ restored: n, saved });
+    ok(`restored iteration ${n} sources into projects/${slug} (what was there is kept as iteration ${saved})`);
     return 0;
   },
 };

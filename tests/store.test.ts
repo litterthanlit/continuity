@@ -3,7 +3,7 @@
  * imported, so CT_ROOT is set before the store is imported: every import of engine code in this
  * file is dynamic for that reason. Do not add a static import of anything under src/.
  */
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -82,5 +82,17 @@ describe("iterationForHash", () => {
     };
     expect(store.iterationForHash(state, "aaa")?.n).toBe(3);
     expect(store.iterationForHash(state, "zzz")).toBeUndefined();
+  });
+});
+
+describe("restoreIteration", () => {
+  it("keeps edits that were never snapshotted as an iteration before replacing them", () => {
+    writeFileSync(sceneFile(), "export default 10;\n");
+    const first = store.currentIteration("demo").n;
+    writeFileSync(sceneFile(), "export default 11;\n");
+    const saved = store.restoreIteration("demo", first);
+    expect(readFileSync(sceneFile(), "utf8")).toBe("export default 10;\n");
+    expect(saved).toBeGreaterThan(first);
+    expect(readFileSync(join(store.iterationDir("demo", saved), "src", "scenes", "a.tsx"), "utf8")).toBe("export default 11;\n");
   });
 });

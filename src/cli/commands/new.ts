@@ -19,8 +19,13 @@ export function ensureEsmProjects(): boolean {
     }
     if (dirname(dir) === dir) break;
   }
+  const own = join(PROJECTS_DIR, "package.json");
+  // The projects dir is a package of its own (a workspace, or the repo root): that file is the user's.
+  if (existsSync(own)) {
+    throw new UsageError(`${rel(own)} is not an ES module package, and scene files must load as ES modules: add "type": "module" to it, or point "projectsDir" in continuity.json at a folder of its own`);
+  }
   mkdirSync(PROJECTS_DIR, { recursive: true });
-  writeFileSync(join(PROJECTS_DIR, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n");
+  writeFileSync(own, JSON.stringify({ type: "module" }, null, 2) + "\n");
   return true;
 }
 
