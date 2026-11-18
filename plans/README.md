@@ -15,7 +15,7 @@ elsewhere, in `docs/superpowers/plans/`.
 | [002](002-browser-suite-gates-npm-publish.md) | The browser suite must pass before anything is published to npm | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#13](https://github.com/litterthanlit/continuity/pull/13), merged 2026-11-18; first real proof is the next release |
 | [003](003-gate-recorded-only-for-checked-sources.md) | A gate result is recorded only for the sources that were checked | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#14](https://github.com/litterthanlit/continuity/pull/14), merged 2026-11-18 |
 | 004 | CLI arguments are validated before they are used as paths | P1 | S | — | TODO — plan file held back from this public repo until the fix lands; the maintainer has it |
-| [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | DONE — reviewed and approved; commit `493a86f` on local branch `worktree-agent-a67e4f671982525d4`, not yet pushed |
+| [005](005-mcp-server-survives-a-cancelled-call.md) | The MCP server survives a cancelled or failed tool call | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#15](https://github.com/litterthanlit/continuity/pull/15), not yet merged |
 | [006](006-frame-budget-test-runs-uncontended.md) | The frame-budget test is measured on its own in CI | P1 | S | — | DONE — reviewed and approved; [litterthanlit/continuity#12](https://github.com/litterthanlit/continuity/pull/12), merged 2026-11-18; `test (amd64)` passed on both of its runs |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
