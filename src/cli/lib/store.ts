@@ -2,7 +2,7 @@ import { closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, renam
 import { join } from "node:path";
 import { sourceHash } from "../../build/hash.js";
 import { projectDir, stateDir } from "../../paths.js";
-import type { Finding } from "../../spec/findings.js";
+import { countBySeverity, type Finding } from "../../spec/findings.js";
 
 /**
  * Iteration store. Every distinct version of a project's sources (storyboard,
@@ -127,6 +127,45 @@ export function writeFindings(dir: string, name: string, findings: Finding[]) {
 export function readFindings(dir: string, name: string): Finding[] {
   const p = join(dir, name);
   return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as Finding[]) : [];
+}
+
+/** The newest iteration recorded for these sources (a hash recurs after an undo or a restore). */
+export function iterationForHash(state: ProjectState, hash: string): IterationRecord | undefined {
+  return state.iterations.findLast((i) => i.hash === hash);
+}
+
+export interface CheckRecord {
+  iteration: number;
+  /** Where the findings were written; null when nothing was recorded. */
+  findingsFile: string | null;
+  /** The findings to report (with `sources-changed` added when the sources moved). */
+  findings: Finding[];
+  /** The sources changed while the check ran: nothing was recorded. */
+  stale: boolean;
+}
+
+/**
+ * Store a check's findings and, for a full check, its gate result on the iteration of the sources
+ * that were audited. `builtHash` is the build's hash, taken before the audit: if the sources on
+ * disk no longer match it, the result belongs to an earlier version and nothing is recorded.
+ */
+export function recordCheck(slug: string, builtHash: string, findings: Finding[], scene?: string): CheckRecord {
+  const it = currentIteration(slug);
+  if (it.record.hash !== builtHash) {
+    const changed: Finding = {
+      source: "check",
+      rule: "sources-changed",
+      severity: "error",
+      message: "the project's sources changed while the check was running, so this result is for an earlier version and was not recorded",
+      suggestion: `run \`npx ct check ${slug}\` again`,
+    };
+    return { iteration: it.n, findingsFile: null, findings: [...findings, changed], stale: true };
+  }
+  const name = scene ? `findings-${scene}.json` : "findings.json";
+  writeFindings(it.dir, name, findings);
+  const c = countBySeverity(findings);
+  if (!scene) updateIteration(slug, it.n, { gate: { ok: c.errors === 0, errors: c.errors, warnings: c.warnings, at: new Date().toISOString() } });
+  return { iteration: it.n, findingsFile: join(it.dir, name), findings, stale: false };
 }
 
 /** Restore a previous iteration's sources into the project (for "keep the best"). */

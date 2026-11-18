@@ -4,7 +4,7 @@ import { rel } from "../../paths.js";
 import { requireSlug } from "../lib/args.js";
 import type { Command } from "../lib/command.js";
 import { color, log } from "../lib/log.js";
-import { iterationDir, readState } from "../lib/store.js";
+import { iterationDir, iterationForHash, readState } from "../lib/store.js";
 import { emitResult } from "../lib/result.js";
 
 export const status: Command = {
@@ -19,7 +19,7 @@ export const status: Command = {
       slug,
       best: s.best ?? null,
       currentHash: combined,
-      current: s.iterations.find((i) => i.hash === combined)?.n ?? null,
+      current: iterationForHash(s, combined)?.n ?? null,
       changedSinceLast: !s.iterations.some((i) => i.hash === combined),
       iterations: s.iterations.map((it) => ({ ...it, dir: iterationDir(slug, it.n) })),
       verdicts: s.verdicts,
