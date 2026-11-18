@@ -86,7 +86,8 @@ joined by a plain cut; measured on the first preset values, §6 — the shader's
 | measure | result |
 |---|---|
 | in-page cost per frame, ct's browser (Vulkan SwiftShader), median of 30 seeks, three runs | 12.6, 15.3, 15.7 ms (budget 25 ms) |
-| the same, during the full slow suite (HyperFrames rendering on the same 4 cores) | 25.7 ms once; the test retries for an uncontended run |
+| the same, during the full slow suite (HyperFrames rendering on the same 4 cores) | 25.7 ms once; CI now runs the test by itself, after the suite |
+| the same, alone, across GitHub's runners | 12.3–30.5 ms: they differ in speed by more than the budget's headroom. The test therefore times a fixed reference shader beside each field run (15.5 ms on the machine above) and fails above 25 / 15.5 = 1.61× it. The field measures 0.72–0.88× on one, two and four cores; the first shader (29–36 ms) would have measured about 2× |
 | in-page cost per frame, `gl-bench` (HyperFrames' ANGLE/SwiftShader flags), median / p95 | a: 15.3 / 19.4 ms, b: 13.3 / 22.1 ms |
 | first draw (SwiftShader compiles the shader on first use) | 611 ms, once per canvas |
 | `gl-bench --determinism 4`: PNG sequence, 1 worker against 4 | 120 of 120 frames byte-identical, 120 distinct; all 120 are field frames |

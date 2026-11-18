@@ -452,6 +452,36 @@ const FIELD_HELPERS = `
   }
 `;
 
+/** The frame budget (docs/decisions/0011 §5), and what the reference shader costs on the machine it was set on. */
+const FRAME_BUDGET_MS = 25;
+const REFERENCE_MS = 15.5;
+
+/**
+ * A fixed workload the size of a field: 32 sin/cos pairs a pixel, drawn and read back like a field
+ * frame. SwiftShader pays for both per pixel on the CPU, so their ratio holds from one machine to
+ * the next where milliseconds do not.
+ */
+const REFERENCE_SHADER = `
+  function reference(like) {
+    var c = document.createElement("canvas"); c.width = like.width; c.height = like.height;
+    var g = c.getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: true });
+    function sh(type, src) {
+      var s = g.createShader(type); g.shaderSource(s, src); g.compileShader(s);
+      if (!g.getShaderParameter(s, g.COMPILE_STATUS)) throw new Error("reference shader: " + g.getShaderInfoLog(s));
+      return s;
+    }
+    var p = g.createProgram();
+    g.attachShader(p, sh(g.VERTEX_SHADER, "#version 300 es\\nvoid main() { vec2 v = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); gl_Position = vec4(v * 2.0 - 1.0, 0.0, 1.0); }"));
+    g.attachShader(p, sh(g.FRAGMENT_SHADER, "#version 300 es\\nprecision highp float; uniform float u_t; out vec4 o; void main() { vec2 q = gl_FragCoord.xy * 0.01; float a = 0.0; for (int i = 0; i < 32; i++) { float k = float(i + 1); a += sin(q.x * k + u_t) * cos(q.y * k - u_t); } o = vec4(vec3(a / 64.0 + 0.5), 1.0); }"));
+    g.linkProgram(p); g.useProgram(p); g.viewport(0, 0, c.width, c.height);
+    var uT = g.getUniformLocation(p, "u_t"), n = 0;
+    return function () {
+      g.uniform1f(uT, ++n * 0.1); g.drawArrays(g.TRIANGLES, 0, 3);
+      g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
+    };
+  }
+`;
+
 d("gradient fields (projects/_backgrounds)", () => {
   afterAll(removeFixtureProjects);
 
@@ -507,32 +537,35 @@ d("gradient fields (projects/_backgrounds)", () => {
     }
   });
 
-  // A wall-clock measurement: alone the field costs 13-16 ms a frame, but beside the rest of the
-  // suite on the same 4 cores it has measured 25-37 ms. CI therefore runs the suite with
-  // CT_BUDGET=0 (this test skipped) and then this test by itself, by name (docker.yml): keep the
-  // name and that command in step. The budget itself does not move (docs/decisions/0011 §5).
+  // The budget is 25 ms a frame on the machine it was set on. CI runners differ in speed by more
+  // than the budget's headroom (alone, 12-30 ms), so the field is judged against a reference shader
+  // timed beside it in the same page: a slower machine slows both. CI still runs this test by
+  // itself, by name, after the suite (docker.yml): keep the name and that command in step.
   it.skipIf(process.env.CT_BUDGET === "0")("fits the frame budget", { retry: 2 }, async () => {
-    const got = await inBackgrounds<{ medianGradient: number; medianSolid: number }>(`(function () {
+    const got = await inBackgrounds<{ gradient: number[]; reference: number[]; solid: number }>(`(function () {
       ${FIELD_HELPERS}
-      var a = sc("a");
-      function median(xs) { xs.sort(function (p, q) { return p - q; }); return xs[xs.length >> 1]; }
-      function run(offset) {
+      ${REFERENCE_SHADER}
+      var a = sc("a"), drawReference = reference(field("a"));
+      function median(xs) { xs = xs.slice().sort(function (p, q) { return p - q; }); return xs[xs.length >> 1]; }
+      function timed(frame) {
         var ms = [];
-        for (var i = 0; i < 30; i++) {
-          var s = performance.now();
-          ct.seek(a.start + offset + (i * (a.duration - 0.1)) / 30);
-          sync();
-          ms.push(performance.now() - s);
-        }
+        for (var i = 0; i < 30; i++) { var s = performance.now(); frame(i); ms.push(performance.now() - s); }
         return median(ms);
       }
-      run(0.05);
-      var medianGradient = run(0);
+      function seeks(offset) {
+        return timed(function (i) { ct.seek(a.start + offset + (i * (a.duration - 0.1)) / 30); sync(); });
+      }
+      seeks(0.05);
+      timed(drawReference);
+      // Three pairs, each field run next to its own reference run, so a busy moment hits both.
+      var gradient = [], reference = [];
+      for (var r = 0; r < 3; r++) { gradient.push(seeks(r * 0.003)); reference.push(timed(drawReference)); }
       document.querySelectorAll("canvas[data-ct-gradient]").forEach(function (c) { c.remove(); });
-      var medianSolid = run(0.01);
-      return { medianGradient: medianGradient, medianSolid: medianSolid };
+      return { gradient: gradient, reference: reference, solid: seeks(0.01) };
     })()`);
-    console.log(`gradient field: ${got.medianGradient.toFixed(1)} ms/frame median, ${got.medianSolid.toFixed(1)} ms without it`);
-    expect(got.medianGradient - got.medianSolid).toBeLessThanOrEqual(25);
+    const ratios = got.gradient.map((g, i) => (g - got.solid) / got.reference[i]).sort((p, q) => p - q);
+    const ms = (xs: number[]) => xs.map((x) => x.toFixed(1)).join(", ");
+    console.log(`gradient field: ${ms(got.gradient)} ms/frame, ${got.solid.toFixed(1)} ms without it; reference ${ms(got.reference)} ms; ${ratios[1].toFixed(2)}x the reference (budget ${(FRAME_BUDGET_MS / REFERENCE_MS).toFixed(2)}x)`);
+    expect(ratios[1]).toBeLessThanOrEqual(FRAME_BUDGET_MS / REFERENCE_MS);
   });
 });
