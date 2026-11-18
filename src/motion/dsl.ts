@@ -164,6 +164,7 @@ export class MotionBuilder {
     const m = this.music;
     if (!m) throw new MotionError(`[${this.scene}] "${kind}:${n}" needs music — add "music" to the storyboard.`);
     if (kind === "hit" && !Number.isInteger(n)) throw new MotionError(`[${this.scene}] hits are counted in whole numbers ("hit:${Math.floor(n)}").`);
+    if (kind !== "hit" && !(m.bpm > 0)) throw new MotionError(`[${this.scene}] "${kind}:${n}" — no tempo could be found in the track. Set "bpm" on "music" in the storyboard.`);
     const t = musicAt(m, kind === "beat" ? { beat: n } : kind === "bar" ? { bar: n } : { hit: n }, 0, 60 / m.bpm);
     if (t === undefined) throw new MotionError(`[${this.scene}] there is no hit ${n} in this scene (it has ${m.hits.length}).`);
     // On the video's frames, as the storyboard's beats are: rounding on the scene's clock could
@@ -673,6 +674,7 @@ export class MotionBuilder {
   }
 
   private push(t: Tween) {
+    if (!Number.isFinite(t.start)) throw new MotionError(`[${this.scene}] ${t.target} starts at a time that is not a number.`);
     if (t.start < 0) throw new MotionError(`[${this.scene}] ${t.target} starts before the scene (${t.start}s).`);
     if (!(t.duration >= 0)) throw new MotionError(`[${this.scene}] ${t.target} has an invalid duration.`);
     const clean = Object.fromEntries(Object.entries(t).filter(([, v]) => v !== undefined)) as unknown as Tween;
