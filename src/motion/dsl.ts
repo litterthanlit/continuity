@@ -141,22 +141,31 @@ export class MotionBuilder {
   time(at: At | undefined, fallback = 0): number {
     if (at === undefined) return fallback;
     if (typeof at === "number") return at;
+    // The whole string first: an id may end in "-2" (card-2, drop-2), which is not "minus 2 seconds".
+    const whole = this.refTime(at.trim());
+    if (whole !== undefined) return round(whole);
     const m = /^\s*([A-Za-z_][\w:.-]*?)\s*(?:([+-])\s*(\d*\.?\d+))?\s*$/.exec(at);
     if (!m) throw new MotionError(`[${this.scene}] Can't parse time "${at}". Use seconds, "b1", "b1+0.2", "end-0.5", "after:el" or "beat:4".`);
     const [, ref, sign, num] = m;
     const offset = num ? (sign === "-" ? -1 : 1) * Number(num) : 0;
+    const base = this.refTime(ref);
+    if (base !== undefined) return round(base + offset);
+    // endOf explains an "after:" with nothing to follow.
+    if (ref.startsWith("after:")) return round(this.endOf(ref.slice(6)) + offset);
+    throw new MotionError(`[${this.scene}] Unknown beat "${ref}". Beats in this scene: ${Object.keys(this.beats).join(", ") || "(none)"}`);
+  }
+
+  /** The scene time a reference names (a beat, "start", "end", "after:el", "beat:4"), or undefined when it names nothing here. */
+  private refTime(ref: string): number | undefined {
+    if (ref === "end") return this.duration;
+    if (ref === "start") return 0;
     const onMusic = /^(beat|bar|hit):(\d*\.?\d+)$/.exec(ref);
-    let base: number;
-    if (ref === "end") base = this.duration;
-    else if (ref === "start") base = 0;
-    else if (ref.startsWith("after:")) base = this.endOf(ref.slice(6));
-    else if (onMusic) base = this.onMusic(onMusic[1] as "beat" | "bar" | "hit", Number(onMusic[2]));
-    else if (ref in this.beats) base = this.beats[ref];
-    else
-      throw new MotionError(
-        `[${this.scene}] Unknown beat "${ref}". Beats in this scene: ${Object.keys(this.beats).join(", ") || "(none)"}`,
-      );
-    return round(base + offset);
+    if (onMusic) return this.onMusic(onMusic[1] as "beat" | "bar" | "hit", Number(onMusic[2]));
+    if (ref.startsWith("after:")) {
+      const id = this.id(ref.slice(6));
+      return this.tweens.some((t) => t.target === id) ? this.endOf(ref.slice(6)) : undefined;
+    }
+    return ref in this.beats ? this.beats[ref] : undefined;
   }
 
   /** Scene time of the scene's Nth beat, bar or hit (0 = the first at or after its start). */
