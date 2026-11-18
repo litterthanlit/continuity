@@ -23,6 +23,8 @@ export function runCt(
   args: string[],
   opts: { root: string; signal?: AbortSignal; onProgress?: (elapsedS: number, lastLine: string) => void; timeoutMs?: number },
 ): Promise<CtRun> {
+  // Cancelled while it waited in the queue: run nothing.
+  if (opts.signal?.aborted) return Promise.reject(new Error("cancelled"));
   const dir = mkdtempSync(join(tmpdir(), "ct-mcp-"));
   const resultFile = join(dir, "result.json");
   return new Promise((resolve, reject) => {
@@ -75,12 +77,16 @@ export function runCt(
 const queues = new Map<string, Promise<unknown>>();
 export function serialized<T>(key: string, fn: () => Promise<T>): Promise<T> {
   const prev = queues.get(key) ?? Promise.resolve();
-  const next = prev.catch(() => undefined).then(fn);
-  queues.set(
-    key,
-    next.finally(() => {
-      if (queues.get(key) === next) queues.delete(key);
-    }),
+  const next = prev.then(fn);
+  // The stored tail never rejects: a failed or cancelled call is its caller's to handle, and an
+  // unhandled rejection on a promise only the queue holds would take the whole server down.
+  const tail: Promise<unknown> = next.then(
+    () => undefined,
+    () => undefined,
   );
+  queues.set(key, tail);
+  void tail.then(() => {
+    if (queues.get(key) === tail) queues.delete(key);
+  });
   return next;
 }
